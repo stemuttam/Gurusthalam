@@ -1,0 +1,23 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "../dist/out-tsc",
+    "module": "commonjs",
+    "moduleResolution": "node10",
+    "types": [
+      "node",
+      "jest"
+    ],
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "isolatedModules": true,
+    "ignoreDeprecations": "6.0"
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "jest.config.cts"
+  ]
+}

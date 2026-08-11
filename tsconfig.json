@@ -1,7 +1,36 @@
 {
   "extends": "./tsconfig.base.json",
-  "compileOnSave": false,
   "files": [],
-  "references": [],
-  "compilerOptions": {}
+  "references": [
+    {
+      "path": "./learner-web"
+    },
+    {
+      "path": "./admin-web"
+    },
+    {
+      "path": "./api"
+    },
+    {
+      "path": "./api-e2e"
+    },
+    {
+      "path": "./libs/shared/types"
+    },
+    {
+      "path": "./libs/shared/constants"
+    },
+    {
+      "path": "./libs/shared/config"
+    },
+    {
+      "path": "./libs/shared/validation"
+    },
+    {
+      "path": "./libs/shared/utils"
+    },
+    {
+      "path": "./libs/shared/logger"
+    }
+  ]
 }

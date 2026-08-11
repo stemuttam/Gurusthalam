@@ -1,2 +1,12 @@
 packages:
-  - 'packages/*'
+  - "apps/*"
+  - "libs/*"
+  - "tools/*"
+  - "learner-web"
+  - "admin-web"
+  - "api"
+  - "api-e2e"
+allowBuilds:
+  '@parcel/watcher': true
+  less: true
+  nx: true

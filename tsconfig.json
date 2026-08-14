@@ -3,7 +3,7 @@
   "files": [],
   "references": [
     {
-      "path": "./learner-web"
+      "path": "./apps/web"
     },
     {
       "path": "./admin-web"
@@ -33,7 +33,7 @@
       "path": "./libs/shared/logger"
     },
     {
-      "path": "./apps/web"
+      "path": "./apps/admin"
     }
   ]
 }

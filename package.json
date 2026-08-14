@@ -10,7 +10,7 @@
   },
   "scripts": {
     "prepare": "husky",
-    "start:web": "nx serve learner-web",
+    "start:web": "nx serve @org/web",
     "start:admin": "nx serve admin-web",
     "start:api": "nx serve api",
     "build": "nx run-many -t build",

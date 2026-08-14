@@ -10,26 +10,19 @@
   },
   "scripts": {
     "prepare": "husky",
-
     "start:web": "nx serve learner-web",
     "start:admin": "nx serve admin-web",
     "start:api": "nx serve api",
-
     "build": "nx run-many -t build",
     "build:affected": "nx affected -t build",
-
     "test": "nx run-many -t test",
     "test:affected": "nx affected -t test",
-
     "lint": "nx run-many -t lint",
     "lint:affected": "nx affected -t lint",
-
     "typecheck": "nx run-many -t typecheck",
     "typecheck:affected": "nx affected -t typecheck",
-
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-
     "graph": "nx graph",
     "projects": "nx show projects",
     "report": "nx report"
@@ -45,11 +38,12 @@
   "devDependencies": {
     "@commitlint/cli": "^21.2.1",
     "@commitlint/config-conventional": "^21.2.0",
-    "@eslint/js": "^10.0.1",
+    "@eslint/js": "^9.8.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.0",
     "@nx/eslint": "23.1.0",
     "@nx/eslint-plugin": "23.1.0",
+    "@nx/jest": "23.1.0",
     "@nx/js": "23.1.0",
     "@nx/nest": "23.1.0",
     "@nx/node": "23.1.0",
@@ -61,9 +55,11 @@
     "@swc-node/register": "1.11.1",
     "@swc/cli": "~0.8.1",
     "@swc/core": "1.15.8",
-    "@swc/helpers": "0.5.18",
+    "@swc/helpers": "0.5.23",
+    "@swc/jest": "^0.2.39",
     "@testing-library/dom": "10.4.0",
     "@testing-library/react": "16.3.0",
+    "@types/jest": "^30.0.0",
     "@types/node": "^24.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
@@ -71,18 +67,20 @@
     "@vitest/coverage-v8": "~4.1.0",
     "@vitest/ui": "~4.1.0",
     "cross-env": "^10.1.0",
-    "eslint": "^10.8.0",
+    "eslint": "^9.8.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-jsx-a11y": "6.10.1",
+    "eslint-plugin-jsx-a11y": "6.10.2",
     "eslint-plugin-perfectionist": "^5.10.1",
-    "eslint-plugin-react": "^7.35.0",
-    "eslint-plugin-react-hooks": "5.0.0",
+    "eslint-plugin-react": "7.37.5",
+    "eslint-plugin-react-hooks": "7.1.1",
     "eslint-plugin-simple-import-sort": "^14.0.0",
     "eslint-plugin-unused-imports": "^4.4.1",
     "husky": "^9.1.7",
+    "jest": "^30.4.2",
     "jiti": "2.4.2",
     "jsdom": "^27.1.0",
+    "jsonc-eslint-parser": "^2.1.0",
     "lint-staged": "^17.3.0",
     "nx": "23.1.0",
     "prettier": "^3.9.6",
@@ -92,18 +90,20 @@
     "vite": "^8.0.0",
     "vitest": "~4.1.0",
     "webpack": "^5.101.3",
-    "webpack-cli": "^7.0.0",
-    "webpack-dev-server": "^5.2.1"
+    "webpack-cli": "^7.2.2",
+    "webpack-dev-server": "^5.2.6"
   },
   "dependencies": {
-    "@nestjs/common": "^11.0.0",
-    "@nestjs/core": "^11.0.0",
-    "@nestjs/platform-express": "^11.0.0",
-    "axios": "^1.6.0",
+    "@nestjs/common": "^11.1.28",
+    "@nestjs/core": "^11.1.28",
+    "@nestjs/platform-express": "^11.1.28",
+    "axios": "^1.16.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "6.30.3",
-    "reflect-metadata": "^0.2.0",
-    "rxjs": "^7.8.0"
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "winston": "^3.19.0",
+    "zod": "^4.4.3"
   }
 }

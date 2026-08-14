@@ -1,0 +1,9 @@
+import axios from 'axios';
+
+module.exports = async function (): Promise<void> {
+  // Configure Axios for tests to use.
+  const host = process.env.HOST ?? 'localhost';
+  const port = process.env.PORT ?? '3000';
+
+  axios.defaults.baseURL = `http://${host}:${port}`;
+};

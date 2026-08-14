@@ -6,7 +6,9 @@ packages:
   - "admin-web"
   - "api"
   - "api-e2e"
+
 allowBuilds:
-  '@parcel/watcher': true
-  less: true
-  nx: true
+  "@parcel/watcher": true
+  "less": true
+  "nx": true
+  "@swc/core": true

@@ -1,38 +1,39 @@
 # Dependencies
-node_modules
+node_modules/
 
 # Nx
-.nx
+.nx/
 
-# Build
-dist
-coverage
-tmp
+# Build artifacts
+**/dist/
+**/build/
+**/out-tsc/
+**/*.tsbuildinfo
 
-# Logs
-*.log
+# Test coverage
+coverage/
 
 # Environment
 .env
 .env.*
-
 !.env.example
+
+# Logs
+*.log
 
 # OS
 .DS_Store
 Thumbs.db
 
 # IDE
-.idea
-.vscode/*
-!.vscode/extensions.json
-!.vscode/settings.json
-
-# Cache
-.cache
+.idea/
 
 # Prisma
 prisma/dev.db
 
 # Docker
-docker-data
+docker-data/
+
+# Vite / Vitest generated timestamps
+vite.config.*.timestamp*
+vitest.config.*.timestamp*

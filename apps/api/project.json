@@ -1,11 +1,22 @@
 {
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "name": "@org/api-migrated",
+  "name": "@org/api",
   "root": "apps/api",
   "sourceRoot": "apps/api/src",
   "projectType": "application",
   "tags": [
     "scope:api",
     "type:application"
-  ]
+  ],
+  "targets": {
+    "serve": {
+      "executor": "@nx/js:node",
+      "continuous": true,
+      "options": {
+        "buildTarget": "@org/api:build",
+        "watch": true,
+        "runBuildTargetDependencies": true
+      }
+    }
+  }
 }

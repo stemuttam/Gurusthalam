@@ -48,7 +48,7 @@ module.exports = {
   coverageDirectory:
     '<rootDir>/test-output/jest/coverage',
 
-  passWithNoTests: true,
+
 
   clearMocks: true,
   resetMocks: true,

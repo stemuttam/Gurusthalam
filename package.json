@@ -11,8 +11,8 @@
   "scripts": {
     "prepare": "husky",
     "start:web": "nx serve @org/web",
-    "start:admin": "nx serve admin-web",
-    "start:api": "nx serve api",
+    "start:admin": "nx serve @org/admin",
+    "start:api": "nx serve @org/api",
     "build": "nx run-many -t build",
     "build:affected": "nx affected -t build",
     "test": "nx run-many -t test",

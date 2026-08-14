@@ -6,10 +6,10 @@
       "path": "./apps/web"
     },
     {
-      "path": "./admin-web"
+      "path": "./apps/admin"
     },
     {
-      "path": "./api"
+      "path": "./apps/api"
     },
     {
       "path": "./api-e2e"
@@ -31,9 +31,6 @@
     },
     {
       "path": "./libs/shared/logger"
-    },
-    {
-      "path": "./apps/admin"
     }
   ]
 }

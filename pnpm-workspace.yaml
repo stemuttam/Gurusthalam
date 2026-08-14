@@ -2,7 +2,6 @@ packages:
   - "apps/*"
   - "libs/*"
   - "tools/*"
-  - "admin-web"
   - "api"
   - "api-e2e"
 

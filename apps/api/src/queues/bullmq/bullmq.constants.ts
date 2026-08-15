@@ -1,7 +1,8 @@
 export const BULLMQ_PREFIX = 'gurusthalam';
 
 export const BULLMQ_QUEUE_NAMES = {
-  SYSTEM: 'system',
+  SYSTEM: 'system-smoke',
+  NOTIFICATIONS: 'notifications',
 } as const;
 
 export type BullMqQueueName =

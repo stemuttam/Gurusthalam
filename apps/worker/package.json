@@ -1,0 +1,13 @@
+{
+  "name": "@org/worker",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@gurusthalam/config": "workspace:*",
+    "@gurusthalam/database": "workspace:*",
+    "@gurusthalam/logger": "workspace:*",
+    "bullmq": "6.1.1",
+    "ioredis": "6.0.0"
+  }
+}

@@ -28,12 +28,7 @@
         "main": "apps/api/src/main.ts",
         "outputPath": "apps/api/dist",
         "tsConfig": "apps/api/tsconfig.app.json",
-        "format": [
-          "esm"
-        ],
-        "assets": [
-          "apps/api/src/assets"
-        ]
+        "assets": []
       }
     },
     "serve": {

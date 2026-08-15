@@ -4,13 +4,17 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 
-import { PrismaPg } from '@prisma/adapter-pg';
+import {
+  PrismaPg,
+} from '@prisma/adapter-pg';
 
-import { getDatabaseConfig } from '@gurusthalam/config';
+import {
+  getDatabaseConfig,
+} from '@gurusthalam/config';
 
 import {
   PrismaClient,
-} from '../../generated/prisma/client.js';
+} from '@gurusthalam/database';
 
 @Injectable()
 export class PrismaService
@@ -20,10 +24,12 @@ export class PrismaService
   private connected = false;
 
   constructor() {
-    const databaseConfig = getDatabaseConfig();
+    const databaseConfig =
+      getDatabaseConfig();
 
     const adapter = new PrismaPg({
-      connectionString: databaseConfig.uri,
+      connectionString:
+        databaseConfig.uri,
     });
 
     super({
@@ -33,11 +39,13 @@ export class PrismaService
 
   async onModuleInit(): Promise<void> {
     await this.$connect();
+
     this.connected = true;
   }
 
   async onModuleDestroy(): Promise<void> {
     this.connected = false;
+
     await this.$disconnect();
   }
 
@@ -48,6 +56,7 @@ export class PrismaService
   async checkConnection(): Promise<boolean> {
     try {
       await this.$queryRaw`SELECT 1`;
+
       return true;
     } catch {
       return false;

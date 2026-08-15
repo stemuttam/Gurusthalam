@@ -8,12 +8,11 @@ import {
   type QueueOptions,
 } from 'bullmq';
 
-import {
-  getRedisConfig,
-} from '@gurusthalam/config';
+import { getRedisConfig } from '@gurusthalam/config';
 
 import {
   BULLMQ_PREFIX,
+  BULLMQ_QUEUE_NAMES,
   type BullMqQueueName,
 } from './bullmq.constants.js';
 
@@ -27,7 +26,8 @@ export class BullMqService
       Queue
     >();
 
-  private readonly connection: QueueOptions['connection'];
+  private readonly connection:
+    QueueOptions['connection'];
 
   constructor() {
     const config = getRedisConfig();
@@ -60,7 +60,9 @@ export class BullMqService
   async ping(): Promise<boolean> {
     try {
       const queue =
-        this.getQueue('system');
+        this.getQueue(
+          BULLMQ_QUEUE_NAMES.SYSTEM,
+        );
 
       await queue.waitUntilReady();
 
@@ -70,11 +72,38 @@ export class BullMqService
     }
   }
 
+  async getQueueCounts(
+    name: BullMqQueueName,
+  ) {
+    const queue =
+      this.getQueue(name);
+
+    return queue.getJobCounts(
+      'waiting',
+      'active',
+      'completed',
+      'failed',
+      'delayed',
+    );
+  }
+
+  async getQueueJob(
+    name: BullMqQueueName,
+    jobId: string,
+  ) {
+    const queue =
+      this.getQueue(name);
+
+    return queue.getJob(jobId);
+  }
+
   async onModuleDestroy(): Promise<void> {
     await Promise.all(
       Array.from(
         this.queues.values(),
-        (queue) => queue.close(),
+        async (queue) => {
+          await queue.close();
+        },
       ),
     );
 

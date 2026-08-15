@@ -5,6 +5,7 @@
   "type": "module",
   "dependencies": {
     "@gurusthalam/config": "workspace:*",
+    "@gurusthalam/database": "workspace:*",
     "@gurusthalam/logger": "workspace:*",
     "@gurusthalam/validation": "workspace:*",
     "@nestjs/common": "11.1.28",

@@ -31,6 +31,12 @@
     },
     {
       "path": "./libs/shared/logger"
+    },
+    {
+      "path": "./apps/worker"
+    },
+    {
+      "path": "./libs/shared/database"
     }
   ]
 }

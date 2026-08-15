@@ -9,13 +9,43 @@
     "type:application"
   ],
   "targets": {
+    "prisma-generate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec prisma generate --config prisma.config.ts",
+        "cwd": "apps/api"
+      }
+    },
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "dependsOn": [
+        "prisma-generate"
+      ],
+      "options": {
+        "main": "apps/api/src/main.ts",
+        "outputPath": "apps/api/dist",
+        "tsConfig": "apps/api/tsconfig.app.json",
+        "format": [
+          "esm"
+        ],
+        "assets": [
+          "apps/api/src/assets"
+        ]
+      }
+    },
     "serve": {
       "executor": "@nx/js:node",
       "continuous": true,
       "options": {
         "buildTarget": "@org/api:build",
         "watch": true,
-        "runBuildTargetDependencies": true
+        "runBuildTargetDependencies": false,
+        "runtimeArgs": [
+          "--env-file=apps/api/.env"
+        ]
       }
     }
   }

@@ -1,8 +1,8 @@
 packages:
   - "apps/*"
   - "libs/*"
+  - "libs/shared/*"
   - "tools/*"
-  - "api"
   - "api-e2e"
 
 allowBuilds:
@@ -10,3 +10,5 @@ allowBuilds:
   "less": true
   "nx": true
   "@swc/core": true
+  '@prisma/engines': true
+  prisma: true

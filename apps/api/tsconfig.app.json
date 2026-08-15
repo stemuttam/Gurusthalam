@@ -2,43 +2,35 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./out-tsc/app",
-
     "target": "ES2022",
-
     "module": "Node16",
-    "moduleResolution": "node16",
-
-    "lib": [
-      "ES2022"
-    ],
-
-    "types": [
-      "node"
-    ],
-
+    "moduleResolution": "Node16",
+    "lib": ["ES2022"],
+    "types": ["node"],
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
-
     "strict": true,
     "noImplicitOverride": true,
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
-
     "skipLibCheck": true
   },
-  "include": [
-    "src/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "out-tsc"
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "out-tsc"],
+  "references": [
+    {
+      "path": "../../libs/shared/validation/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/shared/logger/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/shared/config/tsconfig.lib.json"
+    }
   ]
 }

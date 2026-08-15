@@ -37,3 +37,6 @@ docker-data/
 # Vite / Vitest generated timestamps
 vite.config.*.timestamp*
 vitest.config.*.timestamp*
+
+apps/api/src/generated/
+tmp/

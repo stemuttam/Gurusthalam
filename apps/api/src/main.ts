@@ -1,21 +1,77 @@
-/**
- * This is not a production server yet!
- * This is only a minimal backend to get started.
- */
-
-import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app/app.module';
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  const globalPrefix = 'api';
-  app.setGlobalPrefix(globalPrefix);
-  const port = process.env.PORT || 3000;
-  await app.listen(port);
-  Logger.log(
-    `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`,
+import {
+  GurusthalamLogger,
+} from '@gurusthalam/logger';
+
+import { AppModule } from './app/app.module.js';
+import { AppConfigService } from './config/app-config.service.js';
+import { GlobalExceptionFilter } from './filters/global-exception.filter.js';
+import { NestLoggerAdapter } from './common/logger/nest-logger.adapter.js';
+
+async function bootstrap(): Promise<void> {
+  const app = await NestFactory.create(AppModule, {
+    logger: false,
+  });
+
+  const config = app.get(AppConfigService);
+
+  const structuredLogger = new GurusthalamLogger({
+    service: config.name,
+    environment: config.environment,
+  });
+
+  const nestLogger = new NestLoggerAdapter(
+    structuredLogger,
+  );
+
+  app.useLogger(nestLogger);
+
+  app.setGlobalPrefix(config.apiPrefix);
+
+  app.useGlobalFilters(
+    new GlobalExceptionFilter(structuredLogger),
+  );
+
+  app.enableShutdownHooks();
+
+  await app.listen(config.port);
+
+  structuredLogger.info(
+    `🚀 ${config.name} started successfully`,
+    {
+      operation: 'bootstrap',
+      service: config.name,
+    },
+  );
+
+  structuredLogger.info(
+    `HTTP server listening on port ${config.port}`,
+    {
+      operation: 'bootstrap',
+    },
   );
 }
 
-bootstrap();
+void bootstrap().catch((error: unknown) => {
+  const message =
+    error instanceof Error
+      ? error.message
+      : String(error);
+
+  const fallbackLogger = new GurusthalamLogger({
+    service: 'api-bootstrap',
+    environment:
+      process.env.NODE_ENV ?? 'development',
+  });
+
+  fallbackLogger.error(
+    `API bootstrap failed: ${message}`,
+    error,
+    {
+      operation: 'bootstrap',
+    },
+  );
+
+  process.exitCode = 1;
+});

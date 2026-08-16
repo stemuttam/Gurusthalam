@@ -7,16 +7,8 @@ import {
 } from '../../database/prisma/prisma.service.js';
 
 import {
-  BullMqService,
-} from '../bullmq/bullmq.service.js';
-
-import {
   BULLMQ_QUEUE_NAMES,
 } from '../bullmq/bullmq.constants.js';
-
-import {
-  NOTIFICATION_JOB_OPTIONS,
-} from './notification.policy.js';
 
 import type {
   NotificationJobData,
@@ -51,12 +43,12 @@ export interface NotificationEnqueueResult {
   readonly queue: string;
   readonly notificationId: string;
   readonly status: string;
+  readonly outboxEventId: string;
 }
 
 @Injectable()
 export class NotificationQueueService {
   constructor(
-    private readonly bullMq: BullMqService,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -77,6 +69,14 @@ export class NotificationQueueService {
       });
 
     if (existing) {
+      const outbox =
+        await this.prisma.outboxEvent.findUnique({
+          where: {
+            dedupeKey:
+              `notification:${data.idempotencyKey}`,
+          },
+        });
+
       return {
         jobId:
           data.idempotencyKey,
@@ -89,74 +89,149 @@ export class NotificationQueueService {
 
         status:
           String(existing.status),
+
+        outboxEventId:
+          outbox?.id ?? 'unknown',
       };
     }
 
     /*
      * ---------------------------------------------------------
-     * Persist notification as QUEUED
+     * Atomic PostgreSQL transaction
      * ---------------------------------------------------------
      *
-     * templateData is already strongly typed as JSON-compatible,
-     * so Prisma can consume it directly.
+     * Notification and OutboxEvent are committed together.
+     * No BullMQ call happens inside this transaction.
      */
-    let notification;
-
     try {
-      const createData = {
-        notificationId:
-          data.notificationId,
+      const result =
+        await this.prisma.$transaction(
+          async (tx) => {
+            const notification =
+              await tx.notification.create({
+                data: {
+                  notificationId:
+                    data.notificationId,
 
-        userId:
-          data.recipient.userId,
+                  userId:
+                    data.recipient.userId,
 
-        channel:
-          this.toPrismaChannel(
-            data.channel,
-          ),
+                  channel:
+                    this.toPrismaChannel(
+                      data.channel,
+                    ),
 
-        status:
-          'QUEUED' as const,
+                  status:
+                    'QUEUED',
 
-        subject:
-          data.subject ?? null,
+                  subject:
+                    data.subject ?? null,
 
-        title:
-          data.title ?? null,
+                  title:
+                    data.title ?? null,
 
-        body:
-          data.body,
+                  body:
+                    data.body,
 
-        template:
-          data.template ?? null,
+                  template:
+                    data.template ?? null,
 
-        idempotencyKey:
+                  /*
+                   * JSON.parse returns `any`, which is exactly
+                   * what Prisma's JSON input accepts at this
+                   * serialization boundary.
+                   *
+                   * We intentionally persist a JSON snapshot
+                   * rather than a live TypeScript object.
+                   */
+                  ...(data.templateData !==
+                  undefined
+                    ? {
+                        templateData:
+                          JSON.parse(
+                            JSON.stringify(
+                              data.templateData,
+                            ),
+                          ),
+                      }
+                    : {}),
+
+                  idempotencyKey:
+                    data.idempotencyKey,
+
+                  attempts:
+                    0,
+
+                  queuedAt:
+                    new Date(),
+                },
+              });
+
+            const outboxPayload =
+              JSON.parse(
+                JSON.stringify(data),
+              );
+
+            const outbox =
+              await tx.outboxEvent.create({
+                data: {
+                  eventType:
+                    'notification.enqueue',
+
+                  aggregateType:
+                    'Notification',
+
+                  aggregateId:
+                    notification.id,
+
+                  dedupeKey:
+                    `notification:${data.idempotencyKey}`,
+
+                  payload:
+                    outboxPayload,
+
+                  status:
+                    'PENDING',
+
+                  attempts:
+                    0,
+
+                  availableAt:
+                    new Date(),
+                },
+              });
+
+            return {
+              notification,
+              outbox,
+            };
+          },
+        );
+
+      return {
+        jobId:
           data.idempotencyKey,
 
-        attempts:
-          0,
+        queue:
+          BULLMQ_QUEUE_NAMES.NOTIFICATIONS,
 
-        queuedAt:
-          new Date(),
+        notificationId:
+          result.notification
+            .notificationId,
 
-        ...(data.templateData !==
-        undefined
-          ? {
-              templateData:
-                data.templateData,
-            }
-          : {}),
+        status:
+          String(
+            result.notification.status,
+          ),
+
+        outboxEventId:
+          result.outbox.id,
       };
-
-      notification =
-        await this.prisma.notification.create({
-          data: createData,
-        });
     } catch (error: unknown) {
       /*
-       * -------------------------------------------------------
+       * ---------------------------------------------------------
        * Concurrent idempotency protection
-       * -------------------------------------------------------
+       * ---------------------------------------------------------
        */
       const raced =
         await this.prisma.notification.findUnique({
@@ -167,6 +242,14 @@ export class NotificationQueueService {
         });
 
       if (raced) {
+        const outbox =
+          await this.prisma.outboxEvent.findUnique({
+            where: {
+              dedupeKey:
+                `notification:${data.idempotencyKey}`,
+            },
+          });
+
         return {
           jobId:
             data.idempotencyKey,
@@ -179,74 +262,11 @@ export class NotificationQueueService {
 
           status:
             String(raced.status),
+
+          outboxEventId:
+            outbox?.id ?? 'unknown',
         };
       }
-
-      throw error;
-    }
-
-    /*
-     * ---------------------------------------------------------
-     * Enqueue BullMQ job
-     * ---------------------------------------------------------
-     */
-    try {
-      const queue =
-        this.bullMq.getQueue(
-          BULLMQ_QUEUE_NAMES.NOTIFICATIONS,
-        );
-
-      const job =
-        await queue.add(
-          `notification:${data.channel}`,
-          data,
-          {
-            ...NOTIFICATION_JOB_OPTIONS,
-
-            jobId:
-              data.idempotencyKey,
-          },
-        );
-
-      return {
-        jobId:
-          job.id ??
-          data.idempotencyKey,
-
-        queue:
-          BULLMQ_QUEUE_NAMES.NOTIFICATIONS,
-
-        notificationId:
-          notification.notificationId,
-
-        status:
-          String(notification.status),
-      };
-    } catch (error: unknown) {
-      /*
-       * -------------------------------------------------------
-       * Keep PostgreSQL state truthful if BullMQ enqueue fails
-       * -------------------------------------------------------
-       */
-      await this.prisma.notification.update({
-        where: {
-          id:
-            notification.id,
-        },
-
-        data: {
-          status:
-            'FAILED',
-
-          failedAt:
-            new Date(),
-
-          failureReason:
-            this.getErrorMessage(
-              error,
-            ),
-        },
-      });
 
       throw error;
     }
@@ -346,13 +366,5 @@ export class NotificationQueueService {
       case 'push':
         return 'PUSH';
     }
-  }
-
-  private getErrorMessage(
-    error: unknown,
-  ): string {
-    return error instanceof Error
-      ? error.message
-      : String(error);
   }
 }

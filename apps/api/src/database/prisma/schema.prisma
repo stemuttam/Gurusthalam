@@ -21,6 +21,13 @@ enum NotificationStatus {
   FAILED
 }
 
+enum OutboxStatus {
+  PENDING
+  PROCESSING
+  PUBLISHED
+  FAILED
+}
+
 model Notification {
   id String @id @default(uuid())
 
@@ -51,11 +58,34 @@ model Notification {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
 
-  @@index([userId])
-  @@index([status])
-  @@index([channel])
-  @@index([createdAt])
-  @@index([userId, status])
-  @@index([channel, status])
+model OutboxEvent {
+  id String @id @default(uuid())
+
+  eventType     String
+  aggregateType String
+  aggregateId   String
+
+  dedupeKey String @unique
+
+  payload Json
+
+  status OutboxStatus @default(PENDING)
+
+  attempts Int @default(0)
+
+  availableAt DateTime  @default(now())
+  lockedAt    DateTime?
+  lockedBy    String?
+
+  publishedAt DateTime?
+  lastError   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, availableAt, createdAt])
+  @@index([aggregateType, aggregateId])
+  @@index([lockedAt])
 }

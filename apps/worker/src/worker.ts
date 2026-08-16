@@ -58,6 +58,10 @@ import {
   NotificationPersistenceService,
 } from './notifications/notification-persistence.service.js';
 
+import {
+  OutboxDispatcher,
+} from './outbox/outbox.dispatcher.js';
+
 export class GurusthalamWorker {
   private readonly workers: Worker[] = [];
 
@@ -70,11 +74,17 @@ export class GurusthalamWorker {
   private readonly notificationPersistence:
     NotificationPersistenceService;
 
+  private readonly outboxDispatcher:
+    OutboxDispatcher;
+
+  private started = false;
+
   constructor() {
     this.logger =
       new GurusthalamLogger({
         service:
           'gurusthalam-worker',
+
         environment:
           process.env.NODE_ENV ??
           'development',
@@ -87,300 +97,380 @@ export class GurusthalamWorker {
       new NotificationPersistenceService(
         this.prisma,
       );
+
+    this.outboxDispatcher =
+      new OutboxDispatcher(
+        this.prisma,
+        this.logger,
+      );
   }
 
   async start(): Promise<void> {
-    await this.prisma.$connect();
-
-    const redis =
-      getRedisConfig();
-
-    const connection:
-      WorkerOptions['connection'] = {
-      url: redis.url,
-      maxRetriesPerRequest:
-        null,
-    };
-
-    /*
-     * ---------------------------------------------------------
-     * System worker
-     * ---------------------------------------------------------
-     */
-
-    const systemProcessor =
-      new SystemProcessor(
-        this.logger,
-      );
-
-    const systemWorker =
-      new Worker<
-        SystemJobData,
-        SystemJobResult
-      >(
-        QUEUE_NAMES.SYSTEM,
-        async (
-          job: Job<SystemJobData>,
-        ): Promise<SystemJobResult> =>
-          systemProcessor.process(
-            job,
-          ),
+    if (this.started) {
+      this.logger.info(
+        'Gurusthalam worker is already started',
         {
-          connection,
-          prefix: QUEUE_PREFIX,
-          ...WORKER_OPTIONS,
+          operation:
+            'worker.start.skip',
         },
       );
 
-    systemWorker.on(
-      'ready',
-      () => {
-        this.logger.info(
-          `Worker ready: ${QUEUE_NAMES.SYSTEM}`,
-          {
-            operation:
-              'worker.ready',
-            service:
-              QUEUE_NAMES.SYSTEM,
-          },
-        );
-      },
-    );
+      return;
+    }
 
-    systemWorker.on(
-      'completed',
-      (job) => {
-        this.logger.info(
-          `Job completed: ${
-            job.id ?? 'unknown'
-          }`,
-          {
-            operation:
-              'worker.completed',
-            service:
-              QUEUE_NAMES.SYSTEM,
-          },
-        );
-      },
-    );
+    try {
+      /*
+       * -------------------------------------------------------
+       * PostgreSQL
+       * -------------------------------------------------------
+       */
+      await this.prisma.$connect();
 
-    systemWorker.on(
-      'failed',
-      (job, error) => {
-        this.logger.error(
-          `Job failed: ${
-            job?.id ?? 'unknown'
-          }`,
-          error,
-          {
-            operation:
-              'worker.failed',
-            service:
-              QUEUE_NAMES.SYSTEM,
-          },
-        );
-      },
-    );
-
-    systemWorker.on(
-      'error',
-      (error) => {
-        this.logger.error(
-          'BullMQ worker error',
-          error,
-          {
-            operation:
-              'worker.error',
-            service:
-              QUEUE_NAMES.SYSTEM,
-          },
-        );
-      },
-    );
-
-    this.workers.push(
-      systemWorker,
-    );
-
-    /*
-     * ---------------------------------------------------------
-     * Notification providers
-     * ---------------------------------------------------------
-     */
-
-    const emailProvider =
-      new EmailNotificationProvider(
-        this.logger,
-      );
-
-    const inAppProvider =
-      new InAppNotificationProvider(
-        this.logger,
-      );
-
-    const pushProvider =
-      new PushNotificationProvider(
-        this.logger,
-      );
-
-    const providerRegistry =
-      new NotificationProviderRegistry(
-        emailProvider,
-        inAppProvider,
-        pushProvider,
-      );
-
-    /*
-     * ---------------------------------------------------------
-     * Notification processor
-     * ---------------------------------------------------------
-     */
-
-    const notificationProcessor =
-      new NotificationProcessor(
-        this.logger,
-        providerRegistry,
-        this.notificationPersistence,
-      );
-
-    /*
-     * ---------------------------------------------------------
-     * Notification worker
-     * ---------------------------------------------------------
-     */
-
-    const notificationWorker =
-      new Worker<
-        NotificationJobData,
-        NotificationJobResult
-      >(
-        QUEUE_NAMES.NOTIFICATIONS,
-        async (
-          job: Job<NotificationJobData>,
-        ): Promise<NotificationJobResult> =>
-          notificationProcessor.process(
-            job,
-          ),
+      this.logger.info(
+        'PostgreSQL connection established',
         {
-          connection,
-          prefix: QUEUE_PREFIX,
-          ...WORKER_OPTIONS,
+          operation:
+            'database.connected',
+          service:
+            'database',
         },
       );
 
-    notificationWorker.on(
-      'ready',
-      () => {
-        this.logger.info(
-          `Worker ready: ${QUEUE_NAMES.NOTIFICATIONS}`,
+      /*
+       * -------------------------------------------------------
+       * Redis / BullMQ
+       * -------------------------------------------------------
+       */
+      const redis =
+        getRedisConfig();
+
+      const connection:
+        WorkerOptions['connection'] = {
+        url:
+          redis.url,
+
+        maxRetriesPerRequest:
+          null,
+      };
+
+      /*
+       * -------------------------------------------------------
+       * System worker
+       * -------------------------------------------------------
+       */
+      const systemProcessor =
+        new SystemProcessor(
+          this.logger,
+        );
+
+      const systemWorker =
+        new Worker<
+          SystemJobData,
+          SystemJobResult
+        >(
+          QUEUE_NAMES.SYSTEM,
+
+          async (
+            job:
+              Job<SystemJobData>,
+          ): Promise<SystemJobResult> =>
+            systemProcessor.process(
+              job,
+            ),
+
           {
-            operation:
-              'worker.ready',
-            service:
-              QUEUE_NAMES.NOTIFICATIONS,
+            connection,
+            prefix:
+              QUEUE_PREFIX,
+            ...WORKER_OPTIONS,
           },
         );
-      },
-    );
 
-    notificationWorker.on(
-      'completed',
-      (job) => {
-        this.logger.info(
-          `Notification job completed: ${
-            job.id ?? 'unknown'
-          }`,
-          {
-            operation:
-              'worker.completed',
-            service:
-              QUEUE_NAMES.NOTIFICATIONS,
-          },
-        );
-      },
-    );
+      systemWorker.on(
+        'ready',
+        () => {
+          this.logger.info(
+            `Worker ready: ${QUEUE_NAMES.SYSTEM}`,
+            {
+              operation:
+                'worker.ready',
+              service:
+                QUEUE_NAMES.SYSTEM,
+            },
+          );
+        },
+      );
 
-    notificationWorker.on(
-      'failed',
-      (job, error) => {
-        this.logger.error(
-          `Notification job failed: ${
-            job?.id ?? 'unknown'
-          }`,
+      systemWorker.on(
+        'completed',
+        (job) => {
+          this.logger.info(
+            `Job completed: ${
+              job.id ??
+              'unknown'
+            }`,
+            {
+              operation:
+                'worker.completed',
+              service:
+                QUEUE_NAMES.SYSTEM,
+            },
+          );
+        },
+      );
+
+      systemWorker.on(
+        'failed',
+        (
+          job,
           error,
+        ) => {
+          this.logger.error(
+            `Job failed: ${
+              job?.id ??
+              'unknown'
+            }`,
+            error,
+            {
+              operation:
+                'worker.failed',
+              service:
+                QUEUE_NAMES.SYSTEM,
+            },
+          );
+        },
+      );
+
+      systemWorker.on(
+        'error',
+        (error) => {
+          this.logger.error(
+            'BullMQ worker error',
+            error,
+            {
+              operation:
+                'worker.error',
+              service:
+                QUEUE_NAMES.SYSTEM,
+            },
+          );
+        },
+      );
+
+      this.workers.push(
+        systemWorker,
+      );
+
+      /*
+       * -------------------------------------------------------
+       * Notification providers
+       * -------------------------------------------------------
+       */
+      const emailProvider =
+        new EmailNotificationProvider(
+          this.logger,
+        );
+
+      const inAppProvider =
+        new InAppNotificationProvider(
+          this.logger,
+        );
+
+      const pushProvider =
+        new PushNotificationProvider(
+          this.logger,
+        );
+
+      const providerRegistry =
+        new NotificationProviderRegistry(
+          emailProvider,
+          inAppProvider,
+          pushProvider,
+        );
+
+      /*
+       * -------------------------------------------------------
+       * Notification processor
+       * -------------------------------------------------------
+       */
+      const notificationProcessor =
+        new NotificationProcessor(
+          this.logger,
+          providerRegistry,
+          this.notificationPersistence,
+        );
+
+      /*
+       * -------------------------------------------------------
+       * Notification worker
+       * -------------------------------------------------------
+       */
+      const notificationWorker =
+        new Worker<
+          NotificationJobData,
+          NotificationJobResult
+        >(
+          QUEUE_NAMES.NOTIFICATIONS,
+
+          async (
+            job:
+              Job<NotificationJobData>,
+          ): Promise<NotificationJobResult> =>
+            notificationProcessor.process(
+              job,
+            ),
+
           {
-            operation:
-              'worker.failed',
-            service:
-              QUEUE_NAMES.NOTIFICATIONS,
+            connection,
+            prefix:
+              QUEUE_PREFIX,
+            ...WORKER_OPTIONS,
           },
         );
-      },
-    );
 
-    notificationWorker.on(
-      'error',
-      (error) => {
-        this.logger.error(
-          'Notification worker error',
+      notificationWorker.on(
+        'ready',
+        () => {
+          this.logger.info(
+            `Worker ready: ${QUEUE_NAMES.NOTIFICATIONS}`,
+            {
+              operation:
+                'worker.ready',
+              service:
+                QUEUE_NAMES.NOTIFICATIONS,
+            },
+          );
+        },
+      );
+
+      notificationWorker.on(
+        'completed',
+        (job) => {
+          this.logger.info(
+            `Notification job completed: ${
+              job.id ??
+              'unknown'
+            }`,
+            {
+              operation:
+                'worker.completed',
+              service:
+                QUEUE_NAMES.NOTIFICATIONS,
+            },
+          );
+        },
+      );
+
+      notificationWorker.on(
+        'failed',
+        (
+          job,
           error,
-          {
-            operation:
-              'worker.error',
-            service:
-              QUEUE_NAMES.NOTIFICATIONS,
-          },
-        );
-      },
-    );
+        ) => {
+          this.logger.error(
+            `Notification job failed: ${
+              job?.id ??
+              'unknown'
+            }`,
+            error,
+            {
+              operation:
+                'worker.failed',
+              service:
+                QUEUE_NAMES.NOTIFICATIONS,
+            },
+          );
+        },
+      );
 
-    this.workers.push(
-      notificationWorker,
-    );
+      notificationWorker.on(
+        'error',
+        (error) => {
+          this.logger.error(
+            'Notification worker error',
+            error,
+            {
+              operation:
+                'worker.error',
+              service:
+                QUEUE_NAMES.NOTIFICATIONS,
+            },
+          );
+        },
+      );
 
-    await Promise.all(
-      this.workers.map(
-        (worker) =>
-          worker.waitUntilReady(),
-      ),
-    );
+      this.workers.push(
+        notificationWorker,
+      );
 
-    this.logger.info(
-      `Gurusthalam worker started with ${this.workers.length} worker(s)`,
-      {
-        operation:
-          'worker.start',
-      },
-    );
+      /*
+       * -------------------------------------------------------
+       * Wait for BullMQ workers
+       * -------------------------------------------------------
+       */
+      await Promise.all(
+        this.workers.map(
+          (worker) =>
+            worker.waitUntilReady(),
+        ),
+      );
+
+      /*
+       * -------------------------------------------------------
+       * Start transactional outbox dispatcher
+       * -------------------------------------------------------
+       *
+       * The dispatcher reads committed PENDING outbox events
+       * from PostgreSQL and publishes them to BullMQ.
+       */
+      this.outboxDispatcher.start();
+
+      this.started = true;
+
+      this.logger.info(
+        `Gurusthalam worker started with ${this.workers.length} worker(s) and outbox dispatcher`,
+        {
+          operation:
+            'worker.start',
+        },
+      );
+    } catch (error: unknown) {
+      this.logger.error(
+        'Worker bootstrap failed',
+        error,
+        {
+          operation:
+            'bootstrap',
+        },
+      );
+
+      /*
+       * Best-effort cleanup if startup fails halfway through.
+       */
+      await this.shutdownResources();
+
+      throw error;
+    }
   }
 
   async stop(): Promise<void> {
-    if (
-      this.workers.length === 0
-    ) {
-      await this.prisma.$disconnect();
+    if (!this.started) {
+      await this.shutdownResources();
+
       return;
     }
 
     this.logger.info(
-      `Stopping ${this.workers.length} worker(s)`,
+      `Stopping ${this.workers.length} worker(s) and outbox dispatcher`,
       {
         operation:
           'worker.stop',
       },
     );
 
-    await Promise.all(
-      this.workers.map(
-        async (worker) => {
-          await worker.close();
-        },
-      ),
-    );
+    await this.shutdownResources();
 
-    this.workers.length = 0;
-
-    await this.prisma.$disconnect();
+    this.started = false;
 
     this.logger.info(
       'Gurusthalam worker stopped',
@@ -389,5 +479,80 @@ export class GurusthalamWorker {
           'worker.stopped',
       },
     );
+  }
+
+  private async shutdownResources(): Promise<void> {
+    /*
+     * Stop outbox polling first so it cannot enqueue new jobs
+     * while workers are shutting down.
+     */
+    try {
+      await this.outboxDispatcher.stop();
+    } catch (error: unknown) {
+      this.logger.error(
+        'Failed to stop outbox dispatcher',
+        error,
+        {
+          operation:
+            'outbox.stop.error',
+          service:
+            'outbox',
+        },
+      );
+    }
+
+    /*
+     * Close BullMQ workers.
+     */
+    if (this.workers.length > 0) {
+      try {
+        await Promise.all(
+          this.workers.map(
+            async (worker) => {
+              await worker.close();
+            },
+          ),
+        );
+      } catch (error: unknown) {
+        this.logger.error(
+          'Failed to close BullMQ workers',
+          error,
+          {
+            operation:
+              'worker.close.error',
+          },
+        );
+      }
+
+      this.workers.length = 0;
+    }
+
+    /*
+     * Close PostgreSQL.
+     */
+    try {
+      await this.prisma.$disconnect();
+
+      this.logger.info(
+        'PostgreSQL connection closed',
+        {
+          operation:
+            'database.disconnected',
+          service:
+            'database',
+        },
+      );
+    } catch (error: unknown) {
+      this.logger.error(
+        'Failed to disconnect PostgreSQL',
+        error,
+        {
+          operation:
+            'database.disconnect.error',
+          service:
+            'database',
+        },
+      );
+    }
   }
 }

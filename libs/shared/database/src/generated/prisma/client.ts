@@ -46,3 +46,8 @@ export { Prisma }
  * 
  */
 export type Notification = Prisma.NotificationModel
+/**
+ * Model OutboxEvent
+ * 
+ */
+export type OutboxEvent = Prisma.OutboxEventModel

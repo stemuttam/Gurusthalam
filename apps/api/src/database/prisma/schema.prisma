@@ -26,6 +26,7 @@ enum OutboxStatus {
   PROCESSING
   PUBLISHED
   FAILED
+  DEAD_LETTER
 }
 
 model Notification {
@@ -75,12 +76,21 @@ model OutboxEvent {
 
   attempts Int @default(0)
 
-  availableAt DateTime  @default(now())
-  lockedAt    DateTime?
-  lockedBy    String?
+  availableAt DateTime @default(now())
+
+  lockedAt DateTime?
+  lockedBy String?
 
   publishedAt DateTime?
-  lastError   String?
+
+  deadLetteredAt DateTime?
+  recoveredAt    DateTime?
+
+  recoveryCount Int @default(0)
+
+  lastAttemptAt DateTime?
+
+  lastError String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -88,4 +98,5 @@ model OutboxEvent {
   @@index([status, availableAt, createdAt])
   @@index([aggregateType, aggregateId])
   @@index([lockedAt])
+  @@index([deadLetteredAt])
 }

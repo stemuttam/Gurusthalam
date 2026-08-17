@@ -33,7 +33,8 @@ export const OutboxStatus = {
   PENDING: 'PENDING',
   PROCESSING: 'PROCESSING',
   PUBLISHED: 'PUBLISHED',
-  FAILED: 'FAILED'
+  FAILED: 'FAILED',
+  DEAD_LETTER: 'DEAD_LETTER'
 } as const
 
 export type OutboxStatus = (typeof OutboxStatus)[keyof typeof OutboxStatus]

@@ -17,7 +17,8 @@ export class EmailNotificationProvider
   readonly channel = 'email' as const;
 
   constructor(
-    private readonly logger: GurusthalamLogger,
+    private readonly logger:
+      GurusthalamLogger,
   ) {}
 
   async send(
@@ -31,16 +32,25 @@ export class EmailNotificationProvider
       {
         operation:
           'notification.provider.email.accepted',
-        service: 'email',
+
+        service:
+          'email',
       },
     );
 
     return {
-      accepted: true,
-      provider: 'development-email',
-      channel: notification.channel,
+      accepted:
+        true,
+
+      provider:
+        'development-email',
+
+      channel:
+        notification.channel,
+
       notificationId:
         notification.notificationId,
+
       messageId,
     };
   }

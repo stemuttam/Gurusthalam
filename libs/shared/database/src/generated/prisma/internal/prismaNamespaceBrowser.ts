@@ -111,6 +111,10 @@ export const OutboxEventScalarFieldEnum = {
   lockedAt: 'lockedAt',
   lockedBy: 'lockedBy',
   publishedAt: 'publishedAt',
+  deadLetteredAt: 'deadLetteredAt',
+  recoveredAt: 'recoveredAt',
+  recoveryCount: 'recoveryCount',
+  lastAttemptAt: 'lastAttemptAt',
   lastError: 'lastError',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'

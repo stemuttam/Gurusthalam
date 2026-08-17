@@ -21,6 +21,13 @@ enum NotificationStatus {
   FAILED
 }
 
+enum NotificationDeliveryStatus {
+  PENDING
+  PROCESSING
+  SENT
+  FAILED
+}
+
 enum OutboxStatus {
   PENDING
   PROCESSING
@@ -57,8 +64,39 @@ model Notification {
   failedAt      DateTime?
   failureReason String?
 
+  deliveries NotificationDelivery[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model NotificationDelivery {
+  id             String       @id @default(uuid())
+  notificationId String
+  notification   Notification @relation(fields: [notificationId], references: [notificationId], onDelete: Cascade)
+
+  deliveryKey String @unique
+
+  provider String
+  channel  NotificationChannel
+
+  status NotificationDeliveryStatus @default(PENDING)
+
+  attempts Int @default(0)
+
+  providerMessageId String?
+
+  lastAttemptAt DateTime?
+  sentAt        DateTime?
+  failedAt      DateTime?
+  failureReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([notificationId])
+  @@index([provider, status])
+  @@index([status, lastAttemptAt])
 }
 
 model OutboxEvent {

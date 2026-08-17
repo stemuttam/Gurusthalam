@@ -52,6 +52,7 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   Notification: 'Notification',
+  NotificationDelivery: 'NotificationDelivery',
   OutboxEvent: 'OutboxEvent'
 } as const
 
@@ -96,6 +97,26 @@ export const NotificationScalarFieldEnum = {
 } as const
 
 export type NotificationScalarFieldEnum = (typeof NotificationScalarFieldEnum)[keyof typeof NotificationScalarFieldEnum]
+
+
+export const NotificationDeliveryScalarFieldEnum = {
+  id: 'id',
+  notificationId: 'notificationId',
+  deliveryKey: 'deliveryKey',
+  provider: 'provider',
+  channel: 'channel',
+  status: 'status',
+  attempts: 'attempts',
+  providerMessageId: 'providerMessageId',
+  lastAttemptAt: 'lastAttemptAt',
+  sentAt: 'sentAt',
+  failedAt: 'failedAt',
+  failureReason: 'failureReason',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type NotificationDeliveryScalarFieldEnum = (typeof NotificationDeliveryScalarFieldEnum)[keyof typeof NotificationDeliveryScalarFieldEnum]
 
 
 export const OutboxEventScalarFieldEnum = {

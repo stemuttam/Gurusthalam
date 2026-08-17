@@ -24,6 +24,10 @@ import type {
 } from '../processors/notification.processor.js';
 
 import {
+  getNotificationRetryPolicy,
+} from '../notifications/notification-retry.policy.js';
+
+import {
   OUTBOX_BATCH_SIZE,
   OUTBOX_LOCK_TIMEOUT_MS,
   OUTBOX_MAX_ATTEMPTS,
@@ -98,6 +102,7 @@ export class OutboxDispatcher {
       {
         operation:
           'outbox.start',
+
         service:
           'outbox',
       },
@@ -121,7 +126,7 @@ export class OutboxDispatcher {
     }
 
     /*
-     * Wait for any in-flight polling cycle to finish
+     * Wait for the current polling cycle to finish
      * before closing the BullMQ queue.
      */
     while (this.polling) {
@@ -142,6 +147,7 @@ export class OutboxDispatcher {
       {
         operation:
           'outbox.stop',
+
         service:
           'outbox',
       },
@@ -150,7 +156,7 @@ export class OutboxDispatcher {
 
   private async poll(): Promise<void> {
     /*
-     * Prevent overlapping polling cycles inside the same
+     * Prevent overlapping polling cycles inside this
      * dispatcher instance.
      */
     if (
@@ -186,6 +192,7 @@ export class OutboxDispatcher {
         {
           operation:
             'outbox.poll.error',
+
           service:
             'outbox',
         },
@@ -202,9 +209,11 @@ export class OutboxDispatcher {
       new Date();
 
     /*
-     * The CTE selects available events with row-level
-     * locking and SKIP LOCKED. The update then transfers
-     * ownership to this dispatcher instance atomically.
+     * Atomically claim available events.
+     *
+     * FOR UPDATE SKIP LOCKED prevents concurrent dispatcher
+     * instances from selecting the same currently-claimable
+     * database row.
      */
     return this.prisma.$queryRaw<
       OutboxRow[]
@@ -212,6 +221,7 @@ export class OutboxDispatcher {
       WITH candidates AS (
         SELECT id
         FROM "OutboxEvent"
+
         WHERE
           (
             status =
@@ -279,7 +289,7 @@ export class OutboxDispatcher {
     event: OutboxRow,
   ): Promise<void> {
     /*
-     * Verify that this dispatcher still owns the event.
+     * Re-check ownership before publishing.
      */
     const current =
       await this.prisma.outboxEvent.findUnique({
@@ -308,6 +318,7 @@ export class OutboxDispatcher {
         {
           operation:
             'outbox.ownership.skip',
+
           service:
             'outbox',
         },
@@ -325,6 +336,7 @@ export class OutboxDispatcher {
         {
           operation:
             'outbox.ownership.skip',
+
           service:
             'outbox',
         },
@@ -342,6 +354,7 @@ export class OutboxDispatcher {
         {
           operation:
             'outbox.ownership.skip',
+
           service:
             'outbox',
         },
@@ -357,24 +370,37 @@ export class OutboxDispatcher {
         );
 
       /*
-       * Deterministic BullMQ job ID provides logical
-       * idempotency if publication is retried.
+       * Centralized notification retry policy.
+       *
+       * Outbox attempts are still controlled independently by
+       * OUTBOX_MAX_ATTEMPTS. This policy controls the BullMQ
+       * execution retry configuration for the notification job.
        */
+      const retryPolicy =
+       getNotificationRetryPolicy();
+
       await this.queue.add(
         `notification:${data.channel}`,
         data,
         {
+          /*
+           * Deterministic notification identity.
+           */
           jobId:
             data.idempotencyKey,
 
+          /*
+           * Centralized notification retry policy.
+           */
           attempts:
-            3,
+            retryPolicy.maxAttempts,
 
           backoff: {
             type:
-              'exponential',
+              retryPolicy.backoffType,
+
             delay:
-              1000,
+              retryPolicy.initialDelayMs,
           },
 
           removeOnComplete:
@@ -387,7 +413,7 @@ export class OutboxDispatcher {
 
       /*
        * Only the dispatcher that currently owns the event
-       * can transition PROCESSING -> PUBLISHED.
+       * may transition PROCESSING -> PUBLISHED.
        */
       const updated =
         await this.prisma.outboxEvent.updateMany({
@@ -425,17 +451,19 @@ export class OutboxDispatcher {
         0
       ) {
         /*
-         * The BullMQ job was published, but another
-         * process owns or changed the outbox record.
+         * BullMQ publication succeeded, but this dispatcher
+         * no longer owned the database event.
          *
-         * The deterministic BullMQ jobId protects the
-         * logical notification from duplicate jobs.
+         * The deterministic jobId prevents a second logical
+         * notification job from being created if the event
+         * is subsequently recovered.
          */
         this.logger.info(
           `Outbox event publication race: ${event.id}`,
           {
             operation:
               'outbox.publish.race',
+
             service:
               'outbox',
           },
@@ -449,6 +477,7 @@ export class OutboxDispatcher {
         {
           operation:
             'outbox.published',
+
           service:
             'outbox',
         },
@@ -460,7 +489,7 @@ export class OutboxDispatcher {
           : String(error);
 
       /*
-       * Never overwrite a newer owner/state.
+       * Check ownership before changing failure state.
        */
       const ownership =
         await this.prisma.outboxEvent.findUnique({
@@ -475,16 +504,20 @@ export class OutboxDispatcher {
           },
         });
 
+      if (!ownership) {
+        return;
+      }
+
       if (
-        ownership &&
         ownership.status !==
-          'PROCESSING'
+        'PROCESSING'
       ) {
         this.logger.info(
           `Outbox event state changed during failure handling: ${event.id}`,
           {
             operation:
               'outbox.ownership.skip',
+
             service:
               'outbox',
           },
@@ -494,15 +527,15 @@ export class OutboxDispatcher {
       }
 
       if (
-        ownership &&
         ownership.lockedBy !==
-          this.instanceId
+        this.instanceId
       ) {
         this.logger.info(
           `Outbox event ownership changed during failure handling: ${event.id}`,
           {
             operation:
               'outbox.ownership.skip',
+
             service:
               'outbox',
           },
@@ -568,10 +601,11 @@ export class OutboxDispatcher {
         0
       ) {
         this.logger.info(
-          `Outbox event failure state update lost ownership: ${event.id}`,
+          `Outbox event failure update lost ownership: ${event.id}`,
           {
             operation:
               'outbox.ownership.skip',
+
             service:
               'outbox',
           },
@@ -587,6 +621,7 @@ export class OutboxDispatcher {
           {
             operation:
               'outbox.dead_lettered',
+
             service:
               'outbox',
           },
@@ -598,6 +633,7 @@ export class OutboxDispatcher {
           {
             operation:
               'outbox.retrying',
+
             service:
               'outbox',
           },
@@ -608,9 +644,10 @@ export class OutboxDispatcher {
 
   private async releaseExpiredLocks(): Promise<void> {
     /*
-     * Stale PROCESSING rows are returned to PENDING.
+     * Return stale PROCESSING rows to PENDING.
      *
-     * We do not touch PUBLISHED or DEAD_LETTER rows.
+     * PUBLISHED and DEAD_LETTER rows are intentionally
+     * excluded from recovery.
      */
     await this.prisma.$executeRaw`
       UPDATE "OutboxEvent"
@@ -651,7 +688,9 @@ export class OutboxDispatcher {
     payload: unknown,
   ): NotificationJobData {
     if (
-      !this.isRecord(payload)
+      !this.isRecord(
+        payload,
+      )
     ) {
       throw new Error(
         'Invalid notification outbox payload.',
@@ -723,9 +762,13 @@ export class OutboxDispatcher {
 
     return {
       notificationId,
+
       channel,
+
       recipient,
+
       body,
+
       idempotencyKey,
 
       ...(subject !==
@@ -781,7 +824,9 @@ export class OutboxDispatcher {
     value: unknown,
   ): NotificationJobData['recipient'] {
     if (
-      !this.isRecord(value)
+      !this.isRecord(
+        value,
+      )
     ) {
       throw new Error(
         'Outbox payload recipient is invalid.',
@@ -834,7 +879,9 @@ export class OutboxDispatcher {
     value: unknown,
   ): string[] {
     if (
-      !Array.isArray(value)
+      !Array.isArray(
+        value,
+      )
     ) {
       throw new Error(
         'Outbox payload recipient.deviceTokens is invalid.',
@@ -856,7 +903,9 @@ export class OutboxDispatcher {
     [key: string]: NotificationJsonValue;
   } {
     if (
-      !this.isJsonObject(value)
+      !this.isJsonObject(
+        value,
+      )
     ) {
       throw new Error(
         'Outbox payload templateData is invalid.',
@@ -998,6 +1047,7 @@ export class OutboxDispatcher {
   ): number {
     return Math.min(
       60_000,
+
       1000 *
         Math.pow(
           2,

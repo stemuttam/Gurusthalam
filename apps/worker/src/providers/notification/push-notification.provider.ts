@@ -11,17 +11,24 @@ import type {
   NotificationProvider,
 } from './notification-provider.types.js';
 
+import {
+  NotificationFailureClassification,
+} from './notification-provider-result.types.js';
+
 export class PushNotificationProvider
   implements NotificationProvider
 {
-  readonly channel = 'push' as const;
+  readonly channel =
+    'push' as const;
 
   constructor(
-    private readonly logger: GurusthalamLogger,
+    private readonly logger:
+      GurusthalamLogger,
   ) {}
 
   async send(
-    notification: NotificationJobData,
+    notification:
+      NotificationJobData,
   ): Promise<NotificationDeliveryResult> {
     const messageId =
       `dev-push-${notification.notificationId}`;
@@ -31,17 +38,29 @@ export class PushNotificationProvider
       {
         operation:
           'notification.provider.push.accepted',
-        service: 'push',
+
+        service:
+          'push',
       },
     );
 
     return {
-      accepted: true,
-      provider: 'development-push',
-      channel: notification.channel,
+      accepted:
+        true,
+
+      provider:
+        'development-push',
+
+      channel:
+        notification.channel,
+
       notificationId:
         notification.notificationId,
+
       messageId,
+
+      classification:
+        NotificationFailureClassification.SUCCESS,
     };
   }
 }

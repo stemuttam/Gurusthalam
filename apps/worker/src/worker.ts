@@ -59,11 +59,20 @@ import {
 } from './notifications/notification-persistence.service.js';
 
 import {
+  NotificationDeliveryPersistenceService,
+} from './notifications/notification-delivery-persistence.service.js';
+
+import {
+  NotificationIdempotencyService,
+} from './providers/notification/notification-idempotency.service.js';
+
+import {
   OutboxDispatcher,
 } from './outbox/outbox.dispatcher.js';
 
 export class GurusthalamWorker {
-  private readonly workers: Worker[] = [];
+  private readonly workers:
+    Worker[] = [];
 
   private readonly logger:
     GurusthalamLogger;
@@ -74,10 +83,17 @@ export class GurusthalamWorker {
   private readonly notificationPersistence:
     NotificationPersistenceService;
 
+  private readonly notificationDeliveryPersistence:
+    NotificationDeliveryPersistenceService;
+
+  private readonly notificationIdempotency:
+    NotificationIdempotencyService;
+
   private readonly outboxDispatcher:
     OutboxDispatcher;
 
-  private started = false;
+  private started =
+    false;
 
   constructor() {
     this.logger =
@@ -97,6 +113,14 @@ export class GurusthalamWorker {
       new NotificationPersistenceService(
         this.prisma,
       );
+
+    this.notificationDeliveryPersistence =
+      new NotificationDeliveryPersistenceService(
+        this.prisma,
+      );
+
+    this.notificationIdempotency =
+      new NotificationIdempotencyService();
 
     this.outboxDispatcher =
       new OutboxDispatcher(
@@ -131,6 +155,7 @@ export class GurusthalamWorker {
         {
           operation:
             'database.connected',
+
           service:
             'database',
         },
@@ -145,13 +170,14 @@ export class GurusthalamWorker {
         getRedisConfig();
 
       const connection:
-        WorkerOptions['connection'] = {
-        url:
-          redis.url,
+        WorkerOptions['connection'] =
+        {
+          url:
+            redis.url,
 
-        maxRetriesPerRequest:
-          null,
-      };
+          maxRetriesPerRequest:
+            null,
+        };
 
       /*
        * -------------------------------------------------------
@@ -180,8 +206,10 @@ export class GurusthalamWorker {
 
           {
             connection,
+
             prefix:
               QUEUE_PREFIX,
+
             ...WORKER_OPTIONS,
           },
         );
@@ -194,6 +222,7 @@ export class GurusthalamWorker {
             {
               operation:
                 'worker.ready',
+
               service:
                 QUEUE_NAMES.SYSTEM,
             },
@@ -212,6 +241,7 @@ export class GurusthalamWorker {
             {
               operation:
                 'worker.completed',
+
               service:
                 QUEUE_NAMES.SYSTEM,
             },
@@ -234,6 +264,7 @@ export class GurusthalamWorker {
             {
               operation:
                 'worker.failed',
+
               service:
                 QUEUE_NAMES.SYSTEM,
             },
@@ -250,6 +281,7 @@ export class GurusthalamWorker {
             {
               operation:
                 'worker.error',
+
               service:
                 QUEUE_NAMES.SYSTEM,
             },
@@ -269,6 +301,8 @@ export class GurusthalamWorker {
       const emailProvider =
         new EmailNotificationProvider(
           this.logger,
+
+          this.notificationIdempotency,
         );
 
       const inAppProvider =
@@ -284,7 +318,9 @@ export class GurusthalamWorker {
       const providerRegistry =
         new NotificationProviderRegistry(
           emailProvider,
+
           inAppProvider,
+
           pushProvider,
         );
 
@@ -296,8 +332,12 @@ export class GurusthalamWorker {
       const notificationProcessor =
         new NotificationProcessor(
           this.logger,
+
           providerRegistry,
+
           this.notificationPersistence,
+
+          this.notificationDeliveryPersistence,
         );
 
       /*
@@ -322,8 +362,10 @@ export class GurusthalamWorker {
 
           {
             connection,
+
             prefix:
               QUEUE_PREFIX,
+
             ...WORKER_OPTIONS,
           },
         );
@@ -336,6 +378,7 @@ export class GurusthalamWorker {
             {
               operation:
                 'worker.ready',
+
               service:
                 QUEUE_NAMES.NOTIFICATIONS,
             },
@@ -354,6 +397,7 @@ export class GurusthalamWorker {
             {
               operation:
                 'worker.completed',
+
               service:
                 QUEUE_NAMES.NOTIFICATIONS,
             },
@@ -376,6 +420,7 @@ export class GurusthalamWorker {
             {
               operation:
                 'worker.failed',
+
               service:
                 QUEUE_NAMES.NOTIFICATIONS,
             },
@@ -392,6 +437,7 @@ export class GurusthalamWorker {
             {
               operation:
                 'worker.error',
+
               service:
                 QUEUE_NAMES.NOTIFICATIONS,
             },
@@ -410,22 +456,22 @@ export class GurusthalamWorker {
        */
       await Promise.all(
         this.workers.map(
-          (worker) =>
+          (
+            worker,
+          ) =>
             worker.waitUntilReady(),
         ),
       );
 
       /*
        * -------------------------------------------------------
-       * Start transactional outbox dispatcher
+       * Start outbox dispatcher
        * -------------------------------------------------------
-       *
-       * The dispatcher reads committed PENDING outbox events
-       * from PostgreSQL and publishes them to BullMQ.
        */
       this.outboxDispatcher.start();
 
-      this.started = true;
+      this.started =
+        true;
 
       this.logger.info(
         `Gurusthalam worker started with ${this.workers.length} worker(s) and outbox dispatcher`,
@@ -444,9 +490,6 @@ export class GurusthalamWorker {
         },
       );
 
-      /*
-       * Best-effort cleanup if startup fails halfway through.
-       */
       await this.shutdownResources();
 
       throw error;
@@ -470,7 +513,8 @@ export class GurusthalamWorker {
 
     await this.shutdownResources();
 
-    this.started = false;
+    this.started =
+      false;
 
     this.logger.info(
       'Gurusthalam worker stopped',
@@ -483,8 +527,9 @@ export class GurusthalamWorker {
 
   private async shutdownResources(): Promise<void> {
     /*
-     * Stop outbox polling first so it cannot enqueue new jobs
-     * while workers are shutting down.
+     * -------------------------------------------------------
+     * Stop outbox dispatcher first
+     * -------------------------------------------------------
      */
     try {
       await this.outboxDispatcher.stop();
@@ -495,6 +540,7 @@ export class GurusthalamWorker {
         {
           operation:
             'outbox.stop.error',
+
           service:
             'outbox',
         },
@@ -502,13 +548,20 @@ export class GurusthalamWorker {
     }
 
     /*
-     * Close BullMQ workers.
+     * -------------------------------------------------------
+     * Close BullMQ workers
+     * -------------------------------------------------------
      */
-    if (this.workers.length > 0) {
+    if (
+      this.workers.length >
+      0
+    ) {
       try {
         await Promise.all(
           this.workers.map(
-            async (worker) => {
+            async (
+              worker,
+            ) => {
               await worker.close();
             },
           ),
@@ -524,11 +577,46 @@ export class GurusthalamWorker {
         );
       }
 
-      this.workers.length = 0;
+      this.workers.length =
+        0;
     }
 
     /*
-     * Close PostgreSQL.
+     * -------------------------------------------------------
+     * Close provider idempotency Redis connection
+     * -------------------------------------------------------
+     */
+    try {
+      await this.notificationIdempotency.close();
+
+      this.logger.info(
+        'Notification idempotency Redis connection closed',
+        {
+          operation:
+            'notification.idempotency.redis.closed',
+
+          service:
+            'notification-idempotency',
+        },
+      );
+    } catch (error: unknown) {
+      this.logger.error(
+        'Failed to close notification idempotency Redis connection',
+        error,
+        {
+          operation:
+            'notification.idempotency.redis.close.error',
+
+          service:
+            'notification-idempotency',
+        },
+      );
+    }
+
+    /*
+     * -------------------------------------------------------
+     * Disconnect PostgreSQL
+     * -------------------------------------------------------
      */
     try {
       await this.prisma.$disconnect();
@@ -538,6 +626,7 @@ export class GurusthalamWorker {
         {
           operation:
             'database.disconnected',
+
           service:
             'database',
         },
@@ -549,6 +638,7 @@ export class GurusthalamWorker {
         {
           operation:
             'database.disconnect.error',
+
           service:
             'database',
         },

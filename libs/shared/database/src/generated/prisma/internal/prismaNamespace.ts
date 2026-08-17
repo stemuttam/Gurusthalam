@@ -398,6 +398,7 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 export const ModelName = {
   Notification: 'Notification',
+  NotificationDelivery: 'NotificationDelivery',
   OutboxEvent: 'OutboxEvent'
 } as const
 
@@ -414,7 +415,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "notification" | "outboxEvent"
+    modelProps: "notification" | "notificationDelivery" | "outboxEvent"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -489,6 +490,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.NotificationCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.NotificationCountAggregateOutputType> | number
+        }
+      }
+    }
+    NotificationDelivery: {
+      payload: Prisma.$NotificationDeliveryPayload<ExtArgs>
+      fields: Prisma.NotificationDeliveryFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.NotificationDeliveryFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationDeliveryPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.NotificationDeliveryFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationDeliveryPayload>
+        }
+        findFirst: {
+          args: Prisma.NotificationDeliveryFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationDeliveryPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.NotificationDeliveryFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationDeliveryPayload>
+        }
+        findMany: {
+          args: Prisma.NotificationDeliveryFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationDeliveryPayload>[]
+        }
+        create: {
+          args: Prisma.NotificationDeliveryCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationDeliveryPayload>
+        }
+        createMany: {
+          args: Prisma.NotificationDeliveryCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.NotificationDeliveryCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationDeliveryPayload>[]
+        }
+        delete: {
+          args: Prisma.NotificationDeliveryDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationDeliveryPayload>
+        }
+        update: {
+          args: Prisma.NotificationDeliveryUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationDeliveryPayload>
+        }
+        deleteMany: {
+          args: Prisma.NotificationDeliveryDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.NotificationDeliveryUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.NotificationDeliveryUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationDeliveryPayload>[]
+        }
+        upsert: {
+          args: Prisma.NotificationDeliveryUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationDeliveryPayload>
+        }
+        aggregate: {
+          args: Prisma.NotificationDeliveryAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateNotificationDelivery>
+        }
+        groupBy: {
+          args: Prisma.NotificationDeliveryGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.NotificationDeliveryGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.NotificationDeliveryCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.NotificationDeliveryCountAggregateOutputType> | number
         }
       }
     }
@@ -630,6 +705,26 @@ export const NotificationScalarFieldEnum = {
 } as const
 
 export type NotificationScalarFieldEnum = (typeof NotificationScalarFieldEnum)[keyof typeof NotificationScalarFieldEnum]
+
+
+export const NotificationDeliveryScalarFieldEnum = {
+  id: 'id',
+  notificationId: 'notificationId',
+  deliveryKey: 'deliveryKey',
+  provider: 'provider',
+  channel: 'channel',
+  status: 'status',
+  attempts: 'attempts',
+  providerMessageId: 'providerMessageId',
+  lastAttemptAt: 'lastAttemptAt',
+  sentAt: 'sentAt',
+  failedAt: 'failedAt',
+  failureReason: 'failureReason',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type NotificationDeliveryScalarFieldEnum = (typeof NotificationDeliveryScalarFieldEnum)[keyof typeof NotificationDeliveryScalarFieldEnum]
 
 
 export const OutboxEventScalarFieldEnum = {
@@ -792,6 +887,20 @@ export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel
  * Reference to a field of type 'DateTime[]'
  */
 export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime[]'>
+    
+
+
+/**
+ * Reference to a field of type 'NotificationDeliveryStatus'
+ */
+export type EnumNotificationDeliveryStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'NotificationDeliveryStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'NotificationDeliveryStatus[]'
+ */
+export type ListEnumNotificationDeliveryStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'NotificationDeliveryStatus[]'>
     
 
 
@@ -974,6 +1083,7 @@ export interface PrismaClientOptionsWithAdapter extends PrismaClientBaseOptions 
 export type PrismaClientOptions = PrismaClientOptionsWithAccelerateUrl | PrismaClientOptionsWithAdapter
 export type GlobalOmitConfig = {
   notification?: Prisma.NotificationOmit
+  notificationDelivery?: Prisma.NotificationDeliveryOmit
   outboxEvent?: Prisma.OutboxEventOmit
 }
 

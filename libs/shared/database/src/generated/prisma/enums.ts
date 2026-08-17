@@ -29,6 +29,16 @@ export const NotificationStatus = {
 export type NotificationStatus = (typeof NotificationStatus)[keyof typeof NotificationStatus]
 
 
+export const NotificationDeliveryStatus = {
+  PENDING: 'PENDING',
+  PROCESSING: 'PROCESSING',
+  SENT: 'SENT',
+  FAILED: 'FAILED'
+} as const
+
+export type NotificationDeliveryStatus = (typeof NotificationDeliveryStatus)[keyof typeof NotificationDeliveryStatus]
+
+
 export const OutboxStatus = {
   PENDING: 'PENDING',
   PROCESSING: 'PROCESSING',

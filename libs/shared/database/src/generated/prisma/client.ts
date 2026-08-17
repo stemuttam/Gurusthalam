@@ -47,6 +47,11 @@ export { Prisma }
  */
 export type Notification = Prisma.NotificationModel
 /**
+ * Model NotificationDelivery
+ * 
+ */
+export type NotificationDelivery = Prisma.NotificationDeliveryModel
+/**
  * Model OutboxEvent
  * 
  */

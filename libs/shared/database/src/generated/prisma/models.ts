@@ -9,5 +9,6 @@
  * 🟢 You can import this file directly.
  */
 export type * from './models/Notification.js'
+export type * from './models/NotificationDelivery.js'
 export type * from './models/OutboxEvent.js'
 export type * from './commonInputTypes.js'

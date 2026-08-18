@@ -28,4 +28,16 @@ export class NotificationOperationalController {
       notificationId,
     );
   }
+
+  @Post(
+    ':notificationId/replay',
+  )
+  async replay(
+    @Param('notificationId')
+    notificationId: string,
+  ) {
+    return this.operational.replay(
+      notificationId,
+    );
+  }
 }

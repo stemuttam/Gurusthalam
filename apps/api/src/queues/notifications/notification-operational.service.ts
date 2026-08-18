@@ -5,8 +5,49 @@ import {
 } from '@nestjs/common';
 
 import {
+  randomUUID,
+} from 'node:crypto';
+
+import {
   PrismaService,
 } from '../../database/prisma/prisma.service.js';
+
+type PrismaNotificationChannel =
+  | 'EMAIL'
+  | 'IN_APP'
+  | 'PUSH';
+
+type WorkerNotificationChannel =
+  | 'email'
+  | 'in-app'
+  | 'push';
+
+/*
+ * ------------------------------------------------------------
+ * JSON-compatible types
+ * ------------------------------------------------------------
+ *
+ * Prisma Json fields require values that are structurally
+ * compatible with JSON input.
+ */
+type NotificationJsonPrimitive =
+  | string
+  | number
+  | boolean
+  | null;
+
+type NotificationJsonValue =
+  | NotificationJsonPrimitive
+  | NotificationJsonValue[]
+  | {
+      readonly [key: string]:
+        NotificationJsonValue;
+    };
+
+type NotificationJsonObject = {
+  readonly [key: string]:
+    NotificationJsonValue;
+};
 
 @Injectable()
 export class NotificationOperationalService {
@@ -15,6 +56,17 @@ export class NotificationOperationalService {
       PrismaService,
   ) {}
 
+  /*
+   * ------------------------------------------------------------
+   * MANUAL RETRY
+   * ------------------------------------------------------------
+   *
+   * Retry:
+   * - only FAILED notifications
+   * - preserves original idempotencyKey
+   * - preserves original delivery identity
+   * - creates a new outbox event
+   */
   async retry(
     notificationId: string,
   ) {
@@ -33,8 +85,7 @@ export class NotificationOperationalService {
 
     /*
      * Manual retry is deliberately restricted to terminal
-     * delivery failures. A SENT notification must never be
-     * silently transformed into another delivery.
+     * delivery failures.
      */
     if (
       notification.status !==
@@ -62,6 +113,7 @@ export class NotificationOperationalService {
               status:
                 'PENDING',
             },
+
             {
               status:
                 'PROCESSING',
@@ -75,7 +127,9 @@ export class NotificationOperationalService {
         },
       });
 
-    if (existingOutbox) {
+    if (
+      existingOutbox
+    ) {
       return {
         notificationId,
 
@@ -96,55 +150,23 @@ export class NotificationOperationalService {
     }
 
     /*
-     * Reconstruct the original notification job from the
-     * persisted Notification record.
+     * Reconstruct the original notification job.
      *
-     * This intentionally creates a NEW outbox event identity,
-     * while retaining the notification's idempotencyKey.
+     * Retry intentionally keeps the original idempotencyKey.
      */
-    const payload = {
-      notificationId:
-        notification.notificationId,
-
-      channel:
-        this.fromPrismaChannel(
-          notification.channel,
-        ),
-
-      recipient: {
-        userId:
-          notification.userId,
-      },
-
-      subject:
-        notification.subject ??
-        undefined,
-
-      title:
-        notification.title ??
-        undefined,
-
-      body:
-        notification.body,
-
-      template:
-        notification.template ??
-        undefined,
-
-      templateData:
-        notification.templateData ??
-        undefined,
-
-      idempotencyKey:
-        notification.idempotencyKey,
-    };
+    const payload =
+      this.createOriginalJobPayload(
+        notification,
+      );
 
     const dedupeKey =
       `notification-retry:${notification.notificationId}`;
 
     const result =
       await this.prisma.$transaction(
-        async (tx) => {
+        async (
+          tx,
+        ) => {
           const existing =
             await tx.outboxEvent.findUnique({
               where: {
@@ -152,7 +174,9 @@ export class NotificationOperationalService {
               },
             });
 
-          if (existing) {
+          if (
+            existing
+          ) {
             return existing;
           }
 
@@ -224,16 +248,348 @@ export class NotificationOperationalService {
     };
   }
 
-  private fromPrismaChannel(
+  /*
+   * ------------------------------------------------------------
+   * REPLAY
+   * ------------------------------------------------------------
+   *
+   * Replay is deliberately different from retry.
+   *
+   * Retry:
+   *   same logical notification
+   *   same idempotencyKey
+   *   same delivery identity
+   *
+   * Replay:
+   *   same parent Notification
+   *   NEW idempotencyKey
+   *   NEW deliveryKey
+   *   NEW outbox identity
+   *   NEW NotificationDelivery record
+   */
+  async replay(
+    notificationId: string,
+  ) {
+    const notification =
+      await this.prisma.notification.findUnique({
+        where: {
+          notificationId,
+        },
+      });
+
+    if (!notification) {
+      throw new NotFoundException(
+        `Notification ${notificationId} was not found.`,
+      );
+    }
+
+    /*
+     * Replay is permitted only for notifications that have
+     * already reached a terminal state.
+     */
+    if (
+      notification.status !==
+        'SENT' &&
+      notification.status !==
+        'FAILED'
+    ) {
+      throw new BadRequestException(
+        `Notification ${notificationId} cannot be replayed from status ${String(notification.status)}.`,
+      );
+    }
+
+    const replayId =
+      randomUUID();
+
+    const replayIdempotencyKey =
+      `notification-replay:${notification.notificationId}:${replayId}`;
+
+    const replayDeliveryKey =
+      randomUUID();
+
+    const replayDedupeKey =
+      `notification-replay:${notification.notificationId}:${replayId}`;
+
+    const payload =
+      this.createReplayPayload(
+        notification,
+
+        replayIdempotencyKey,
+
+        replayDeliveryKey,
+      );
+
+    const result =
+      await this.prisma.outboxEvent.create({
+        data: {
+          eventType:
+            'notification.enqueue',
+
+          aggregateType:
+            'Notification',
+
+          aggregateId:
+            notification.id,
+
+          dedupeKey:
+            replayDedupeKey,
+
+          payload,
+
+          status:
+            'PENDING',
+
+          attempts:
+            0,
+
+          availableAt:
+            new Date(),
+
+          lastError:
+            null,
+        },
+      });
+
+    return {
+      notificationId,
+
+      replayId,
+
+      accepted:
+        true,
+
+      action:
+        'replay-scheduled',
+
+      outboxEventId:
+        result.id,
+
+      idempotencyKey:
+        replayIdempotencyKey,
+
+      deliveryKey:
+        replayDeliveryKey,
+
+      status:
+        String(
+          result.status,
+        ),
+    };
+  }
+
+  /*
+   * ------------------------------------------------------------
+   * ORIGINAL RETRY PAYLOAD
+   * ------------------------------------------------------------
+   */
+  private createOriginalJobPayload(
+    notification: {
+      readonly notificationId:
+        string;
+
+      readonly userId:
+        string;
+
+      readonly channel:
+        PrismaNotificationChannel;
+
+      readonly subject:
+        string | null;
+
+      readonly title:
+        string | null;
+
+      readonly body:
+        string;
+
+      readonly template:
+        string | null;
+
+      readonly templateData:
+        unknown;
+
+      readonly idempotencyKey:
+        string;
+    },
+  ): NotificationJsonObject {
+    const payload:
+      Record<
+        string,
+        NotificationJsonValue
+      > = {
+      notificationId:
+        notification.notificationId,
+
+      channel:
+        this.toWorkerChannel(
+          notification.channel,
+        ),
+
+      recipient: {
+        userId:
+          notification.userId,
+      },
+
+      body:
+        notification.body,
+
+      idempotencyKey:
+        notification.idempotencyKey,
+    };
+
+    if (
+      notification.subject !==
+      null
+    ) {
+      payload.subject =
+        notification.subject;
+    }
+
+    if (
+      notification.title !==
+      null
+    ) {
+      payload.title =
+        notification.title;
+    }
+
+    if (
+      notification.template !==
+      null
+    ) {
+      payload.template =
+        notification.template;
+    }
+
+    if (
+      notification.templateData !==
+      null
+    ) {
+      payload.templateData =
+        this.toJsonValue(
+          notification.templateData,
+        );
+    }
+
+    return payload;
+  }
+
+  /*
+   * ------------------------------------------------------------
+   * REPLAY PAYLOAD
+   * ------------------------------------------------------------
+   */
+  private createReplayPayload(
+    notification: {
+      readonly notificationId:
+        string;
+
+      readonly userId:
+        string;
+
+      readonly channel:
+        PrismaNotificationChannel;
+
+      readonly subject:
+        string | null;
+
+      readonly title:
+        string | null;
+
+      readonly body:
+        string;
+
+      readonly template:
+        string | null;
+
+      readonly templateData:
+        unknown;
+    },
+
+    replayIdempotencyKey:
+      string,
+
+    replayDeliveryKey:
+      string,
+  ): NotificationJsonObject {
+    const payload:
+      Record<
+        string,
+        NotificationJsonValue
+      > = {
+      notificationId:
+        notification.notificationId,
+
+      channel:
+        this.toWorkerChannel(
+          notification.channel,
+        ),
+
+      recipient: {
+        userId:
+          notification.userId,
+      },
+
+      body:
+        notification.body,
+
+      idempotencyKey:
+        replayIdempotencyKey,
+
+      deliveryKey:
+        replayDeliveryKey,
+    };
+
+    if (
+      notification.subject !==
+      null
+    ) {
+      payload.subject =
+        notification.subject;
+    }
+
+    if (
+      notification.title !==
+      null
+    ) {
+      payload.title =
+        notification.title;
+    }
+
+    if (
+      notification.template !==
+      null
+    ) {
+      payload.template =
+        notification.template;
+    }
+
+    if (
+      notification.templateData !==
+      null
+    ) {
+      payload.templateData =
+        this.toJsonValue(
+          notification.templateData,
+        );
+    }
+
+    return payload;
+  }
+
+  /*
+   * ------------------------------------------------------------
+   * Prisma channel -> worker channel
+   * ------------------------------------------------------------
+   */
+  private toWorkerChannel(
     channel:
-      | 'EMAIL'
-      | 'IN_APP'
-      | 'PUSH',
+      PrismaNotificationChannel,
   ):
-    | 'email'
-    | 'in-app'
-    | 'push' {
-    switch (channel) {
+    WorkerNotificationChannel {
+    switch (
+      channel
+    ) {
       case 'EMAIL':
         return 'email';
 
@@ -242,6 +598,91 @@ export class NotificationOperationalService {
 
       case 'PUSH':
         return 'push';
+
+      default:
+        throw new Error(
+          `Unsupported notification channel: ${String(channel)}`,
+        );
     }
+  }
+
+  /*
+   * ------------------------------------------------------------
+   * Convert Prisma Json-compatible runtime data into the
+   * recursive JSON input shape expected by Prisma.
+   * ------------------------------------------------------------
+   */
+  private toJsonValue(
+    value: unknown,
+  ): NotificationJsonValue {
+    if (
+      value ===
+      null
+    ) {
+      return null;
+    }
+
+    if (
+      typeof value ===
+        'string' ||
+      typeof value ===
+        'number' ||
+      typeof value ===
+        'boolean'
+    ) {
+      return value;
+    }
+
+    if (
+      Array.isArray(
+        value,
+      )
+    ) {
+      return value.map(
+        (
+          item,
+        ) =>
+          this.toJsonValue(
+            item,
+          ),
+      );
+    }
+
+    if (
+      typeof value ===
+        'object'
+    ) {
+      const source =
+        value as Record<
+          string,
+          unknown
+        >;
+
+      const result:
+        Record<
+          string,
+          NotificationJsonValue
+        > = {};
+
+      for (
+        const [
+          key,
+          item,
+        ] of Object.entries(
+          source,
+        )
+      ) {
+        result[key] =
+          this.toJsonValue(
+            item,
+          );
+      }
+
+      return result;
+    }
+
+    throw new TypeError(
+      `Unsupported notification JSON value type: ${typeof value}`,
+    );
   }
 }

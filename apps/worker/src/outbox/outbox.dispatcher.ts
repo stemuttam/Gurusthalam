@@ -685,122 +685,137 @@ export class OutboxDispatcher {
   }
 
   private parseNotificationData(
-    payload: unknown,
-  ): NotificationJobData {
-    if (
-      !this.isRecord(
-        payload,
-      )
-    ) {
-      throw new Error(
-        'Invalid notification outbox payload.',
-      );
-    }
-
-    const notificationId =
-      this.requireString(
-        payload,
-        'notificationId',
-      );
-
-    const channel =
-      this.parseChannel(
-        payload.channel,
-      );
-
-    const idempotencyKey =
-      this.requireString(
-        payload,
-        'idempotencyKey',
-      );
-
-    const body =
-      this.requireString(
-        payload,
-        'body',
-      );
-
-    const recipient =
-      this.parseRecipient(
-        payload.recipient,
-      );
-
-    const subject =
-      payload.subject !==
-      undefined
-        ? this.requireStringValue(
-            payload.subject,
-            'subject',
-          )
-        : undefined;
-
-    const title =
-      payload.title !==
-      undefined
-        ? this.requireStringValue(
-            payload.title,
-            'title',
-          )
-        : undefined;
-
-    const template =
-      payload.template !==
-      undefined
-        ? this.requireStringValue(
-            payload.template,
-            'template',
-          )
-        : undefined;
-
-    const templateData =
-      payload.templateData !==
-      undefined
-        ? this.parseTemplateData(
-            payload.templateData,
-          )
-        : undefined;
-
-    return {
-      notificationId,
-
-      channel,
-
-      recipient,
-
-      body,
-
-      idempotencyKey,
-
-      ...(subject !==
-      undefined
-        ? {
-            subject,
-          }
-        : {}),
-
-      ...(title !==
-      undefined
-        ? {
-            title,
-          }
-        : {}),
-
-      ...(template !==
-      undefined
-        ? {
-            template,
-          }
-        : {}),
-
-      ...(templateData !==
-      undefined
-        ? {
-            templateData,
-          }
-        : {}),
-    };
+  payload: unknown,
+): NotificationJobData {
+  if (
+    !this.isRecord(
+      payload,
+    )
+  ) {
+    throw new Error(
+      'Invalid notification outbox payload.',
+    );
   }
 
+  const notificationId =
+    this.requireString(
+      payload,
+      'notificationId',
+    );
+
+  const channel =
+    this.parseChannel(
+      payload.channel,
+    );
+
+  const idempotencyKey =
+    this.requireString(
+      payload,
+      'idempotencyKey',
+    );
+
+  const body =
+    this.requireString(
+      payload,
+      'body',
+    );
+
+  const recipient =
+    this.parseRecipient(
+      payload.recipient,
+    );
+
+  const deliveryKey =
+    payload.deliveryKey !==
+    undefined
+      ? this.requireStringValue(
+          payload.deliveryKey,
+          'deliveryKey',
+        )
+      : undefined;
+
+  const subject =
+    payload.subject !==
+    undefined
+      ? this.requireStringValue(
+          payload.subject,
+          'subject',
+        )
+      : undefined;
+
+  const title =
+    payload.title !==
+    undefined
+      ? this.requireStringValue(
+          payload.title,
+          'title',
+        )
+      : undefined;
+
+  const template =
+    payload.template !==
+    undefined
+      ? this.requireStringValue(
+          payload.template,
+          'template',
+        )
+      : undefined;
+
+  const templateData =
+    payload.templateData !==
+    undefined
+      ? this.parseTemplateData(
+          payload.templateData,
+        )
+      : undefined;
+
+  return {
+    notificationId,
+
+    channel,
+
+    recipient,
+
+    body,
+
+    idempotencyKey,
+
+    ...(deliveryKey !==
+    undefined
+      ? {
+          deliveryKey,
+        }
+      : {}),
+
+    ...(subject !==
+    undefined
+      ? {
+          subject,
+        }
+      : {}),
+
+    ...(title !==
+    undefined
+      ? {
+          title,
+        }
+      : {}),
+
+    ...(template !==
+    undefined
+      ? {
+          template,
+        }
+      : {}),
+
+    ...(templateData !==
+    undefined
+      ? {
+          templateData,
+        }
+      : {}),
+  };
+}
   private parseChannel(
     value: unknown,
   ): NotificationJobData['channel'] {

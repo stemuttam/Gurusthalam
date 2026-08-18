@@ -92,6 +92,15 @@ export interface NotificationJobData {
   };
 
   readonly idempotencyKey: string;
+
+  /**
+   * Normal notification jobs omit this field and the processor
+   * derives the canonical delivery key.
+   *
+   * Replay jobs provide a new delivery key so they create a
+   * distinct NotificationDelivery record.
+   */
+  readonly deliveryKey?: string;
 }
 
 export interface NotificationJobResult {
@@ -184,11 +193,6 @@ export class NotificationProcessor {
       attempt,
     );
 
-    /*
-     * ---------------------------------------------------------
-     * Resolve provider and canonical delivery identity once.
-     * ---------------------------------------------------------
-     */
     const provider =
       this.providerRegistry.get(
         notification.channel,
@@ -199,7 +203,13 @@ export class NotificationProcessor {
         notification.channel,
       );
 
+    /*
+     * Replays provide their own delivery identity.
+     * Normal notifications continue using the existing
+     * deterministic delivery-key calculation.
+     */
     const deliveryKey =
+      notification.deliveryKey ??
       createNotificationDeliveryKey(
         notification.notificationId,
 
@@ -209,10 +219,8 @@ export class NotificationProcessor {
       );
 
     /*
-     * ---------------------------------------------------------
-     * Guarantee that the delivery record exists before any
+     * Guarantee that the delivery record exists before
      * provider invocation or failure handling.
-     * ---------------------------------------------------------
      */
     await this.deliveryPersistence.createIfMissing(
       notification.notificationId,
@@ -227,16 +235,18 @@ export class NotificationProcessor {
     );
 
     try {
-      /*
-       * ---------------------------------------------------------
-       * Check durable delivery state.
-       * ---------------------------------------------------------
-       */
       const deliveryRecord =
         await this.deliveryPersistence.getByDeliveryKey(
           deliveryKey,
         );
 
+      /*
+       * Durable idempotency short-circuit.
+       *
+       * This applies independently to each delivery identity.
+       * Therefore a replay is not blocked by the original
+       * delivery record.
+       */
       if (
         deliveryRecord?.status ===
           'SENT' &&
@@ -299,22 +309,12 @@ export class NotificationProcessor {
         };
       }
 
-      /*
-       * ---------------------------------------------------------
-       * Mark provider delivery attempt as processing.
-       * ---------------------------------------------------------
-       */
       await this.deliveryPersistence.markProcessing(
         deliveryKey,
 
         attempt,
       );
 
-      /*
-       * ---------------------------------------------------------
-       * Provider invocation.
-       * ---------------------------------------------------------
-       */
       const providerStartedAt =
         Date.now();
 
@@ -357,11 +357,6 @@ export class NotificationProcessor {
       switch (
         delivery.classification
       ) {
-        /*
-         * -------------------------------------------------------
-         * SUCCESS
-         * -------------------------------------------------------
-         */
         case NotificationFailureClassification.SUCCESS: {
           if (
             delivery.accepted !==
@@ -448,11 +443,6 @@ export class NotificationProcessor {
           };
         }
 
-        /*
-         * -------------------------------------------------------
-         * RETRYABLE / RATE LIMITED
-         * -------------------------------------------------------
-         */
         case NotificationFailureClassification.RETRYABLE:
         case NotificationFailureClassification.RATE_LIMITED: {
           const reason =
@@ -470,11 +460,6 @@ export class NotificationProcessor {
           );
         }
 
-        /*
-         * -------------------------------------------------------
-         * NON-RETRYABLE / PERMANENT
-         * -------------------------------------------------------
-         */
         case NotificationFailureClassification.NON_RETRYABLE:
         case NotificationFailureClassification.PERMANENT: {
           const reason =
@@ -498,11 +483,6 @@ export class NotificationProcessor {
           ? error.message
           : String(error);
 
-      /*
-       * ---------------------------------------------------------
-       * Classified provider failure
-       * ---------------------------------------------------------
-       */
       if (
         error instanceof
         ClassifiedNotificationError
@@ -519,12 +499,6 @@ export class NotificationProcessor {
         if (
           decision.shouldRetry
         ) {
-          /*
-           * NotificationDelivery does not have a RETRYING state.
-           *
-           * Therefore the delivery attempt is recorded as FAILED
-           * while the parent Notification remains RETRYING.
-           */
           await this.deliveryPersistence.markFailed(
             deliveryKey,
 
@@ -542,7 +516,7 @@ export class NotificationProcessor {
           this.metrics.incrementRetrying();
 
           this.metrics.incrementProviderRetrying(
-            providerName,
+            error.provider,
           );
 
           this.logger.error(
@@ -553,16 +527,13 @@ export class NotificationProcessor {
                 'notification.retrying',
 
               service:
-                providerName,
+                error.provider,
             },
           );
 
           throw error;
         }
 
-        /*
-         * Terminal classified failure.
-         */
         await this.deliveryPersistence.markFailed(
           deliveryKey,
 
@@ -580,7 +551,7 @@ export class NotificationProcessor {
         this.metrics.incrementFailed();
 
         this.metrics.incrementProviderFailed(
-          providerName,
+          error.provider,
         );
 
         this.metrics.recordLatency(
@@ -596,7 +567,7 @@ export class NotificationProcessor {
               'notification.failed',
 
             service:
-              providerName,
+              error.provider,
           },
         );
 
@@ -611,18 +582,13 @@ export class NotificationProcessor {
             notification.channel,
 
           provider:
-            providerName,
+            error.provider,
 
           messageId:
             `failed-${notification.notificationId}`,
         };
       }
 
-      /*
-       * ---------------------------------------------------------
-       * Unexpected provider / infrastructure exception
-       * ---------------------------------------------------------
-       */
       this.metrics.incrementProviderErrorsFor(
         providerName,
       );
@@ -631,11 +597,6 @@ export class NotificationProcessor {
         attempt <
         retryPolicy.maxAttempts
       ) {
-        /*
-         * NotificationDelivery does not have a RETRYING state.
-         * Record this particular attempt as FAILED and keep the
-         * parent Notification in RETRYING.
-         */
         await this.deliveryPersistence.markFailed(
           deliveryKey,
 
@@ -664,13 +625,10 @@ export class NotificationProcessor {
               'notification.retrying',
 
             service:
-              providerName,
+              notification.channel,
           },
         );
       } else {
-        /*
-         * Terminal infrastructure failure.
-         */
         await this.deliveryPersistence.markFailed(
           deliveryKey,
 

@@ -31,10 +31,19 @@ import {
   getNotificationRetryPolicy,
 } from '../notifications/notification-retry.policy.js';
 
+import {
+  NotificationMetricsService,
+} from '../notifications/notification-metrics.service.js';
+
 export const NOTIFICATION_CHANNELS = {
-  EMAIL: 'email',
-  IN_APP: 'in-app',
-  PUSH: 'push',
+  EMAIL:
+    'email',
+
+  IN_APP:
+    'in-app',
+
+  PUSH:
+    'push',
 } as const;
 
 export type NotificationChannel =
@@ -50,7 +59,8 @@ export type NotificationJsonValue =
   | NotificationJsonPrimitive
   | NotificationJsonValue[]
   | {
-      [key: string]: NotificationJsonValue;
+      [key: string]:
+        NotificationJsonValue;
     };
 
 export interface NotificationRecipient {
@@ -77,7 +87,8 @@ export interface NotificationJobData {
   readonly template?: string;
 
   readonly templateData?: {
-    [key: string]: NotificationJsonValue;
+    [key: string]:
+      NotificationJsonValue;
   };
 
   readonly idempotencyKey: string;
@@ -130,12 +141,18 @@ export class NotificationProcessor {
 
     private readonly deliveryPersistence:
       NotificationDeliveryPersistenceService,
+
+    private readonly metrics:
+      NotificationMetricsService,
   ) {}
 
   async process(
     job:
       Job<NotificationJobData>,
   ): Promise<NotificationJobResult> {
+    const startedAt =
+      Date.now();
+
     const notification =
       job.data;
 
@@ -144,6 +161,8 @@ export class NotificationProcessor {
 
     const retryPolicy =
       getNotificationRetryPolicy();
+
+    this.metrics.incrementProcessing();
 
     this.logger.info(
       `Processing notification job: ${
@@ -159,94 +178,90 @@ export class NotificationProcessor {
       },
     );
 
-    /*
-     * ---------------------------------------------------------
-     * Notification lifecycle
-     * ---------------------------------------------------------
-     */
     await this.persistence.markProcessing(
       notification,
+
       attempt,
     );
 
+    /*
+     * ---------------------------------------------------------
+     * Resolve provider and canonical delivery identity once.
+     * ---------------------------------------------------------
+     */
+    const provider =
+      this.providerRegistry.get(
+        notification.channel,
+      );
+
+    const providerName =
+      this.getProviderName(
+        notification.channel,
+      );
+
+    const deliveryKey =
+      createNotificationDeliveryKey(
+        notification.notificationId,
+
+        notification.channel,
+
+        providerName,
+      );
+
+    /*
+     * ---------------------------------------------------------
+     * Guarantee that the delivery record exists before any
+     * provider invocation or failure handling.
+     * ---------------------------------------------------------
+     */
+    await this.deliveryPersistence.createIfMissing(
+      notification.notificationId,
+
+      deliveryKey,
+
+      providerName,
+
+      this.toPrismaChannel(
+        notification.channel,
+      ),
+    );
+
     try {
-      const provider =
-        this.providerRegistry.get(
-          notification.channel,
-        );
-
       /*
-       * -------------------------------------------------------
-       * Resolve the stable provider identity.
-       *
-       * The current development providers use deterministic
-       * provider names. Real providers will eventually expose
-       * their own stable provider identifier.
-       * -------------------------------------------------------
-       */
-      const providerName =
-        this.getProviderName(
-          notification.channel,
-        );
-
-      /*
-       * -------------------------------------------------------
-       * Stable delivery identity
-       * -------------------------------------------------------
-       *
-       * This key is identical across BullMQ retries for the
-       * same logical notification/provider combination.
-       * -------------------------------------------------------
-       */
-      const deliveryKey =
-        createNotificationDeliveryKey(
-          notification.notificationId,
-
-          notification.channel,
-
-          providerName,
-        );
-
-      /*
-       * -------------------------------------------------------
-       * Create the delivery record if it does not already exist.
-       * -------------------------------------------------------
+       * ---------------------------------------------------------
+       * Check durable delivery state.
+       * ---------------------------------------------------------
        */
       const deliveryRecord =
-        await this.deliveryPersistence.createIfMissing(
-          notification.notificationId,
-
+        await this.deliveryPersistence.getByDeliveryKey(
           deliveryKey,
-
-          providerName,
-
-          this.toPrismaChannel(
-            notification.channel,
-          ),
         );
 
-      /*
-       * -------------------------------------------------------
-       * Idempotent delivery short-circuit
-       * -------------------------------------------------------
-       *
-       * If the provider already completed this logical
-       * delivery, do not send it again.
-       *
-       * This protects against the classic failure window:
-       *
-       * provider accepted
-       *      ↓
-       * process crashed
-       *      ↓
-       * BullMQ retry
-       * -------------------------------------------------------
-       */
       if (
-        deliveryRecord.status ===
+        deliveryRecord?.status ===
           'SENT' &&
         deliveryRecord.providerMessageId
       ) {
+        this.metrics.incrementIdempotentHits();
+
+        this.metrics.incrementProviderIdempotentHits(
+          providerName,
+        );
+
+        const latency =
+          Date.now() -
+          startedAt;
+
+        this.metrics.recordLatency(
+          latency,
+        );
+
+        this.metrics.recordProviderLatency(
+          providerName,
+
+          latency,
+        );
+
         this.logger.info(
           `Notification delivery already completed: ${notification.notificationId}`,
           {
@@ -285,9 +300,9 @@ export class NotificationProcessor {
       }
 
       /*
-       * -------------------------------------------------------
-       * Delivery lifecycle
-       * -------------------------------------------------------
+       * ---------------------------------------------------------
+       * Mark provider delivery attempt as processing.
+       * ---------------------------------------------------------
        */
       await this.deliveryPersistence.markProcessing(
         deliveryKey,
@@ -296,32 +311,66 @@ export class NotificationProcessor {
       );
 
       /*
-       * -------------------------------------------------------
-       * Provider invocation
-       * -------------------------------------------------------
+       * ---------------------------------------------------------
+       * Provider invocation.
+       * ---------------------------------------------------------
        */
-      const delivery =
-        await provider.send(
-          notification,
+      const providerStartedAt =
+        Date.now();
 
-          {
-            deliveryKey,
-          },
+      let delivery;
+
+      try {
+        delivery =
+          await provider.send(
+            notification,
+
+            {
+              deliveryKey,
+            },
+          );
+      } catch (error: unknown) {
+        this.metrics.incrementProviderErrorsFor(
+          providerName,
         );
+
+        this.metrics.recordProviderLatency(
+          providerName,
+
+          Date.now() -
+            providerStartedAt,
+        );
+
+        throw error;
+      }
+
+      const providerLatency =
+        Date.now() -
+        providerStartedAt;
+
+      this.metrics.recordProviderLatency(
+        providerName,
+
+        providerLatency,
+      );
 
       switch (
         delivery.classification
       ) {
         /*
-         * -----------------------------------------------------
+         * -------------------------------------------------------
          * SUCCESS
-         * -----------------------------------------------------
+         * -------------------------------------------------------
          */
         case NotificationFailureClassification.SUCCESS: {
           if (
             delivery.accepted !==
             true
           ) {
+            this.metrics.incrementProviderErrorsFor(
+              providerName,
+            );
+
             throw new Error(
               `Provider "${delivery.provider}" reported SUCCESS without accepting notification "${notification.notificationId}".`,
             );
@@ -334,20 +383,18 @@ export class NotificationProcessor {
             typeof messageId !==
               'string' ||
             messageId.trim()
-              .length === 0
+              .length ===
+              0
           ) {
+            this.metrics.incrementProviderErrorsFor(
+              providerName,
+            );
+
             throw new Error(
               `Provider "${delivery.provider}" reported SUCCESS without a valid messageId for notification "${notification.notificationId}".`,
             );
           }
 
-          /*
-           * Persist delivery success first.
-           *
-           * If the worker crashes after this operation but
-           * before Notification.markSent(), the next retry
-           * will see delivery.status = SENT and short-circuit.
-           */
           await this.deliveryPersistence.markSent(
             deliveryKey,
 
@@ -360,6 +407,17 @@ export class NotificationProcessor {
             delivery.provider,
 
             messageId,
+          );
+
+          this.metrics.incrementSent();
+
+          this.metrics.incrementProviderSent(
+            providerName,
+          );
+
+          this.metrics.recordLatency(
+            Date.now() -
+              startedAt,
           );
 
           this.logger.info(
@@ -391,9 +449,9 @@ export class NotificationProcessor {
         }
 
         /*
-         * -----------------------------------------------------
+         * -------------------------------------------------------
          * RETRYABLE / RATE LIMITED
-         * -----------------------------------------------------
+         * -------------------------------------------------------
          */
         case NotificationFailureClassification.RETRYABLE:
         case NotificationFailureClassification.RATE_LIMITED: {
@@ -413,9 +471,9 @@ export class NotificationProcessor {
         }
 
         /*
-         * -----------------------------------------------------
+         * -------------------------------------------------------
          * NON-RETRYABLE / PERMANENT
-         * -----------------------------------------------------
+         * -------------------------------------------------------
          */
         case NotificationFailureClassification.NON_RETRYABLE:
         case NotificationFailureClassification.PERMANENT: {
@@ -441,9 +499,9 @@ export class NotificationProcessor {
           : String(error);
 
       /*
-       * -------------------------------------------------------
+       * ---------------------------------------------------------
        * Classified provider failure
-       * -------------------------------------------------------
+       * ---------------------------------------------------------
        */
       if (
         error instanceof
@@ -458,30 +516,15 @@ export class NotificationProcessor {
             retryPolicy,
           );
 
-        /*
-         * -----------------------------------------------------
-         * Retryable provider failure
-         * -----------------------------------------------------
-         */
         if (
           decision.shouldRetry
         ) {
           /*
-           * Obtain the same stable delivery key so that the
-           * delivery record is updated rather than duplicated.
+           * NotificationDelivery does not have a RETRYING state.
+           *
+           * Therefore the delivery attempt is recorded as FAILED
+           * while the parent Notification remains RETRYING.
            */
-          const providerName =
-            error.provider;
-
-          const deliveryKey =
-            createNotificationDeliveryKey(
-              notification.notificationId,
-
-              notification.channel,
-
-              providerName,
-            );
-
           await this.deliveryPersistence.markFailed(
             deliveryKey,
 
@@ -496,6 +539,12 @@ export class NotificationProcessor {
             attempt,
           );
 
+          this.metrics.incrementRetrying();
+
+          this.metrics.incrementProviderRetrying(
+            providerName,
+          );
+
           this.logger.error(
             `Notification retry scheduled [${error.classification}] attempt ${attempt}/${retryPolicy.maxAttempts}: ${notification.notificationId}`,
             error,
@@ -504,7 +553,7 @@ export class NotificationProcessor {
                 'notification.retrying',
 
               service:
-                error.provider,
+                providerName,
             },
           );
 
@@ -512,22 +561,8 @@ export class NotificationProcessor {
         }
 
         /*
-         * -----------------------------------------------------
-         * Terminal provider failure
-         * -----------------------------------------------------
+         * Terminal classified failure.
          */
-        const providerName =
-          error.provider;
-
-        const deliveryKey =
-          createNotificationDeliveryKey(
-            notification.notificationId,
-
-            notification.channel,
-
-            providerName,
-          );
-
         await this.deliveryPersistence.markFailed(
           deliveryKey,
 
@@ -542,6 +577,17 @@ export class NotificationProcessor {
           attempt,
         );
 
+        this.metrics.incrementFailed();
+
+        this.metrics.incrementProviderFailed(
+          providerName,
+        );
+
+        this.metrics.recordLatency(
+          Date.now() -
+            startedAt,
+        );
+
         this.logger.error(
           `Notification terminal failure [${error.classification}] attempt ${attempt}/${retryPolicy.maxAttempts}: ${notification.notificationId}`,
           error,
@@ -550,15 +596,10 @@ export class NotificationProcessor {
               'notification.failed',
 
             service:
-              error.provider,
+              providerName,
           },
         );
 
-        /*
-         * Terminal business failure is already persisted as
-         * FAILED, so BullMQ must not execute infrastructure
-         * retries for this result.
-         */
         return {
           processed:
             true,
@@ -570,7 +611,7 @@ export class NotificationProcessor {
             notification.channel,
 
           provider:
-            error.provider,
+            providerName,
 
           messageId:
             `failed-${notification.notificationId}`,
@@ -578,32 +619,23 @@ export class NotificationProcessor {
       }
 
       /*
-       * -------------------------------------------------------
-       * Unexpected infrastructure/provider exception
-       * -------------------------------------------------------
-       *
-       * Treat unexpected exceptions as retryable infrastructure
-       * failures.
-       * -------------------------------------------------------
+       * ---------------------------------------------------------
+       * Unexpected provider / infrastructure exception
+       * ---------------------------------------------------------
        */
-      const providerName =
-        this.getProviderName(
-          notification.channel,
-        );
-
-      const deliveryKey =
-        createNotificationDeliveryKey(
-          notification.notificationId,
-
-          notification.channel,
-
-          providerName,
-        );
+      this.metrics.incrementProviderErrorsFor(
+        providerName,
+      );
 
       if (
         attempt <
         retryPolicy.maxAttempts
       ) {
+        /*
+         * NotificationDelivery does not have a RETRYING state.
+         * Record this particular attempt as FAILED and keep the
+         * parent Notification in RETRYING.
+         */
         await this.deliveryPersistence.markFailed(
           deliveryKey,
 
@@ -618,6 +650,12 @@ export class NotificationProcessor {
           attempt,
         );
 
+        this.metrics.incrementRetrying();
+
+        this.metrics.incrementProviderRetrying(
+          providerName,
+        );
+
         this.logger.error(
           `Notification infrastructure retry scheduled attempt ${attempt}/${retryPolicy.maxAttempts}: ${notification.notificationId}`,
           error,
@@ -626,10 +664,13 @@ export class NotificationProcessor {
               'notification.retrying',
 
             service:
-              notification.channel,
+              providerName,
           },
         );
       } else {
+        /*
+         * Terminal infrastructure failure.
+         */
         await this.deliveryPersistence.markFailed(
           deliveryKey,
 
@@ -644,6 +685,17 @@ export class NotificationProcessor {
           attempt,
         );
 
+        this.metrics.incrementFailed();
+
+        this.metrics.incrementProviderFailed(
+          providerName,
+        );
+
+        this.metrics.recordLatency(
+          Date.now() -
+            startedAt,
+        );
+
         this.logger.error(
           `Notification infrastructure retry limit reached: ${notification.notificationId}`,
           error,
@@ -652,7 +704,7 @@ export class NotificationProcessor {
               'notification.failed',
 
             service:
-              notification.channel,
+              providerName,
           },
         );
       }
@@ -665,7 +717,9 @@ export class NotificationProcessor {
     channel:
       NotificationChannel,
   ): string {
-    switch (channel) {
+    switch (
+      channel
+    ) {
       case 'email':
         return 'development-email';
 
@@ -680,8 +734,13 @@ export class NotificationProcessor {
   private toPrismaChannel(
     channel:
       NotificationChannel,
-  ): 'EMAIL' | 'IN_APP' | 'PUSH' {
-    switch (channel) {
+  ):
+    | 'EMAIL'
+    | 'IN_APP'
+    | 'PUSH' {
+    switch (
+      channel
+    ) {
       case 'email':
         return 'EMAIL';
 

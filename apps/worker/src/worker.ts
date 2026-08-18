@@ -1,8 +1,21 @@
 import {
+  loadEnvFile,
+} from 'node:process';
+
+import {
   Worker,
   type Job,
   type WorkerOptions,
 } from 'bullmq';
+
+import {
+  dirname,
+  join,
+} from 'node:path';
+
+import {
+  fileURLToPath,
+} from 'node:url';
 
 import {
   createPrismaClient,
@@ -55,6 +68,10 @@ import {
 } from './providers/notification/notification-provider.registry.js';
 
 import {
+  NotificationIdempotencyService,
+} from './providers/notification/notification-idempotency.service.js';
+
+import {
   NotificationPersistenceService,
 } from './notifications/notification-persistence.service.js';
 
@@ -63,12 +80,55 @@ import {
 } from './notifications/notification-delivery-persistence.service.js';
 
 import {
-  NotificationIdempotencyService,
-} from './providers/notification/notification-idempotency.service.js';
+  NotificationMetricsService,
+} from './notifications/notification-metrics.service.js';
 
 import {
   OutboxDispatcher,
 } from './outbox/outbox.dispatcher.js';
+
+/*
+ * -------------------------------------------------------------
+ * Explicit worker .env loading
+ * -------------------------------------------------------------
+ *
+ * worker.ts:
+ *   apps/worker/src/worker.ts
+ *
+ * Load:
+ *   apps/worker/.env
+ *
+ * This keeps worker configuration independent from the current
+ * Nx/terminal working directory.
+ */
+const workerFilePath =
+  fileURLToPath(
+    import.meta.url,
+  );
+
+const workerSrcDirectory =
+  dirname(
+    workerFilePath,
+  );
+
+const workerEnvPath =
+  join(
+    workerSrcDirectory,
+    '../.env',
+  );
+
+try {
+  loadEnvFile(
+    workerEnvPath,
+  );
+} catch {
+  /*
+   * The worker may also receive configuration from the host
+   * environment, Docker, CI, or another runtime mechanism.
+   *
+   * Therefore an unavailable .env file is not fatal.
+   */
+}
 
 export class GurusthalamWorker {
   private readonly workers:
@@ -88,6 +148,9 @@ export class GurusthalamWorker {
 
   private readonly notificationIdempotency:
     NotificationIdempotencyService;
+
+  private readonly notificationMetrics:
+    NotificationMetricsService;
 
   private readonly outboxDispatcher:
     OutboxDispatcher;
@@ -122,15 +185,23 @@ export class GurusthalamWorker {
     this.notificationIdempotency =
       new NotificationIdempotencyService();
 
+    this.notificationMetrics =
+      new NotificationMetricsService(
+        this.logger,
+      );
+
     this.outboxDispatcher =
       new OutboxDispatcher(
         this.prisma,
+
         this.logger,
       );
   }
 
   async start(): Promise<void> {
-    if (this.started) {
+    if (
+      this.started
+    ) {
       this.logger.info(
         'Gurusthalam worker is already started',
         {
@@ -338,6 +409,8 @@ export class GurusthalamWorker {
           this.notificationPersistence,
 
           this.notificationDeliveryPersistence,
+
+          this.notificationMetrics,
         );
 
       /*
@@ -497,7 +570,9 @@ export class GurusthalamWorker {
   }
 
   async stop(): Promise<void> {
-    if (!this.started) {
+    if (
+      !this.started
+    ) {
       await this.shutdownResources();
 
       return;
@@ -528,7 +603,7 @@ export class GurusthalamWorker {
   private async shutdownResources(): Promise<void> {
     /*
      * -------------------------------------------------------
-     * Stop outbox dispatcher first
+     * Stop outbox dispatcher
      * -------------------------------------------------------
      */
     try {
@@ -583,7 +658,7 @@ export class GurusthalamWorker {
 
     /*
      * -------------------------------------------------------
-     * Close provider idempotency Redis connection
+     * Close notification idempotency Redis connection
      * -------------------------------------------------------
      */
     try {
@@ -609,6 +684,38 @@ export class GurusthalamWorker {
 
           service:
             'notification-idempotency',
+        },
+      );
+    }
+
+    /*
+     * -------------------------------------------------------
+     * Close notification metrics Redis connection
+     * -------------------------------------------------------
+     */
+    try {
+      await this.notificationMetrics.close();
+
+      this.logger.info(
+        'Notification metrics Redis connection closed',
+        {
+          operation:
+            'notification.metrics.redis.closed',
+
+          service:
+            'notification-metrics',
+        },
+      );
+    } catch (error: unknown) {
+      this.logger.error(
+        'Failed to close notification metrics Redis connection',
+        error,
+        {
+          operation:
+            'notification.metrics.redis.close.error',
+
+          service:
+            'notification-metrics',
         },
       );
     }

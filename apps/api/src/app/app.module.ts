@@ -30,6 +30,14 @@ import {
 } from '../queues/bullmq/bullmq.module.js';
 
 import {
+  AppController,
+} from './app.controller.js';
+
+import {
+  AppService,
+} from './app.service.js';
+
+import {
   OutboxAdminController,
 } from '../queues/outbox/outbox-admin.controller.js';
 
@@ -38,31 +46,59 @@ import {
 } from '../queues/outbox/outbox-admin.service.js';
 
 import {
-  AppController,
-} from './app.controller.js';
+  NotificationMetricsController,
+} from '../queues/notifications/notification-metrics.controller.js';
 
 import {
-  AppService,
-} from './app.service.js';
+  NotificationMetricsService,
+} from '../queues/notifications/notification-metrics.service.js';
+import {
+  NotificationTroubleshootingController,
+} from '../queues/notifications/notification-troubleshooting.controller.js';
+
+import {
+  NotificationTroubleshootingService,
+} from '../queues/notifications/notification-troubleshooting.service.js';
+
+  import {
+  NotificationOperationalController,
+} from '../queues/notifications/notification-operational.controller.js';
+
+import {
+  NotificationOperationalService,
+} from '../queues/notifications/notification-operational.service.js';
+
+
 
 @Module({
   imports: [
     AppConfigModule,
+
     DatabaseModule,
+
     RedisModule,
+
     BullMqModule,
+
     HealthModule,
   ],
 
   controllers: [
-    AppController,
-    OutboxAdminController,
-  ],
+  AppController,
+  OutboxAdminController,
+  NotificationMetricsController,
+  NotificationTroubleshootingController,
+  NotificationOperationalController,
+],
 
   providers: [
-    AppService,
-    OutboxAdminService,
-  ],
+  AppService,
+  OutboxAdminService,
+  NotificationMetricsService,
+  NotificationTroubleshootingService,
+  NotificationOperationalService,
+],
+
 })
 export class AppModule
   implements NestModule
@@ -75,7 +111,9 @@ export class AppModule
         RequestIdMiddleware,
       )
       .forRoutes({
-        path: '{*splat}',
+        path:
+          '{*splat}',
+
         method:
           RequestMethod.ALL,
       });

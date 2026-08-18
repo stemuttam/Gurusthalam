@@ -61,12 +61,18 @@ export class NotificationDeliveryPersistenceService {
 
         create: {
           notificationId,
+
           deliveryKey,
+
           provider,
+
           channel,
+
           status:
             'PENDING',
-          attempts: 0,
+
+          attempts:
+            0,
         },
 
         update: {},

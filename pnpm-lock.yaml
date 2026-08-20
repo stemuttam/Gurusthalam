@@ -232,6 +232,9 @@ importers:
       '@gurusthalam/logger':
         specifier: workspace:*
         version: link:../../libs/shared/logger
+      '@gurusthalam/shared':
+        specifier: workspace:*
+        version: link:../../libs/shared
       '@gurusthalam/validation':
         specifier: workspace:*
         version: link:../../libs/shared/validation
@@ -289,12 +292,21 @@ importers:
       '@gurusthalam/logger':
         specifier: workspace:*
         version: link:../../libs/shared/logger
+      '@gurusthalam/shared':
+        specifier: workspace:*
+        version: link:../../libs/shared
       bullmq:
         specifier: 6.1.1
         version: 6.1.1(ioredis@6.0.0)(pg@8.23.0)
       ioredis:
         specifier: 6.0.0
         version: 6.0.0
+
+  libs/shared:
+    dependencies:
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
 
   libs/shared/config:
     dependencies:

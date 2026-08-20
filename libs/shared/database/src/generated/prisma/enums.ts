@@ -48,3 +48,39 @@ export const OutboxStatus = {
 } as const
 
 export type OutboxStatus = (typeof OutboxStatus)[keyof typeof OutboxStatus]
+
+
+export const NotificationTemplateChannel = {
+  EMAIL: 'EMAIL',
+  IN_APP: 'IN_APP',
+  PUSH: 'PUSH'
+} as const
+
+export type NotificationTemplateChannel = (typeof NotificationTemplateChannel)[keyof typeof NotificationTemplateChannel]
+
+
+export const NotificationTemplateStatus = {
+  DRAFT: 'DRAFT',
+  REVIEW: 'REVIEW',
+  PUBLISHED: 'PUBLISHED',
+  ARCHIVED: 'ARCHIVED'
+} as const
+
+export type NotificationTemplateStatus = (typeof NotificationTemplateStatus)[keyof typeof NotificationTemplateStatus]
+
+
+export const NotificationTemplateCategory = {
+  SYSTEM: 'SYSTEM',
+  SECURITY: 'SECURITY',
+  AUTHENTICATION: 'AUTHENTICATION',
+  COURSE: 'COURSE',
+  LEARNING: 'LEARNING',
+  PAYMENT: 'PAYMENT',
+  SUBSCRIPTION: 'SUBSCRIPTION',
+  CERTIFICATE: 'CERTIFICATE',
+  CORPORATE: 'CORPORATE',
+  MARKETING: 'MARKETING',
+  REMINDER: 'REMINDER'
+} as const
+
+export type NotificationTemplateCategory = (typeof NotificationTemplateCategory)[keyof typeof NotificationTemplateCategory]

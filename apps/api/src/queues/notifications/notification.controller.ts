@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -17,36 +18,69 @@ import type {
 } from './notification.types.js';
 
 interface EnqueueNotificationRequest {
-  readonly notificationId?: unknown;
-  readonly userId?: unknown;
-  readonly email?: unknown;
-  readonly subject?: unknown;
-  readonly title?: unknown;
-  readonly body?: unknown;
-  readonly idempotencyKey?: unknown;
+  readonly notificationId?:
+    unknown;
+
+  readonly userId?:
+    unknown;
+
+  readonly email?:
+    unknown;
+
+  readonly subject?:
+    unknown;
+
+  readonly title?:
+    unknown;
+
+  readonly body?:
+    unknown;
+
+  readonly templateId?:
+    unknown;
+
+  readonly templateData?:
+    unknown;
+
+  readonly locale?:
+    unknown;
+
+  readonly idempotencyKey?:
+    unknown;
 }
 
 type NotificationGetResponse =
   | {
-      readonly found: false;
-      readonly notificationId: string;
+      readonly found:
+        false;
+
+      readonly notificationId:
+        string;
     }
   | {
-      readonly found: true;
-      readonly notification: NotificationRecord;
+      readonly found:
+        true;
+
+      readonly notification:
+        NotificationRecord;
     };
 
-@Controller('internal/notifications')
+@Controller(
+  'internal/notifications',
+)
 export class NotificationController {
   constructor(
     private readonly notificationQueue:
       NotificationQueueService,
   ) {}
 
-  @Post('smoke')
+  @Post(
+    'smoke',
+  )
   async enqueue(
     @Body()
-    request: EnqueueNotificationRequest,
+    request:
+      EnqueueNotificationRequest,
   ): Promise<NotificationEnqueueResult> {
     const notificationId =
       typeof request.notificationId ===
@@ -78,7 +112,7 @@ export class NotificationController {
       request.subject.trim()
         .length > 0
         ? request.subject.trim()
-        : 'Gurusthalam notification smoke test';
+        : undefined;
 
     const title =
       typeof request.title ===
@@ -86,7 +120,7 @@ export class NotificationController {
       request.title.trim()
         .length > 0
         ? request.title.trim()
-        : 'Gurusthalam notification';
+        : undefined;
 
     const body =
       typeof request.body ===
@@ -94,7 +128,23 @@ export class NotificationController {
       request.body.trim()
         .length > 0
         ? request.body.trim()
-        : 'This is a notification worker smoke test.';
+        : undefined;
+
+    const templateId =
+      typeof request.templateId ===
+        'string' &&
+      request.templateId.trim()
+        .length > 0
+        ? request.templateId.trim()
+        : undefined;
+
+    const locale =
+      typeof request.locale ===
+        'string' &&
+      request.locale.trim()
+        .length > 0
+        ? request.locale.trim()
+        : undefined;
 
     const idempotencyKey =
       typeof request.idempotencyKey ===
@@ -104,51 +154,150 @@ export class NotificationController {
         ? request.idempotencyKey.trim()
         : `notification-smoke-${Date.now()}`;
 
+    if (
+      templateId ===
+        undefined &&
+      body ===
+        undefined
+    ) {
+      throw new BadRequestException(
+        'Either body or templateId must be provided.',
+      );
+    }
+
+    if (
+      templateId !==
+        undefined &&
+      request.templateData !==
+        undefined &&
+      (
+        typeof request.templateData !==
+          'object' ||
+        request.templateData ===
+          null ||
+        Array.isArray(
+          request.templateData,
+        )
+      )
+    ) {
+      throw new BadRequestException(
+        'templateData must be a JSON object when supplied.',
+      );
+    }
+
+    const templateData =
+      templateId !==
+        undefined
+        ? (
+            request.templateData ===
+            undefined
+              ? {}
+              : request.templateData as Record<
+                  string,
+                  unknown
+                >
+          )
+        : undefined;
+
     const data:
       NotificationJobData = {
       notificationId,
 
-      channel: 'email',
+      channel:
+        'email',
 
       recipient: {
         userId,
+
         email,
       },
 
-      subject,
-
-      title,
-
-      body,
+      body:
+        body ??
+        '',
 
       idempotencyKey,
+
+      ...(subject !==
+      undefined
+        ? {
+            subject,
+          }
+        : {}),
+
+      ...(title !==
+      undefined
+        ? {
+            title,
+          }
+        : {}),
+
+      ...(templateId !==
+      undefined
+        ? {
+            template:
+              templateId,
+          }
+        : {}),
+
+      ...(templateData !==
+      undefined
+        ? {
+            templateData:
+              templateData as NonNullable<
+                NotificationJobData['templateData']
+              >,
+          }
+        : {}),
     };
+
+    /*
+     * Locale is used by the template-backed enqueue path.
+     * With exactOptionalPropertyTypes enabled, the locale
+     * property must be omitted completely when it is undefined.
+     */
+    const enqueueOptions =
+      locale !==
+      undefined
+        ? {
+            locale,
+          }
+        : {};
 
     return this.notificationQueue.enqueue(
       data,
+      enqueueOptions,
     );
   }
 
-  @Get(':notificationId')
+  @Get(
+    ':notificationId',
+  )
   async getNotification(
-    @Param('notificationId')
-    notificationId: string,
+    @Param(
+      'notificationId',
+    )
+    notificationId:
+      string,
   ): Promise<NotificationGetResponse> {
     const notification =
-      await this.notificationQueue
-        .getByNotificationId(
-          notificationId,
-        );
+      await this.notificationQueue.getByNotificationId(
+        notificationId,
+      );
 
     if (!notification) {
       return {
-        found: false,
+        found:
+          false,
+
         notificationId,
       };
     }
 
     return {
-      found: true,
+      found:
+        true,
+
       notification,
     };
   }

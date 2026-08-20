@@ -27,21 +27,37 @@ import {
   SystemQueueService,
 } from './system.queue.js';
 
+import {
+  NotificationTemplateModule,
+} from '../templates/notification-template.module.js';
+
 @Global()
 @Module({
+  imports: [
+    NotificationTemplateModule,
+  ],
+
   controllers: [
     SystemQueueController,
+
     BullMqController,
+
     NotificationController,
   ],
+
   providers: [
     BullMqService,
+
     SystemQueueService,
+
     NotificationQueueService,
   ],
+
   exports: [
     BullMqService,
+
     SystemQueueService,
+
     NotificationQueueService,
   ],
 })

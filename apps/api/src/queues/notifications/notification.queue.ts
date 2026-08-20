@@ -1,10 +1,15 @@
 import {
+  BadRequestException,
   Injectable,
 } from '@nestjs/common';
 
 import {
   PrismaService,
 } from '../../database/prisma/prisma.service.js';
+
+import {
+  NotificationTemplateService,
+} from '../templates/notification-template.service.js';
 
 import {
   BULLMQ_QUEUE_NAMES,
@@ -15,46 +20,129 @@ import type {
 } from './notification.types.js';
 
 export interface NotificationRecord {
-  readonly id: string;
-  readonly notificationId: string;
-  readonly userId: string;
-  readonly channel: string;
-  readonly status: string;
-  readonly subject: string | null;
-  readonly title: string | null;
-  readonly body: string;
-  readonly template: string | null;
-  readonly templateData: unknown;
-  readonly provider: string | null;
-  readonly providerMessageId: string | null;
-  readonly idempotencyKey: string;
-  readonly attempts: number;
-  readonly queuedAt: Date;
-  readonly processingAt: Date | null;
-  readonly sentAt: Date | null;
-  readonly failedAt: Date | null;
-  readonly failureReason: string | null;
-  readonly createdAt: Date;
-  readonly updatedAt: Date;
+  readonly id:
+    string;
+
+  readonly notificationId:
+    string;
+
+  readonly userId:
+    string;
+
+  readonly channel:
+    string;
+
+  readonly status:
+    string;
+
+  readonly subject:
+    string | null;
+
+  readonly title:
+    string | null;
+
+  readonly body:
+    string;
+
+  readonly template:
+    string | null;
+
+  readonly templateData:
+    unknown;
+
+  readonly provider:
+    string | null;
+
+  readonly providerMessageId:
+    string | null;
+
+  readonly idempotencyKey:
+    string;
+
+  readonly attempts:
+    number;
+
+  readonly queuedAt:
+    Date;
+
+  readonly processingAt:
+    Date | null;
+
+  readonly sentAt:
+    Date | null;
+
+  readonly failedAt:
+    Date | null;
+
+  readonly failureReason:
+    string | null;
+
+  readonly createdAt:
+    Date;
+
+  readonly updatedAt:
+    Date;
 }
 
 export interface NotificationEnqueueResult {
-  readonly jobId: string;
-  readonly queue: string;
-  readonly notificationId: string;
-  readonly status: string;
-  readonly outboxEventId: string;
+  readonly jobId:
+    string;
+
+  readonly queue:
+    string;
+
+  readonly notificationId:
+    string;
+
+  readonly status:
+    string;
+
+  readonly outboxEventId:
+    string;
+}
+
+export interface NotificationEnqueueOptions {
+  readonly locale?:
+    string;
 }
 
 @Injectable()
 export class NotificationQueueService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly prisma:
+      PrismaService,
+
+    private readonly templateService:
+      NotificationTemplateService,
   ) {}
 
   async enqueue(
-    data: NotificationJobData,
+    data:
+      NotificationJobData,
+
+    options:
+      NotificationEnqueueOptions = {},
   ): Promise<NotificationEnqueueResult> {
+    /*
+     * ---------------------------------------------------------
+     * Resolve published template BEFORE the transaction.
+     * ---------------------------------------------------------
+     *
+     * This makes rendering deterministic.
+     *
+     * If rendering/validation fails:
+     *
+     * - no Notification is created
+     * - no OutboxEvent is created
+     * - no queue message is created
+     */
+    const resolvedData =
+      await this.resolveTemplate(
+        data,
+
+        options,
+      );
+
     /*
      * ---------------------------------------------------------
      * Idempotency check
@@ -64,22 +152,24 @@ export class NotificationQueueService {
       await this.prisma.notification.findUnique({
         where: {
           idempotencyKey:
-            data.idempotencyKey,
+            resolvedData.idempotencyKey,
         },
       });
 
-    if (existing) {
+    if (
+      existing
+    ) {
       const outbox =
         await this.prisma.outboxEvent.findUnique({
           where: {
             dedupeKey:
-              `notification:${data.idempotencyKey}`,
+              `notification:${resolvedData.idempotencyKey}`,
           },
         });
 
       return {
         jobId:
-          data.idempotencyKey,
+          resolvedData.idempotencyKey,
 
         queue:
           BULLMQ_QUEUE_NAMES.NOTIFICATIONS,
@@ -88,10 +178,13 @@ export class NotificationQueueService {
           existing.notificationId,
 
         status:
-          String(existing.status),
+          String(
+            existing.status,
+          ),
 
         outboxEventId:
-          outbox?.id ?? 'unknown',
+          outbox?.id ??
+          'unknown',
       };
     }
 
@@ -99,65 +192,59 @@ export class NotificationQueueService {
      * ---------------------------------------------------------
      * Atomic PostgreSQL transaction
      * ---------------------------------------------------------
-     *
-     * Notification and OutboxEvent are committed together.
-     * No BullMQ call happens inside this transaction.
      */
     try {
       const result =
         await this.prisma.$transaction(
-          async (tx) => {
+          async (
+            tx,
+          ) => {
             const notification =
               await tx.notification.create({
                 data: {
                   notificationId:
-                    data.notificationId,
+                    resolvedData.notificationId,
 
                   userId:
-                    data.recipient.userId,
+                    resolvedData.recipient.userId,
 
                   channel:
                     this.toPrismaChannel(
-                      data.channel,
+                      resolvedData.channel,
                     ),
 
                   status:
                     'QUEUED',
 
                   subject:
-                    data.subject ?? null,
+                    resolvedData.subject ??
+                    null,
 
                   title:
-                    data.title ?? null,
+                    resolvedData.title ??
+                    null,
 
                   body:
-                    data.body,
+                    resolvedData.body,
 
                   template:
-                    data.template ?? null,
+                    resolvedData.template ??
+                    null,
 
-                  /*
-                   * JSON.parse returns `any`, which is exactly
-                   * what Prisma's JSON input accepts at this
-                   * serialization boundary.
-                   *
-                   * We intentionally persist a JSON snapshot
-                   * rather than a live TypeScript object.
-                   */
-                  ...(data.templateData !==
+                  ...(resolvedData.templateData !==
                   undefined
                     ? {
                         templateData:
                           JSON.parse(
                             JSON.stringify(
-                              data.templateData,
+                              resolvedData.templateData,
                             ),
                           ),
                       }
                     : {}),
 
                   idempotencyKey:
-                    data.idempotencyKey,
+                    resolvedData.idempotencyKey,
 
                   attempts:
                     0,
@@ -169,7 +256,9 @@ export class NotificationQueueService {
 
             const outboxPayload =
               JSON.parse(
-                JSON.stringify(data),
+                JSON.stringify(
+                  resolvedData,
+                ),
               );
 
             const outbox =
@@ -185,7 +274,7 @@ export class NotificationQueueService {
                     notification.id,
 
                   dedupeKey:
-                    `notification:${data.idempotencyKey}`,
+                    `notification:${resolvedData.idempotencyKey}`,
 
                   payload:
                     outboxPayload,
@@ -203,6 +292,7 @@ export class NotificationQueueService {
 
             return {
               notification,
+
               outbox,
             };
           },
@@ -210,14 +300,13 @@ export class NotificationQueueService {
 
       return {
         jobId:
-          data.idempotencyKey,
+          resolvedData.idempotencyKey,
 
         queue:
           BULLMQ_QUEUE_NAMES.NOTIFICATIONS,
 
         notificationId:
-          result.notification
-            .notificationId,
+          result.notification.notificationId,
 
         status:
           String(
@@ -227,7 +316,9 @@ export class NotificationQueueService {
         outboxEventId:
           result.outbox.id,
       };
-    } catch (error: unknown) {
+    } catch (
+      error: unknown
+    ) {
       /*
        * ---------------------------------------------------------
        * Concurrent idempotency protection
@@ -237,22 +328,24 @@ export class NotificationQueueService {
         await this.prisma.notification.findUnique({
           where: {
             idempotencyKey:
-              data.idempotencyKey,
+              resolvedData.idempotencyKey,
           },
         });
 
-      if (raced) {
+      if (
+        raced
+      ) {
         const outbox =
           await this.prisma.outboxEvent.findUnique({
             where: {
               dedupeKey:
-                `notification:${data.idempotencyKey}`,
+                `notification:${resolvedData.idempotencyKey}`,
             },
           });
 
         return {
           jobId:
-            data.idempotencyKey,
+            resolvedData.idempotencyKey,
 
           queue:
             BULLMQ_QUEUE_NAMES.NOTIFICATIONS,
@@ -261,10 +354,13 @@ export class NotificationQueueService {
             raced.notificationId,
 
           status:
-            String(raced.status),
+            String(
+              raced.status,
+            ),
 
           outboxEventId:
-            outbox?.id ?? 'unknown',
+            outbox?.id ??
+            'unknown',
         };
       }
 
@@ -273,7 +369,8 @@ export class NotificationQueueService {
   }
 
   async getByNotificationId(
-    notificationId: string,
+    notificationId:
+      string,
   ): Promise<NotificationRecord | null> {
     const notification =
       await this.prisma.notification.findUnique({
@@ -282,7 +379,9 @@ export class NotificationQueueService {
         },
       });
 
-    if (!notification) {
+    if (
+      !notification
+    ) {
       return null;
     }
 
@@ -297,10 +396,14 @@ export class NotificationQueueService {
         notification.userId,
 
       channel:
-        String(notification.channel),
+        String(
+          notification.channel,
+        ),
 
       status:
-        String(notification.status),
+        String(
+          notification.status,
+        ),
 
       subject:
         notification.subject,
@@ -352,11 +455,81 @@ export class NotificationQueueService {
     };
   }
 
+  private async resolveTemplate(
+    data:
+      NotificationJobData,
+
+    options:
+      NotificationEnqueueOptions,
+  ): Promise<NotificationJobData> {
+    if (
+      data.template ===
+      undefined
+    ) {
+      /*
+       * Existing literal-notification behavior is preserved.
+       */
+      return data;
+    }
+
+    if (
+      data.templateData ===
+      undefined
+    ) {
+      throw new BadRequestException(
+        `Template-backed notification "${data.template}" requires templateData.`,
+      );
+    }
+
+    const rendered =
+      await this.templateService.renderPublishedVersion(
+        data.template,
+
+        data.templateData,
+
+        options.locale,
+      );
+
+    return {
+      ...data,
+
+      ...(rendered.rendered.subject !==
+      undefined
+        ? {
+            subject:
+              rendered.rendered.subject,
+          }
+        : {}),
+
+      ...(rendered.rendered.title !==
+      undefined
+        ? {
+            title:
+              rendered.rendered.title,
+          }
+        : {}),
+
+      body:
+        rendered.rendered.body,
+
+      template:
+        data.template,
+
+      templateData:
+        rendered.templateData,
+    };
+  }
+
   private toPrismaChannel(
     channel:
       NotificationJobData['channel'],
-  ): 'EMAIL' | 'IN_APP' | 'PUSH' {
-    switch (channel) {
+  ):
+    | 'EMAIL'
+    | 'IN_APP'
+    | 'PUSH' {
+    switch (
+      channel
+    ) {
       case 'email':
         return 'EMAIL';
 

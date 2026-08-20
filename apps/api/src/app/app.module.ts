@@ -30,14 +30,6 @@ import {
 } from '../queues/bullmq/bullmq.module.js';
 
 import {
-  AppController,
-} from './app.controller.js';
-
-import {
-  AppService,
-} from './app.service.js';
-
-import {
   OutboxAdminController,
 } from '../queues/outbox/outbox-admin.controller.js';
 
@@ -52,6 +44,7 @@ import {
 import {
   NotificationMetricsService,
 } from '../queues/notifications/notification-metrics.service.js';
+
 import {
   NotificationTroubleshootingController,
 } from '../queues/notifications/notification-troubleshooting.controller.js';
@@ -60,7 +53,7 @@ import {
   NotificationTroubleshootingService,
 } from '../queues/notifications/notification-troubleshooting.service.js';
 
-  import {
+import {
   NotificationOperationalController,
 } from '../queues/notifications/notification-operational.controller.js';
 
@@ -68,7 +61,17 @@ import {
   NotificationOperationalService,
 } from '../queues/notifications/notification-operational.service.js';
 
+import {
+  NotificationTemplateModule,
+} from '../queues/templates/notification-template.module.js';
 
+import {
+  AppController,
+} from './app.controller.js';
+
+import {
+  AppService,
+} from './app.service.js';
 
 @Module({
   imports: [
@@ -78,33 +81,42 @@ import {
 
     RedisModule,
 
+    NotificationTemplateModule,
+
     BullMqModule,
 
     HealthModule,
   ],
 
   controllers: [
-  AppController,
-  OutboxAdminController,
-  NotificationMetricsController,
-  NotificationTroubleshootingController,
-  NotificationOperationalController,
-],
+    AppController,
+
+    OutboxAdminController,
+
+    NotificationMetricsController,
+
+    NotificationTroubleshootingController,
+
+    NotificationOperationalController,
+  ],
 
   providers: [
-  AppService,
-  OutboxAdminService,
-  NotificationMetricsService,
-  NotificationTroubleshootingService,
-  NotificationOperationalService,
-],
+    AppService,
 
+    OutboxAdminService,
+
+    NotificationMetricsService,
+
+    NotificationTroubleshootingService,
+
+    NotificationOperationalService,
+  ],
 })
 export class AppModule
-  implements NestModule
-{
+  implements NestModule {
   configure(
-    consumer: MiddlewareConsumer,
+    consumer:
+      MiddlewareConsumer,
   ): void {
     consumer
       .apply(

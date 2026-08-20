@@ -7,6 +7,7 @@
     "@gurusthalam/config": "workspace:*",
     "@gurusthalam/database": "workspace:*",
     "@gurusthalam/logger": "workspace:*",
+    "@gurusthalam/shared": "workspace:*",
     "bullmq": "6.1.1",
     "ioredis": "6.0.0"
   }

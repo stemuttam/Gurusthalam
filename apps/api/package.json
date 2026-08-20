@@ -7,6 +7,7 @@
     "@gurusthalam/config": "workspace:*",
     "@gurusthalam/database": "workspace:*",
     "@gurusthalam/logger": "workspace:*",
+    "@gurusthalam/shared": "workspace:*",
     "@gurusthalam/validation": "workspace:*",
     "@nestjs/common": "11.1.28",
     "@nestjs/core": "11.1.28",

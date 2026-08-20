@@ -36,13 +36,105 @@ enum OutboxStatus {
   DEAD_LETTER
 }
 
+/**
+ * =============================================================
+ * Notification Template Domain
+ * =============================================================
+ */
+
+enum NotificationTemplateChannel {
+  EMAIL
+  IN_APP
+  PUSH
+}
+
+enum NotificationTemplateStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
+enum NotificationTemplateCategory {
+  SYSTEM
+  SECURITY
+  AUTHENTICATION
+  COURSE
+  LEARNING
+  PAYMENT
+  SUBSCRIPTION
+  CERTIFICATE
+  CORPORATE
+  MARKETING
+  REMINDER
+}
+
+model NotificationTemplate {
+  id String @id @default(uuid())
+
+  templateId  String  @unique
+  name        String
+  description String?
+
+  channel  NotificationTemplateChannel
+  category NotificationTemplateCategory
+  locale   String
+
+  status         NotificationTemplateStatus @default(DRAFT)
+  currentVersion Int                        @default(1)
+
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  versions NotificationTemplateVersion[]
+
+  @@index([channel, status])
+  @@index([category, status])
+  @@index([locale, status])
+  @@index([createdBy, createdAt])
+}
+
+model NotificationTemplateVersion {
+  id String @id @default(uuid())
+
+  templateId String
+  version    Int
+
+  subject String?
+  title   String?
+  body    String
+
+  variables Json
+
+  status NotificationTemplateStatus @default(DRAFT)
+
+  createdBy   String
+  createdAt   DateTime  @default(now())
+  publishedAt DateTime?
+
+  template NotificationTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([templateId, version])
+  @@index([templateId, status])
+  @@index([status, publishedAt])
+  @@index([createdBy, createdAt])
+}
+
+/**
+ * =============================================================
+ * Existing Notification Domain
+ * =============================================================
+ */
+
 model Notification {
   id String @id @default(uuid())
 
-  notificationId String              @unique
+  notificationId String @unique
   userId         String
-  channel        NotificationChannel
-  status         NotificationStatus  @default(QUEUED)
+
+  channel NotificationChannel
+  status  NotificationStatus  @default(QUEUED)
 
   subject String?
   title   String?
@@ -64,18 +156,21 @@ model Notification {
   failedAt      DateTime?
   failureReason String?
 
-  deliveries NotificationDelivery[]
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  deliveries NotificationDelivery[]
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@index([channel, status])
 }
 
 model NotificationDelivery {
-  id             String       @id @default(uuid())
-  notificationId String
-  notification   Notification @relation(fields: [notificationId], references: [notificationId], onDelete: Cascade)
+  id String @id @default(uuid())
 
-  deliveryKey String @unique
+  notificationId String
+  deliveryKey    String @unique
 
   provider String
   channel  NotificationChannel
@@ -94,9 +189,11 @@ model NotificationDelivery {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([notificationId])
+  notification Notification @relation(fields: [notificationId], references: [notificationId], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([notificationId, createdAt])
+  @@index([status, createdAt])
   @@index([provider, status])
-  @@index([status, lastAttemptAt])
 }
 
 model OutboxEvent {
@@ -127,8 +224,7 @@ model OutboxEvent {
   recoveryCount Int @default(0)
 
   lastAttemptAt DateTime?
-
-  lastError String?
+  lastError     String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

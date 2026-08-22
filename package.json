@@ -25,7 +25,8 @@
     "format:check": "prettier --check .",
     "graph": "nx graph",
     "projects": "nx show projects",
-    "report": "nx report"
+    "report": "nx report",
+    "prisma:generate": "pnpm --filter @org/api exec prisma generate --config prisma.config.ts && node scripts/normalize-prisma-generated.mjs"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,mjs,cjs}": [

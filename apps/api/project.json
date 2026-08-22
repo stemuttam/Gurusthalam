@@ -10,12 +10,12 @@
   ],
   "targets": {
     "prisma-generate": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "pnpm exec prisma generate --config prisma.config.ts",
-        "cwd": "apps/api"
-      }
-    },
+  "executor": "nx:run-commands",
+  "options": {
+    "command": "pnpm prisma:generate",
+    "cwd": "."
+  }
+},
 
     "build": {
       "executor": "@nx/js:tsc",
@@ -36,7 +36,7 @@
     "test": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm exec vitest run",
+        "command": "pnpm exec vitest run --config vitest.config.mts",
         "cwd": "apps/api"
       },
       "cache": true

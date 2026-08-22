@@ -280,11 +280,10 @@ export class NotificationController {
      * record contract.
      */
     const notification =
-      await this.notificationApplication
-        ['queue']
-        ?.getByNotificationId?.(
-          notificationId,
-        );
+  await this.notificationApplication
+    .getByNotificationId(
+      notificationId,
+    );
 
     if (!notification) {
       return {

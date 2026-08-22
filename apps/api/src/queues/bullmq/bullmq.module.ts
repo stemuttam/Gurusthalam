@@ -16,6 +16,10 @@ import {
 } from '../notifications/notification.controller.js';
 
 import {
+  NotificationCommandController,
+} from '../notifications/notification.command.controller.js';
+
+import {
   NotificationQueueService,
 } from '../notifications/notification.queue.js';
 
@@ -47,6 +51,8 @@ import {
     BullMqController,
 
     NotificationController,
+
+    NotificationCommandController,
   ],
 
   providers: [

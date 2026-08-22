@@ -40,6 +40,51 @@ export interface NotificationRecipient {
     readonly string[];
 }
 
+/**
+ * Immutable provenance information describing the exact
+ * template version selected before notification rendering.
+ *
+ * This metadata is persisted with the Notification record.
+ */
+export interface NotificationTemplateSnapshot {
+  readonly templateId:
+    string;
+
+  readonly version:
+    number;
+
+  readonly locale:
+    string;
+
+  readonly subject?:
+    string;
+
+  readonly title?:
+    string;
+
+  readonly body:
+    string;
+
+  readonly variables:
+    readonly {
+      readonly path:
+        string;
+
+      readonly required:
+        boolean;
+
+      readonly description?:
+        string;
+
+      readonly type:
+        | 'string'
+        | 'number'
+        | 'boolean'
+        | 'object'
+        | 'array';
+    }[];
+}
+
 export interface NotificationJobData {
   readonly notificationId:
     string;
@@ -59,35 +104,29 @@ export interface NotificationJobData {
   readonly body:
     string;
 
-  /**
-   * Template identifier used to generate the rendered notification.
-   *
-   * This is metadata only at delivery time. The worker does not
-   * resolve the template again.
-   */
   readonly template?:
     string;
 
-  /**
-   * Runtime data snapshot used when the notification was rendered.
-   *
-   * The persisted notification therefore retains the input that
-   * produced the final notification content.
-   */
+  readonly templateVersion?:
+    number;
+
+  readonly templateLocale?:
+    string;
+
   readonly templateData?: {
     [key: string]:
       NotificationJsonValue;
   };
 
-  readonly idempotencyKey:
-    string;
-
   /**
-   * Replay jobs provide their own delivery identity.
+   * Immutable template provenance snapshot.
    *
-   * Normal notification jobs omit this field and the worker
-   * derives the canonical delivery key.
+   * This is metadata for persistence/audit. The worker does not
+   * re-render from this snapshot.
    */
-  readonly deliveryKey?:
+  readonly templateSnapshot?:
+    NotificationTemplateSnapshot;
+
+  readonly idempotencyKey:
     string;
 }

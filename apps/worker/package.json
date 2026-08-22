@@ -10,5 +10,8 @@
     "@gurusthalam/shared": "workspace:*",
     "bullmq": "6.1.1",
     "ioredis": "6.0.0"
+  },
+  "devDependencies": {
+    "dotenv": "17.4.2"
   }
 }

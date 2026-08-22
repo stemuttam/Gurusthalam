@@ -9,43 +9,120 @@ import {
 
 export interface NotificationTroubleshootingResponse {
   readonly notification: {
-    readonly id: string;
-    readonly notificationId: string;
-    readonly userId: string;
-    readonly channel: string;
-    readonly status: string;
-    readonly subject: string | null;
-    readonly title: string | null;
-    readonly body: string;
-    readonly template: string | null;
-    readonly provider: string | null;
-    readonly providerMessageId: string | null;
-    readonly idempotencyKey: string;
-    readonly attempts: number;
-    readonly queuedAt: Date;
-    readonly processingAt: Date | null;
-    readonly sentAt: Date | null;
-    readonly failedAt: Date | null;
-    readonly failureReason: string | null;
-    readonly createdAt: Date;
-    readonly updatedAt: Date;
+    readonly id:
+      string;
+
+    readonly notificationId:
+      string;
+
+    readonly userId:
+      string;
+
+    readonly channel:
+      string;
+
+    readonly status:
+      string;
+
+    readonly subject:
+      string | null;
+
+    readonly title:
+      string | null;
+
+    readonly body:
+      string;
+
+    readonly template:
+      string | null;
+
+    readonly templateVersion:
+      number | null;
+
+    readonly templateLocale:
+      string | null;
+
+    readonly templateSnapshot:
+      unknown;
+
+    readonly templateData:
+      unknown;
+
+    readonly provider:
+      string | null;
+
+    readonly providerMessageId:
+      string | null;
+
+    readonly idempotencyKey:
+      string;
+
+    readonly attempts:
+      number;
+
+    readonly queuedAt:
+      Date;
+
+    readonly processingAt:
+      Date | null;
+
+    readonly sentAt:
+      Date | null;
+
+    readonly failedAt:
+      Date | null;
+
+    readonly failureReason:
+      string | null;
+
+    readonly createdAt:
+      Date;
+
+    readonly updatedAt:
+      Date;
   };
 
-  readonly deliveries: readonly {
-    readonly id: string;
-    readonly deliveryKey: string;
-    readonly provider: string;
-    readonly channel: string;
-    readonly status: string;
-    readonly attempts: number;
-    readonly providerMessageId: string | null;
-    readonly lastAttemptAt: Date | null;
-    readonly sentAt: Date | null;
-    readonly failedAt: Date | null;
-    readonly failureReason: string | null;
-    readonly createdAt: Date;
-    readonly updatedAt: Date;
-  }[];
+  readonly deliveries:
+    readonly {
+      readonly id:
+        string;
+
+      readonly deliveryKey:
+        string;
+
+      readonly provider:
+        string;
+
+      readonly channel:
+        string;
+
+      readonly status:
+        string;
+
+      readonly attempts:
+        number;
+
+      readonly providerMessageId:
+        string | null;
+
+      readonly lastAttemptAt:
+        Date | null;
+
+      readonly sentAt:
+        Date | null;
+
+      readonly failedAt:
+        Date | null;
+
+      readonly failureReason:
+        string | null;
+
+      readonly createdAt:
+        Date;
+
+      readonly updatedAt:
+        Date;
+    }[];
 }
 
 @Injectable()
@@ -56,7 +133,8 @@ export class NotificationTroubleshootingService {
   ) {}
 
   async getByNotificationId(
-    notificationId: string,
+    notificationId:
+      string,
   ): Promise<NotificationTroubleshootingResponse> {
     const notification =
       await this.prisma.notification.findUnique({
@@ -67,13 +145,16 @@ export class NotificationTroubleshootingService {
         include: {
           deliveries: {
             orderBy: {
-              createdAt: 'asc',
+              createdAt:
+                'asc',
             },
           },
         },
       });
 
-    if (!notification) {
+    if (
+      !notification
+    ) {
       throw new NotFoundException(
         `Notification ${notificationId} was not found.`,
       );
@@ -111,6 +192,18 @@ export class NotificationTroubleshootingService {
 
         template:
           notification.template,
+
+        templateVersion:
+          notification.templateVersion,
+
+        templateLocale:
+          notification.templateLocale,
+
+        templateSnapshot:
+          notification.templateSnapshot,
+
+        templateData:
+          notification.templateData,
 
         provider:
           notification.provider,

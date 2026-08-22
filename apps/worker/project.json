@@ -18,11 +18,20 @@
         "main": "apps/worker/src/main.ts",
         "outputPath": "apps/worker/dist",
         "tsConfig": "apps/worker/tsconfig.app.json",
-         "assets": [
+        "assets": [
           "apps/worker/src/assets"
         ]
       }
     },
+
+  "test": {
+  "executor": "nx:run-commands",
+  "options": {
+    "command": "pnpm exec vitest run --config apps/worker/vitest.config.mts",
+    "cwd": "."
+  },
+  "cache": true
+ },
     "serve": {
       "executor": "@nx/js:node",
       "continuous": true,

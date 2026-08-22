@@ -31,6 +31,10 @@ import {
   NotificationTemplateModule,
 } from '../templates/notification-template.module.js';
 
+import {
+  NotificationApplicationService,
+} from '../notifications/notification.application.service.js';
+
 @Global()
 @Module({
   imports: [
@@ -51,6 +55,8 @@ import {
     SystemQueueService,
 
     NotificationQueueService,
+
+    NotificationApplicationService,
   ],
 
   exports: [
@@ -59,6 +65,8 @@ import {
     SystemQueueService,
 
     NotificationQueueService,
+
+    NotificationApplicationService,
   ],
 })
 export class BullMqModule {}

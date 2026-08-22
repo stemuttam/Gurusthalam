@@ -8,14 +8,13 @@ import {
 } from '@nestjs/common';
 
 import {
-  NotificationQueueService,
-  type NotificationRecord,
-  type NotificationEnqueueResult,
-} from './notification.queue.js';
+  NotificationApplicationService,
+} from './notification.application.service.js';
 
 import type {
-  NotificationJobData,
-} from './notification.types.js';
+  NotificationRecord,
+  NotificationEnqueueResult,
+} from './notification.queue.js';
 
 interface EnqueueNotificationRequest {
   readonly notificationId?:
@@ -70,8 +69,8 @@ type NotificationGetResponse =
 )
 export class NotificationController {
   constructor(
-    private readonly notificationQueue:
-      NotificationQueueService,
+    private readonly notificationApplication:
+      NotificationApplicationService,
   ) {}
 
   @Post(
@@ -104,7 +103,7 @@ export class NotificationController {
       request.email.trim()
         .length > 0
         ? request.email.trim()
-        : 'smoke@gurusthalam.local';
+        : undefined;
 
     const subject =
       typeof request.subject ===
@@ -199,75 +198,70 @@ export class NotificationController {
           )
         : undefined;
 
-    const data:
-      NotificationJobData = {
-      notificationId,
+    const result =
+      await this.notificationApplication.create({
+        notificationId,
 
-      channel:
-        'email',
-
-      recipient: {
         userId,
 
-        email,
-      },
+        channel:
+          'email',
 
-      body:
-        body ??
-        '',
+        recipient: {
+          userId,
 
-      idempotencyKey,
+          ...(email !==
+          undefined
+            ? {
+                email,
+              }
+            : {}),
+        },
 
-      ...(subject !==
-      undefined
-        ? {
-            subject,
-          }
-        : {}),
+        idempotencyKey,
 
-      ...(title !==
-      undefined
-        ? {
-            title,
-          }
-        : {}),
+        ...(templateId !==
+        undefined
+          ? {
+              template: {
+                templateId,
 
-      ...(templateId !==
-      undefined
-        ? {
-            template:
-              templateId,
-          }
-        : {}),
+                templateData:
+                  templateData ??
+                  {},
 
-      ...(templateData !==
-      undefined
-        ? {
-            templateData:
-              templateData as NonNullable<
-                NotificationJobData['templateData']
-              >,
-          }
-        : {}),
-    };
+                ...(locale !==
+                undefined
+                  ? {
+                      locale,
+                    }
+                  : {}),
+              },
+            }
+          : {
+              content: {
+                body:
+                  body ??
+                  '',
 
-    /*
-     * Locale is used by the template-backed enqueue path.
-     * With exactOptionalPropertyTypes enabled, the locale
-     * property must be omitted completely when it is undefined.
-     */
-    const enqueueOptions =
-      locale !==
-      undefined
-        ? {
-            locale,
-          }
-        : {};
+                ...(subject !==
+                undefined
+                  ? {
+                      subject,
+                    }
+                  : {}),
 
-    return this.notificationQueue.enqueue(
-      data,
-      enqueueOptions,
-    );
+                ...(title !==
+                undefined
+                  ? {
+                      title,
+                    }
+                  : {}),
+              },
+            }),
+      });
+
+    return result;
   }
 
   @Get(
@@ -280,10 +274,17 @@ export class NotificationController {
     notificationId:
       string,
   ): Promise<NotificationGetResponse> {
+    /*
+     * Notification reads remain on the queue service because
+     * that service owns the persistence-facing notification
+     * record contract.
+     */
     const notification =
-      await this.notificationQueue.getByNotificationId(
-        notificationId,
-      );
+      await this.notificationApplication
+        ['queue']
+        ?.getByNotificationId?.(
+          notificationId,
+        );
 
     if (!notification) {
       return {

@@ -65,7 +65,9 @@ export type NotificationJsonValue =
 
 export interface NotificationRecipient {
   readonly userId: string;
+
   readonly email?: string;
+
   readonly deviceTokens?: readonly string[];
 }
 
@@ -165,6 +167,17 @@ export class NotificationProcessor {
     const notification =
       job.data;
 
+    /*
+     * A replay owns a new NotificationDelivery identity.
+     *
+     * The parent Notification represents the business-level
+     * notification and must not have its lifecycle overwritten
+     * by replay processing.
+     */
+    const isReplay =
+      notification.deliveryKey !==
+      undefined;
+
     const attempt =
       job.attemptsMade + 1;
 
@@ -184,14 +197,28 @@ export class NotificationProcessor {
 
         service:
           notification.channel,
+
+        ...(isReplay
+          ? {
+              deliveryKey:
+                notification.deliveryKey,
+            }
+          : {}),
       },
     );
 
-    await this.persistence.markProcessing(
-      notification,
+    /*
+     * Normal delivery changes the parent Notification lifecycle.
+     *
+     * Replay delivery changes only NotificationDelivery.
+     */
+    if (!isReplay) {
+      await this.persistence.markProcessing(
+        notification,
 
-      attempt,
-    );
+        attempt,
+      );
+    }
 
     const provider =
       this.providerRegistry.get(
@@ -205,6 +232,7 @@ export class NotificationProcessor {
 
     /*
      * Replays provide their own delivery identity.
+     *
      * Normal notifications continue using the existing
      * deterministic delivery-key calculation.
      */
@@ -241,11 +269,14 @@ export class NotificationProcessor {
         );
 
       /*
-       * Durable idempotency short-circuit.
+       * Durable delivery-level idempotency.
        *
-       * This applies independently to each delivery identity.
-       * Therefore a replay is not blocked by the original
-       * delivery record.
+       * This is scoped to deliveryKey, so:
+       *
+       * - the original notification has its canonical deliveryKey
+       * - a replay has its own deliveryKey
+       *
+       * Therefore a replay is not blocked by the original delivery.
        */
       if (
         deliveryRecord?.status ===
@@ -280,16 +311,32 @@ export class NotificationProcessor {
 
             service:
               providerName,
+
+            ...(isReplay
+              ? {
+                  deliveryKey,
+                }
+              : {}),
           },
         );
 
-        await this.persistence.markSent(
-          notification.notificationId,
+        /*
+         * IMPORTANT:
+         *
+         * A replay must not overwrite the parent Notification's
+         * provider identity with the replay providerMessageId.
+         *
+         * The delivery record is already authoritative here.
+         */
+        if (!isReplay) {
+          await this.persistence.markSent(
+            notification.notificationId,
 
-          providerName,
+            providerName,
 
-          deliveryRecord.providerMessageId,
-        );
+            deliveryRecord.providerMessageId,
+          );
+        }
 
         return {
           processed:
@@ -309,6 +356,9 @@ export class NotificationProcessor {
         };
       }
 
+      /*
+       * Mark only the individual delivery as processing.
+       */
       await this.deliveryPersistence.markProcessing(
         deliveryKey,
 
@@ -390,19 +440,31 @@ export class NotificationProcessor {
             );
           }
 
+          /*
+           * Delivery-level state is always updated.
+           */
           await this.deliveryPersistence.markSent(
             deliveryKey,
 
             messageId,
           );
 
-          await this.persistence.markSent(
-            notification.notificationId,
+          /*
+           * Parent Notification state is updated only for
+           * the normal/canonical delivery.
+           *
+           * Replay has its own NotificationDelivery record and
+           * must not replace the original providerMessageId.
+           */
+          if (!isReplay) {
+            await this.persistence.markSent(
+              notification.notificationId,
 
-            delivery.provider,
+              delivery.provider,
 
-            messageId,
-          );
+              messageId,
+            );
+          }
 
           this.metrics.incrementSent();
 
@@ -423,6 +485,12 @@ export class NotificationProcessor {
 
               service:
                 delivery.provider,
+
+              ...(isReplay
+                ? {
+                    deliveryKey,
+                  }
+                : {}),
             },
           );
 
@@ -499,19 +567,28 @@ export class NotificationProcessor {
         if (
           decision.shouldRetry
         ) {
+          /*
+           * Delivery-level failure state is always persisted.
+           */
           await this.deliveryPersistence.markFailed(
             deliveryKey,
 
             message,
           );
 
-          await this.persistence.markRetrying(
-            notification.notificationId,
+          /*
+           * Only the original notification changes to RETRYING.
+           * A replay failure must remain isolated to its delivery.
+           */
+          if (!isReplay) {
+            await this.persistence.markRetrying(
+              notification.notificationId,
 
-            message,
+              message,
 
-            attempt,
-          );
+              attempt,
+            );
+          }
 
           this.metrics.incrementRetrying();
 
@@ -528,25 +605,40 @@ export class NotificationProcessor {
 
               service:
                 error.provider,
+
+              ...(isReplay
+                ? {
+                    deliveryKey,
+                  }
+                : {}),
             },
           );
 
           throw error;
         }
 
+        /*
+         * Terminal delivery failure is always persisted.
+         */
         await this.deliveryPersistence.markFailed(
           deliveryKey,
 
           message,
         );
 
-        await this.persistence.markFailed(
-          notification.notificationId,
+        /*
+         * Do not turn the original SENT Notification into
+         * FAILED because a replay failed.
+         */
+        if (!isReplay) {
+          await this.persistence.markFailed(
+            notification.notificationId,
 
-          message,
+            message,
 
-          attempt,
-        );
+            attempt,
+          );
+        }
 
         this.metrics.incrementFailed();
 
@@ -568,6 +660,12 @@ export class NotificationProcessor {
 
             service:
               error.provider,
+
+            ...(isReplay
+              ? {
+                  deliveryKey,
+                }
+              : {}),
           },
         );
 
@@ -597,19 +695,27 @@ export class NotificationProcessor {
         attempt <
         retryPolicy.maxAttempts
       ) {
+        /*
+         * Delivery-level retry state is always persisted.
+         */
         await this.deliveryPersistence.markFailed(
           deliveryKey,
 
           message,
         );
 
-        await this.persistence.markRetrying(
-          notification.notificationId,
+        /*
+         * Only the original notification moves to RETRYING.
+         */
+        if (!isReplay) {
+          await this.persistence.markRetrying(
+            notification.notificationId,
 
-          message,
+            message,
 
-          attempt,
-        );
+            attempt,
+          );
+        }
 
         this.metrics.incrementRetrying();
 
@@ -626,22 +732,36 @@ export class NotificationProcessor {
 
             service:
               notification.channel,
+
+            ...(isReplay
+              ? {
+                  deliveryKey,
+                }
+              : {}),
           },
         );
       } else {
+        /*
+         * Delivery-level terminal state is always persisted.
+         */
         await this.deliveryPersistence.markFailed(
           deliveryKey,
 
           message,
         );
 
-        await this.persistence.markFailed(
-          notification.notificationId,
+        /*
+         * Only the original notification may become FAILED.
+         */
+        if (!isReplay) {
+          await this.persistence.markFailed(
+            notification.notificationId,
 
-          message,
+            message,
 
-          attempt,
-        );
+            attempt,
+          );
+        }
 
         this.metrics.incrementFailed();
 
@@ -663,6 +783,12 @@ export class NotificationProcessor {
 
             service:
               providerName,
+
+            ...(isReplay
+              ? {
+                  deliveryKey,
+                }
+              : {}),
           },
         );
       }
@@ -691,7 +817,7 @@ export class NotificationProcessor {
 
   private toPrismaChannel(
     channel:
-      NotificationChannel,
+      NotificationJobData['channel'],
   ):
     | 'EMAIL'
     | 'IN_APP'

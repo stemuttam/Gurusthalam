@@ -17,6 +17,7 @@ import {
 
 import type {
   NotificationJobData,
+  NotificationTemplateSnapshot,
 } from './notification.types.js';
 
 export interface NotificationRecord {
@@ -46,6 +47,15 @@ export interface NotificationRecord {
 
   readonly template:
     string | null;
+
+  readonly templateVersion:
+    number | null;
+
+  readonly templateLocale:
+    string | null;
+
+  readonly templateSnapshot:
+    unknown;
 
   readonly templateData:
     unknown;
@@ -106,6 +116,14 @@ export interface NotificationEnqueueOptions {
     string;
 }
 
+interface ResolvedNotificationData {
+  readonly data:
+    NotificationJobData;
+
+  readonly templateSnapshot?:
+    NotificationTemplateSnapshot;
+}
+
 @Injectable()
 export class NotificationQueueService {
   constructor(
@@ -136,12 +154,15 @@ export class NotificationQueueService {
      * - no OutboxEvent is created
      * - no queue message is created
      */
-    const resolvedData =
+    const resolved =
       await this.resolveTemplate(
         data,
 
         options,
       );
+
+    const resolvedData =
+      resolved.data;
 
     /*
      * ---------------------------------------------------------
@@ -238,6 +259,26 @@ export class NotificationQueueService {
                           JSON.parse(
                             JSON.stringify(
                               resolvedData.templateData,
+                            ),
+                          ),
+                      }
+                    : {}),
+
+                  ...(resolvedData.templateSnapshot !==
+                  undefined
+                    ? {
+                        templateVersion:
+                          resolvedData.templateVersion ??
+                          resolvedData.templateSnapshot.version,
+
+                        templateLocale:
+                          resolvedData.templateLocale ??
+                          resolvedData.templateSnapshot.locale,
+
+                        templateSnapshot:
+                          JSON.parse(
+                            JSON.stringify(
+                              resolvedData.templateSnapshot,
                             ),
                           ),
                       }
@@ -417,6 +458,15 @@ export class NotificationQueueService {
       template:
         notification.template,
 
+      templateVersion:
+        notification.templateVersion,
+
+      templateLocale:
+        notification.templateLocale,
+
+      templateSnapshot:
+        notification.templateSnapshot,
+
       templateData:
         notification.templateData,
 
@@ -461,7 +511,7 @@ export class NotificationQueueService {
 
     options:
       NotificationEnqueueOptions,
-  ): Promise<NotificationJobData> {
+  ): Promise<ResolvedNotificationData> {
     if (
       data.template ===
       undefined
@@ -469,7 +519,9 @@ export class NotificationQueueService {
       /*
        * Existing literal-notification behavior is preserved.
        */
-      return data;
+      return {
+        data,
+      };
     }
 
     if (
@@ -490,7 +542,8 @@ export class NotificationQueueService {
         options.locale,
       );
 
-    return {
+    const resolvedData:
+      NotificationJobData = {
       ...data,
 
       ...(rendered.rendered.subject !==
@@ -513,10 +566,27 @@ export class NotificationQueueService {
         rendered.rendered.body,
 
       template:
-        data.template,
+        rendered.templateId,
+
+      templateVersion:
+        rendered.version,
+
+      templateLocale:
+        rendered.locale,
 
       templateData:
         rendered.templateData,
+
+      templateSnapshot:
+        rendered.snapshot,
+    };
+
+    return {
+      data:
+        resolvedData,
+
+      templateSnapshot:
+        rendered.snapshot,
     };
   }
 

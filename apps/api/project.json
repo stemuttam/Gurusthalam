@@ -16,6 +16,7 @@
         "cwd": "apps/api"
       }
     },
+
     "build": {
       "executor": "@nx/js:tsc",
       "outputs": [
@@ -31,6 +32,16 @@
         "assets": []
       }
     },
+
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec vitest run",
+        "cwd": "apps/api"
+      },
+      "cache": true
+    },
+
     "serve": {
       "executor": "@nx/js:node",
       "continuous": true,
@@ -42,6 +53,15 @@
           "--env-file=apps/api/.env"
         ]
       }
+    },
+
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec tsc --build apps/api/tsconfig.app.json --emitDeclarationOnly",
+        "cwd": "."
+      },
+      "cache": true
     }
   }
 }

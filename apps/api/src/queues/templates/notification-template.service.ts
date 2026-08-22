@@ -10,6 +10,10 @@ import {
   type NotificationTemplateVersion,
 } from '@gurusthalam/shared';
 
+import type {
+  NotificationTemplateSnapshot,
+} from '../notifications/notification.types.js';
+
 import {
   NotificationTemplateRepository,
   type CreateNotificationTemplateInput,
@@ -19,15 +23,22 @@ import {
   type NotificationTemplateVariableRecord,
 } from './notification-template.repository.js';
 
+import {
+  NotificationTemplateResolutionService,
+} from './notification-template-resolution.service.js';
+
 @Injectable()
 export class NotificationTemplateService {
   constructor(
-    private readonly repository:
-      NotificationTemplateRepository,
+  private readonly repository:
+    NotificationTemplateRepository,
 
-    private readonly renderer:
-      SafeNotificationTemplateRenderer,
-  ) {}
+  private readonly renderer:
+    SafeNotificationTemplateRenderer,
+
+  private readonly resolution:
+    NotificationTemplateResolutionService,
+) {}
 
   async getByTemplateId(
     templateId: string,
@@ -47,24 +58,20 @@ export class NotificationTemplateService {
   }
 
   async getPublishedVersion(
-    templateId: string,
-  ) {
-    const version =
-      await this.repository.findPublishedVersion(
-        templateId,
-      );
+  templateId:
+    string,
+) {
+  const resolved =
+    await this.resolution.resolvePublishedVersion(
+      templateId,
+    );
 
-    if (!version) {
-      throw new NotFoundException(
-        `Published version for notification template ${templateId} was not found.`,
-      );
-    }
+  return resolved.versionRecord;
+}
 
-    return version;
-  }
-
-  async renderPublishedVersion(
-  templateId: string,
+async renderPublishedVersion(
+  templateId:
+    string,
 
   data:
     Record<
@@ -75,29 +82,12 @@ export class NotificationTemplateService {
   locale?:
     string,
 ) {
-  const template =
-    await this.getByTemplateId(
+  const resolved =
+    await this.resolution.resolvePublishedVersion(
       templateId,
-    );
 
-  const publishedVersion =
-    template.versions.find(
-      (
-        version,
-      ) =>
-        version.status ===
-        'PUBLISHED' &&
-        version.version ===
-          template.currentVersion,
+      locale,
     );
-
-  if (
-    !publishedVersion
-  ) {
-    throw new NotFoundException(
-      `Published version for notification template ${templateId} was not found.`,
-    );
-  }
 
   const templateData =
     this.toNotificationTemplateData(
@@ -108,29 +98,39 @@ export class NotificationTemplateService {
     await this.renderer.render({
       template:
         this.toTemplateVersion(
-          publishedVersion,
+          resolved.versionRecord,
         ),
 
       data:
         templateData,
 
-      ...(locale !==
-      undefined
-        ? {
-            locale,
-          }
-        : {}),
+      locale:
+        resolved.locale,
     });
 
+  const snapshot:
+    NotificationTemplateSnapshot =
+    this.createTemplateSnapshot(
+      resolved.versionRecord,
+
+      resolved.locale,
+    );
+
   return {
-    templateId,
+    templateId:
+      resolved.templateId,
 
     version:
-      publishedVersion.version,
+      resolved.version,
+
+    locale:
+      resolved.locale,
 
     rendered,
 
     templateData,
+
+    snapshot,
   };
 }
 
@@ -430,6 +430,87 @@ export class NotificationTemplateService {
    * uses exactOptionalPropertyTypes: true.
    * -----------------------------------------------------------
    */
+  private createTemplateSnapshot(
+  version: {
+    readonly id:
+      string;
+
+    readonly templateId:
+      string;
+
+    readonly version:
+      number;
+
+    readonly subject:
+      string | null;
+
+    readonly title:
+      string | null;
+
+    readonly body:
+      string;
+
+    readonly variables:
+      readonly NotificationTemplateVariableRecord[];
+  },
+
+  locale:
+    string,
+): NotificationTemplateSnapshot {
+  return {
+    templateId:
+      version.templateId,
+
+    version:
+      version.version,
+
+    locale,
+
+    ...(version.subject !==
+    null
+      ? {
+          subject:
+            version.subject,
+        }
+      : {}),
+
+    ...(version.title !==
+    null
+      ? {
+          title:
+            version.title,
+        }
+      : {}),
+
+    body:
+      version.body,
+
+    variables:
+      version.variables.map(
+        (
+          variable,
+        ) => ({
+          path:
+            variable.path,
+
+          required:
+            variable.required,
+
+          ...(variable.description !==
+          undefined
+            ? {
+                description:
+                  variable.description,
+              }
+            : {}),
+
+          type:
+            variable.type,
+        }),
+      ),
+  };
+}
+
   private toTemplateVersion(
     version: {
       readonly id:

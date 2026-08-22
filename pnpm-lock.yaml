@@ -301,6 +301,10 @@ importers:
       ioredis:
         specifier: 6.0.0
         version: 6.0.0
+    devDependencies:
+      dotenv:
+        specifier: 17.4.2
+        version: 17.4.2
 
   libs/shared:
     dependencies:
@@ -4978,6 +4982,7 @@ packages:
   eslint@9.8.0:
     resolution: {integrity: sha512-K8qnZ/QJzT2dLKdZJVX6W4XOwBzutMYmt0lqUS+JdXgd+HTYFlonFgkJ8s44d/zMPPCnOOk0kMWCApCPhiOy9A==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
 
   espree@10.4.0:

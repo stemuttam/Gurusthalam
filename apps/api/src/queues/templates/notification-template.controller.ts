@@ -6,7 +6,12 @@ import {
   Param,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
+
+import {
+  InternalApiKeyGuard,
+} from '../../security/internal-api-key.guard.js';
 
 import {
   NotificationTemplateService,
@@ -19,11 +24,14 @@ import type {
 } from './notification-template.repository.js';
 
 interface CreateTemplateRequest {
-  readonly templateId: string;
+  readonly templateId:
+    string;
 
-  readonly name: string;
+  readonly name:
+    string;
 
-  readonly description?: string;
+  readonly description?:
+    string;
 
   readonly channel:
     NotificationTemplateChannel;
@@ -31,51 +39,68 @@ interface CreateTemplateRequest {
   readonly category:
     NotificationTemplateCategory;
 
-  readonly locale: string;
+  readonly locale:
+    string;
 
-  readonly createdBy: string;
+  readonly createdBy:
+    string;
 }
 
 interface CreateVersionRequest {
-  readonly version: number;
+  readonly version:
+    number;
 
-  readonly subject?: string;
+  readonly subject?:
+    string;
 
-  readonly title?: string;
+  readonly title?:
+    string;
 
-  readonly body: string;
+  readonly body:
+    string;
 
-  readonly variables: readonly {
-    readonly path: string;
+  readonly variables:
+    readonly {
+      readonly path:
+        string;
 
-    readonly required: boolean;
+      readonly required:
+        boolean;
 
-    readonly description?: string;
+      readonly description?:
+        string;
 
-    readonly type:
-      | 'string'
-      | 'number'
-      | 'boolean'
-      | 'object'
-      | 'array';
-  }[];
+      readonly type:
+        | 'string'
+        | 'number'
+        | 'boolean'
+        | 'object'
+        | 'array';
+    }[];
 
-  readonly createdBy: string;
+  readonly createdBy:
+    string;
 }
 
 interface PreviewRequest {
-  readonly version: number;
+  readonly version:
+    number;
 
-  readonly data: Record<
-    string,
-    unknown
-  >;
+  readonly data:
+    Record<
+      string,
+      unknown
+    >;
 
-  readonly locale?: string;
+  readonly locale?:
+    string;
 }
 
 @Controller(
   'internal/notification-templates',
+)
+@UseGuards(
+  InternalApiKeyGuard,
 )
 export class NotificationTemplateController {
   constructor(
@@ -99,7 +124,8 @@ export class NotificationTemplateController {
   )
   async get(
     @Param('templateId')
-    templateId: string,
+    templateId:
+      string,
   ) {
     return this.service.getByTemplateId(
       templateId,
@@ -111,7 +137,8 @@ export class NotificationTemplateController {
   )
   async createVersion(
     @Param('templateId')
-    templateId: string,
+    templateId:
+      string,
 
     @Body()
     body:
@@ -137,36 +164,36 @@ export class NotificationTemplateController {
     }
 
     return this.service.createVersion({
-  templateId,
+      templateId,
 
-  version:
-    body.version,
+      version:
+        body.version,
 
-  body:
-    body.body,
+      body:
+        body.body,
 
-  variables:
-    body.variables,
+      variables:
+        body.variables,
 
-  createdBy:
-    body.createdBy,
+      createdBy:
+        body.createdBy,
 
-  ...(body.subject !==
-  undefined
-    ? {
-        subject:
-          body.subject,
-      }
-    : {}),
+      ...(body.subject !==
+      undefined
+        ? {
+            subject:
+              body.subject,
+          }
+        : {}),
 
-  ...(body.title !==
-  undefined
-    ? {
-        title:
-          body.title,
-      }
-    : {}),
-});
+      ...(body.title !==
+      undefined
+        ? {
+            title:
+              body.title,
+          }
+        : {}),
+    });
   }
 
   @Post(
@@ -174,11 +201,13 @@ export class NotificationTemplateController {
   )
   async validate(
     @Param('templateId')
-    templateId: string,
+    templateId:
+      string,
 
     @Body()
     body: {
-      readonly version: number;
+      readonly version:
+        number;
     },
   ) {
     return this.service.validateVersion(
@@ -192,7 +221,8 @@ export class NotificationTemplateController {
   )
   async preview(
     @Param('templateId')
-    templateId: string,
+    templateId:
+      string,
 
     @Body()
     body:
@@ -211,7 +241,8 @@ export class NotificationTemplateController {
   )
   async publish(
     @Param('templateId')
-    templateId: string,
+    templateId:
+      string,
 
     @Param('version')
     version:
@@ -246,7 +277,8 @@ export class NotificationTemplateController {
   )
   async archive(
     @Param('templateId')
-    templateId: string,
+    templateId:
+      string,
   ) {
     return this.service.updateStatus(
       templateId,
@@ -259,7 +291,8 @@ export class NotificationTemplateController {
   )
   async updateStatus(
     @Param('templateId')
-    templateId: string,
+    templateId:
+      string,
 
     @Body()
     body: {

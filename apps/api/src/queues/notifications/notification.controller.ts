@@ -5,7 +5,12 @@ import {
   Get,
   Param,
   Post,
+  UseGuards,
 } from '@nestjs/common';
+
+import {
+  InternalApiKeyGuard,
+} from '../../security/internal-api-key.guard.js';
 
 import {
   NotificationApplicationService,
@@ -67,6 +72,9 @@ type NotificationGetResponse =
 @Controller(
   'internal/notifications',
 )
+@UseGuards(
+  InternalApiKeyGuard,
+)
 export class NotificationController {
   constructor(
     private readonly notificationApplication:
@@ -85,7 +93,8 @@ export class NotificationController {
       typeof request.notificationId ===
         'string' &&
       request.notificationId.trim()
-        .length > 0
+        .length >
+        0
         ? request.notificationId.trim()
         : `notification-${Date.now()}`;
 
@@ -93,7 +102,8 @@ export class NotificationController {
       typeof request.userId ===
         'string' &&
       request.userId.trim()
-        .length > 0
+        .length >
+        0
         ? request.userId.trim()
         : 'smoke-user';
 
@@ -101,7 +111,8 @@ export class NotificationController {
       typeof request.email ===
         'string' &&
       request.email.trim()
-        .length > 0
+        .length >
+        0
         ? request.email.trim()
         : undefined;
 
@@ -109,7 +120,8 @@ export class NotificationController {
       typeof request.subject ===
         'string' &&
       request.subject.trim()
-        .length > 0
+        .length >
+        0
         ? request.subject.trim()
         : undefined;
 
@@ -117,7 +129,8 @@ export class NotificationController {
       typeof request.title ===
         'string' &&
       request.title.trim()
-        .length > 0
+        .length >
+        0
         ? request.title.trim()
         : undefined;
 
@@ -125,7 +138,8 @@ export class NotificationController {
       typeof request.body ===
         'string' &&
       request.body.trim()
-        .length > 0
+        .length >
+        0
         ? request.body.trim()
         : undefined;
 
@@ -133,7 +147,8 @@ export class NotificationController {
       typeof request.templateId ===
         'string' &&
       request.templateId.trim()
-        .length > 0
+        .length >
+        0
         ? request.templateId.trim()
         : undefined;
 
@@ -141,7 +156,8 @@ export class NotificationController {
       typeof request.locale ===
         'string' &&
       request.locale.trim()
-        .length > 0
+        .length >
+        0
         ? request.locale.trim()
         : undefined;
 
@@ -149,7 +165,8 @@ export class NotificationController {
       typeof request.idempotencyKey ===
         'string' &&
       request.idempotencyKey.trim()
-        .length > 0
+        .length >
+        0
         ? request.idempotencyKey.trim()
         : `notification-smoke-${Date.now()}`;
 
@@ -189,7 +206,7 @@ export class NotificationController {
         undefined
         ? (
             request.templateData ===
-            undefined
+              undefined
               ? {}
               : request.templateData as Record<
                   string,
@@ -274,18 +291,15 @@ export class NotificationController {
     notificationId:
       string,
   ): Promise<NotificationGetResponse> {
-    /*
-     * Notification reads remain on the queue service because
-     * that service owns the persistence-facing notification
-     * record contract.
-     */
     const notification =
-  await this.notificationApplication
-    .getByNotificationId(
-      notificationId,
-    );
+      await this.notificationApplication
+        .getByNotificationId(
+          notificationId,
+        );
 
-    if (!notification) {
+    if (
+      !notification
+    ) {
       return {
         found:
           false,

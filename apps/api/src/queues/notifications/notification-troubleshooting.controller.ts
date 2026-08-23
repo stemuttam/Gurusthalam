@@ -2,7 +2,12 @@ import {
   Controller,
   Get,
   Param,
+  UseGuards,
 } from '@nestjs/common';
+
+import {
+  InternalApiKeyGuard,
+} from '../../security/internal-api-key.guard.js';
 
 import {
   NotificationTroubleshootingService,
@@ -10,6 +15,9 @@ import {
 
 @Controller(
   'internal/notifications',
+)
+@UseGuards(
+  InternalApiKeyGuard,
 )
 export class NotificationTroubleshootingController {
   constructor(
@@ -21,8 +29,11 @@ export class NotificationTroubleshootingController {
     ':notificationId/troubleshooting',
   )
   async getTroubleshooting(
-    @Param('notificationId')
-    notificationId: string,
+    @Param(
+      'notificationId',
+    )
+    notificationId:
+      string,
   ) {
     return this.troubleshooting
       .getByNotificationId(

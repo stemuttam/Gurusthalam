@@ -66,6 +66,10 @@ import {
 } from '../queues/templates/notification-template.module.js';
 
 import {
+  InternalApiKeyGuard,
+} from '../security/internal-api-key.guard.js';
+
+import {
   AppController,
 } from './app.controller.js';
 
@@ -110,6 +114,8 @@ import {
     NotificationTroubleshootingService,
 
     NotificationOperationalService,
+
+    InternalApiKeyGuard,
   ],
 })
 export class AppModule

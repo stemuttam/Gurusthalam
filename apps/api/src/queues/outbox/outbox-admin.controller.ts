@@ -5,7 +5,12 @@ import {
   ParseIntPipe,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
+
+import {
+  InternalApiKeyGuard,
+} from '../../security/internal-api-key.guard.js';
 
 import {
   OutboxAdminService,
@@ -14,55 +19,76 @@ import {
   type StuckRecoveryResult,
 } from './outbox-admin.service.js';
 
-@Controller('internal/outbox')
+@Controller(
+  'internal/outbox',
+)
+@UseGuards(
+  InternalApiKeyGuard,
+)
 export class OutboxAdminController {
   constructor(
     private readonly outbox:
       OutboxAdminService,
   ) {}
 
-  @Get('summary')
-  async summary(): Promise<OutboxSummary> {
+  @Get(
+    'summary',
+  )
+  async summary():
+    Promise<OutboxSummary> {
     return this.outbox.getSummary();
   }
 
-  @Get('dead-letters')
+  @Get(
+    'dead-letters',
+  )
   async deadLetters(
     @Query(
       'limit',
       new ParseIntPipe({
-        optional: true,
+        optional:
+          true,
       }),
     )
-    limit?: number,
+    limit?:
+      number,
   ): Promise<OutboxRecord[]> {
     return this.outbox.getDeadLetters(
       limit,
     );
   }
 
-  @Get(':id')
+  @Get(
+    ':id',
+  )
   async getEvent(
     @Param('id')
-    id: string,
+    id:
+      string,
   ): Promise<OutboxRecord> {
     return this.outbox.getEvent(
       id,
     );
   }
 
-  @Post(':id/requeue')
+  @Post(
+    ':id/requeue',
+  )
   async requeue(
     @Param('id')
-    id: string,
+    id:
+      string,
   ): Promise<OutboxRecord> {
     return this.outbox.requeueDeadLetter(
       id,
     );
   }
 
-  @Post('recover-stuck')
-  async recoverStuck(): Promise<StuckRecoveryResult> {
+  @Post(
+    'recover-stuck',
+  )
+  async recoverStuck():
+    Promise<StuckRecoveryResult> {
     return this.outbox.recoverStuckEvents();
   }
 }

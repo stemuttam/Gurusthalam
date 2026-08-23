@@ -2,7 +2,12 @@ import {
   Body,
   Controller,
   Post,
+  UseGuards,
 } from '@nestjs/common';
+
+import {
+  InternalApiKeyGuard,
+} from '../../security/internal-api-key.guard.js';
 
 import {
   SystemQueueService,
@@ -13,26 +18,41 @@ interface EnqueueSystemSmokeRequest {
   readonly message?: unknown;
 }
 
-@Controller('internal/queues')
+@Controller(
+  'internal/queues',
+)
+@UseGuards(
+  InternalApiKeyGuard,
+)
 export class SystemQueueController {
   constructor(
-    private readonly systemQueue: SystemQueueService,
+    private readonly systemQueue:
+      SystemQueueService,
   ) {}
 
-  @Post('system-smoke')
+  @Post(
+    'system-smoke',
+  )
   async enqueue(
-    @Body() body: EnqueueSystemSmokeRequest,
+    @Body()
+    body:
+      EnqueueSystemSmokeRequest,
   ) {
     const message =
-      typeof body.message === 'string' &&
-      body.message.trim().length > 0
+      typeof body.message ===
+        'string' &&
+      body.message.trim().length >
+        0
         ? body.message.trim()
         : 'Gurusthalam BullMQ smoke test';
 
-    const data: SystemSmokeJobData = {
+    const data:
+      SystemSmokeJobData = {
       message,
     };
 
-    return this.systemQueue.enqueue(data);
+    return this.systemQueue.enqueue(
+      data,
+    );
   }
 }

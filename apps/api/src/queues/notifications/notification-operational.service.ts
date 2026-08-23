@@ -63,12 +63,30 @@ export class NotificationOperationalService {
    *
    * Retry:
    * - only FAILED notifications
-   * - preserves original idempotencyKey
-   * - preserves original delivery identity
-   * - creates a new outbox event
+   * - preserves the original idempotencyKey
+   * - preserves the original logical notification
+   * - creates a NEW retry outbox identity for every legitimate
+   *   manual retry lifecycle
+   *
+   * Concurrency invariant:
+   *
+   *   FAILED
+   *      |
+   *      +---- request A ----+
+   *      |                   |
+   *      +---- request B ----+
+   *                          |
+   *              exactly one FAILED -> RETRYING
+   *                          |
+   *                 exactly one outbox
+   *
+   * A later FAILED state is allowed to create another retry
+   * because every manual retry receives a fresh UUID-backed
+   * dedupeKey.
    */
   async retry(
-    notificationId: string,
+    notificationId:
+      string,
   ) {
     const notification =
       await this.prisma.notification.findUnique({
@@ -77,58 +95,273 @@ export class NotificationOperationalService {
         },
       });
 
-    if (!notification) {
+    if (
+      !notification
+    ) {
       throw new NotFoundException(
         `Notification ${notificationId} was not found.`,
       );
     }
 
     /*
-     * Manual retry is deliberately restricted to terminal
-     * delivery failures.
+     * Manual retry is only valid for a terminal delivery failure.
      */
     if (
       notification.status !==
       'FAILED'
     ) {
+      /*
+       * RETRYING is normally handled below by the transaction
+       * race-safe path only when the request began from FAILED.
+       *
+       * A direct retry request against a currently RETRYING
+       * notification is rejected unless it is already represented
+       * by an active retry operation.
+       */
+      if (
+        notification.status ===
+        'RETRYING'
+      ) {
+        const existingActiveRetry =
+          await this.prisma.outboxEvent.findFirst({
+            where: {
+              aggregateType:
+                'Notification',
+
+              aggregateId:
+                notification.id,
+
+              eventType:
+                'notification.enqueue',
+
+              OR: [
+                {
+                  status:
+                    'PENDING',
+                },
+                {
+                  status:
+                    'PROCESSING',
+                },
+              ],
+            },
+
+            orderBy: {
+              createdAt:
+                'desc',
+            },
+          });
+
+        if (
+          existingActiveRetry
+        ) {
+          return {
+            notificationId,
+
+            accepted:
+              true,
+
+            action:
+              'retry-already-scheduled',
+
+            outboxEventId:
+              existingActiveRetry.id,
+
+            status:
+              String(
+                existingActiveRetry.status,
+              ),
+          };
+        }
+
+        throw new BadRequestException(
+          `Notification ${notificationId} is marked RETRYING but has no pending retry operation.`,
+        );
+      }
+
       throw new BadRequestException(
         `Notification ${notificationId} cannot be retried from status ${String(notification.status)}.`,
       );
     }
 
-    const existingOutbox =
-      await this.prisma.outboxEvent.findFirst({
-        where: {
-          aggregateType:
-            'Notification',
+    /*
+     * Reconstruct the original notification job.
+     *
+     * Retry intentionally preserves the original logical
+     * idempotencyKey.
+     */
+    const payload =
+      this.createOriginalJobPayload(
+        notification,
+      );
 
-          aggregateId:
-            notification.id,
+    /*
+     * IMPORTANT:
+     *
+     * This key is intentionally unique per manual retry
+     * lifecycle.
+     *
+     * We must not use:
+     *
+     *   notification-retry:<notificationId>
+     *
+     * because that would permanently block a legitimate second
+     * manual retry after the notification fails again later.
+     */
+    const retryId =
+      randomUUID();
 
-          eventType:
-            'notification.enqueue',
+    const dedupeKey =
+      `notification-retry:${notification.notificationId}:${retryId}`;
 
-          OR: [
-            {
-              status:
-                'PENDING',
-            },
+    const result =
+      await this.prisma.$transaction(
+        async (
+          tx,
+        ) => {
+          /*
+           * Critical race-safety boundary.
+           *
+           * Only one concurrent transaction can change this
+           * specific Notification from FAILED -> RETRYING.
+           *
+           * PostgreSQL serializes competing UPDATE statements
+           * against the same row. The second transaction therefore
+           * receives count = 0 after the first transaction commits.
+           */
+          const transition =
+            await tx.notification.updateMany({
+              where: {
+                id:
+                  notification.id,
 
-            {
-              status:
-                'PROCESSING',
-            },
-          ],
+                status:
+                  'FAILED',
+              },
+
+              data: {
+                status:
+                  'RETRYING',
+
+                failedAt:
+                  null,
+
+                failureReason:
+                  null,
+              },
+            });
+
+          if (
+            transition.count ===
+            1
+          ) {
+            /*
+             * We won the state transition and therefore own
+             * creation of the retry outbox event.
+             */
+            const created =
+              await tx.outboxEvent.create({
+                data: {
+                  eventType:
+                    'notification.enqueue',
+
+                  aggregateType:
+                    'Notification',
+
+                  aggregateId:
+                    notification.id,
+
+                  dedupeKey,
+
+                  payload,
+
+                  status:
+                    'PENDING',
+
+                  attempts:
+                    0,
+
+                  availableAt:
+                    new Date(),
+
+                  lastError:
+                    null,
+                },
+              });
+
+            return {
+              kind:
+                'created' as const,
+
+              outboxEvent:
+                created,
+            };
+          }
+
+          /*
+           * Another concurrent request won the FAILED ->
+           * RETRYING transition.
+           *
+           * Its outbox event must already exist once the competing
+           * transaction is visible to us.
+           */
+          const existingRetry =
+            await tx.outboxEvent.findFirst({
+              where: {
+                aggregateType:
+                  'Notification',
+
+                aggregateId:
+                  notification.id,
+
+                eventType:
+                  'notification.enqueue',
+
+                OR: [
+                  {
+                    status:
+                      'PENDING',
+                  },
+
+                  {
+                    status:
+                      'PROCESSING',
+                  },
+                ],
+              },
+
+              orderBy: {
+                createdAt:
+                  'desc',
+              },
+            });
+
+          if (
+            existingRetry
+          ) {
+            return {
+              kind:
+                'existing' as const,
+
+              outboxEvent:
+                existingRetry,
+            };
+          }
+
+          /*
+           * This should only be reachable if the database state is
+           * inconsistent. We fail loudly rather than silently
+           * creating a second retry.
+           */
+          throw new BadRequestException(
+            `Notification ${notificationId} is no longer retryable because another retry operation is already in progress.`,
+          );
         },
-
-        orderBy: {
-          createdAt:
-            'desc',
-        },
-      });
+      );
 
     if (
-      existingOutbox
+      result.kind ===
+      'existing'
     ) {
       return {
         notificationId,
@@ -140,94 +373,14 @@ export class NotificationOperationalService {
           'retry-already-scheduled',
 
         outboxEventId:
-          existingOutbox.id,
+          result.outboxEvent.id,
 
         status:
           String(
-            existingOutbox.status,
+            result.outboxEvent.status,
           ),
       };
     }
-
-    /*
-     * Reconstruct the original notification job.
-     *
-     * Retry intentionally keeps the original idempotencyKey.
-     */
-    const payload =
-      this.createOriginalJobPayload(
-        notification,
-      );
-
-    const dedupeKey =
-      `notification-retry:${notification.notificationId}`;
-
-    const result =
-      await this.prisma.$transaction(
-        async (
-          tx,
-        ) => {
-          const existing =
-            await tx.outboxEvent.findUnique({
-              where: {
-                dedupeKey,
-              },
-            });
-
-          if (
-            existing
-          ) {
-            return existing;
-          }
-
-          await tx.notification.update({
-            where: {
-              id:
-                notification.id,
-            },
-
-            data: {
-              status:
-                'RETRYING',
-
-              failedAt:
-                null,
-
-              failureReason:
-                null,
-            },
-          });
-
-          return tx.outboxEvent.create({
-            data: {
-              eventType:
-                'notification.enqueue',
-
-              aggregateType:
-                'Notification',
-
-              aggregateId:
-                notification.id,
-
-              dedupeKey,
-
-              payload,
-
-              status:
-                'PENDING',
-
-              attempts:
-                0,
-
-              availableAt:
-                new Date(),
-
-              lastError:
-                null,
-            },
-          });
-        },
-      );
 
     return {
       notificationId,
@@ -239,11 +392,11 @@ export class NotificationOperationalService {
         'retry-scheduled',
 
       outboxEventId:
-        result.id,
+        result.outboxEvent.id,
 
       status:
         String(
-          result.status,
+          result.outboxEvent.status,
         ),
     };
   }
@@ -268,7 +421,8 @@ export class NotificationOperationalService {
    *   NEW NotificationDelivery record
    */
   async replay(
-    notificationId: string,
+    notificationId:
+      string,
   ) {
     const notification =
       await this.prisma.notification.findUnique({
@@ -277,15 +431,16 @@ export class NotificationOperationalService {
         },
       });
 
-    if (!notification) {
+    if (
+      !notification
+    ) {
       throw new NotFoundException(
         `Notification ${notificationId} was not found.`,
       );
     }
 
     /*
-     * Replay is permitted only for notifications that have
-     * already reached a terminal state.
+     * Replay is permitted only for terminal states.
      */
     if (
       notification.status !==
@@ -313,9 +468,7 @@ export class NotificationOperationalService {
     const payload =
       this.createReplayPayload(
         notification,
-
         replayIdempotencyKey,
-
         replayDeliveryKey,
       );
 
@@ -608,13 +761,14 @@ export class NotificationOperationalService {
 
   /*
    * ------------------------------------------------------------
-   * Convert Prisma Json-compatible runtime data into the
-   * recursive JSON input shape expected by Prisma.
+   * Convert runtime values into Prisma-compatible JSON.
    * ------------------------------------------------------------
    */
   private toJsonValue(
-    value: unknown,
-  ): NotificationJsonValue {
+    value:
+      unknown,
+  ):
+    NotificationJsonValue {
     if (
       value ===
       null

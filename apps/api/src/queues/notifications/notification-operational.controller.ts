@@ -2,7 +2,12 @@ import {
   Controller,
   Param,
   Post,
+  UseGuards,
 } from '@nestjs/common';
+
+import {
+  InternalApiKeyGuard,
+} from '../../security/internal-api-key.guard.js';
 
 import {
   NotificationOperationalService,
@@ -10,6 +15,9 @@ import {
 
 @Controller(
   'internal/notifications',
+)
+@UseGuards(
+  InternalApiKeyGuard,
 )
 export class NotificationOperationalController {
   constructor(
@@ -22,7 +30,8 @@ export class NotificationOperationalController {
   )
   async retry(
     @Param('notificationId')
-    notificationId: string,
+    notificationId:
+      string,
   ) {
     return this.operational.retry(
       notificationId,
@@ -34,7 +43,8 @@ export class NotificationOperationalController {
   )
   async replay(
     @Param('notificationId')
-    notificationId: string,
+    notificationId:
+      string,
   ) {
     return this.operational.replay(
       notificationId,

@@ -2,7 +2,12 @@ import {
   Controller,
   Get,
   Param,
+  UseGuards,
 } from '@nestjs/common';
+
+import {
+  InternalApiKeyGuard,
+} from '../../security/internal-api-key.guard.js';
 
 import {
   NotificationMetricsService,
@@ -10,6 +15,9 @@ import {
 
 @Controller(
   'internal/notifications/metrics',
+)
+@UseGuards(
+  InternalApiKeyGuard,
 )
 export class NotificationMetricsController {
   constructor(
@@ -27,7 +35,8 @@ export class NotificationMetricsController {
   )
   async getProviderMetrics(
     @Param('provider')
-    provider: string,
+    provider:
+      string,
   ) {
     return this.metrics.getProviderMetrics(
       provider,

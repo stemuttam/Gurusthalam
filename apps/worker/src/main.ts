@@ -10,18 +10,29 @@ import {
   GurusthalamWorker,
 } from './worker.js';
 
+import {
+  OutboxDeadLetterSyncService,
+} from './outbox/outbox-dead-letter-sync.service.js';
+
 async function bootstrap(): Promise<void> {
   const environment =
     getEnvironment();
 
   const logger =
     new GurusthalamLogger({
-      service: 'gurusthalam-worker',
+      service:
+        'gurusthalam-worker',
+
       environment,
     });
 
   const worker =
     new GurusthalamWorker();
+
+  const deadLetterSync =
+    new OutboxDeadLetterSyncService(
+      logger,
+    );
 
   const shutdown =
     async (
@@ -30,42 +41,75 @@ async function bootstrap(): Promise<void> {
       logger.info(
         `Received ${signal}; shutting down worker`,
         {
-          operation: 'shutdown',
+          operation:
+            'shutdown',
         },
       );
 
+      /*
+       * Stop the synchronization loop before shutting down
+       * the main worker resources.
+       */
+      try {
+        await deadLetterSync.stop();
+      } catch (
+        error: unknown
+      ) {
+        logger.error(
+          'Failed to stop outbox dead-letter synchronization',
+          error,
+          {
+            operation:
+              'outbox.dead_letter_sync.stop.error',
+          },
+        );
+      }
+
       await worker.stop();
 
-      process.exitCode = 0;
+      process.exitCode =
+        0;
     };
 
   process.once(
     'SIGINT',
     () => {
-      void shutdown('SIGINT');
+      void shutdown(
+        'SIGINT',
+      );
     },
   );
 
   process.once(
     'SIGTERM',
     () => {
-      void shutdown('SIGTERM');
+      void shutdown(
+        'SIGTERM',
+      );
     },
   );
 
   await worker.start();
+
+  await deadLetterSync.start();
 }
 
 void bootstrap().catch(
-  (error: unknown) => {
+  (
+    error: unknown,
+  ) => {
     const message =
       error instanceof Error
         ? error.message
-        : String(error);
+        : String(
+            error,
+          );
 
     const logger =
       new GurusthalamLogger({
-        service: 'gurusthalam-worker',
+        service:
+          'gurusthalam-worker',
+
         environment:
           process.env.NODE_ENV ??
           'development',
@@ -75,10 +119,12 @@ void bootstrap().catch(
       `Worker bootstrap failed: ${message}`,
       error,
       {
-        operation: 'bootstrap',
+        operation:
+          'bootstrap',
       },
     );
 
-    process.exitCode = 1;
+    process.exitCode =
+      1;
   },
 );

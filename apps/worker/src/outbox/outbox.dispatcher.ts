@@ -25,6 +25,7 @@ import type {
 
 import {
   getNotificationRetryPolicy,
+  NOTIFICATION_RETRY_BACKOFF_TYPE,
 } from '../notifications/notification-retry.policy.js';
 
 import {
@@ -396,12 +397,9 @@ export class OutboxDispatcher {
             retryPolicy.maxAttempts,
 
           backoff: {
-            type:
-              retryPolicy.backoffType,
-
-            delay:
-              retryPolicy.initialDelayMs,
-          },
+  type:
+    NOTIFICATION_RETRY_BACKOFF_TYPE,
+},
 
           removeOnComplete:
             100,

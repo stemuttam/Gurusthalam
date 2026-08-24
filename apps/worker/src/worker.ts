@@ -553,7 +553,9 @@ export class GurusthalamWorker {
             'worker.start',
         },
       );
-    } catch (error: unknown) {
+    } catch (
+      error: unknown
+    ) {
       this.logger.error(
         'Worker bootstrap failed',
         error,
@@ -608,7 +610,9 @@ export class GurusthalamWorker {
      */
     try {
       await this.outboxDispatcher.stop();
-    } catch (error: unknown) {
+    } catch (
+      error: unknown
+    ) {
       this.logger.error(
         'Failed to stop outbox dispatcher',
         error,
@@ -641,7 +645,9 @@ export class GurusthalamWorker {
             },
           ),
         );
-      } catch (error: unknown) {
+      } catch (
+        error: unknown
+      ) {
         this.logger.error(
           'Failed to close BullMQ workers',
           error,
@@ -674,7 +680,9 @@ export class GurusthalamWorker {
             'notification-idempotency',
         },
       );
-    } catch (error: unknown) {
+    } catch (
+      error: unknown
+    ) {
       this.logger.error(
         'Failed to close notification idempotency Redis connection',
         error,
@@ -706,7 +714,9 @@ export class GurusthalamWorker {
             'notification-metrics',
         },
       );
-    } catch (error: unknown) {
+    } catch (
+      error: unknown
+    ) {
       this.logger.error(
         'Failed to close notification metrics Redis connection',
         error,
@@ -738,7 +748,9 @@ export class GurusthalamWorker {
             'database',
         },
       );
-    } catch (error: unknown) {
+    } catch (
+      error: unknown
+    ) {
       this.logger.error(
         'Failed to disconnect PostgreSQL',
         error,

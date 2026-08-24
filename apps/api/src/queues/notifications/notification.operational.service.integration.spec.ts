@@ -109,12 +109,6 @@ describe(
             template:
               null,
 
-            /*
-             * Prisma 7 Json? input does not accept plain null
-             * here. Omitting the optional field represents the
-             * absence of template data.
-             */
-
             idempotencyKey,
 
             attempts:
@@ -159,11 +153,6 @@ describe(
       fixture:
         NotificationFixture,
     ): Promise<void> {
-      /*
-       * OutboxEvent is intentionally deleted first because the
-       * integration fixture is being removed explicitly by
-       * aggregateId.
-       */
       await prisma.outboxEvent.deleteMany({
         where: {
           aggregateId:
@@ -316,10 +305,18 @@ describe(
             1,
           );
 
+          /*
+           * The real worker may consume the outbox event before
+           * this assertion executes. Both PENDING and PROCESSING
+           * are valid active states.
+           */
           expect(
+            [
+              'PENDING',
+              'PROCESSING',
+            ],
+          ).toContain(
             outboxEvents[0]?.status,
-          ).toBe(
-            'PENDING',
           );
 
           expect(
@@ -344,11 +341,6 @@ describe(
           await createFailedFixture();
 
         try {
-          /*
-           * ------------------------------------------------------
-           * Retry #1
-           * ------------------------------------------------------
-           */
           const first =
             await service.retry(
               fixture.notificationId,
@@ -378,15 +370,10 @@ describe(
             firstOutbox,
           ).not.toBeNull();
 
-          expect(
-            firstOutbox?.status,
-          ).toBe(
-            'PENDING',
-          );
-
           /*
-           * The first outbox operation has now been published.
-           * It is no longer an active retry operation.
+           * A worker may already have consumed the event. The
+           * lifecycle test becomes deterministic by explicitly
+           * moving it to a terminal outbox state.
            */
           await prisma.outboxEvent.update({
             where: {
@@ -399,13 +386,14 @@ describe(
                 'PUBLISHED',
 
               attempts:
-                1,
+                Math.max(
+                  firstOutbox?.attempts ??
+                    0,
+                  1,
+                ),
             },
           });
 
-          /*
-           * Simulate the worker/provider failing this retry again.
-           */
           await prisma.notification.update({
             where: {
               id:
@@ -427,11 +415,6 @@ describe(
             },
           });
 
-          /*
-           * ------------------------------------------------------
-           * Retry #2
-           * ------------------------------------------------------
-           */
           const second =
             await service.retry(
               fixture.notificationId,
@@ -473,9 +456,6 @@ describe(
             'RETRYING',
           );
 
-          /*
-           * The logical notification identity does not change.
-           */
           expect(
             notification?.notificationId,
           ).toBe(
@@ -488,10 +468,6 @@ describe(
             fixture.idempotencyKey,
           );
 
-          /*
-           * There must now be exactly two retry outbox events:
-           * one historical terminal event and one active event.
-           */
           const outboxEvents =
             await prisma.outboxEvent.findMany({
               where: {
@@ -532,16 +508,19 @@ describe(
             second.outboxEventId,
           );
 
+          /*
+           * The worker may already have started processing the
+           * second retry too.
+           */
           expect(
+            [
+              'PENDING',
+              'PROCESSING',
+            ],
+          ).toContain(
             outboxEvents[1]?.status,
-          ).toBe(
-            'PENDING',
           );
 
-          /*
-           * The two manual retry operations must have different
-           * outbox identities.
-           */
           expect(
             outboxEvents[0]?.dedupeKey,
           ).not.toBe(

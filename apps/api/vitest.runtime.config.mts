@@ -24,7 +24,7 @@ export default defineConfig({
     ],
 
     include: [
-      'src/**/*.{test,spec}.ts',
+      '**/*.runtime.spec.ts',
     ],
 
     exclude: [
@@ -33,12 +33,6 @@ export default defineConfig({
       'node_modules/**',
       '.git/**',
       '.nx/**',
-
-      /*
-       * Runtime tests require a separately managed HTTP server.
-       * They are executed by @org/api:runtime-test.
-       */
-      '**/*.runtime.spec.ts',
     ],
   },
 });

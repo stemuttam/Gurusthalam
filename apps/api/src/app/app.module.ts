@@ -77,6 +77,14 @@ import {
   AppService,
 } from './app.service.js';
 
+import {
+  NotificationReconciliationController,
+} from '../queues/notifications/notification-reconciliation.controller.js';
+
+import {
+  NotificationReconciliationService,
+} from '../queues/notifications/notification-reconciliation.service.js';
+
 @Module({
   imports: [
     AppConfigModule,
@@ -102,12 +110,15 @@ import {
     NotificationTroubleshootingController,
 
     NotificationOperationalController,
+
+    NotificationReconciliationController,
   ],
 
   providers: [
     AppService,
 
     OutboxAdminService,
+    NotificationReconciliationService,
 
     NotificationMetricsService,
 

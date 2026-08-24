@@ -307,10 +307,13 @@ describe(
           );
 
           expect(
-            outbox?.status,
-          ).toBe(
-            'PENDING',
-          );
+  [
+    'PENDING',
+    'PROCESSING',
+  ],
+).toContain(
+  outbox?.status,
+);
 
           expect(
             outbox?.dedupeKey,

@@ -87,6 +87,10 @@ import {
   OutboxDispatcher,
 } from './outbox/outbox.dispatcher.js';
 
+import {
+  NotificationProviderFailureSimulator,
+} from './providers/notification/notification-provider.failure-simulator.js';
+
 /*
  * -------------------------------------------------------------
  * Explicit worker .env loading
@@ -386,6 +390,9 @@ export class GurusthalamWorker {
           this.logger,
         );
 
+        const failureSimulator =
+  new NotificationProviderFailureSimulator();
+
       const providerRegistry =
         new NotificationProviderRegistry(
           emailProvider,
@@ -393,6 +400,7 @@ export class GurusthalamWorker {
           inAppProvider,
 
           pushProvider,
+          failureSimulator,
         );
 
       /*

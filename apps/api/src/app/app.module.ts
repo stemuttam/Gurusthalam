@@ -66,6 +66,19 @@ import {
 } from '../queues/notifications/notification.orchestration.service.js';
 
 import {
+  NotificationChannelPolicy,
+  NOTIFICATION_CHANNEL_POLICY_CONFIG,
+} from '../queues/notifications/notification.channel-policy.js';
+
+import {
+  NotificationReconciliationController,
+} from '../queues/notifications/notification-reconciliation.controller.js';
+
+import {
+  NotificationReconciliationService,
+} from '../queues/notifications/notification-reconciliation.service.js';
+
+import {
   NotificationTemplateModule,
 } from '../queues/templates/notification-template.module.js';
 
@@ -80,14 +93,6 @@ import {
 import {
   AppService,
 } from './app.service.js';
-
-import {
-  NotificationReconciliationController,
-} from '../queues/notifications/notification-reconciliation.controller.js';
-
-import {
-  NotificationReconciliationService,
-} from '../queues/notifications/notification-reconciliation.service.js';
 
 @Module({
   imports: [
@@ -122,6 +127,7 @@ import {
     AppService,
 
     OutboxAdminService,
+
     NotificationReconciliationService,
 
     NotificationMetricsService,
@@ -129,6 +135,15 @@ import {
     NotificationTroubleshootingService,
 
     NotificationOperationalService,
+
+    {
+      provide:
+        NOTIFICATION_CHANNEL_POLICY_CONFIG,
+
+      useValue: {},
+    },
+
+    NotificationChannelPolicy,
 
     NotificationOrchestrationService,
 

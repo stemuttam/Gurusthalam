@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Optional,
 } from '@nestjs/common';
 
 import {
@@ -12,6 +13,14 @@ import {
 import {
   assertNotificationChannelIdentity,
 } from './notification-channel-identity.js';
+
+import {
+  NotificationChannelPolicy,
+} from './notification.channel-policy.js';
+
+import type {
+  NotificationCommandChannel,
+} from './notification.command.js';
 
 import type {
   NotificationJobData,
@@ -45,6 +54,11 @@ export class NotificationOrchestrationService {
   constructor(
     private readonly queue:
       NotificationQueueService,
+
+    @Optional()
+    private readonly channelPolicy:
+      NotificationChannelPolicy =
+        new NotificationChannelPolicy(),
   ) {}
 
   async fanOut(
@@ -93,15 +107,32 @@ export class NotificationOrchestrationService {
       };
     }
 
+    const policyResult =
+      this.channelPolicy.evaluate(
+        notifications.map(
+          (
+            notification,
+          ) =>
+            notification.channel,
+        ),
+      );
+
+    const policyOrderedNotifications =
+      this.orderNotificationsByPolicy(
+        notifications,
+
+        policyResult.channels,
+      );
+
     this.validateFanOutIdentities(
       logicalId,
 
-      notifications,
+      policyOrderedNotifications,
     );
 
     const results =
       await Promise.all(
-        notifications.map(
+        policyOrderedNotifications.map(
           async (
             notification,
           ) => {
@@ -138,6 +169,53 @@ export class NotificationOrchestrationService {
       channels:
         results,
     };
+  }
+
+  private orderNotificationsByPolicy(
+    notifications:
+      readonly NotificationJobData[],
+
+    orderedChannels:
+      readonly NotificationCommandChannel[],
+  ):
+    readonly NotificationJobData[] {
+    const byChannel =
+      new Map<
+        NotificationCommandChannel,
+        NotificationJobData
+      >();
+
+    for (
+      const notification of
+        notifications
+    ) {
+      byChannel.set(
+        notification.channel,
+        notification,
+      );
+    }
+
+    return orderedChannels.map(
+      (
+        channel,
+      ) => {
+        const notification =
+          byChannel.get(
+            channel,
+          );
+
+        if (
+          notification ===
+          undefined
+        ) {
+          throw new BadRequestException(
+            `Channel policy produced channel "${channel}" without a corresponding notification.`,
+          );
+        }
+
+        return notification;
+      },
+    );
   }
 
   private validateFanOutIdentities(

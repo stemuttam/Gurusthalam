@@ -1,6 +1,7 @@
 import {
   randomUUID,
 } from 'node:crypto';
+
 import {
   BadRequestException,
 } from '@nestjs/common';
@@ -15,18 +16,32 @@ import type {
 
 export interface CreateNotificationHttpRequest {
   readonly notificationId?: unknown;
+
   readonly userId?: unknown;
+
   readonly channel?: unknown;
+
+  readonly channels?: unknown;
+
   readonly recipient?: unknown;
+
   readonly idempotencyKey?: unknown;
+
   readonly template?: unknown;
+
   readonly content?: unknown;
 }
 
 export function parseCreateNotificationHttpRequest(
-  request: unknown,
-): CreateNotificationCommand {
-  if (!isRecord(request)) {
+  request:
+    unknown,
+):
+  CreateNotificationCommand {
+  if (
+    !isRecord(
+      request,
+    )
+  ) {
     throw new BadRequestException(
       'Request body must be a JSON object.',
     );
@@ -38,6 +53,7 @@ export function parseCreateNotificationHttpRequest(
       'notificationId',
       'userId',
       'channel',
+      'channels',
       'recipient',
       'idempotencyKey',
       'template',
@@ -53,9 +69,42 @@ export function parseCreateNotificationHttpRequest(
     );
 
   const channel =
-    readChannel(
-      request.channel,
+    request.channel !==
+    undefined
+      ? readChannel(
+          request.channel,
+        )
+      : undefined;
+
+  const channels =
+    request.channels !==
+    undefined
+      ? readChannels(
+          request.channels,
+        )
+      : undefined;
+
+  if (
+    channel ===
+      undefined &&
+    channels ===
+      undefined
+  ) {
+    throw new BadRequestException(
+      'Exactly one of channel or channels must be provided.',
     );
+  }
+
+  if (
+    channel !==
+      undefined &&
+    channels !==
+      undefined
+  ) {
+    throw new BadRequestException(
+      'Exactly one of channel or channels must be provided.',
+    );
+  }
 
   const recipient =
     readRecipient(
@@ -96,7 +145,19 @@ export function parseCreateNotificationHttpRequest(
 
     userId,
 
-    channel,
+    ...(channel !==
+    undefined
+      ? {
+          channel,
+        }
+      : {}),
+
+    ...(channels !==
+    undefined
+      ? {
+          channels,
+        }
+      : {}),
 
     recipient,
 
@@ -119,9 +180,15 @@ export function parseCreateNotificationHttpRequest(
 }
 
 function readRecipient(
-  value: unknown,
-): NotificationCommandRecipient {
-  if (!isRecord(value)) {
+  value:
+    unknown,
+):
+  NotificationCommandRecipient {
+  if (
+    !isRecord(
+      value,
+    )
+  ) {
     throw new BadRequestException(
       'recipient must be a JSON object.',
     );
@@ -175,9 +242,15 @@ function readRecipient(
 }
 
 function readTemplate(
-  value: unknown,
-): NotificationTemplateCommand {
-  if (!isRecord(value)) {
+  value:
+    unknown,
+):
+  NotificationTemplateCommand {
+  if (
+    !isRecord(
+      value,
+    )
+  ) {
     throw new BadRequestException(
       'template must be a JSON object.',
     );
@@ -231,9 +304,15 @@ function readTemplate(
 }
 
 function readContent(
-  value: unknown,
-): NotificationLiteralContent {
-  if (!isRecord(value)) {
+  value:
+    unknown,
+):
+  NotificationLiteralContent {
+  if (
+    !isRecord(
+      value,
+    )
+  ) {
     throw new BadRequestException(
       'content must be a JSON object.',
     );
@@ -287,8 +366,10 @@ function readContent(
 }
 
 function readChannel(
-  value: unknown,
-): NotificationCommandChannel {
+  value:
+    unknown,
+):
+  NotificationCommandChannel {
   if (
     value !==
       'email' &&
@@ -305,10 +386,72 @@ function readChannel(
   return value;
 }
 
+function readChannels(
+  value:
+    unknown,
+):
+  readonly NotificationCommandChannel[] {
+  if (
+    !Array.isArray(
+      value,
+    ) ||
+    value.length ===
+      0
+  ) {
+    throw new BadRequestException(
+      'channels must be a non-empty array.',
+    );
+  }
+
+  const channels =
+    value.map(
+      (
+        item,
+        index,
+      ) => {
+        try {
+          return readChannel(
+            item,
+          );
+        } catch (
+          error: unknown
+        ) {
+          if (
+            error instanceof
+            BadRequestException
+          ) {
+            throw new BadRequestException(
+              `channels[${index}] ${error.message}`,
+            );
+          }
+
+          throw error;
+        }
+      },
+    );
+
+  if (
+    new Set(
+      channels,
+    ).size !==
+    channels.length
+  ) {
+    throw new BadRequestException(
+      'channels must not contain duplicates.',
+    );
+  }
+
+  return channels;
+}
+
 function readRequiredString(
-  value: unknown,
-  fieldName: string,
-): string {
+  value:
+    unknown,
+
+  fieldName:
+    string,
+):
+  string {
   if (
     typeof value !==
       'string' ||
@@ -325,9 +468,13 @@ function readRequiredString(
 }
 
 function readOptionalString(
-  value: unknown,
-  fieldName: string,
-): string | undefined {
+  value:
+    unknown,
+
+  fieldName:
+    string,
+):
+  string | undefined {
   if (
     value ===
     undefined
@@ -351,9 +498,14 @@ function readOptionalString(
 }
 
 function readOptionalStringArray(
-  value: unknown,
-  fieldName: string,
-): readonly string[] | undefined {
+  value:
+    unknown,
+
+  fieldName:
+    string,
+):
+  readonly string[] |
+  undefined {
   if (
     value ===
     undefined
@@ -362,7 +514,9 @@ function readOptionalStringArray(
   }
 
   if (
-    !Array.isArray(value)
+    !Array.isArray(
+      value,
+    )
   ) {
     throw new BadRequestException(
       `${fieldName} must be an array of strings.`,
@@ -389,10 +543,19 @@ function readOptionalStringArray(
 }
 
 function rejectUnknownKeys(
-  value: Record<string, unknown>,
-  allowedKeys: readonly string[],
-  objectName: string,
-): void {
+  value:
+    Record<
+      string,
+      unknown
+    >,
+
+  allowedKeys:
+    readonly string[],
+
+  objectName:
+    string,
+):
+  void {
   const allowed =
     new Set(
       allowedKeys,
@@ -416,11 +579,13 @@ function rejectUnknownKeys(
 }
 
 function isRecord(
-  value: unknown,
-): value is Record<
-  string,
-  unknown
-> {
+  value:
+    unknown,
+):
+  value is Record<
+    string,
+    unknown
+  > {
   return (
     typeof value ===
       'object' &&
@@ -432,6 +597,7 @@ function isRecord(
   );
 }
 
-function createNotificationId(): string {
+function createNotificationId():
+  string {
   return `notification-${randomUUID()}`;
 }

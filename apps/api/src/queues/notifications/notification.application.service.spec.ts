@@ -27,17 +27,23 @@ describe(
     const enqueue =
       vi.fn<
         (
-          data: unknown,
-          options?: unknown,
+          data:
+            unknown,
+
+          options?:
+            unknown,
         ) =>
-          Promise<NotificationEnqueueResult>
+          Promise<
+            NotificationEnqueueResult
+          >
       >();
 
     const queue =
       {
         enqueue,
       } as unknown as {
-        enqueue: typeof enqueue;
+        enqueue:
+          typeof enqueue;
       };
 
     const service =
@@ -51,64 +57,68 @@ describe(
       };
 
     const validPushBase =
-      (): CreateNotificationCommand => ({
-        notificationId:
-          'phase-3-2-5-push-test',
+      ():
+        CreateNotificationCommand =>
+        ({
+          notificationId:
+            'phase-3-2-5-push-test',
 
-        userId:
-          'user-001',
-
-        channel:
-          'push',
-
-        recipient: {
           userId:
             'user-001',
-        },
 
-        idempotencyKey:
-          'phase-3-2-5-push-test',
+          channel:
+            'push',
 
-        content: {
-          body:
-            'Push notification test.',
-        },
-      });
+          recipient: {
+            userId:
+              'user-001',
+          },
+
+          idempotencyKey:
+            'phase-3-2-5-push-test',
+
+          content: {
+            body:
+              'Push notification test.',
+          },
+        });
 
     const validEmailTemplateBase =
-      (): CreateNotificationCommand => ({
-        notificationId:
-          'phase-3-2-5-template-content-test',
+      ():
+        CreateNotificationCommand =>
+        ({
+          notificationId:
+            'phase-3-2-5-template-content-test',
 
-        userId:
-          'user-001',
-
-        channel:
-          'email',
-
-        recipient: {
           userId:
             'user-001',
 
-          email:
-            'user-001@example.com',
-        },
+          channel:
+            'email',
 
-        idempotencyKey:
-          'phase-3-2-5-template-content-test',
+          recipient: {
+            userId:
+              'user-001',
 
-        template: {
-          templateId:
-            'course-welcome-003',
+            email:
+              'user-001@example.com',
+          },
 
-          templateData: {
-            user: {
-              firstName:
-                'Uttam',
+          idempotencyKey:
+            'phase-3-2-5-template-content-test',
+
+          template: {
+            templateId:
+              'course-welcome-003',
+
+            templateData: {
+              user: {
+                firstName:
+                  'Uttam',
+              },
             },
           },
-        },
-      });
+        });
 
     it(
       'D - rejects PUSH notifications without device tokens',
@@ -140,18 +150,19 @@ describe(
         resetQueue();
 
         const command:
-          CreateNotificationCommand = {
-          ...validPushBase(),
+          CreateNotificationCommand =
+          {
+            ...validPushBase(),
 
-          recipient: {
-            userId:
-              'user-001',
+            recipient: {
+              userId:
+                'user-001',
 
-            deviceTokens: [
-              '',
-            ],
-          },
-        };
+              deviceTokens: [
+                '',
+              ],
+            },
+          };
 
         await expect(
           service.create(
@@ -175,19 +186,20 @@ describe(
         resetQueue();
 
         const command:
-          CreateNotificationCommand = {
-          ...validPushBase(),
+          CreateNotificationCommand =
+          {
+            ...validPushBase(),
 
-          recipient: {
-            userId:
-              'user-001',
+            recipient: {
+              userId:
+                'user-001',
 
-            deviceTokens: [
-              'token-001',
-              'token-001',
-            ],
-          },
-        };
+              deviceTokens: [
+                'token-001',
+                'token-001',
+              ],
+            },
+          };
 
         await expect(
           service.create(
@@ -211,21 +223,22 @@ describe(
         resetQueue();
 
         const command:
-          CreateNotificationCommand = {
-          ...validPushBase(),
+          CreateNotificationCommand =
+          {
+            ...validPushBase(),
 
-          userId:
-            'user-001',
-
-          recipient: {
             userId:
-              'user-002',
+              'user-001',
 
-            deviceTokens: [
-              'token-001',
-            ],
-          },
-        };
+            recipient: {
+              userId:
+                'user-002',
+
+              deviceTokens: [
+                'token-001',
+              ],
+            },
+          };
 
         await expect(
           service.create(
@@ -252,14 +265,15 @@ describe(
           validEmailTemplateBase();
 
         const command:
-          CreateNotificationCommand = {
-          ...base,
+          CreateNotificationCommand =
+          {
+            ...base,
 
-          content: {
-            body:
-              'This body should not be accepted together with a template.',
-          },
-        };
+            content: {
+              body:
+                'This body should not be accepted together with a template.',
+            },
+          };
 
         await expect(
           service.create(
@@ -283,27 +297,28 @@ describe(
         resetQueue();
 
         const command:
-          CreateNotificationCommand = {
-          notificationId:
-            'phase-3-2-5-neither-test',
+          CreateNotificationCommand =
+          {
+            notificationId:
+              'phase-3-2-5-neither-test',
 
-          userId:
-            'user-001',
-
-          channel:
-            'email',
-
-          recipient: {
             userId:
               'user-001',
 
-            email:
-              'user-001@example.com',
-          },
+            channel:
+              'email',
 
-          idempotencyKey:
-            'phase-3-2-5-neither-test',
-        };
+            recipient: {
+              userId:
+                'user-001',
+
+              email:
+                'user-001@example.com',
+            },
+
+            idempotencyKey:
+              'phase-3-2-5-neither-test',
+          };
 
         await expect(
           service.create(
@@ -344,44 +359,61 @@ describe(
         });
 
         const command:
-          CreateNotificationCommand = {
-          notificationId:
-            'phase-3-2-5-push-valid-001',
+          CreateNotificationCommand =
+          {
+            notificationId:
+              'phase-3-2-5-push-valid-001',
 
-          userId:
-            'user-001',
-
-          channel:
-            'push',
-
-          recipient: {
             userId:
               'user-001',
 
-            deviceTokens: [
-              'token-001',
-            ],
-          },
+            channel:
+              'push',
 
-          idempotencyKey:
-            'phase-3-2-5-push-valid-001',
+            recipient: {
+              userId:
+                'user-001',
 
-          content: {
-            body:
-              'Valid PUSH notification.',
-          },
-        };
+              deviceTokens: [
+                'token-001',
+              ],
+            },
+
+            idempotencyKey:
+              'phase-3-2-5-push-valid-001',
+
+            content: {
+              body:
+                'Valid PUSH notification.',
+            },
+          };
 
         const result =
           await service.create(
             command,
           );
 
+        /*
+         * This test deliberately uses the broad command type.
+         * Narrow the result before accessing single-channel fields.
+         */
         expect(
-          result.status,
+          'status' in
+            result,
         ).toBe(
-          'QUEUED',
+          true,
         );
+
+        if (
+          'status' in
+          result
+        ) {
+          expect(
+            result.status,
+          ).toBe(
+            'QUEUED',
+          );
+        }
 
         expect(
           enqueue,

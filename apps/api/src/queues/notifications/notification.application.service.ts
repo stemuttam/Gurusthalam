@@ -1,11 +1,19 @@
 import {
   BadRequestException,
   Injectable,
+  Optional,
 } from '@nestjs/common';
 
 import {
   NotificationQueueService,
+  type NotificationEnqueueOptions,
+  type NotificationEnqueueResult,
 } from './notification.queue.js';
+
+import {
+  NotificationOrchestrationService,
+  type NotificationOrchestrationResult,
+} from './notification.orchestration.service.js';
 
 import type {
   NotificationJobData,
@@ -14,29 +22,138 @@ import type {
 
 import type {
   CreateNotificationCommand,
+  NotificationCommandChannel,
 } from './notification.command.js';
+
+type SingleChannelNotificationCommand =
+  CreateNotificationCommand & {
+    readonly channel:
+      NotificationCommandChannel;
+
+    readonly channels?:
+      never;
+  };
+
+type MultiChannelNotificationCommand =
+  CreateNotificationCommand & {
+    readonly channel?:
+      never;
+
+    readonly channels:
+      readonly NotificationCommandChannel[];
+  };
 
 @Injectable()
 export class NotificationApplicationService {
   constructor(
     private readonly queue:
       NotificationQueueService,
+
+    @Optional()
+    private readonly orchestration?:
+      NotificationOrchestrationService,
   ) {}
 
   async create(
     command:
+      SingleChannelNotificationCommand,
+  ):
+    Promise<NotificationEnqueueResult>;
+
+  async create(
+    command:
+      MultiChannelNotificationCommand,
+  ):
+    Promise<NotificationOrchestrationResult>;
+
+  /*
+   * Broad compatibility overload.
+   *
+   * Existing tests and internal callers frequently hold a
+   * CreateNotificationCommand-typed value instead of a narrowed
+   * discriminated command. Keep that usage valid without weakening
+   * the two precise overloads above.
+   */
+  async create(
+    command:
       CreateNotificationCommand,
-  ) {
+  ):
+    Promise<
+      NotificationEnqueueResult |
+      NotificationOrchestrationResult
+    >;
+
+  async create(
+    command:
+      CreateNotificationCommand,
+  ):
+    Promise<
+      NotificationEnqueueResult |
+      NotificationOrchestrationResult
+    > {
     this.validateCommand(
       command,
     );
 
-    const data =
-      this.toNotificationJobData(
+    const channels =
+      this.resolveChannels(
         command,
       );
 
-    const enqueueOptions =
+    const data =
+      channels.map(
+        (
+          channel,
+        ) =>
+          this.toNotificationJobData(
+            command,
+            channel,
+            channels.length >
+              1,
+          ),
+      );
+
+    if (
+      data.length ===
+      1
+    ) {
+      const enqueueOptions:
+        NotificationEnqueueOptions =
+        command.template?.locale !==
+        undefined
+          ? {
+              locale:
+                command.template.locale,
+            }
+          : {};
+
+      const first =
+        data[0];
+
+      if (
+        first ===
+        undefined
+      ) {
+        throw new BadRequestException(
+          'Notification channel resolution produced no notification data.',
+        );
+      }
+
+      return this.queue.enqueue(
+        first,
+
+        enqueueOptions,
+      );
+    }
+
+    const orchestration =
+      this.orchestration ??
+      new NotificationOrchestrationService(
+        this.queue,
+      );
+
+    const enqueueOptions:
+      NotificationEnqueueOptions =
       command.template?.locale !==
       undefined
         ? {
@@ -45,8 +162,11 @@ export class NotificationApplicationService {
           }
         : {};
 
-    return this.queue.enqueue(
+    return orchestration.fanOut(
+      command.notificationId.trim(),
+
       data,
+
       enqueueOptions,
     );
   }
@@ -63,7 +183,8 @@ export class NotificationApplicationService {
   private validateCommand(
     command:
       CreateNotificationCommand,
-  ): void {
+  ):
+    void {
     this.validateRequiredIdentity(
       command,
     );
@@ -72,19 +193,92 @@ export class NotificationApplicationService {
       command,
     );
 
-    this.validateChannelRecipient(
-      command,
-    );
+    const channels =
+      this.resolveChannels(
+        command,
+      );
+
+    for (
+      const channel of
+        channels
+    ) {
+      this.validateChannelRecipient(
+        command,
+
+        channel,
+      );
+    }
 
     this.validateContentMode(
       command,
     );
   }
 
+  private resolveChannels(
+    command:
+      CreateNotificationCommand,
+  ):
+    readonly NotificationCommandChannel[] {
+    const hasChannel =
+      command.channel !==
+      undefined;
+
+    const hasChannels =
+      command.channels !==
+      undefined;
+
+    if (
+      hasChannel ===
+      hasChannels
+    ) {
+      throw new BadRequestException(
+        'Exactly one of channel or channels must be provided.',
+      );
+    }
+
+    if (
+      hasChannel
+    ) {
+      return [
+        command.channel as NotificationCommandChannel,
+      ];
+    }
+
+    const channels =
+      command.channels;
+
+    if (
+      channels ===
+        undefined ||
+      channels.length ===
+        0
+    ) {
+      throw new BadRequestException(
+        'channels must be a non-empty array.',
+      );
+    }
+
+    if (
+      new Set(
+        channels,
+      ).size !==
+      channels.length
+    ) {
+      throw new BadRequestException(
+        'channels must not contain duplicates.',
+      );
+    }
+
+    return [
+      ...channels,
+    ];
+  }
+
   private validateRequiredIdentity(
     command:
       CreateNotificationCommand,
-  ): void {
+  ):
+    void {
     if (
       typeof command.notificationId !==
         'string' ||
@@ -125,7 +319,8 @@ export class NotificationApplicationService {
   private validateRecipientIdentity(
     command:
       CreateNotificationCommand,
-  ): void {
+  ):
+    void {
     if (
       typeof command.recipient?.userId !==
         'string' ||
@@ -151,9 +346,13 @@ export class NotificationApplicationService {
   private validateChannelRecipient(
     command:
       CreateNotificationCommand,
-  ): void {
+
+    channel:
+      NotificationCommandChannel,
+  ):
+    void {
     switch (
-      command.channel
+      channel
     ) {
       case 'email':
         this.validateEmailRecipient(
@@ -174,7 +373,7 @@ export class NotificationApplicationService {
 
       default:
         this.assertNeverChannel(
-          command.channel,
+          channel,
         );
     }
   }
@@ -182,7 +381,8 @@ export class NotificationApplicationService {
   private validateEmailRecipient(
     email:
       string | undefined,
-  ): void {
+  ):
+    void {
     if (
       email ===
         undefined ||
@@ -216,7 +416,8 @@ export class NotificationApplicationService {
     deviceTokens:
       readonly string[] |
       undefined,
-  ): void {
+  ):
+    void {
     if (
       deviceTokens ===
         undefined ||
@@ -268,7 +469,8 @@ export class NotificationApplicationService {
   private validateContentMode(
     command:
       CreateNotificationCommand,
-  ): void {
+  ):
+    void {
     const hasTemplate =
       command.template !==
       undefined;
@@ -308,7 +510,8 @@ export class NotificationApplicationService {
       NonNullable<
         CreateNotificationCommand['template']
       >,
-  ): void {
+  ):
+    void {
     if (
       typeof template.templateId !==
         'string' ||
@@ -357,7 +560,8 @@ export class NotificationApplicationService {
       NonNullable<
         CreateNotificationCommand['content']
       >,
-  ): void {
+  ):
+    void {
     if (
       typeof content.body !==
         'string' ||
@@ -406,14 +610,35 @@ export class NotificationApplicationService {
   private toNotificationJobData(
     command:
       CreateNotificationCommand,
-  ): NotificationJobData {
+
+    channel:
+      NotificationCommandChannel,
+
+    multiChannel:
+      boolean,
+  ):
+    NotificationJobData {
+    const baseNotificationId =
+      command.notificationId.trim();
+
+    const baseIdempotencyKey =
+      command.idempotencyKey.trim();
+
+    const notificationId =
+      multiChannel
+        ? `${baseNotificationId}:${channel}`
+        : baseNotificationId;
+
+    const idempotencyKey =
+      multiChannel
+        ? `${baseIdempotencyKey}:${channel}`
+        : baseIdempotencyKey;
+
     const base:
       NotificationJobData = {
-      notificationId:
-        command.notificationId.trim(),
+      notificationId,
 
-      channel:
-        command.channel,
+      channel,
 
       recipient: {
         userId:
@@ -445,8 +670,7 @@ export class NotificationApplicationService {
         command.content?.body.trim() ??
         '',
 
-      idempotencyKey:
-        command.idempotencyKey.trim(),
+      idempotencyKey,
     };
 
     if (
@@ -502,9 +726,10 @@ export class NotificationApplicationService {
         string,
         unknown
       >,
-  ): NonNullable<
-    NotificationJobData['templateData']
-  > {
+  ):
+    NonNullable<
+      NotificationJobData['templateData']
+    > {
     const output:
       NonNullable<
         NotificationJobData['templateData']
@@ -530,7 +755,8 @@ export class NotificationApplicationService {
   private toNotificationJsonValue(
     value:
       unknown,
-  ): NotificationJsonValue {
+  ):
+    NotificationJsonValue {
     if (
       value ===
       null
@@ -599,7 +825,8 @@ export class NotificationApplicationService {
   private assertNeverChannel(
     channel:
       never,
-  ): never {
+  ):
+    never {
     throw new BadRequestException(
       `Unsupported notification channel: ${String(channel)}.`,
     );

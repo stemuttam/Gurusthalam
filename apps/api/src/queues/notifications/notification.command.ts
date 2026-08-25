@@ -46,8 +46,17 @@ export interface CreateNotificationCommand {
   readonly userId:
     string;
 
-  readonly channel:
+  /*
+   * Backward-compatible single-channel command form.
+   */
+  readonly channel?:
     NotificationCommandChannel;
+
+  /*
+   * New multi-channel orchestration form.
+   */
+  readonly channels?:
+    readonly NotificationCommandChannel[];
 
   readonly recipient:
     NotificationCommandRecipient;

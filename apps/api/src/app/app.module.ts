@@ -62,6 +62,10 @@ import {
 } from '../queues/notifications/notification-operational.service.js';
 
 import {
+  NotificationOrchestrationService,
+} from '../queues/notifications/notification.orchestration.service.js';
+
+import {
   NotificationTemplateModule,
 } from '../queues/templates/notification-template.module.js';
 
@@ -126,6 +130,8 @@ import {
 
     NotificationOperationalService,
 
+    NotificationOrchestrationService,
+
     InternalApiKeyGuard,
   ],
 })
@@ -134,7 +140,8 @@ export class AppModule
   configure(
     consumer:
       MiddlewareConsumer,
-  ): void {
+  ):
+    void {
     consumer
       .apply(
         RequestIdMiddleware,

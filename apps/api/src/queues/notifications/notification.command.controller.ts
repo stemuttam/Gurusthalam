@@ -14,6 +14,10 @@ import type {
   NotificationEnqueueResult,
 } from './notification.queue.js';
 
+import type {
+  NotificationOrchestrationResult,
+} from './notification.orchestration.service.js';
+
 import {
   parseCreateNotificationHttpRequest,
 } from './notification.command.dto.js';
@@ -33,8 +37,13 @@ export class NotificationCommandController {
   )
   async create(
     @Body()
-    request: unknown,
-  ): Promise<NotificationEnqueueResult> {
+    request:
+      unknown,
+  ):
+    Promise<
+      NotificationEnqueueResult |
+      NotificationOrchestrationResult
+    > {
     const command =
       parseCreateNotificationHttpRequest(
         request,

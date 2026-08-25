@@ -27,7 +27,35 @@ import type {
 } from './notification.types.js';
 
 const testPrefix =
-  `phase-3-2-15-orchestration-${randomUUID()}`;
+  `phase-3-2-16-fan-out-${randomUUID()}`;
+
+type NotificationRow = {
+  readonly id:
+    string;
+
+  readonly notificationId:
+    string;
+
+  readonly channel:
+    unknown;
+
+  readonly idempotencyKey:
+    string;
+};
+
+type OutboxRow = {
+  readonly id:
+    string;
+
+  readonly aggregateId:
+    string;
+
+  readonly dedupeKey:
+    string;
+
+  readonly eventType:
+    string;
+};
 
 describe(
   'NotificationOrchestrationService - PostgreSQL integration',
@@ -41,19 +69,29 @@ describe(
     let orchestration:
       NotificationOrchestrationService;
 
+    /*
+     * Phase 3.2.16 exercises the queue/persistence boundary,
+     * so template rendering is deliberately not part of this test.
+     */
     const fakeTemplateService =
       {} as never;
 
-    const createData =
+    const createNotificationData =
       (
         channel:
           'email' |
           'push' |
           'in-app',
+
+        logicalNotificationId:
+          string,
+
+        logicalIdempotencyKey:
+          string,
       ):
         NotificationJobData => ({
         notificationId:
-          `${testPrefix}:${channel}`,
+          `${logicalNotificationId}:${channel}`,
 
         channel,
 
@@ -80,10 +118,10 @@ describe(
         },
 
         body:
-          'Phase 3.2.15 PostgreSQL orchestration integration test.',
+          'Phase 3.2.16 multi-channel fan-out integration test.',
 
         idempotencyKey:
-          `${testPrefix}:${channel}`,
+          `${logicalIdempotencyKey}:${channel}`,
       });
 
     beforeAll(
@@ -109,11 +147,52 @@ describe(
 
     afterAll(
       async () => {
+        /*
+         * OutboxEvent has no FK cascade to Notification, so clean up
+         * outbox rows explicitly before deleting notifications.
+         */
+        const notifications =
+          await prisma.notification.findMany({
+            where: {
+              notificationId: {
+                startsWith:
+                  testPrefix,
+              },
+            },
+
+            select: {
+              id:
+                true,
+            },
+          });
+
+        const aggregateIds =
+          notifications.map(
+            (
+              notification,
+            ) =>
+              notification.id,
+          );
+
+        if (
+          aggregateIds.length >
+          0
+        ) {
+          await prisma.outboxEvent.deleteMany({
+            where: {
+              aggregateId: {
+                in:
+                  aggregateIds,
+              },
+            },
+          });
+        }
+
         await prisma.notification.deleteMany({
           where: {
             notificationId: {
               startsWith:
-                `${testPrefix}:`,
+                testPrefix,
             },
           },
         });
@@ -125,21 +204,39 @@ describe(
     it(
       'creates independent channel notifications and outbox events',
       async () => {
+        const logicalNotificationId =
+          `${testPrefix}-independent`;
+
+        const logicalIdempotencyKey =
+          `${testPrefix}-independent-key`;
+
         const result =
           await orchestration.fanOut(
-            testPrefix,
+            logicalNotificationId,
 
             [
-              createData(
+              createNotificationData(
                 'email',
+
+                logicalNotificationId,
+
+                logicalIdempotencyKey,
               ),
 
-              createData(
+              createNotificationData(
                 'push',
+
+                logicalNotificationId,
+
+                logicalIdempotencyKey,
               ),
 
-              createData(
+              createNotificationData(
                 'in-app',
+
+                logicalNotificationId,
+
+                logicalIdempotencyKey,
               ),
             ],
           );
@@ -151,25 +248,66 @@ describe(
         );
 
         expect(
+          result.action,
+        ).toBe(
+          'fan-out-scheduled',
+        );
+
+        expect(
+          result.orchestrationId,
+        ).toBe(
+          logicalNotificationId,
+        );
+
+        expect(
           result.channels,
         ).toHaveLength(
           3,
         );
 
-        const notifications =
-          await prisma.notification.findMany({
-            where: {
-              notificationId: {
-                startsWith:
-                  `${testPrefix}:`,
-              },
-            },
+        expect(
+          result.channels.map(
+            (
+              item,
+            ) =>
+              item.channel,
+          ),
+        ).toEqual([
+          'email',
+          'push',
+          'in-app',
+        ]);
 
-            orderBy: {
-              notificationId:
-                'asc',
-            },
-          });
+        const notifications =
+          (
+            await prisma.notification.findMany({
+              where: {
+                notificationId: {
+                  startsWith:
+                    `${logicalNotificationId}:`,
+                },
+              },
+
+              orderBy: {
+                notificationId:
+                  'asc',
+              },
+
+              select: {
+                id:
+                  true,
+
+                notificationId:
+                  true,
+
+                channel:
+                  true,
+
+                idempotencyKey:
+                  true,
+              },
+            })
+          ) as NotificationRow[];
 
         expect(
           notifications,
@@ -177,75 +315,185 @@ describe(
           3,
         );
 
-        const notificationChannels:
-          string[] =
+        expect(
           notifications.map(
             (
-              item: {
-                readonly channel:
-                  string;
-              },
+              item,
             ) =>
-              item.channel,
-          );
+              item.notificationId,
+          ).sort(),
+        ).toEqual(
+          [
+            `${logicalNotificationId}:email`,
+            `${logicalNotificationId}:in-app`,
+            `${logicalNotificationId}:push`,
+          ].sort(),
+        );
+
+        expect(
+          notifications.map(
+            (
+              item,
+            ) =>
+              item.idempotencyKey,
+          ).sort(),
+        ).toEqual(
+          [
+            `${logicalIdempotencyKey}:email`,
+            `${logicalIdempotencyKey}:in-app`,
+            `${logicalIdempotencyKey}:push`,
+          ].sort(),
+        );
 
         expect(
           new Set(
-            notificationChannels,
+            notifications.map(
+              (
+                item,
+              ) =>
+                item.notificationId,
+            ),
           ).size,
         ).toBe(
-          3,
+          notifications.length,
         );
 
-        const aggregateIds:
-          string[] =
+        expect(
+          new Set(
+            notifications.map(
+              (
+                item,
+              ) =>
+                item.idempotencyKey,
+            ),
+          ).size,
+        ).toBe(
+          notifications.length,
+        );
+
+        expect(
+          new Set(
+            notifications.map(
+              (
+                item,
+              ) =>
+                String(
+                  item.channel,
+                ),
+            ),
+          ),
+        ).toEqual(
+          new Set([
+            'EMAIL',
+            'IN_APP',
+            'PUSH',
+          ]),
+        );
+
+        const notificationIds =
           notifications.map(
             (
-              item: {
-                readonly id:
-                  string;
-              },
+              item,
             ) =>
               item.id,
           );
 
-        const outbox =
-          await prisma.outboxEvent.findMany({
-            where: {
-              aggregateId: {
-                in:
-                  aggregateIds,
+        const outboxEvents =
+          (
+            await prisma.outboxEvent.findMany({
+              where: {
+                aggregateId: {
+                  in:
+                    notificationIds,
+                },
+
+                eventType:
+                  'notification.enqueue',
               },
 
-              eventType:
-                'notification.enqueue',
-            },
-          });
+              orderBy: {
+                createdAt:
+                  'asc',
+              },
+
+              select: {
+                id:
+                  true,
+
+                aggregateId:
+                  true,
+
+                dedupeKey:
+                  true,
+
+                eventType:
+                  true,
+              },
+            })
+          ) as OutboxRow[];
 
         expect(
-          outbox,
+          outboxEvents,
         ).toHaveLength(
           3,
         );
 
-        const dedupeKeys:
-          string[] =
-          outbox.map(
-            (
-              item: {
-                readonly dedupeKey:
-                  string;
-              },
-            ) =>
-              item.dedupeKey,
-          );
+        expect(
+          new Set(
+            outboxEvents.map(
+              (
+                item,
+              ) =>
+                item.aggregateId,
+            ),
+          ).size,
+        ).toBe(
+          outboxEvents.length,
+        );
 
         expect(
           new Set(
-            dedupeKeys,
+            outboxEvents.map(
+              (
+                item,
+              ) =>
+                item.dedupeKey,
+            ),
           ).size,
         ).toBe(
-          3,
+          outboxEvents.length,
+        );
+
+        expect(
+          outboxEvents.every(
+            (
+              item,
+            ) =>
+              item.eventType ===
+              'notification.enqueue',
+          ),
+        ).toBe(
+          true,
+        );
+
+        expect(
+          outboxEvents.map(
+            (
+              item,
+            ) =>
+              item.dedupeKey,
+          ).sort(),
+        ).toEqual(
+          [
+            `${logicalIdempotencyKey}:email`,
+            `${logicalIdempotencyKey}:in-app`,
+            `${logicalIdempotencyKey}:push`,
+          ].map(
+            (
+              key,
+            ) =>
+              `notification:${key}`,
+          ).sort(),
         );
       },
     );
@@ -253,111 +501,337 @@ describe(
     it(
       'is idempotent across a repeated orchestration request',
       async () => {
-        const repeatPrefix =
+        const logicalNotificationId =
           `${testPrefix}-repeat`;
+
+        const logicalIdempotencyKey =
+          `${testPrefix}-repeat-key`;
+
+        const createFanOutData =
+          () => [
+            createNotificationData(
+              'email',
+
+              logicalNotificationId,
+
+              logicalIdempotencyKey,
+            ),
+
+            createNotificationData(
+              'push',
+
+              logicalNotificationId,
+
+              logicalIdempotencyKey,
+            ),
+          ];
 
         const first =
           await orchestration.fanOut(
-            repeatPrefix,
+            logicalNotificationId,
 
-            [
-              {
-                ...createData(
-                  'email',
-                ),
-
-                notificationId:
-                  `${repeatPrefix}:email`,
-
-                idempotencyKey:
-                  `${repeatPrefix}:email`,
-              },
-
-              {
-                ...createData(
-                  'push',
-                ),
-
-                notificationId:
-                  `${repeatPrefix}:push`,
-
-                idempotencyKey:
-                  `${repeatPrefix}:push`,
-              },
-            ],
+            createFanOutData(),
           );
 
         const second =
           await orchestration.fanOut(
-            repeatPrefix,
+            logicalNotificationId,
 
-            [
-              {
-                ...createData(
-                  'email',
-                ),
-
-                notificationId:
-                  `${repeatPrefix}:email`,
-
-                idempotencyKey:
-                  `${repeatPrefix}:email`,
-              },
-
-              {
-                ...createData(
-                  'push',
-                ),
-
-                notificationId:
-                  `${repeatPrefix}:push`,
-
-                idempotencyKey:
-                  `${repeatPrefix}:push`,
-              },
-            ],
+            createFanOutData(),
           );
+
+        expect(
+          first.accepted,
+        ).toBe(
+          true,
+        );
+
+        expect(
+          second.accepted,
+        ).toBe(
+          true,
+        );
+
+        expect(
+          first.channels,
+        ).toHaveLength(
+          2,
+        );
+
+        expect(
+          second.channels,
+        ).toHaveLength(
+          2,
+        );
 
         expect(
           second.channels.map(
             (
-              item:
-                {
-                  readonly outboxEventId:
-                    string;
-                },
+              item,
             ) =>
               item.outboxEventId,
           ),
         ).toEqual(
           first.channels.map(
             (
-              item:
-                {
-                  readonly outboxEventId:
-                    string;
-                },
+              item,
             ) =>
               item.outboxEventId,
           ),
         );
 
+        expect(
+          second.channels.map(
+            (
+              item,
+            ) =>
+              item.notificationId,
+          ),
+        ).toEqual(
+          first.channels.map(
+            (
+              item,
+            ) =>
+              item.notificationId,
+          ),
+        );
+
         const notifications =
-          await prisma.notification.findMany({
-            where: {
-              notificationId: {
-                in: [
-                  `${repeatPrefix}:email`,
-                  `${repeatPrefix}:push`,
-                ],
+          (
+            await prisma.notification.findMany({
+              where: {
+                notificationId: {
+                  in: [
+                    `${logicalNotificationId}:email`,
+                    `${logicalNotificationId}:push`,
+                  ],
+                },
               },
-            },
-          });
+
+              select: {
+                id:
+                  true,
+
+                notificationId:
+                  true,
+
+                channel:
+                  true,
+
+                idempotencyKey:
+                  true,
+              },
+            })
+          ) as NotificationRow[];
 
         expect(
           notifications,
         ).toHaveLength(
           2,
+        );
+
+        expect(
+          new Set(
+            notifications.map(
+              (
+                item,
+              ) =>
+                item.notificationId,
+            ),
+          ).size,
+        ).toBe(
+          2,
+        );
+
+        expect(
+          new Set(
+            notifications.map(
+              (
+                item,
+              ) =>
+                item.idempotencyKey,
+            ),
+          ).size,
+        ).toBe(
+          2,
+        );
+
+        const notificationIds =
+          notifications.map(
+            (
+              item,
+            ) =>
+              item.id,
+          );
+
+        const outboxEvents =
+          (
+            await prisma.outboxEvent.findMany({
+              where: {
+                aggregateId: {
+                  in:
+                    notificationIds,
+                },
+
+                eventType:
+                  'notification.enqueue',
+              },
+
+              select: {
+                id:
+                  true,
+
+                aggregateId:
+                  true,
+
+                dedupeKey:
+                  true,
+
+                eventType:
+                  true,
+              },
+            })
+          ) as OutboxRow[];
+
+        expect(
+          outboxEvents,
+        ).toHaveLength(
+          2,
+        );
+
+        expect(
+          new Set(
+            outboxEvents.map(
+              (
+                item,
+              ) =>
+                item.dedupeKey,
+            ),
+          ).size,
+        ).toBe(
+          2,
+        );
+      },
+    );
+
+    it(
+      'keeps channel identities independent when all channels share the same logical notification',
+      async () => {
+        const logicalNotificationId =
+          `${testPrefix}-identity`;
+
+        const logicalIdempotencyKey =
+          `${testPrefix}-identity-key`;
+
+        const result =
+          await orchestration.fanOut(
+            logicalNotificationId,
+
+            [
+              createNotificationData(
+                'email',
+
+                logicalNotificationId,
+
+                logicalIdempotencyKey,
+              ),
+
+              createNotificationData(
+                'push',
+
+                logicalNotificationId,
+
+                logicalIdempotencyKey,
+              ),
+
+              createNotificationData(
+                'in-app',
+
+                logicalNotificationId,
+
+                logicalIdempotencyKey,
+              ),
+            ],
+          );
+
+        const notificationIds =
+          result.channels.map(
+            (
+              item,
+            ) =>
+              item.notificationId,
+          );
+
+        const idempotencyKeys =
+          result.channels.map(
+            (
+              item,
+            ) =>
+              item.jobId,
+          );
+
+        expect(
+          new Set(
+            notificationIds,
+          ).size,
+        ).toBe(
+          3,
+        );
+
+        expect(
+          new Set(
+            idempotencyKeys,
+          ).size,
+        ).toBe(
+          3,
+        );
+
+        expect(
+          notificationIds,
+        ).toEqual([
+          `${logicalNotificationId}:email`,
+          `${logicalNotificationId}:push`,
+          `${logicalNotificationId}:in-app`,
+        ]);
+
+        expect(
+          idempotencyKeys,
+        ).toEqual([
+          `${logicalIdempotencyKey}:email`,
+          `${logicalIdempotencyKey}:push`,
+          `${logicalIdempotencyKey}:in-app`,
+        ]);
+
+        const notifications =
+          (
+            await prisma.notification.findMany({
+              where: {
+                idempotencyKey: {
+                  in:
+                    idempotencyKeys,
+                },
+              },
+
+              select: {
+                id:
+                  true,
+
+                notificationId:
+                  true,
+
+                channel:
+                  true,
+
+                idempotencyKey:
+                  true,
+              },
+            })
+          ) as NotificationRow[];
+
+        expect(
+          notifications,
+        ).toHaveLength(
+          3,
         );
       },
     );

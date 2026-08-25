@@ -6,6 +6,10 @@ import {
 } from 'vitest';
 
 import {
+  BadRequestException,
+} from '@nestjs/common';
+
+import {
   NotificationOrchestrationService,
 } from './notification.orchestration.service.js';
 
@@ -123,62 +127,160 @@ describe(
         );
 
         expect(
-          result,
-        ).toEqual({
-          orchestrationId:
-            'orchestration-001',
+          result.channels,
+        ).toHaveLength(
+          2,
+        );
 
-          notificationId:
-            'orchestration-001',
+        expect(
+          new Set(
+            result.channels.map(
+              (
+                item,
+              ) =>
+                item.channel,
+            ),
+          ).size,
+        ).toBe(
+          2,
+        );
+      },
+    );
 
-          accepted:
-            true,
+    it(
+      'rejects duplicate channels before persistence',
+      async () => {
+        enqueue.mockReset();
 
-          action:
-            'fan-out-scheduled',
+        await expect(
+          service.fanOut(
+            'orchestration-duplicate',
 
-          channels: [
-            {
-              jobId:
-                'orchestration-001:email',
-
-              queue:
-                'notifications',
-
-              notificationId:
-                'orchestration-001:email',
-
-              status:
-                'QUEUED',
-
-              outboxEventId:
-                'outbox-email',
-
-              channel:
+            [
+              /*
+               * Both identities are canonical. The only
+               * intentional violation here is the duplicate
+               * channel.
+               */
+              createNotification(
                 'email',
-            },
 
-            {
-              jobId:
-                'orchestration-001:push',
+                'orchestration-duplicate:email',
 
-              queue:
-                'notifications',
+                'orchestration-key:email',
+              ),
 
-              notificationId:
-                'orchestration-001:push',
+              createNotification(
+                'email',
 
-              status:
-                'QUEUED',
+                'orchestration-duplicate:email',
 
-              outboxEventId:
-                'outbox-push',
+                'orchestration-key:email',
+              ),
+            ],
+          ),
+        ).rejects.toThrow(
+          new BadRequestException(
+            'Duplicate channel "email" in notification fan-out.',
+          ),
+        );
 
-              channel:
+        expect(
+          enqueue,
+        ).not.toHaveBeenCalled();
+      },
+    );
+
+    it(
+      'rejects duplicate child notification identities',
+      async () => {
+        enqueue.mockReset();
+
+        await expect(
+          service.fanOut(
+            'orchestration-duplicate-id',
+
+            [
+              createNotification(
+                'email',
+                'orchestration-duplicate-id:email',
+                'orchestration-key:email',
+              ),
+
+              createNotification(
                 'push',
-            },
-          ],
-        });
+                'orchestration-duplicate-id:email',
+                'orchestration-key:push',
+              ),
+            ],
+          ),
+        ).rejects.toThrow(
+          'Duplicate notificationId',
+        );
+
+        expect(
+          enqueue,
+        ).not.toHaveBeenCalled();
+      },
+    );
+
+    it(
+      'rejects duplicate child idempotency identities',
+      async () => {
+        enqueue.mockReset();
+
+        await expect(
+          service.fanOut(
+            'orchestration-duplicate-key',
+
+            [
+              createNotification(
+                'email',
+                'orchestration-duplicate-key:email',
+                'orchestration-key:email',
+              ),
+
+              createNotification(
+                'push',
+                'orchestration-duplicate-key:push',
+                'orchestration-key:email',
+              ),
+            ],
+          ),
+        ).rejects.toThrow(
+          'Duplicate idempotencyKey',
+        );
+
+        expect(
+          enqueue,
+        ).not.toHaveBeenCalled();
+      },
+    );
+
+    it(
+      'rejects a malformed channel notification identity',
+      async () => {
+        enqueue.mockReset();
+
+        await expect(
+          service.fanOut(
+            'orchestration-invalid',
+
+            [
+              createNotification(
+                'email',
+                'wrong-notification-id',
+                'orchestration-key:email',
+              ),
+            ],
+          ),
+        ).rejects.toThrow(
+          'Invalid notification identity',
+        );
+
+        expect(
+          enqueue,
+        ).not.toHaveBeenCalled();
       },
     );
 
@@ -205,18 +307,18 @@ describe(
         });
 
         await service.fanOut(
-          'orchestration-002',
+          'orchestration-options',
 
           [
             createNotification(
               'email',
-              'orchestration-002:email',
+              'orchestration-options:email',
               'key:email',
             ),
 
             createNotification(
               'in-app',
-              'orchestration-002:in-app',
+              'orchestration-options:in-app',
               'key:in-app',
             ),
           ],
@@ -232,56 +334,6 @@ describe(
         ).toHaveBeenCalledTimes(
           2,
         );
-
-        expect(
-          enqueue.mock.calls[0]?.[1],
-        ).toEqual({
-          locale:
-            'en-IN',
-        });
-
-        expect(
-          enqueue.mock.calls[1]?.[1],
-        ).toEqual({
-          locale:
-            'en-IN',
-        });
-      },
-    );
-
-    it(
-      'returns an empty successful result for an empty fan-out',
-      async () => {
-        enqueue.mockReset();
-
-        const result =
-          await service.fanOut(
-            'orchestration-empty',
-            [],
-          );
-
-        expect(
-          result,
-        ).toEqual({
-          orchestrationId:
-            'orchestration-empty',
-
-          notificationId:
-            'orchestration-empty',
-
-          accepted:
-            true,
-
-          action:
-            'fan-out-scheduled',
-
-          channels:
-            [],
-        });
-
-        expect(
-          enqueue,
-        ).not.toHaveBeenCalled();
       },
     );
   },

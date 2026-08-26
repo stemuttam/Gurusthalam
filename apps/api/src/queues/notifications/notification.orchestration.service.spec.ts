@@ -651,5 +651,264 @@ it(
     );
   },
 );
+
+it(
+  'adds deterministic fallback metadata to every channel in a fallback plan',
+  async () => {
+    enqueue.mockReset();
+
+    enqueue
+      .mockResolvedValueOnce({
+        jobId:
+          'fallback-metadata-email',
+
+        queue:
+          'notifications',
+
+        notificationId:
+          'fallback-metadata-001:email',
+
+        status:
+          'QUEUED',
+
+        outboxEventId:
+          'outbox-email',
+      })
+      .mockResolvedValueOnce({
+        jobId:
+          'fallback-metadata-push',
+
+        queue:
+          'notifications',
+
+        notificationId:
+          'fallback-metadata-001:push',
+
+        status:
+          'QUEUED',
+
+        outboxEventId:
+          'outbox-push',
+      });
+
+    const service =
+      createService();
+
+    await service.fanOut(
+      'fallback-metadata-001',
+
+      [
+        createNotification(
+          'email',
+          'fallback-metadata-001:email',
+          'fallback-metadata-key:email',
+        ),
+
+        createNotification(
+          'push',
+          'fallback-metadata-001:push',
+          'fallback-metadata-key:push',
+        ),
+      ],
+
+      {},
+
+      {
+        email: [
+          'push',
+        ],
+      },
+    );
+
+    const firstCall =
+      enqueue.mock.calls[0]?.[0] as {
+        readonly fallbackMetadata:
+          | {
+              readonly planId:
+                string;
+
+              readonly orchestrationId:
+                string;
+
+              readonly primary:
+                string;
+
+              readonly fallbacks:
+                readonly string[];
+
+              readonly sequence:
+                readonly string[];
+
+              readonly position:
+                number;
+            }
+          | undefined;
+      };
+
+    const secondCall =
+      enqueue.mock.calls[1]?.[0] as {
+        readonly fallbackMetadata:
+          | {
+              readonly planId:
+                string;
+
+              readonly orchestrationId:
+                string;
+
+              readonly primary:
+                string;
+
+              readonly fallbacks:
+                readonly string[];
+
+              readonly sequence:
+                readonly string[];
+
+              readonly position:
+                number;
+            }
+          | undefined;
+      };
+
+    expect(
+      firstCall.fallbackMetadata,
+    ).toBeDefined();
+
+    expect(
+      secondCall.fallbackMetadata,
+    ).toBeDefined();
+
+    expect(
+      firstCall.fallbackMetadata?.planId,
+    ).toBe(
+      secondCall.fallbackMetadata?.planId,
+    );
+
+    expect(
+      firstCall.fallbackMetadata,
+    ).toMatchObject({
+      orchestrationId:
+        'fallback-metadata-001',
+
+      primary:
+        'email',
+
+      fallbacks: [
+        'push',
+      ],
+
+      sequence: [
+        'email',
+        'push',
+      ],
+
+      position:
+        0,
+    });
+
+    expect(
+      secondCall.fallbackMetadata,
+    ).toMatchObject({
+      orchestrationId:
+        'fallback-metadata-001',
+
+      primary:
+        'email',
+
+      fallbacks: [
+        'push',
+      ],
+
+      sequence: [
+        'email',
+        'push',
+      ],
+
+      position:
+        1,
+    });
+  },
+);
+
+it(
+  'keeps fallback plan identity stable across repeated planning',
+  async () => {
+    enqueue.mockReset();
+
+    enqueue
+      .mockResolvedValue({
+        jobId:
+          'fallback-stable-job',
+
+        queue:
+          'notifications',
+
+        notificationId:
+          'fallback-stable',
+
+        status:
+          'QUEUED',
+
+        outboxEventId:
+          'fallback-stable-outbox',
+      });
+
+    const service =
+      createService();
+
+    const createPlan =
+      async () => {
+        await service.fanOut(
+          'fallback-stable-001',
+
+          [
+            createNotification(
+              'email',
+              'fallback-stable-001:email',
+              'fallback-stable-key:email',
+            ),
+
+            createNotification(
+              'push',
+              'fallback-stable-001:push',
+              'fallback-stable-key:push',
+            ),
+          ],
+
+          {},
+
+          {
+            email: [
+              'push',
+            ],
+          },
+        );
+
+        return (
+          enqueue.mock.calls[0]?.[0] as {
+            readonly fallbackMetadata:
+              | {
+                  readonly planId:
+                    string;
+                };
+          }
+        ).fallbackMetadata?.planId;
+      };
+
+    const firstPlanId =
+      await createPlan();
+
+    enqueue.mockClear();
+
+    const secondPlanId =
+      await createPlan();
+
+    expect(
+      firstPlanId,
+    ).toBe(
+      secondPlanId,
+    );
+  },
+);
   },
 );

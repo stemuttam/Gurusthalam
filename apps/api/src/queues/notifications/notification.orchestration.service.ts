@@ -23,12 +23,17 @@ import {
   type NotificationChannelFallbackPlan,
 } from './notification.channel-fallback-policy.js';
 
+import {
+  createNotificationFallbackMetadata,
+} from './notification-fallback-identity.js';
+
 import type {
   NotificationCommandChannel,
 } from './notification.command.js';
 
 import type {
   NotificationJobData,
+  NotificationFallbackMetadata,
 } from './notification.types.js';
 
 export type NotificationFallbackMap =
@@ -117,6 +122,7 @@ export class NotificationOrchestrationService {
       this.validateFallbackMap(
         fallbackMap,
         [],
+        logicalId,
       );
 
       return {
@@ -173,11 +179,45 @@ export class NotificationOrchestrationService {
           ) =>
             notification.channel,
         ),
+
+        logicalId,
+      );
+
+    const fallbackMetadataByChannel =
+      this.createFallbackMetadataByChannel(
+        fallbackPlans,
+
+        logicalId,
+      );
+
+    const persistedNotifications =
+      policyOrderedNotifications.map(
+        (
+          notification,
+        ) => {
+          const fallbackMetadata =
+            fallbackMetadataByChannel.get(
+              notification.channel,
+            );
+
+          if (
+            fallbackMetadata ===
+            undefined
+          ) {
+            return notification;
+          }
+
+          return {
+            ...notification,
+
+            fallbackMetadata,
+          };
+        },
       );
 
     const results =
       await Promise.all(
-        policyOrderedNotifications.map(
+        persistedNotifications.map(
           async (
             notification,
           ) => {
@@ -224,6 +264,9 @@ export class NotificationOrchestrationService {
 
     channels:
       readonly NotificationCommandChannel[],
+
+    orchestrationId:
+      string,
   ):
     NotificationChannelFallbackPlan[] {
     const channelSet =
@@ -275,12 +318,70 @@ export class NotificationOrchestrationService {
           this.channelPolicy,
         );
 
+      /*
+       * Validate deterministic identity creation here as part
+       * of the orchestration boundary, before persistence.
+       */
+      createNotificationFallbackMetadata(
+        orchestrationId,
+
+        plan,
+
+        channel,
+      );
+
       plans.push(
         plan,
       );
     }
 
     return plans;
+  }
+
+  private createFallbackMetadataByChannel(
+    plans:
+      readonly NotificationChannelFallbackPlan[],
+
+    orchestrationId:
+      string,
+  ):
+    Map<
+      NotificationCommandChannel,
+      NotificationFallbackMetadata
+    > {
+    const metadataByChannel =
+      new Map<
+        NotificationCommandChannel,
+        NotificationFallbackMetadata
+      >();
+
+    for (
+      const plan of
+        plans
+    ) {
+      for (
+        const channel of
+          plan.sequence
+      ) {
+        /*
+         * Every channel in a plan gets the same deterministic
+         * planId and an explicit position.
+         */
+        metadataByChannel.set(
+          channel,
+
+          createNotificationFallbackMetadata(
+            orchestrationId,
+
+            plan,
+
+            channel,
+          ),
+        );
+      }
+    }
+
+    return metadataByChannel;
   }
 
   private orderNotificationsByPolicy(

@@ -85,6 +85,33 @@ export interface NotificationTemplateSnapshot {
     }[];
 }
 
+/**
+ * Immutable fallback-plan provenance attached to a queued
+ * channel notification.
+ *
+ * The metadata is serialized into the transactional outbox
+ * payload by NotificationQueueService.
+ */
+export interface NotificationFallbackMetadata {
+  readonly planId:
+    string;
+
+  readonly orchestrationId:
+    string;
+
+  readonly primary:
+    NotificationChannel;
+
+  readonly fallbacks:
+    readonly NotificationChannel[];
+
+  readonly sequence:
+    readonly NotificationChannel[];
+
+  readonly position:
+    number;
+}
+
 export interface NotificationJobData {
   readonly notificationId:
     string;
@@ -126,6 +153,15 @@ export interface NotificationJobData {
    */
   readonly templateSnapshot?:
     NotificationTemplateSnapshot;
+
+  /**
+   * Immutable fallback-plan provenance.
+   *
+   * This is persisted through the transactional outbox payload.
+   * It does not activate provider failover by itself.
+   */
+  readonly fallbackMetadata?:
+    NotificationFallbackMetadata;
 
   readonly idempotencyKey:
     string;

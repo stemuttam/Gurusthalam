@@ -18,7 +18,11 @@ import {
   NotificationFailureClassification,
 } from '../providers/notification/notification-provider-result.types.js';
 
-function createNotificationData(): NotificationJobData {
+function createNotificationData(
+  overrides:
+    Partial<NotificationJobData> = {},
+):
+  NotificationJobData {
   return {
     notificationId:
       'notification-policy-001',
@@ -39,6 +43,8 @@ function createNotificationData(): NotificationJobData {
 
     idempotencyKey:
       'idempotency-policy-001',
+
+    ...overrides,
   };
 }
 
@@ -48,7 +54,8 @@ function createJob(
 
   attemptsMade =
     0,
-): Job<NotificationJobData> {
+):
+  Job<NotificationJobData> {
   return {
     data,
 
@@ -59,9 +66,54 @@ function createJob(
   } as Job<NotificationJobData>;
 }
 
+interface TestProvider {
+  readonly send:
+    ReturnType<
+      typeof vi.fn
+    >;
+}
+
+function getTestProvider(
+  providers:
+    Map<
+      string,
+      TestProvider
+    >,
+
+  channel:
+    string,
+):
+  TestProvider {
+  const provider =
+    providers.get(
+      channel,
+    );
+
+  if (
+    provider ===
+    undefined
+  ) {
+    throw new Error(
+      `Test provider "${channel}" was not registered.`,
+    );
+  }
+
+  return provider;
+}
+
 function createProcessor(
-  providerResult:
+  primaryProviderResult:
     unknown,
+
+  fallbackProviderResults:
+    Partial<
+      Record<
+        'email' |
+        'push' |
+        'in-app',
+        unknown
+      >
+    > = {},
 ) {
   const logger = {
     info:
@@ -77,17 +129,70 @@ function createProcessor(
       vi.fn(),
   };
 
-  const provider = {
+  const primaryProvider:
+    TestProvider = {
     send:
       vi.fn().mockResolvedValue(
-        providerResult,
+        primaryProviderResult,
       ),
   };
 
+  const fallbackProviders =
+    new Map<
+      string,
+      TestProvider
+    >();
+
+  for (
+    const channel of [
+      'email',
+      'push',
+      'in-app',
+    ]
+  ) {
+    if (
+      channel ===
+      'email'
+    ) {
+      fallbackProviders.set(
+        channel,
+
+        primaryProvider,
+      );
+
+      continue;
+    }
+
+    fallbackProviders.set(
+      channel,
+
+      {
+        send:
+          vi.fn().mockResolvedValue(
+            fallbackProviderResults[
+              channel as
+                'push' |
+                'in-app'
+            ],
+          ),
+      },
+    );
+  }
+
   const providerRegistry = {
     get:
-      vi.fn().mockReturnValue(
-        provider,
+      vi.fn(
+        (
+          channel:
+            'email' |
+            'push' |
+            'in-app',
+        ) =>
+          getTestProvider(
+            fallbackProviders,
+
+            channel,
+          ),
       ),
   };
 
@@ -194,7 +299,7 @@ function createProcessor(
   return {
     processor,
 
-    provider,
+    primaryProvider,
 
     providerRegistry,
 
@@ -203,6 +308,35 @@ function createProcessor(
     deliveryPersistence,
 
     metrics,
+
+    fallbackProviders,
+  };
+}
+
+function createFallbackMetadata() {
+  return {
+    planId:
+      'fallback-plan-001',
+
+    orchestrationId:
+      'fallback-orchestration-001',
+
+    primary:
+      'email' as const,
+
+    fallbacks: [
+      'push' as const,
+      'in-app' as const,
+    ],
+
+    sequence: [
+      'email' as const,
+      'push' as const,
+      'in-app' as const,
+    ],
+
+    position:
+      0,
   };
 }
 
@@ -498,6 +632,465 @@ describe(
         ).toHaveBeenCalledTimes(
           1,
         );
+      },
+    );
+
+    it(
+      'executes the first fallback after primary retry exhaustion',
+      async () => {
+        const {
+          processor,
+          primaryProvider,
+          fallbackProviders,
+          persistence,
+        } =
+          createProcessor(
+            {
+              accepted:
+                false,
+
+              provider:
+                'development-email',
+
+              channel:
+                'email',
+
+              notificationId:
+                'notification-policy-001',
+
+              classification:
+                NotificationFailureClassification.RETRYABLE,
+
+              errorMessage:
+                'Primary provider retry budget exhausted.',
+            },
+
+            {
+              push: {
+                accepted:
+                  true,
+
+                provider:
+                  'development-push',
+
+                channel:
+                  'push',
+
+                notificationId:
+                  'notification-policy-001',
+
+                messageId:
+                  'fallback-push-message-001',
+
+                classification:
+                  NotificationFailureClassification.SUCCESS,
+              },
+            },
+          );
+
+        const result =
+          await processor.process(
+            createJob(
+              createNotificationData({
+                fallbackMetadata:
+                  createFallbackMetadata(),
+              }),
+
+              2,
+            ),
+          );
+
+        expect(
+          result,
+        ).toEqual({
+          processed:
+            true,
+
+          notificationId:
+            'notification-policy-001',
+
+          channel:
+            'push',
+
+          provider:
+            'development-push',
+
+          messageId:
+            'fallback-push-message-001',
+        });
+
+        expect(
+          primaryProvider.send,
+        ).toHaveBeenCalledTimes(
+          1,
+        );
+
+        expect(
+          getTestProvider(
+            fallbackProviders,
+            'push',
+          ).send,
+        ).toHaveBeenCalledTimes(
+          1,
+        );
+
+        expect(
+          getTestProvider(
+            fallbackProviders,
+            'in-app',
+          ).send,
+        ).not.toHaveBeenCalled();
+
+        expect(
+          persistence.markRetrying,
+        ).not.toHaveBeenCalled();
+
+        expect(
+          persistence.markSent,
+        ).toHaveBeenCalledWith(
+          'notification-policy-001',
+
+          'development-push',
+
+          'fallback-push-message-001',
+        );
+      },
+    );
+
+    it(
+      'does not execute fallback while primary retry remains available',
+      async () => {
+        const {
+          processor,
+          primaryProvider,
+          fallbackProviders,
+          persistence,
+        } =
+          createProcessor(
+            {
+              accepted:
+                false,
+
+              provider:
+                'development-email',
+
+              channel:
+                'email',
+
+              notificationId:
+                'notification-policy-001',
+
+              classification:
+                NotificationFailureClassification.RETRYABLE,
+
+              errorMessage:
+                'Temporary primary provider failure.',
+            },
+
+            {
+              push: {
+                accepted:
+                  true,
+
+                provider:
+                  'development-push',
+
+                channel:
+                  'push',
+
+                notificationId:
+                  'notification-policy-001',
+
+                messageId:
+                  'should-not-be-used',
+
+                classification:
+                  NotificationFailureClassification.SUCCESS,
+              },
+            },
+          );
+
+        const promise =
+          processor.process(
+            createJob(
+              createNotificationData({
+                fallbackMetadata:
+                  createFallbackMetadata(),
+              }),
+
+              0,
+            ),
+          );
+
+        await expect(
+          promise,
+        ).rejects.toThrow(
+          'Temporary primary provider failure.',
+        );
+
+        expect(
+          primaryProvider.send,
+        ).toHaveBeenCalledTimes(
+          1,
+        );
+
+        expect(
+          getTestProvider(
+            fallbackProviders,
+            'push',
+          ).send,
+        ).not.toHaveBeenCalled();
+
+        expect(
+          persistence.markRetrying,
+        ).toHaveBeenCalledTimes(
+          1,
+        );
+      },
+    );
+
+    it(
+      'marks the original notification SENT when fallback succeeds',
+      async () => {
+        const {
+          processor,
+          persistence,
+          deliveryPersistence,
+        } =
+          createProcessor(
+            {
+              accepted:
+                false,
+
+              provider:
+                'development-email',
+
+              channel:
+                'email',
+
+              notificationId:
+                'notification-policy-001',
+
+              classification:
+                NotificationFailureClassification.PERMANENT,
+
+              errorMessage:
+                'Primary provider permanently rejected message.',
+            },
+
+            {
+              push: {
+                accepted:
+                  true,
+
+                provider:
+                  'development-push',
+
+                channel:
+                  'push',
+
+                notificationId:
+                  'notification-policy-001',
+
+                messageId:
+                  'fallback-message-001',
+
+                classification:
+                  NotificationFailureClassification.SUCCESS,
+              },
+            },
+          );
+
+        const result =
+          await processor.process(
+            createJob(
+              createNotificationData({
+                fallbackMetadata:
+                  createFallbackMetadata(),
+              }),
+            ),
+          );
+
+        expect(
+          result.processed,
+        ).toBe(
+          true,
+        );
+
+        expect(
+          result.provider,
+        ).toBe(
+          'development-push',
+        );
+
+        expect(
+          result.messageId,
+        ).toBe(
+          'fallback-message-001',
+        );
+
+        expect(
+          persistence.markSent,
+        ).toHaveBeenCalledWith(
+          'notification-policy-001',
+
+          'development-push',
+
+          'fallback-message-001',
+        );
+
+        expect(
+          persistence.markFailed,
+        ).not.toHaveBeenCalled();
+
+        expect(
+          deliveryPersistence.markSent,
+        ).toHaveBeenCalledTimes(
+          1,
+        );
+      },
+    );
+
+    it(
+      'keeps the original notification FAILED when all fallbacks fail',
+      async () => {
+        const {
+          processor,
+          persistence,
+          deliveryPersistence,
+          fallbackProviders,
+        } =
+          createProcessor(
+            {
+              accepted:
+                false,
+
+              provider:
+                'development-email',
+
+              channel:
+                'email',
+
+              notificationId:
+                'notification-policy-001',
+
+              classification:
+                NotificationFailureClassification.PERMANENT,
+
+              errorMessage:
+                'Primary provider permanently rejected message.',
+            },
+
+            {
+              push: {
+                accepted:
+                  false,
+
+                provider:
+                  'development-push',
+
+                channel:
+                  'push',
+
+                notificationId:
+                  'notification-policy-001',
+
+                classification:
+                  NotificationFailureClassification.PERMANENT,
+
+                errorMessage:
+                  'Push fallback failed.',
+              },
+
+              'in-app': {
+                accepted:
+                  false,
+
+                provider:
+                  'development-in-app',
+
+                channel:
+                  'in-app',
+
+                notificationId:
+                  'notification-policy-001',
+
+                classification:
+                  NotificationFailureClassification.NON_RETRYABLE,
+
+                errorMessage:
+                  'In-app fallback failed.',
+              },
+            },
+          );
+
+        const result =
+          await processor.process(
+            createJob(
+              createNotificationData({
+                fallbackMetadata:
+                  createFallbackMetadata(),
+              }),
+            ),
+          );
+
+        expect(
+          result.processed,
+        ).toBe(
+          true,
+        );
+
+        expect(
+          result.provider,
+        ).toBe(
+          'development-email',
+        );
+
+        expect(
+          result.messageId,
+        ).toBe(
+          'failed-notification-policy-001',
+        );
+
+        expect(
+          getTestProvider(
+            fallbackProviders,
+            'push',
+          ).send,
+        ).toHaveBeenCalledTimes(
+          1,
+        );
+
+        expect(
+          getTestProvider(
+            fallbackProviders,
+            'in-app',
+          ).send,
+        ).toHaveBeenCalledTimes(
+          1,
+        );
+
+        expect(
+          deliveryPersistence.markFailed,
+        ).toHaveBeenCalledTimes(
+          3,
+        );
+
+        expect(
+          persistence.markFailed,
+        ).toHaveBeenCalledWith(
+          'notification-policy-001',
+
+          expect.any(
+            String,
+          ),
+
+          1,
+        );
+
+        expect(
+          persistence.markSent,
+        ).not.toHaveBeenCalled();
       },
     );
   },

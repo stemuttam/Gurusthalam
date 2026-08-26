@@ -33,7 +33,6 @@ import type {
 
 import type {
   NotificationJobData,
-  NotificationFallbackMetadata,
 } from './notification.types.js';
 
 export type NotificationFallbackMap =
@@ -121,7 +120,9 @@ export class NotificationOrchestrationService {
     ) {
       this.validateFallbackMap(
         fallbackMap,
+
         [],
+
         logicalId,
       );
 
@@ -183,29 +184,81 @@ export class NotificationOrchestrationService {
         logicalId,
       );
 
-    const fallbackMetadataByChannel =
-      this.createFallbackMetadataByChannel(
-        fallbackPlans,
+    const fallbackPlansByPrimary =
+      new Map<
+        NotificationCommandChannel,
+        NotificationChannelFallbackPlan
+      >();
 
-        logicalId,
+    for (
+      const plan of
+        fallbackPlans
+    ) {
+      fallbackPlansByPrimary.set(
+        plan.primary,
+
+        plan,
+      );
+    }
+
+    const fallbackTargetChannels =
+      new Set<NotificationCommandChannel>();
+
+    for (
+      const plan of
+        fallbackPlans
+    ) {
+      for (
+        const fallbackChannel of
+          plan.fallbacks
+      ) {
+        fallbackTargetChannels.add(
+          fallbackChannel,
+        );
+      }
+    }
+
+    /*
+     * A channel participating as a fallback must not also be
+     * scheduled as an independent primary job. Otherwise the
+     * fallback would be delivered immediately instead of only
+     * after primary delivery failure.
+     */
+    const notificationsToEnqueue =
+      policyOrderedNotifications.filter(
+        (
+          notification,
+        ) =>
+          !fallbackTargetChannels.has(
+            notification.channel,
+          ),
       );
 
     const persistedNotifications =
-      policyOrderedNotifications.map(
+      notificationsToEnqueue.map(
         (
           notification,
         ) => {
-          const fallbackMetadata =
-            fallbackMetadataByChannel.get(
+          const fallbackPlan =
+            fallbackPlansByPrimary.get(
               notification.channel,
             );
 
           if (
-            fallbackMetadata ===
+            fallbackPlan ===
             undefined
           ) {
             return notification;
           }
+
+          const fallbackMetadata =
+            createNotificationFallbackMetadata(
+              logicalId,
+
+              fallbackPlan,
+
+              notification.channel,
+            );
 
           return {
             ...notification,
@@ -295,6 +348,9 @@ export class NotificationOrchestrationService {
       NotificationChannelFallbackPlan[] =
       [];
 
+    const fallbackTargetSet =
+      new Set<NotificationCommandChannel>();
+
     for (
       const channel of
         channels
@@ -318,9 +374,38 @@ export class NotificationOrchestrationService {
           this.channelPolicy,
         );
 
+      for (
+        const fallbackChannel of
+          plan.fallbacks
+      ) {
+        if (
+          channelSet.has(
+            fallbackChannel,
+          )
+        ) {
+          throw new BadRequestException(
+            `Fallback target channel "${fallbackChannel}" must not also be independently scheduled in the same notification fan-out.`,
+          );
+        }
+
+        if (
+          fallbackTargetSet.has(
+            fallbackChannel,
+          )
+        ) {
+          throw new BadRequestException(
+            `Fallback target channel "${fallbackChannel}" cannot belong to multiple fallback plans.`,
+          );
+        }
+
+        fallbackTargetSet.add(
+          fallbackChannel,
+        );
+      }
+
       /*
-       * Validate deterministic identity creation here as part
-       * of the orchestration boundary, before persistence.
+       * Validate deterministic identity creation at the
+       * orchestration boundary.
        */
       createNotificationFallbackMetadata(
         orchestrationId,
@@ -336,52 +421,6 @@ export class NotificationOrchestrationService {
     }
 
     return plans;
-  }
-
-  private createFallbackMetadataByChannel(
-    plans:
-      readonly NotificationChannelFallbackPlan[],
-
-    orchestrationId:
-      string,
-  ):
-    Map<
-      NotificationCommandChannel,
-      NotificationFallbackMetadata
-    > {
-    const metadataByChannel =
-      new Map<
-        NotificationCommandChannel,
-        NotificationFallbackMetadata
-      >();
-
-    for (
-      const plan of
-        plans
-    ) {
-      for (
-        const channel of
-          plan.sequence
-      ) {
-        /*
-         * Every channel in a plan gets the same deterministic
-         * planId and an explicit position.
-         */
-        metadataByChannel.set(
-          channel,
-
-          createNotificationFallbackMetadata(
-            orchestrationId,
-
-            plan,
-
-            channel,
-          ),
-        );
-      }
-    }
-
-    return metadataByChannel;
   }
 
   private orderNotificationsByPolicy(
@@ -404,6 +443,7 @@ export class NotificationOrchestrationService {
     ) {
       byChannel.set(
         notification.channel,
+
         notification,
       );
     }

@@ -18,6 +18,11 @@ import {
   NotificationChannelPolicy,
 } from './notification.channel-policy.js';
 
+import {
+  NotificationChannelFallbackPolicy,
+  type NotificationChannelFallbackPlan,
+} from './notification.channel-fallback-policy.js';
+
 import type {
   NotificationCommandChannel,
 } from './notification.command.js';
@@ -25,6 +30,14 @@ import type {
 import type {
   NotificationJobData,
 } from './notification.types.js';
+
+export type NotificationFallbackMap =
+  Partial<
+    Record<
+      NotificationCommandChannel,
+      readonly NotificationCommandChannel[]
+    >
+  >;
 
 export interface NotificationOrchestrationChildResult
   extends NotificationEnqueueResult {
@@ -47,6 +60,9 @@ export interface NotificationOrchestrationResult {
 
   readonly channels:
     readonly NotificationOrchestrationChildResult[];
+
+  readonly fallbackPlans:
+    readonly NotificationChannelFallbackPlan[];
 }
 
 @Injectable()
@@ -59,6 +75,11 @@ export class NotificationOrchestrationService {
     private readonly channelPolicy:
       NotificationChannelPolicy =
         new NotificationChannelPolicy(),
+
+    @Optional()
+    private readonly fallbackPolicy:
+      NotificationChannelFallbackPolicy =
+        new NotificationChannelFallbackPolicy(),
   ) {}
 
   async fanOut(
@@ -70,6 +91,10 @@ export class NotificationOrchestrationService {
 
     options:
       NotificationEnqueueOptions =
+        {},
+
+    fallbackMap:
+      NotificationFallbackMap =
         {},
   ):
     Promise<NotificationOrchestrationResult> {
@@ -89,6 +114,11 @@ export class NotificationOrchestrationService {
       notifications.length ===
       0
     ) {
+      this.validateFallbackMap(
+        fallbackMap,
+        [],
+      );
+
       return {
         orchestrationId:
           logicalId,
@@ -103,6 +133,9 @@ export class NotificationOrchestrationService {
           'fan-out-scheduled',
 
         channels:
+          [],
+
+        fallbackPlans:
           [],
       };
     }
@@ -129,6 +162,18 @@ export class NotificationOrchestrationService {
 
       policyOrderedNotifications,
     );
+
+    const fallbackPlans =
+      this.validateFallbackMap(
+        fallbackMap,
+
+        policyOrderedNotifications.map(
+          (
+            notification,
+          ) =>
+            notification.channel,
+        ),
+      );
 
     const results =
       await Promise.all(
@@ -168,7 +213,74 @@ export class NotificationOrchestrationService {
 
       channels:
         results,
+
+      fallbackPlans,
     };
+  }
+
+  private validateFallbackMap(
+    fallbackMap:
+      NotificationFallbackMap,
+
+    channels:
+      readonly NotificationCommandChannel[],
+  ):
+    NotificationChannelFallbackPlan[] {
+    const channelSet =
+      new Set(
+        channels,
+      );
+
+    for (
+      const key of
+        Object.keys(
+          fallbackMap,
+        )
+    ) {
+      if (
+        !channelSet.has(
+          key as NotificationCommandChannel,
+        )
+      ) {
+        throw new BadRequestException(
+          `Fallback configuration references channel "${key}" that is not part of the notification fan-out.`,
+        );
+      }
+    }
+
+    const plans:
+      NotificationChannelFallbackPlan[] =
+      [];
+
+    for (
+      const channel of
+        channels
+    ) {
+      const fallbacks =
+        fallbackMap[channel];
+
+      if (
+        fallbacks ===
+        undefined
+      ) {
+        continue;
+      }
+
+      const plan =
+        this.fallbackPolicy.createPlan(
+          channel,
+
+          fallbacks,
+
+          this.channelPolicy,
+        );
+
+      plans.push(
+        plan,
+      );
+    }
+
+    return plans;
   }
 
   private orderNotificationsByPolicy(

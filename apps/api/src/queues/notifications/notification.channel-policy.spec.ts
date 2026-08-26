@@ -333,5 +333,102 @@ describe(
         );
       },
     );
+    it(
+  'accepts a valid fallback sequence without applying request cardinality rules',
+  () => {
+    const policy =
+      new NotificationChannelPolicy({
+        minimumChannels:
+          2,
+
+        maximumChannels:
+          2,
+      });
+
+    expect(
+      () =>
+        policy.validateFallbackSequence(
+          [
+            'email',
+            'push',
+            'in-app',
+          ],
+        ),
+    ).not.toThrow();
+  },
+);
+
+it(
+  'rejects an unsupported fallback channel',
+  () => {
+    const policy =
+      new NotificationChannelPolicy({
+        allowedChannels: [
+          'email',
+          'push',
+        ],
+      });
+
+    expect(
+      () =>
+        policy.validateFallbackSequence(
+          [
+            'email',
+            'in-app',
+          ],
+        ),
+    ).toThrow(
+      'Notification channel "in-app" is not allowed by the channel policy.',
+    );
+  },
+);
+
+it(
+  'rejects duplicate channels in a fallback sequence',
+  () => {
+    const policy =
+      new NotificationChannelPolicy();
+
+    expect(
+      () =>
+        policy.validateFallbackSequence(
+          [
+            'email',
+            'push',
+            'push',
+          ],
+        ),
+    ).toThrow(
+      'Notification fallback sequence must not contain duplicates.',
+    );
+  },
+);
+
+it(
+  'rejects mutually-exclusive channels in a fallback sequence',
+  () => {
+    const policy =
+      new NotificationChannelPolicy({
+        mutuallyExclusiveChannels: [
+          [
+            'email',
+            'push',
+          ],
+        ],
+      });
+
+    expect(
+      () =>
+        policy.validateFallbackSequence(
+          [
+            'email',
+            'push',
+          ],
+        ),
+    ).toThrow(
+      'Notification channels "email" and "push" cannot be selected together.',
+    );
+  },
+);
   },
 );

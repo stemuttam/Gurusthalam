@@ -189,10 +189,9 @@ export class NotificationChannelPolicy {
       );
     }
 
-    const channels =
-      [
-        ...requestedChannels,
-      ];
+    const channels = [
+      ...requestedChannels,
+    ];
 
     if (
       channels.length <
@@ -220,20 +219,9 @@ export class NotificationChannelPolicy {
       );
     }
 
-    for (
-      const channel of
-        channels
-    ) {
-      if (
-        !this.allowedChannels.includes(
-          channel,
-        )
-      ) {
-        throw new BadRequestException(
-          `Notification channel "${channel}" is not allowed by the channel policy.`,
-        );
-      }
-    }
+    this.validateSupportedChannels(
+      channels,
+    );
 
     for (
       const mandatoryChannel of
@@ -246,6 +234,85 @@ export class NotificationChannelPolicy {
       ) {
         throw new BadRequestException(
           `Notification channel "${mandatoryChannel}" is mandatory for this channel policy.`,
+        );
+      }
+    }
+
+    return {
+      channels:
+        this.orderChannels(
+          channels,
+        ),
+    };
+  }
+
+  /**
+   * Validates a fallback sequence against the channel
+   * compatibility rules without applying request-level
+   * minimum/maximum or mandatory-channel requirements.
+   *
+   * Fallbacks are evaluated as a compatibility sequence,
+   * not as a new independent notification request.
+   */
+  validateFallbackSequence(
+    channels:
+      readonly NotificationCommandChannel[],
+  ):
+    void {
+    if (
+      channels.length ===
+      0
+    ) {
+      throw new BadRequestException(
+        'Notification fallback sequence must contain at least one channel.',
+      );
+    }
+
+    if (
+      hasDuplicateChannels(
+        channels,
+      )
+    ) {
+      throw new BadRequestException(
+        'Notification fallback sequence must not contain duplicates.',
+      );
+    }
+
+    this.validateSupportedChannels(
+      channels,
+    );
+  }
+
+  getAllowedChannels():
+    readonly NotificationCommandChannel[] {
+    return [
+      ...this.allowedChannels,
+    ];
+  }
+
+  getPreferredOrder():
+    readonly NotificationCommandChannel[] {
+    return [
+      ...this.preferredOrder,
+    ];
+  }
+
+  private validateSupportedChannels(
+    channels:
+      readonly NotificationCommandChannel[],
+  ):
+    void {
+    for (
+      const channel of
+        channels
+    ) {
+      if (
+        !this.allowedChannels.includes(
+          channel,
+        )
+      ) {
+        throw new BadRequestException(
+          `Notification channel "${channel}" is not allowed by the channel policy.`,
         );
       }
     }
@@ -270,27 +337,6 @@ export class NotificationChannelPolicy {
         );
       }
     }
-
-    return {
-      channels:
-        this.orderChannels(
-          channels,
-        ),
-    };
-  }
-
-  getAllowedChannels():
-    readonly NotificationCommandChannel[] {
-    return [
-      ...this.allowedChannels,
-    ];
-  }
-
-  getPreferredOrder():
-    readonly NotificationCommandChannel[] {
-    return [
-      ...this.preferredOrder,
-    ];
   }
 
   private orderChannels(

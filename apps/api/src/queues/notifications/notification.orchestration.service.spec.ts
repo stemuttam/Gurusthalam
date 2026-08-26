@@ -439,5 +439,217 @@ describe(
         );
       },
     );
+    it(
+  'validates fallback configuration before persistence',
+  async () => {
+    enqueue.mockReset();
+
+    const service =
+      createService();
+
+    await expect(
+      service.fanOut(
+        'fallback-validation-001',
+
+        [
+          createNotification(
+            'email',
+            'fallback-validation-001:email',
+            'fallback-validation-key:email',
+          ),
+
+          createNotification(
+            'push',
+            'fallback-validation-001:push',
+            'fallback-validation-key:push',
+          ),
+        ],
+
+        {},
+
+        {
+          email: [
+            'push',
+          ],
+        },
+      ),
+    ).resolves.toMatchObject({
+      accepted:
+        true,
+
+      fallbackPlans: [
+        {
+          primary:
+            'email',
+
+          fallbacks: [
+            'push',
+          ],
+
+          sequence: [
+            'email',
+            'push',
+          ],
+        },
+      ],
+    });
+
+    expect(
+      enqueue,
+    ).toHaveBeenCalledTimes(
+      2,
+    );
+  },
+);
+
+it(
+  'rejects a fallback channel that is not part of the fan-out',
+  async () => {
+    enqueue.mockReset();
+
+    const service =
+      createService();
+
+    await expect(
+      service.fanOut(
+        'fallback-unknown-channel-001',
+
+        [
+          createNotification(
+            'email',
+            'fallback-unknown-channel-001:email',
+            'fallback-unknown-key:email',
+          ),
+        ],
+
+        {},
+
+        {
+          email: [
+            'push',
+          ],
+
+          push: [
+            'in-app',
+          ],
+        },
+      ),
+    ).rejects.toThrow(
+      'Fallback configuration references channel "push" that is not part of the notification fan-out.',
+    );
+
+    expect(
+      enqueue,
+    ).not.toHaveBeenCalled();
+  },
+);
+
+it(
+  'rejects a fallback sequence that violates channel policy',
+  async () => {
+    enqueue.mockReset();
+
+    const service =
+      createService(
+        new NotificationChannelPolicy({
+          allowedChannels: [
+            'email',
+            'push',
+          ],
+
+          mutuallyExclusiveChannels: [
+            [
+              'email',
+              'push',
+            ],
+          ],
+        }),
+      );
+
+    await expect(
+      service.fanOut(
+        'fallback-policy-001',
+
+        [
+          createNotification(
+            'email',
+            'fallback-policy-001:email',
+            'fallback-policy-key:email',
+          ),
+        ],
+
+        {},
+
+        {
+          email: [
+            'push',
+          ],
+        },
+      ),
+    ).rejects.toThrow(
+      'Notification channels "email" and "push" cannot be selected together.',
+    );
+
+    expect(
+      enqueue,
+    ).not.toHaveBeenCalled();
+  },
+);
+
+it(
+  'does not change existing single-channel behavior when no fallback map is supplied',
+  async () => {
+    enqueue.mockReset();
+
+    enqueue.mockResolvedValue({
+      jobId:
+        'single-channel-job',
+
+      queue:
+        'notifications',
+
+      notificationId:
+        'single-channel-001',
+
+      status:
+        'QUEUED',
+
+      outboxEventId:
+        'single-channel-outbox',
+    });
+
+    const service =
+      createService();
+
+    const result =
+      await service.fanOut(
+        'single-channel-001',
+
+        [
+          createNotification(
+            'email',
+            'single-channel-001:email',
+            'single-channel-key:email',
+          ),
+        ],
+      );
+
+    expect(
+      result.fallbackPlans,
+    ).toEqual([]);
+
+    expect(
+      result.channels,
+    ).toHaveLength(
+      1,
+    );
+
+    expect(
+      enqueue,
+    ).toHaveBeenCalledTimes(
+      1,
+    );
+  },
+);
   },
 );

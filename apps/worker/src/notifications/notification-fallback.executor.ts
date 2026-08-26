@@ -98,7 +98,7 @@ export class NotificationFallbackExecutor {
       );
 
     this.logger.info(
-      `Fallback lifecycle started for notification "${notification.notificationId}" using plan "${fallbackMetadata.planId}" from primary channel "${fallbackMetadata.primary}" at position "${fallbackMetadata.position}".`,
+      `Fallback lifecycle started for notification "${notification.notificationId}" using orchestration "${fallbackMetadata.orchestrationId}", plan "${fallbackMetadata.planId}" from primary channel "${fallbackMetadata.primary}" at position "${fallbackMetadata.position}".`,
       {
         operation:
           FALLBACK_OPERATIONS.STARTED,
@@ -115,7 +115,7 @@ export class NotificationFallbackExecutor {
       this.metrics.incrementFallbackExhausted();
 
       this.logger.warn(
-        `Fallback lifecycle exhausted for notification "${notification.notificationId}" using plan "${fallbackMetadata.planId}".`,
+        `Fallback lifecycle exhausted for notification "${notification.notificationId}" using orchestration "${fallbackMetadata.orchestrationId}", plan "${fallbackMetadata.planId}".`,
         {
           operation:
             FALLBACK_OPERATIONS.EXHAUSTED,
@@ -141,7 +141,7 @@ export class NotificationFallbackExecutor {
       this.metrics.incrementFallbackAttempts();
 
       this.logger.info(
-        `Fallback attempt started for notification "${notification.notificationId}" using plan "${fallbackMetadata.planId}", channel "${channel}", position "${position}".`,
+        `Fallback attempt started for notification "${notification.notificationId}" using orchestration "${fallbackMetadata.orchestrationId}", plan "${fallbackMetadata.planId}", channel "${channel}", position "${position}".`,
         {
           operation:
             FALLBACK_OPERATIONS.ATTEMPT_STARTED,
@@ -171,7 +171,7 @@ export class NotificationFallbackExecutor {
         this.metrics.incrementFallbackRecovered();
 
         this.logger.info(
-          `Fallback attempt succeeded for notification "${notification.notificationId}" using plan "${fallbackMetadata.planId}", channel "${channel}", position "${position}".`,
+          `Fallback attempt succeeded for notification "${notification.notificationId}" using orchestration "${fallbackMetadata.orchestrationId}", plan "${fallbackMetadata.planId}", channel "${channel}", position "${position}".`,
           {
             operation:
               FALLBACK_OPERATIONS.ATTEMPT_SUCCEEDED,
@@ -188,7 +188,7 @@ export class NotificationFallbackExecutor {
     this.metrics.incrementFallbackExhausted();
 
     this.logger.warn(
-      `Fallback lifecycle exhausted for notification "${notification.notificationId}" using plan "${fallbackMetadata.planId}" after attempting positions "${nextPosition}" through "${fallbackMetadata.sequence.length - 1}".`,
+      `Fallback lifecycle exhausted for notification "${notification.notificationId}" using orchestration "${fallbackMetadata.orchestrationId}", plan "${fallbackMetadata.planId}" after attempting positions "${nextPosition}" through "${fallbackMetadata.sequence.length - 1}".`,
       {
         operation:
           FALLBACK_OPERATIONS.EXHAUSTED,
@@ -264,7 +264,7 @@ export class NotificationFallbackExecutor {
       this.metrics.incrementFallbackIdempotentHits();
 
       this.logger.info(
-        `Fallback delivery already completed for notification "${notification.notificationId}" using plan "${fallbackMetadata.planId}", channel "${channel}", position "${position}".`,
+        `Fallback delivery already completed for notification "${notification.notificationId}" using orchestration "${fallbackMetadata.orchestrationId}", plan "${fallbackMetadata.planId}", channel "${channel}", position "${position}".`,
         {
           operation:
             FALLBACK_OPERATIONS.IDEMPOTENT_SKIP,
@@ -327,7 +327,7 @@ export class NotificationFallbackExecutor {
         this.metrics.incrementFallbackAttemptFailures();
 
         this.logger.warn(
-          `Fallback attempt failed for notification "${notification.notificationId}" using plan "${fallbackMetadata.planId}", channel "${channel}", position "${position}", classification "${delivery.classification}".`,
+          `Fallback attempt failed for notification "${notification.notificationId}" using orchestration "${fallbackMetadata.orchestrationId}", plan "${fallbackMetadata.planId}", channel "${channel}", position "${position}", classification "${delivery.classification}".`,
           {
             operation:
               FALLBACK_OPERATIONS.ATTEMPT_FAILED,
@@ -362,7 +362,7 @@ export class NotificationFallbackExecutor {
         this.metrics.incrementFallbackAttemptFailures();
 
         this.logger.warn(
-          `Fallback attempt failed for notification "${notification.notificationId}" using plan "${fallbackMetadata.planId}", channel "${channel}", position "${position}" because the provider returned no valid messageId.`,
+          `Fallback attempt failed for notification "${notification.notificationId}" using orchestration "${fallbackMetadata.orchestrationId}", plan "${fallbackMetadata.planId}", channel "${channel}", position "${position}" because the provider returned no valid messageId.`,
           {
             operation:
               FALLBACK_OPERATIONS.ATTEMPT_FAILED,
@@ -408,7 +408,7 @@ export class NotificationFallbackExecutor {
       this.metrics.incrementFallbackAttemptFailures();
 
       this.logger.warn(
-        `Fallback attempt failed for notification "${notification.notificationId}" using plan "${fallbackMetadata.planId}", channel "${channel}", position "${position}": ${message}`,
+        `Fallback attempt failed for notification "${notification.notificationId}" using orchestration "${fallbackMetadata.orchestrationId}", plan "${fallbackMetadata.planId}", channel "${channel}", position "${position}": ${message}`,
         {
           operation:
             FALLBACK_OPERATIONS.ATTEMPT_FAILED,

@@ -1,26 +1,14 @@
-import {
-  GurusthalamLogger,
-} from '@gurusthalam/logger';
+import { GurusthalamLogger } from '@gurusthalam/logger';
 
-import {
-  NotificationProviderRegistry,
-} from '../providers/notification/notification-provider.registry.js';
+import { NotificationProviderRegistry } from '../providers/notification/notification-provider.registry.js';
 
-import {
-  NotificationFailureClassification,
-} from '../providers/notification/notification-provider-result.types.js';
+import { NotificationFailureClassification } from '../providers/notification/notification-provider-result.types.js';
 
-import {
-  NotificationDeliveryPersistenceService,
-} from './notification-delivery-persistence.service.js';
+import { NotificationDeliveryPersistenceService } from './notification-delivery-persistence.service.js';
 
-import {
-  createNotificationDeliveryKey,
-} from './notification-delivery-key.js';
+import { createNotificationDeliveryKey } from './notification-delivery-key.js';
 
-import {
-  NotificationMetricsService,
-} from './notification-metrics.service.js';
+import { NotificationMetricsService } from './notification-metrics.service.js';
 
 import type {
   NotificationJobData,
@@ -28,156 +16,110 @@ import type {
 } from '../processors/notification.processor.js';
 
 export interface NotificationFallbackExecutionResult {
-  readonly channel:
-    NotificationJobData['channel'];
+  readonly channel: NotificationJobData['channel'];
 
-  readonly provider:
-    string;
+  readonly provider: string;
 
-  readonly messageId:
-    string;
+  readonly messageId: string;
 }
 
 const FALLBACK_OPERATIONS = {
-  STARTED:
-    'notification.fallback.started',
+  STARTED: 'notification.fallback.started',
 
-  ATTEMPT_STARTED:
-    'notification.fallback.attempt.started',
+  ATTEMPT_STARTED: 'notification.fallback.attempt.started',
 
-  ATTEMPT_FAILED:
-    'notification.fallback.attempt.failed',
+  ATTEMPT_FAILED: 'notification.fallback.attempt.failed',
 
-  ATTEMPT_SUCCEEDED:
-    'notification.fallback.attempt.succeeded',
+  ATTEMPT_SUCCEEDED: 'notification.fallback.attempt.succeeded',
 
-  EXHAUSTED:
-    'notification.fallback.exhausted',
+  EXHAUSTED: 'notification.fallback.exhausted',
 
-  IDEMPOTENT_SKIP:
-    'notification.fallback.idempotent_skip',
+  IDEMPOTENT_SKIP: 'notification.fallback.idempotent_skip',
 } as const;
 
 export class NotificationFallbackExecutor {
   constructor(
-    private readonly logger:
-      GurusthalamLogger,
+    private readonly logger: GurusthalamLogger,
 
-    private readonly providerRegistry:
-      NotificationProviderRegistry,
+    private readonly providerRegistry: NotificationProviderRegistry,
 
-    private readonly deliveryPersistence:
-      NotificationDeliveryPersistenceService,
+    private readonly deliveryPersistence: NotificationDeliveryPersistenceService,
 
-    private readonly metrics:
-      NotificationMetricsService,
+    private readonly metrics: NotificationMetricsService,
   ) {}
 
   async execute(
-    notification:
-      NotificationJobData,
+    notification: NotificationJobData,
 
-    fallbackMetadata:
-      NotificationFallbackMetadata,
+    fallbackMetadata: NotificationFallbackMetadata,
 
-    attempt:
-      number,
-  ):
-    Promise<
-      NotificationFallbackExecutionResult | null
-    > {
+    attempt: number,
+  ): Promise<NotificationFallbackExecutionResult | null> {
     this.metrics.incrementFallbackStarted();
 
-    const nextPosition =
-      fallbackMetadata.position +
-      1;
+    const nextPosition = fallbackMetadata.position + 1;
 
-    const remainingChannels =
-      fallbackMetadata.sequence.slice(
-        nextPosition,
-      );
+    const remainingChannels = fallbackMetadata.sequence.slice(nextPosition);
 
     this.logger.info(
-      `Fallback lifecycle started for notification "${notification.notificationId}" using plan "${fallbackMetadata.planId}" from primary channel "${fallbackMetadata.primary}" at position "${fallbackMetadata.position}".`,
+      `Fallback lifecycle started for notification "${notification.notificationId}" using orchestration "${fallbackMetadata.orchestrationId}", plan "${fallbackMetadata.planId}" from primary channel "${fallbackMetadata.primary}" at position "${fallbackMetadata.position}".`,
       {
-        operation:
-          FALLBACK_OPERATIONS.STARTED,
+        operation: FALLBACK_OPERATIONS.STARTED,
 
-        service:
-          notification.channel,
+        service: notification.channel,
       },
     );
 
-    if (
-      remainingChannels.length ===
-      0
-    ) {
+    if (remainingChannels.length === 0) {
       this.metrics.incrementFallbackExhausted();
 
       this.logger.warn(
-        `Fallback lifecycle exhausted for notification "${notification.notificationId}" using plan "${fallbackMetadata.planId}".`,
+        `Fallback lifecycle exhausted for notification "${notification.notificationId}" using orchestration "${fallbackMetadata.orchestrationId}", plan "${fallbackMetadata.planId}".`,
         {
-          operation:
-            FALLBACK_OPERATIONS.EXHAUSTED,
+          operation: FALLBACK_OPERATIONS.EXHAUSTED,
 
-          service:
-            notification.channel,
+          service: notification.channel,
         },
       );
 
       return null;
     }
 
-    for (
-      const [
-        offset,
-        channel,
-      ] of remainingChannels.entries()
-    ) {
-      const position =
-        nextPosition +
-        offset;
+    for (const [offset, channel] of remainingChannels.entries()) {
+      const position = nextPosition + offset;
 
       this.metrics.incrementFallbackAttempts();
 
       this.logger.info(
-        `Fallback attempt started for notification "${notification.notificationId}" using plan "${fallbackMetadata.planId}", channel "${channel}", position "${position}".`,
+        `Fallback attempt started for notification "${notification.notificationId}" using orchestration "${fallbackMetadata.orchestrationId}", plan "${fallbackMetadata.planId}", channel "${channel}", position "${position}".`,
         {
-          operation:
-            FALLBACK_OPERATIONS.ATTEMPT_STARTED,
+          operation: FALLBACK_OPERATIONS.ATTEMPT_STARTED,
 
-          service:
-            channel,
+          service: channel,
         },
       );
 
-      const result =
-        await this.tryChannel(
-          notification,
+      const result = await this.tryChannel(
+        notification,
 
-          channel,
+        channel,
 
-          attempt,
+        attempt,
 
-          fallbackMetadata,
+        fallbackMetadata,
 
-          position,
-        );
+        position,
+      );
 
-      if (
-        result !==
-        null
-      ) {
+      if (result !== null) {
         this.metrics.incrementFallbackRecovered();
 
         this.logger.info(
-          `Fallback attempt succeeded for notification "${notification.notificationId}" using plan "${fallbackMetadata.planId}", channel "${channel}", position "${position}".`,
+          `Fallback attempt succeeded for notification "${notification.notificationId}" using orchestration "${fallbackMetadata.orchestrationId}", plan "${fallbackMetadata.planId}", channel "${channel}", position "${position}".`,
           {
-            operation:
-              FALLBACK_OPERATIONS.ATTEMPT_SUCCEEDED,
+            operation: FALLBACK_OPERATIONS.ATTEMPT_SUCCEEDED,
 
-            service:
-              result.provider,
+            service: result.provider,
           },
         );
 
@@ -188,13 +130,11 @@ export class NotificationFallbackExecutor {
     this.metrics.incrementFallbackExhausted();
 
     this.logger.warn(
-      `Fallback lifecycle exhausted for notification "${notification.notificationId}" using plan "${fallbackMetadata.planId}" after attempting positions "${nextPosition}" through "${fallbackMetadata.sequence.length - 1}".`,
+      `Fallback lifecycle exhausted for notification "${notification.notificationId}" using orchestration "${fallbackMetadata.orchestrationId}", plan "${fallbackMetadata.planId}" after attempting positions "${nextPosition}" through "${fallbackMetadata.sequence.length - 1}".`,
       {
-        operation:
-          FALLBACK_OPERATIONS.EXHAUSTED,
+        operation: FALLBACK_OPERATIONS.EXHAUSTED,
 
-        service:
-          notification.channel,
+        service: notification.channel,
       },
     );
 
@@ -202,42 +142,27 @@ export class NotificationFallbackExecutor {
   }
 
   private async tryChannel(
-    notification:
-      NotificationJobData,
+    notification: NotificationJobData,
 
-    channel:
-      NotificationJobData['channel'],
+    channel: NotificationJobData['channel'],
 
-    attempt:
-      number,
+    attempt: number,
 
-    fallbackMetadata:
-      NotificationFallbackMetadata,
+    fallbackMetadata: NotificationFallbackMetadata,
 
-    position:
-      number,
-  ):
-    Promise<
-      NotificationFallbackExecutionResult | null
-    > {
-    const provider =
-      this.providerRegistry.get(
-        channel,
-      );
+    position: number,
+  ): Promise<NotificationFallbackExecutionResult | null> {
+    const provider = this.providerRegistry.get(channel);
 
-    const providerName =
-      this.getProviderName(
-        channel,
-      );
+    const providerName = this.getProviderName(channel);
 
-    const deliveryKey =
-      createNotificationDeliveryKey(
-        notification.notificationId,
+    const deliveryKey = createNotificationDeliveryKey(
+      notification.notificationId,
 
-        channel,
+      channel,
 
-        providerName,
-      );
+      providerName,
+    );
 
     await this.deliveryPersistence.createIfMissing(
       notification.notificationId,
@@ -246,42 +171,30 @@ export class NotificationFallbackExecutor {
 
       providerName,
 
-      this.toPrismaChannel(
-        channel,
-      ),
+      this.toPrismaChannel(channel),
     );
 
     const existing =
-      await this.deliveryPersistence.getByDeliveryKey(
-        deliveryKey,
-      );
+      await this.deliveryPersistence.getByDeliveryKey(deliveryKey);
 
-    if (
-      existing?.status ===
-        'SENT' &&
-      existing.providerMessageId
-    ) {
+    if (existing?.status === 'SENT' && existing.providerMessageId) {
       this.metrics.incrementFallbackIdempotentHits();
 
       this.logger.info(
-        `Fallback delivery already completed for notification "${notification.notificationId}" using plan "${fallbackMetadata.planId}", channel "${channel}", position "${position}".`,
+        `Fallback delivery already completed for notification "${notification.notificationId}" using orchestration "${fallbackMetadata.orchestrationId}", plan "${fallbackMetadata.planId}", channel "${channel}", position "${position}".`,
         {
-          operation:
-            FALLBACK_OPERATIONS.IDEMPOTENT_SKIP,
+          operation: FALLBACK_OPERATIONS.IDEMPOTENT_SKIP,
 
-          service:
-            providerName,
+          service: providerName,
         },
       );
 
       return {
         channel,
 
-        provider:
-          providerName,
+        provider: providerName,
 
-        messageId:
-          existing.providerMessageId,
+        messageId: existing.providerMessageId,
       };
     }
 
@@ -291,28 +204,24 @@ export class NotificationFallbackExecutor {
       attempt,
     );
 
-    const fallbackNotification:
-      NotificationJobData = {
+    const fallbackNotification: NotificationJobData = {
       ...notification,
 
       channel,
     };
 
     try {
-      const delivery =
-        await provider.send(
-          fallbackNotification,
+      const delivery = await provider.send(
+        fallbackNotification,
 
-          {
-            deliveryKey,
-          },
-        );
+        {
+          deliveryKey,
+        },
+      );
 
       if (
-        delivery.classification !==
-          NotificationFailureClassification.SUCCESS ||
-        delivery.accepted !==
-          true
+        delivery.classification !== NotificationFailureClassification.SUCCESS ||
+        delivery.accepted !== true
       ) {
         const reason =
           delivery.errorMessage ??
@@ -327,29 +236,20 @@ export class NotificationFallbackExecutor {
         this.metrics.incrementFallbackAttemptFailures();
 
         this.logger.warn(
-          `Fallback attempt failed for notification "${notification.notificationId}" using plan "${fallbackMetadata.planId}", channel "${channel}", position "${position}", classification "${delivery.classification}".`,
+          `Fallback attempt failed for notification "${notification.notificationId}" using orchestration "${fallbackMetadata.orchestrationId}", plan "${fallbackMetadata.planId}", channel "${channel}", position "${position}", classification "${delivery.classification}".`,
           {
-            operation:
-              FALLBACK_OPERATIONS.ATTEMPT_FAILED,
+            operation: FALLBACK_OPERATIONS.ATTEMPT_FAILED,
 
-            service:
-              providerName,
+            service: providerName,
           },
         );
 
         return null;
       }
 
-      const messageId =
-        delivery.messageId;
+      const messageId = delivery.messageId;
 
-      if (
-        typeof messageId !==
-          'string' ||
-        messageId.trim()
-          .length ===
-          0
-      ) {
+      if (typeof messageId !== 'string' || messageId.trim().length === 0) {
         const reason =
           'Fallback provider returned SUCCESS without a valid messageId.';
 
@@ -362,13 +262,11 @@ export class NotificationFallbackExecutor {
         this.metrics.incrementFallbackAttemptFailures();
 
         this.logger.warn(
-          `Fallback attempt failed for notification "${notification.notificationId}" using plan "${fallbackMetadata.planId}", channel "${channel}", position "${position}" because the provider returned no valid messageId.`,
+          `Fallback attempt failed for notification "${notification.notificationId}" using orchestration "${fallbackMetadata.orchestrationId}", plan "${fallbackMetadata.planId}", channel "${channel}", position "${position}" because the provider returned no valid messageId.`,
           {
-            operation:
-              FALLBACK_OPERATIONS.ATTEMPT_FAILED,
+            operation: FALLBACK_OPERATIONS.ATTEMPT_FAILED,
 
-            service:
-              providerName,
+            service: providerName,
           },
         );
 
@@ -384,20 +282,12 @@ export class NotificationFallbackExecutor {
       return {
         channel,
 
-        provider:
-          providerName,
+        provider: providerName,
 
         messageId,
       };
-    } catch (
-      error: unknown
-    ) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : String(
-              error,
-            );
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
 
       await this.deliveryPersistence.markFailed(
         deliveryKey,
@@ -408,13 +298,11 @@ export class NotificationFallbackExecutor {
       this.metrics.incrementFallbackAttemptFailures();
 
       this.logger.warn(
-        `Fallback attempt failed for notification "${notification.notificationId}" using plan "${fallbackMetadata.planId}", channel "${channel}", position "${position}": ${message}`,
+        `Fallback attempt failed for notification "${notification.notificationId}" using orchestration "${fallbackMetadata.orchestrationId}", plan "${fallbackMetadata.planId}", channel "${channel}", position "${position}": ${message}`,
         {
-          operation:
-            FALLBACK_OPERATIONS.ATTEMPT_FAILED,
+          operation: FALLBACK_OPERATIONS.ATTEMPT_FAILED,
 
-          service:
-            providerName,
+          service: providerName,
         },
       );
 
@@ -422,14 +310,8 @@ export class NotificationFallbackExecutor {
     }
   }
 
-  private getProviderName(
-    channel:
-      NotificationJobData['channel'],
-  ):
-    string {
-    switch (
-      channel
-    ) {
+  private getProviderName(channel: NotificationJobData['channel']): string {
+    switch (channel) {
       case 'email':
         return 'development-email';
 
@@ -442,15 +324,9 @@ export class NotificationFallbackExecutor {
   }
 
   private toPrismaChannel(
-    channel:
-      NotificationJobData['channel'],
-  ):
-    | 'EMAIL'
-    | 'IN_APP'
-    | 'PUSH' {
-    switch (
-      channel
-    ) {
+    channel: NotificationJobData['channel'],
+  ): 'EMAIL' | 'IN_APP' | 'PUSH' {
+    switch (channel) {
       case 'email':
         return 'EMAIL';
 

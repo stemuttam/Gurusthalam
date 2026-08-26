@@ -1,294 +1,153 @@
-import {
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import {
-  NotificationFailureClassification,
-} from '../providers/notification/notification-provider-result.types.js';
+import { NotificationFailureClassification } from '../providers/notification/notification-provider-result.types.js';
 
-import {
-  NotificationFallbackExecutor,
-} from './notification-fallback.executor.js';
+import { NotificationFallbackExecutor } from './notification-fallback.executor.js';
 
-import type {
-  NotificationJobData,
-} from '../processors/notification.processor.js';
+import type { NotificationJobData } from '../processors/notification.processor.js';
 
 interface TestProvider {
-  readonly send:
-    ReturnType<
-      typeof vi.fn
-    >;
+  readonly send: ReturnType<typeof vi.fn>;
 }
 
 interface TestLogger {
-  readonly info:
-    ReturnType<
-      typeof vi.fn
-    >;
+  readonly info: ReturnType<typeof vi.fn>;
 
-  readonly warn:
-    ReturnType<
-      typeof vi.fn
-    >;
+  readonly warn: ReturnType<typeof vi.fn>;
 
-  readonly error:
-    ReturnType<
-      typeof vi.fn
-    >;
+  readonly error: ReturnType<typeof vi.fn>;
 
-  readonly debug:
-    ReturnType<
-      typeof vi.fn
-    >;
+  readonly debug: ReturnType<typeof vi.fn>;
 }
 
 interface TestMetrics {
-  readonly incrementFallbackStarted:
-    ReturnType<
-      typeof vi.fn
-    >;
+  readonly incrementFallbackStarted: ReturnType<typeof vi.fn>;
 
-  readonly incrementFallbackAttempts:
-    ReturnType<
-      typeof vi.fn
-    >;
+  readonly incrementFallbackAttempts: ReturnType<typeof vi.fn>;
 
-  readonly incrementFallbackAttemptFailures:
-    ReturnType<
-      typeof vi.fn
-    >;
+  readonly incrementFallbackAttemptFailures: ReturnType<typeof vi.fn>;
 
-  readonly incrementFallbackRecovered:
-    ReturnType<
-      typeof vi.fn
-    >;
+  readonly incrementFallbackRecovered: ReturnType<typeof vi.fn>;
 
-  readonly incrementFallbackExhausted:
-    ReturnType<
-      typeof vi.fn
-    >;
+  readonly incrementFallbackExhausted: ReturnType<typeof vi.fn>;
 
-  readonly incrementFallbackIdempotentHits:
-    ReturnType<
-      typeof vi.fn
-    >;
+  readonly incrementFallbackIdempotentHits: ReturnType<typeof vi.fn>;
 }
 
 function getTestProvider(
-  providers:
-    Map<
-      string,
-      TestProvider
-    >,
+  providers: Map<string, TestProvider>,
 
-  channel:
-    string,
-):
-  TestProvider {
-  const provider =
-    providers.get(
-      channel,
-    );
+  channel: string,
+): TestProvider {
+  const provider = providers.get(channel);
 
-  if (
-    provider ===
-    undefined
-  ) {
-    throw new Error(
-      `Test provider "${channel}" was not registered.`,
-    );
+  if (provider === undefined) {
+    throw new Error(`Test provider "${channel}" was not registered.`);
   }
 
   return provider;
 }
 
-function createNotification():
-  NotificationJobData {
+function createNotification(): NotificationJobData {
   return {
-    notificationId:
-      'fallback-execution-001',
+    notificationId: 'fallback-execution-001',
 
-    channel:
-      'email',
+    channel: 'email',
 
     recipient: {
-      userId:
-        'fallback-user-001',
+      userId: 'fallback-user-001',
 
-      email:
-        'fallback@example.com',
+      email: 'fallback@example.com',
     },
 
-    body:
-      'Fallback execution test',
+    body: 'Fallback execution test',
 
-    idempotencyKey:
-      'fallback-execution-key:email',
+    idempotencyKey: 'fallback-execution-key:email',
   };
 }
 
 function createMetadata() {
   return {
-    planId:
-      'fallback-plan-001',
+    planId: 'fallback-plan-001',
 
-    orchestrationId:
-      'fallback-orchestration-001',
+    orchestrationId: 'fallback-orchestration-001',
 
-    primary:
-      'email' as const,
+    primary: 'email' as const,
 
-    fallbacks: [
-      'push' as const,
-      'in-app' as const,
-    ],
+    fallbacks: ['push' as const, 'in-app' as const],
 
-    sequence: [
-      'email' as const,
-      'push' as const,
-      'in-app' as const,
-    ],
+    sequence: ['email' as const, 'push' as const, 'in-app' as const],
 
-    position:
-      0,
+    position: 0,
   };
 }
 
-function createExecutor(
-  providerResults:
-    Record<
-      string,
-      unknown
-    >,
-) {
-  const logger:
-    TestLogger = {
-    info:
-      vi.fn(),
+function createExecutor(providerResults: Record<string, unknown>) {
+  const logger: TestLogger = {
+    info: vi.fn(),
 
-    warn:
-      vi.fn(),
+    warn: vi.fn(),
 
-    error:
-      vi.fn(),
+    error: vi.fn(),
 
-    debug:
-      vi.fn(),
+    debug: vi.fn(),
   };
 
-  const metrics:
-    TestMetrics = {
-    incrementFallbackStarted:
-      vi.fn(),
+  const metrics: TestMetrics = {
+    incrementFallbackStarted: vi.fn(),
 
-    incrementFallbackAttempts:
-      vi.fn(),
+    incrementFallbackAttempts: vi.fn(),
 
-    incrementFallbackAttemptFailures:
-      vi.fn(),
+    incrementFallbackAttemptFailures: vi.fn(),
 
-    incrementFallbackRecovered:
-      vi.fn(),
+    incrementFallbackRecovered: vi.fn(),
 
-    incrementFallbackExhausted:
-      vi.fn(),
+    incrementFallbackExhausted: vi.fn(),
 
-    incrementFallbackIdempotentHits:
-      vi.fn(),
+    incrementFallbackIdempotentHits: vi.fn(),
   };
 
-  const providers =
-    new Map<
-      string,
-      TestProvider
-    >();
+  const providers = new Map<string, TestProvider>();
 
-  for (
-    const channel of [
-      'push',
-      'in-app',
-    ]
-  ) {
-    providers.set(
-      channel,
-      {
-        send:
-          vi.fn().mockResolvedValue(
-            providerResults[channel],
-          ),
-      },
-    );
+  for (const channel of ['push', 'in-app']) {
+    providers.set(channel, {
+      send: vi.fn().mockResolvedValue(providerResults[channel]),
+    });
   }
 
   const providerRegistry = {
-    get:
-      vi.fn(
-        (
-          channel:
-            'email' |
-            'push' |
-            'in-app',
-        ) => {
-          const provider =
-            providers.get(
-              channel,
-            );
+    get: vi.fn((channel: 'email' | 'push' | 'in-app') => {
+      const provider = providers.get(channel);
 
-          if (
-            provider ===
-            undefined
-          ) {
-            throw new Error(
-              `Test provider "${channel}" was not registered.`,
-            );
-          }
+      if (provider === undefined) {
+        throw new Error(`Test provider "${channel}" was not registered.`);
+      }
 
-          return provider;
-        },
-      ),
+      return provider;
+    }),
   };
 
   const deliveryPersistence = {
-    createIfMissing:
-      vi.fn().mockResolvedValue(
-        undefined,
-      ),
+    createIfMissing: vi.fn().mockResolvedValue(undefined),
 
-    getByDeliveryKey:
-      vi.fn().mockResolvedValue(
-        null,
-      ),
+    getByDeliveryKey: vi.fn().mockResolvedValue(null),
 
-    markProcessing:
-      vi.fn().mockResolvedValue(
-        undefined,
-      ),
+    markProcessing: vi.fn().mockResolvedValue(undefined),
 
-    markSent:
-      vi.fn().mockResolvedValue(
-        undefined,
-      ),
+    markSent: vi.fn().mockResolvedValue(undefined),
 
-    markFailed:
-      vi.fn().mockResolvedValue(
-        undefined,
-      ),
+    markFailed: vi.fn().mockResolvedValue(undefined),
   };
 
-  const executor =
-    new NotificationFallbackExecutor(
-      logger as never,
+  const executor = new NotificationFallbackExecutor(
+    logger as never,
 
-      providerRegistry as never,
+    providerRegistry as never,
 
-      deliveryPersistence as never,
+    deliveryPersistence as never,
 
-      metrics as never,
-    );
+    metrics as never,
+  );
 
   return {
     executor,
@@ -305,536 +164,528 @@ function createExecutor(
   };
 }
 
-describe(
-  'NotificationFallbackExecutor',
-  () => {
-    it(
-      'uses the first successful fallback channel',
-      async () => {
-        const {
-          executor,
-          providers,
-          metrics,
-          deliveryPersistence,
-        } =
-          createExecutor({
-            push: {
-              accepted:
-                true,
+function getLogMessages(logger: TestLogger): string[] {
+  return [
+    ...logger.info.mock.calls,
+    ...logger.warn.mock.calls,
+    ...logger.error.mock.calls,
+  ]
+    .map((call) => call[0])
+    .filter((message): message is string => typeof message === 'string');
+}
 
-              provider:
-                'development-push',
+describe('NotificationFallbackExecutor', () => {
+  it('uses the first successful fallback channel', async () => {
+    const { executor, providers, metrics, deliveryPersistence } =
+      createExecutor({
+        push: {
+          accepted: true,
 
-              channel:
-                'push',
+          provider: 'development-push',
 
-              notificationId:
-                'fallback-execution-001',
+          channel: 'push',
 
-              messageId:
-                'push-message-001',
+          notificationId: 'fallback-execution-001',
 
-              classification:
-                NotificationFailureClassification.SUCCESS,
-            },
+          messageId: 'push-message-001',
 
-            'in-app': {
-              accepted:
-                true,
+          classification: NotificationFailureClassification.SUCCESS,
+        },
 
-              provider:
-                'development-in-app',
+        'in-app': {
+          accepted: true,
 
-              channel:
-                'in-app',
+          provider: 'development-in-app',
 
-              notificationId:
-                'fallback-execution-001',
+          channel: 'in-app',
 
-              messageId:
-                'inapp-message-001',
+          notificationId: 'fallback-execution-001',
 
-              classification:
-                NotificationFailureClassification.SUCCESS,
-            },
-          });
+          messageId: 'inapp-message-001',
 
-        const result =
-          await executor.execute(
-            createNotification(),
+          classification: NotificationFailureClassification.SUCCESS,
+        },
+      });
 
-            createMetadata(),
+    const result = await executor.execute(
+      createNotification(),
 
-            3,
-          );
+      createMetadata(),
 
-        expect(
-          result,
-        ).toEqual({
-          channel:
-            'push',
-
-          provider:
-            'development-push',
-
-          messageId:
-            'push-message-001',
-        });
-
-        expect(
-          getTestProvider(
-            providers,
-            'push',
-          ).send,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-
-        expect(
-          getTestProvider(
-            providers,
-            'in-app',
-          ).send,
-        ).not.toHaveBeenCalled();
-
-        expect(
-          deliveryPersistence.markSent,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-
-        expect(
-          metrics.incrementFallbackStarted,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-
-        expect(
-          metrics.incrementFallbackAttempts,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-
-        expect(
-          metrics.incrementFallbackAttemptFailures,
-        ).not.toHaveBeenCalled();
-
-        expect(
-          metrics.incrementFallbackRecovered,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-
-        expect(
-          metrics.incrementFallbackExhausted,
-        ).not.toHaveBeenCalled();
-
-        expect(
-          metrics.incrementFallbackIdempotentHits,
-        ).not.toHaveBeenCalled();
-      },
+      3,
     );
 
-    it(
-      'continues to the next fallback after a failed fallback',
-      async () => {
-        const {
-          executor,
-          providers,
-          metrics,
-        } =
-          createExecutor({
-            push: {
-              accepted:
-                false,
+    expect(result).toEqual({
+      channel: 'push',
 
-              provider:
-                'development-push',
+      provider: 'development-push',
 
-              channel:
-                'push',
+      messageId: 'push-message-001',
+    });
 
-              notificationId:
-                'fallback-execution-001',
+    expect(getTestProvider(providers, 'push').send).toHaveBeenCalledTimes(1);
 
-              classification:
-                NotificationFailureClassification.PERMANENT,
+    expect(getTestProvider(providers, 'in-app').send).not.toHaveBeenCalled();
 
-              errorMessage:
-                'Push permanently rejected.',
-            },
+    expect(deliveryPersistence.markSent).toHaveBeenCalledTimes(1);
 
-            'in-app': {
-              accepted:
-                true,
+    expect(metrics.incrementFallbackStarted).toHaveBeenCalledTimes(1);
 
-              provider:
-                'development-in-app',
+    expect(metrics.incrementFallbackAttempts).toHaveBeenCalledTimes(1);
 
-              channel:
-                'in-app',
+    expect(metrics.incrementFallbackAttemptFailures).not.toHaveBeenCalled();
 
-              notificationId:
-                'fallback-execution-001',
+    expect(metrics.incrementFallbackRecovered).toHaveBeenCalledTimes(1);
 
-              messageId:
-                'inapp-message-001',
+    expect(metrics.incrementFallbackExhausted).not.toHaveBeenCalled();
 
-              classification:
-                NotificationFailureClassification.SUCCESS,
-            },
-          });
+    expect(metrics.incrementFallbackIdempotentHits).not.toHaveBeenCalled();
+  });
 
-        const result =
-          await executor.execute(
-            createNotification(),
+  it('continues to the next fallback after a failed fallback', async () => {
+    const { executor, providers, metrics } = createExecutor({
+      push: {
+        accepted: false,
 
-            createMetadata(),
+        provider: 'development-push',
 
-            3,
-          );
+        channel: 'push',
 
-        expect(
-          result?.channel,
-        ).toBe(
-          'in-app',
-        );
+        notificationId: 'fallback-execution-001',
 
-        expect(
-          getTestProvider(
-            providers,
-            'push',
-          ).send,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
+        classification: NotificationFailureClassification.PERMANENT,
 
-        expect(
-          getTestProvider(
-            providers,
-            'in-app',
-          ).send,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-
-        expect(
-          metrics.incrementFallbackStarted,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-
-        expect(
-          metrics.incrementFallbackAttempts,
-        ).toHaveBeenCalledTimes(
-          2,
-        );
-
-        expect(
-          metrics.incrementFallbackAttemptFailures,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-
-        expect(
-          metrics.incrementFallbackRecovered,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-
-        expect(
-          metrics.incrementFallbackExhausted,
-        ).not.toHaveBeenCalled();
-
-        expect(
-          metrics.incrementFallbackIdempotentHits,
-        ).not.toHaveBeenCalled();
+        errorMessage: 'Push permanently rejected.',
       },
+
+      'in-app': {
+        accepted: true,
+
+        provider: 'development-in-app',
+
+        channel: 'in-app',
+
+        notificationId: 'fallback-execution-001',
+
+        messageId: 'inapp-message-001',
+
+        classification: NotificationFailureClassification.SUCCESS,
+      },
+    });
+
+    const result = await executor.execute(
+      createNotification(),
+
+      createMetadata(),
+
+      3,
     );
 
-    it(
-      'returns null when every fallback fails',
-      async () => {
-        const {
-          executor,
-          deliveryPersistence,
-          metrics,
-        } =
-          createExecutor({
-            push: {
-              accepted:
-                false,
+    expect(result?.channel).toBe('in-app');
 
-              provider:
-                'development-push',
+    expect(getTestProvider(providers, 'push').send).toHaveBeenCalledTimes(1);
 
-              channel:
-                'push',
+    expect(getTestProvider(providers, 'in-app').send).toHaveBeenCalledTimes(1);
 
-              notificationId:
-                'fallback-execution-001',
+    expect(metrics.incrementFallbackStarted).toHaveBeenCalledTimes(1);
 
-              classification:
-                NotificationFailureClassification.PERMANENT,
+    expect(metrics.incrementFallbackAttempts).toHaveBeenCalledTimes(2);
 
-              errorMessage:
-                'Push failed.',
-            },
+    expect(metrics.incrementFallbackAttemptFailures).toHaveBeenCalledTimes(1);
 
-            'in-app': {
-              accepted:
-                false,
+    expect(metrics.incrementFallbackRecovered).toHaveBeenCalledTimes(1);
 
-              provider:
-                'development-in-app',
+    expect(metrics.incrementFallbackExhausted).not.toHaveBeenCalled();
 
-              channel:
-                'in-app',
+    expect(metrics.incrementFallbackIdempotentHits).not.toHaveBeenCalled();
+  });
 
-              notificationId:
-                'fallback-execution-001',
+  it('returns null when every fallback fails', async () => {
+    const { executor, deliveryPersistence, metrics } = createExecutor({
+      push: {
+        accepted: false,
 
-              classification:
-                NotificationFailureClassification.NON_RETRYABLE,
+        provider: 'development-push',
 
-              errorMessage:
-                'In-app failed.',
-            },
-          });
+        channel: 'push',
 
-        const result =
-          await executor.execute(
-            createNotification(),
+        notificationId: 'fallback-execution-001',
 
-            createMetadata(),
+        classification: NotificationFailureClassification.PERMANENT,
 
-            3,
-          );
-
-        expect(
-          result,
-        ).toBeNull();
-
-        expect(
-          deliveryPersistence.markFailed,
-        ).toHaveBeenCalledTimes(
-          2,
-        );
-
-        expect(
-          metrics.incrementFallbackStarted,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-
-        expect(
-          metrics.incrementFallbackAttempts,
-        ).toHaveBeenCalledTimes(
-          2,
-        );
-
-        expect(
-          metrics.incrementFallbackAttemptFailures,
-        ).toHaveBeenCalledTimes(
-          2,
-        );
-
-        expect(
-          metrics.incrementFallbackRecovered,
-        ).not.toHaveBeenCalled();
-
-        expect(
-          metrics.incrementFallbackExhausted,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-
-        expect(
-          metrics.incrementFallbackIdempotentHits,
-        ).not.toHaveBeenCalled();
+        errorMessage: 'Push failed.',
       },
+
+      'in-app': {
+        accepted: false,
+
+        provider: 'development-in-app',
+
+        channel: 'in-app',
+
+        notificationId: 'fallback-execution-001',
+
+        classification: NotificationFailureClassification.NON_RETRYABLE,
+
+        errorMessage: 'In-app failed.',
+      },
+    });
+
+    const result = await executor.execute(
+      createNotification(),
+
+      createMetadata(),
+
+      3,
     );
 
-    it(
-      'skips already-sent fallback deliveries idempotently',
-      async () => {
-        const {
-          executor,
-          providers,
-          deliveryPersistence,
-          metrics,
-        } =
-          createExecutor({
-            push: {
-              accepted:
-                true,
+    expect(result).toBeNull();
 
-              provider:
-                'development-push',
+    expect(deliveryPersistence.markFailed).toHaveBeenCalledTimes(2);
 
-              channel:
-                'push',
+    expect(metrics.incrementFallbackStarted).toHaveBeenCalledTimes(1);
 
-              notificationId:
-                'fallback-execution-001',
+    expect(metrics.incrementFallbackAttempts).toHaveBeenCalledTimes(2);
 
-              messageId:
-                'unused',
+    expect(metrics.incrementFallbackAttemptFailures).toHaveBeenCalledTimes(2);
 
-              classification:
-                NotificationFailureClassification.SUCCESS,
-            },
+    expect(metrics.incrementFallbackRecovered).not.toHaveBeenCalled();
 
-            'in-app': {
-              accepted:
-                true,
+    expect(metrics.incrementFallbackExhausted).toHaveBeenCalledTimes(1);
 
-              provider:
-                'development-in-app',
+    expect(metrics.incrementFallbackIdempotentHits).not.toHaveBeenCalled();
+  });
 
-              channel:
-                'in-app',
+  it('skips already-sent fallback deliveries idempotently', async () => {
+    const { executor, providers, deliveryPersistence, metrics } =
+      createExecutor({
+        push: {
+          accepted: true,
 
-              notificationId:
-                'fallback-execution-001',
+          provider: 'development-push',
 
-              messageId:
-                'unused',
+          channel: 'push',
 
-              classification:
-                NotificationFailureClassification.SUCCESS,
-            },
-          });
+          notificationId: 'fallback-execution-001',
 
-        deliveryPersistence.getByDeliveryKey.mockResolvedValueOnce({
-          status:
-            'SENT',
+          messageId: 'unused',
 
-          providerMessageId:
-            'existing-push-message',
-        });
+          classification: NotificationFailureClassification.SUCCESS,
+        },
 
-        const result =
-          await executor.execute(
-            createNotification(),
+        'in-app': {
+          accepted: true,
 
-            createMetadata(),
+          provider: 'development-in-app',
 
-            3,
-          );
+          channel: 'in-app',
 
-        expect(
-          result,
-        ).toEqual({
-          channel:
-            'push',
+          notificationId: 'fallback-execution-001',
 
-          provider:
-            'development-push',
+          messageId: 'unused',
 
-          messageId:
-            'existing-push-message',
-        });
+          classification: NotificationFailureClassification.SUCCESS,
+        },
+      });
 
-        expect(
-          getTestProvider(
-            providers,
-            'push',
-          ).send,
-        ).not.toHaveBeenCalled();
+    deliveryPersistence.getByDeliveryKey.mockResolvedValueOnce({
+      status: 'SENT',
 
-        expect(
-          metrics.incrementFallbackStarted,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
+      providerMessageId: 'existing-push-message',
+    });
 
-        expect(
-          metrics.incrementFallbackAttempts,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
+    const result = await executor.execute(
+      createNotification(),
 
-        expect(
-          metrics.incrementFallbackAttemptFailures,
-        ).not.toHaveBeenCalled();
+      createMetadata(),
 
-        expect(
-          metrics.incrementFallbackRecovered,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-
-        expect(
-          metrics.incrementFallbackExhausted,
-        ).not.toHaveBeenCalled();
-
-        expect(
-          metrics.incrementFallbackIdempotentHits,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-      },
+      3,
     );
 
-    it(
-      'marks fallback lifecycle exhausted when no fallback remains',
-      async () => {
-        const {
-          executor,
-          metrics,
-        } =
-          createExecutor({});
+    expect(result).toEqual({
+      channel: 'push',
 
-        const metadata =
-          {
-            ...createMetadata(),
+      provider: 'development-push',
 
-            position:
-              2,
-          };
+      messageId: 'existing-push-message',
+    });
 
-        const result =
-          await executor.execute(
-            createNotification(),
+    expect(getTestProvider(providers, 'push').send).not.toHaveBeenCalled();
 
-            metadata,
+    expect(metrics.incrementFallbackStarted).toHaveBeenCalledTimes(1);
 
-            3,
-          );
+    expect(metrics.incrementFallbackAttempts).toHaveBeenCalledTimes(1);
 
-        expect(
-          result,
-        ).toBeNull();
+    expect(metrics.incrementFallbackAttemptFailures).not.toHaveBeenCalled();
 
-        expect(
-          metrics.incrementFallbackStarted,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
+    expect(metrics.incrementFallbackRecovered).toHaveBeenCalledTimes(1);
 
-        expect(
-          metrics.incrementFallbackAttempts,
-        ).not.toHaveBeenCalled();
+    expect(metrics.incrementFallbackExhausted).not.toHaveBeenCalled();
 
-        expect(
-          metrics.incrementFallbackAttemptFailures,
-        ).not.toHaveBeenCalled();
+    expect(metrics.incrementFallbackIdempotentHits).toHaveBeenCalledTimes(1);
+  });
 
-        expect(
-          metrics.incrementFallbackRecovered,
-        ).not.toHaveBeenCalled();
+  it('marks fallback lifecycle exhausted when no fallback remains', async () => {
+    const { executor, metrics } = createExecutor({});
 
-        expect(
-          metrics.incrementFallbackExhausted,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
+    const metadata = {
+      ...createMetadata(),
 
-        expect(
-          metrics.incrementFallbackIdempotentHits,
-        ).not.toHaveBeenCalled();
-      },
+      position: 2,
+    };
+
+    const result = await executor.execute(
+      createNotification(),
+
+      metadata,
+
+      3,
     );
-  },
-);
+
+    expect(result).toBeNull();
+
+    expect(metrics.incrementFallbackStarted).toHaveBeenCalledTimes(1);
+
+    expect(metrics.incrementFallbackAttempts).not.toHaveBeenCalled();
+
+    expect(metrics.incrementFallbackAttemptFailures).not.toHaveBeenCalled();
+
+    expect(metrics.incrementFallbackRecovered).not.toHaveBeenCalled();
+
+    expect(metrics.incrementFallbackExhausted).toHaveBeenCalledTimes(1);
+
+    expect(metrics.incrementFallbackIdempotentHits).not.toHaveBeenCalled();
+  });
+
+  it('correlates the complete fallback lifecycle with orchestrationId', async () => {
+    const { executor, logger } = createExecutor({
+      push: {
+        accepted: false,
+
+        provider: 'development-push',
+
+        channel: 'push',
+
+        notificationId: 'fallback-execution-001',
+
+        classification: NotificationFailureClassification.PERMANENT,
+
+        errorMessage: 'Push failed.',
+      },
+
+      'in-app': {
+        accepted: true,
+
+        provider: 'development-in-app',
+
+        channel: 'in-app',
+
+        notificationId: 'fallback-execution-001',
+
+        messageId: 'inapp-message-001',
+
+        classification: NotificationFailureClassification.SUCCESS,
+      },
+    });
+
+    const result = await executor.execute(
+      createNotification(),
+
+      createMetadata(),
+
+      3,
+    );
+
+    expect(result).toEqual({
+      channel: 'in-app',
+
+      provider: 'development-in-app',
+
+      messageId: 'inapp-message-001',
+    });
+
+    const messages = getLogMessages(logger);
+
+    const orchestrationId = 'fallback-orchestration-001';
+
+    const notificationId = 'fallback-execution-001';
+
+    const planId = 'fallback-plan-001';
+
+    expect(
+      messages.some(
+        (message) =>
+          message.includes('Fallback lifecycle started') &&
+          message.includes(`notification "${notificationId}"`) &&
+          message.includes(`orchestration "${orchestrationId}"`) &&
+          message.includes(`plan "${planId}"`),
+      ),
+    ).toBe(true);
+
+    expect(
+      messages.some(
+        (message) =>
+          message.includes('Fallback attempt started') &&
+          message.includes(`notification "${notificationId}"`) &&
+          message.includes(`orchestration "${orchestrationId}"`) &&
+          message.includes('channel "push"') &&
+          message.includes('position "1"'),
+      ),
+    ).toBe(true);
+
+    expect(
+      messages.some(
+        (message) =>
+          message.includes('Fallback attempt failed') &&
+          message.includes(`notification "${notificationId}"`) &&
+          message.includes(`orchestration "${orchestrationId}"`) &&
+          message.includes('channel "push"') &&
+          message.includes('position "1"'),
+      ),
+    ).toBe(true);
+
+    expect(
+      messages.some(
+        (message) =>
+          message.includes('Fallback attempt started') &&
+          message.includes(`notification "${notificationId}"`) &&
+          message.includes(`orchestration "${orchestrationId}"`) &&
+          message.includes('channel "in-app"') &&
+          message.includes('position "2"'),
+      ),
+    ).toBe(true);
+
+    expect(
+      messages.some(
+        (message) =>
+          message.includes('Fallback attempt succeeded') &&
+          message.includes(`notification "${notificationId}"`) &&
+          message.includes(`orchestration "${orchestrationId}"`) &&
+          message.includes('channel "in-app"') &&
+          message.includes('position "2"'),
+      ),
+    ).toBe(true);
+  });
+
+  it('correlates idempotent fallback recovery with orchestrationId', async () => {
+    const { executor, logger, deliveryPersistence } = createExecutor({
+      push: {
+        accepted: true,
+
+        provider: 'development-push',
+
+        channel: 'push',
+
+        notificationId: 'fallback-execution-001',
+
+        messageId: 'unused',
+
+        classification: NotificationFailureClassification.SUCCESS,
+      },
+
+      'in-app': {
+        accepted: true,
+
+        provider: 'development-in-app',
+
+        channel: 'in-app',
+
+        notificationId: 'fallback-execution-001',
+
+        messageId: 'unused',
+
+        classification: NotificationFailureClassification.SUCCESS,
+      },
+    });
+
+    deliveryPersistence.getByDeliveryKey.mockResolvedValueOnce({
+      status: 'SENT',
+
+      providerMessageId: 'existing-push-message',
+    });
+
+    const result = await executor.execute(
+      createNotification(),
+
+      createMetadata(),
+
+      3,
+    );
+
+    expect(result).toEqual({
+      channel: 'push',
+
+      provider: 'development-push',
+
+      messageId: 'existing-push-message',
+    });
+
+    const messages = getLogMessages(logger);
+
+    expect(
+      messages.some(
+        (message) =>
+          message.includes('Fallback delivery already completed') &&
+          message.includes('orchestration "fallback-orchestration-001"') &&
+          message.includes('plan "fallback-plan-001"') &&
+          message.includes('channel "push"') &&
+          message.includes('position "1"'),
+      ),
+    ).toBe(true);
+  });
+
+  it('correlates fallback exhaustion with orchestrationId', async () => {
+    const { executor, logger } = createExecutor({
+      push: {
+        accepted: false,
+
+        provider: 'development-push',
+
+        channel: 'push',
+
+        notificationId: 'fallback-execution-001',
+
+        classification: NotificationFailureClassification.PERMANENT,
+
+        errorMessage: 'Push failed.',
+      },
+
+      'in-app': {
+        accepted: false,
+
+        provider: 'development-in-app',
+
+        channel: 'in-app',
+
+        notificationId: 'fallback-execution-001',
+
+        classification: NotificationFailureClassification.NON_RETRYABLE,
+
+        errorMessage: 'In-app failed.',
+      },
+    });
+
+    const result = await executor.execute(
+      createNotification(),
+
+      createMetadata(),
+
+      3,
+    );
+
+    expect(result).toBeNull();
+
+    const messages = getLogMessages(logger);
+
+    expect(
+      messages.some(
+        (message) =>
+          message.includes('Fallback lifecycle exhausted') &&
+          message.includes('notification "fallback-execution-001"') &&
+          message.includes('orchestration "fallback-orchestration-001"') &&
+          message.includes('plan "fallback-plan-001"') &&
+          message.includes('positions "1" through "2"'),
+      ),
+    ).toBe(true);
+  });
+});

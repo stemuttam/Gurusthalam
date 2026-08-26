@@ -24,6 +24,60 @@ interface TestProvider {
     >;
 }
 
+interface TestLogger {
+  readonly info:
+    ReturnType<
+      typeof vi.fn
+    >;
+
+  readonly warn:
+    ReturnType<
+      typeof vi.fn
+    >;
+
+  readonly error:
+    ReturnType<
+      typeof vi.fn
+    >;
+
+  readonly debug:
+    ReturnType<
+      typeof vi.fn
+    >;
+}
+
+interface TestMetrics {
+  readonly incrementFallbackStarted:
+    ReturnType<
+      typeof vi.fn
+    >;
+
+  readonly incrementFallbackAttempts:
+    ReturnType<
+      typeof vi.fn
+    >;
+
+  readonly incrementFallbackAttemptFailures:
+    ReturnType<
+      typeof vi.fn
+    >;
+
+  readonly incrementFallbackRecovered:
+    ReturnType<
+      typeof vi.fn
+    >;
+
+  readonly incrementFallbackExhausted:
+    ReturnType<
+      typeof vi.fn
+    >;
+
+  readonly incrementFallbackIdempotentHits:
+    ReturnType<
+      typeof vi.fn
+    >;
+}
+
 function getTestProvider(
   providers:
     Map<
@@ -111,7 +165,8 @@ function createExecutor(
       unknown
     >,
 ) {
-  const logger = {
+  const logger:
+    TestLogger = {
     info:
       vi.fn(),
 
@@ -122,6 +177,27 @@ function createExecutor(
       vi.fn(),
 
     debug:
+      vi.fn(),
+  };
+
+  const metrics:
+    TestMetrics = {
+    incrementFallbackStarted:
+      vi.fn(),
+
+    incrementFallbackAttempts:
+      vi.fn(),
+
+    incrementFallbackAttemptFailures:
+      vi.fn(),
+
+    incrementFallbackRecovered:
+      vi.fn(),
+
+    incrementFallbackExhausted:
+      vi.fn(),
+
+    incrementFallbackIdempotentHits:
       vi.fn(),
   };
 
@@ -210,10 +286,16 @@ function createExecutor(
       providerRegistry as never,
 
       deliveryPersistence as never,
+
+      metrics as never,
     );
 
   return {
     executor,
+
+    logger,
+
+    metrics,
 
     providers,
 
@@ -232,6 +314,7 @@ describe(
         const {
           executor,
           providers,
+          metrics,
           deliveryPersistence,
         } =
           createExecutor({
@@ -319,6 +402,36 @@ describe(
         ).toHaveBeenCalledTimes(
           1,
         );
+
+        expect(
+          metrics.incrementFallbackStarted,
+        ).toHaveBeenCalledTimes(
+          1,
+        );
+
+        expect(
+          metrics.incrementFallbackAttempts,
+        ).toHaveBeenCalledTimes(
+          1,
+        );
+
+        expect(
+          metrics.incrementFallbackAttemptFailures,
+        ).not.toHaveBeenCalled();
+
+        expect(
+          metrics.incrementFallbackRecovered,
+        ).toHaveBeenCalledTimes(
+          1,
+        );
+
+        expect(
+          metrics.incrementFallbackExhausted,
+        ).not.toHaveBeenCalled();
+
+        expect(
+          metrics.incrementFallbackIdempotentHits,
+        ).not.toHaveBeenCalled();
       },
     );
 
@@ -328,6 +441,7 @@ describe(
         const {
           executor,
           providers,
+          metrics,
         } =
           createExecutor({
             push: {
@@ -403,6 +517,38 @@ describe(
         ).toHaveBeenCalledTimes(
           1,
         );
+
+        expect(
+          metrics.incrementFallbackStarted,
+        ).toHaveBeenCalledTimes(
+          1,
+        );
+
+        expect(
+          metrics.incrementFallbackAttempts,
+        ).toHaveBeenCalledTimes(
+          2,
+        );
+
+        expect(
+          metrics.incrementFallbackAttemptFailures,
+        ).toHaveBeenCalledTimes(
+          1,
+        );
+
+        expect(
+          metrics.incrementFallbackRecovered,
+        ).toHaveBeenCalledTimes(
+          1,
+        );
+
+        expect(
+          metrics.incrementFallbackExhausted,
+        ).not.toHaveBeenCalled();
+
+        expect(
+          metrics.incrementFallbackIdempotentHits,
+        ).not.toHaveBeenCalled();
       },
     );
 
@@ -412,6 +558,7 @@ describe(
         const {
           executor,
           deliveryPersistence,
+          metrics,
         } =
           createExecutor({
             push: {
@@ -473,6 +620,38 @@ describe(
         ).toHaveBeenCalledTimes(
           2,
         );
+
+        expect(
+          metrics.incrementFallbackStarted,
+        ).toHaveBeenCalledTimes(
+          1,
+        );
+
+        expect(
+          metrics.incrementFallbackAttempts,
+        ).toHaveBeenCalledTimes(
+          2,
+        );
+
+        expect(
+          metrics.incrementFallbackAttemptFailures,
+        ).toHaveBeenCalledTimes(
+          2,
+        );
+
+        expect(
+          metrics.incrementFallbackRecovered,
+        ).not.toHaveBeenCalled();
+
+        expect(
+          metrics.incrementFallbackExhausted,
+        ).toHaveBeenCalledTimes(
+          1,
+        );
+
+        expect(
+          metrics.incrementFallbackIdempotentHits,
+        ).not.toHaveBeenCalled();
       },
     );
 
@@ -483,6 +662,7 @@ describe(
           executor,
           providers,
           deliveryPersistence,
+          metrics,
         } =
           createExecutor({
             push: {
@@ -561,6 +741,98 @@ describe(
             providers,
             'push',
           ).send,
+        ).not.toHaveBeenCalled();
+
+        expect(
+          metrics.incrementFallbackStarted,
+        ).toHaveBeenCalledTimes(
+          1,
+        );
+
+        expect(
+          metrics.incrementFallbackAttempts,
+        ).toHaveBeenCalledTimes(
+          1,
+        );
+
+        expect(
+          metrics.incrementFallbackAttemptFailures,
+        ).not.toHaveBeenCalled();
+
+        expect(
+          metrics.incrementFallbackRecovered,
+        ).toHaveBeenCalledTimes(
+          1,
+        );
+
+        expect(
+          metrics.incrementFallbackExhausted,
+        ).not.toHaveBeenCalled();
+
+        expect(
+          metrics.incrementFallbackIdempotentHits,
+        ).toHaveBeenCalledTimes(
+          1,
+        );
+      },
+    );
+
+    it(
+      'marks fallback lifecycle exhausted when no fallback remains',
+      async () => {
+        const {
+          executor,
+          metrics,
+        } =
+          createExecutor({});
+
+        const metadata =
+          {
+            ...createMetadata(),
+
+            position:
+              2,
+          };
+
+        const result =
+          await executor.execute(
+            createNotification(),
+
+            metadata,
+
+            3,
+          );
+
+        expect(
+          result,
+        ).toBeNull();
+
+        expect(
+          metrics.incrementFallbackStarted,
+        ).toHaveBeenCalledTimes(
+          1,
+        );
+
+        expect(
+          metrics.incrementFallbackAttempts,
+        ).not.toHaveBeenCalled();
+
+        expect(
+          metrics.incrementFallbackAttemptFailures,
+        ).not.toHaveBeenCalled();
+
+        expect(
+          metrics.incrementFallbackRecovered,
+        ).not.toHaveBeenCalled();
+
+        expect(
+          metrics.incrementFallbackExhausted,
+        ).toHaveBeenCalledTimes(
+          1,
+        );
+
+        expect(
+          metrics.incrementFallbackIdempotentHits,
         ).not.toHaveBeenCalled();
       },
     );

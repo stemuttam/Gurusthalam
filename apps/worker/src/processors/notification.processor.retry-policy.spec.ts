@@ -246,42 +246,60 @@ function createProcessor(
   };
 
   const metrics = {
-    incrementProcessing:
-      vi.fn(),
+  incrementProcessing:
+    vi.fn(),
 
-    incrementIdempotentHits:
-      vi.fn(),
+  incrementIdempotentHits:
+    vi.fn(),
 
-    incrementProviderIdempotentHits:
-      vi.fn(),
+  incrementProviderIdempotentHits:
+    vi.fn(),
 
-    incrementProviderErrorsFor:
-      vi.fn(),
+  incrementProviderErrorsFor:
+    vi.fn(),
 
-    incrementRetrying:
-      vi.fn(),
+  incrementRetrying:
+    vi.fn(),
 
-    incrementProviderRetrying:
-      vi.fn(),
+  incrementProviderRetrying:
+    vi.fn(),
 
-    incrementSent:
-      vi.fn(),
+  incrementSent:
+    vi.fn(),
 
-    incrementProviderSent:
-      vi.fn(),
+  incrementProviderSent:
+    vi.fn(),
 
-    incrementFailed:
-      vi.fn(),
+  incrementFailed:
+    vi.fn(),
 
-    incrementProviderFailed:
-      vi.fn(),
+  incrementProviderFailed:
+    vi.fn(),
 
-    recordLatency:
-      vi.fn(),
+  recordLatency:
+    vi.fn(),
 
-    recordProviderLatency:
-      vi.fn(),
-  };
+  recordProviderLatency:
+    vi.fn(),
+
+  incrementFallbackStarted:
+    vi.fn(),
+
+  incrementFallbackAttempts:
+    vi.fn(),
+
+  incrementFallbackAttemptFailures:
+    vi.fn(),
+
+  incrementFallbackRecovered:
+    vi.fn(),
+
+  incrementFallbackExhausted:
+    vi.fn(),
+
+  incrementFallbackIdempotentHits:
+    vi.fn(),
+};
 
   const processor =
     new NotificationProcessor(

@@ -11,28 +11,82 @@ import {
 } from '@gurusthalam/logger';
 
 export interface NotificationMetricSnapshot {
-  readonly queued: number;
-  readonly processing: number;
-  readonly retrying: number;
-  readonly sent: number;
-  readonly failed: number;
-  readonly idempotentHits: number;
-  readonly providerErrors: number;
-  readonly totalLatencyMs: number;
-  readonly latencySamples: number;
-  readonly averageLatencyMs: number;
+  readonly queued:
+    number;
+
+  readonly processing:
+    number;
+
+  readonly retrying:
+    number;
+
+  readonly sent:
+    number;
+
+  readonly failed:
+    number;
+
+  readonly idempotentHits:
+    number;
+
+  readonly providerErrors:
+    number;
+
+  readonly totalLatencyMs:
+    number;
+
+  readonly latencySamples:
+    number;
+
+  readonly averageLatencyMs:
+    number;
+
+  readonly fallbackStarted:
+    number;
+
+  readonly fallbackAttempts:
+    number;
+
+  readonly fallbackAttemptFailures:
+    number;
+
+  readonly fallbackRecovered:
+    number;
+
+  readonly fallbackExhausted:
+    number;
+
+  readonly fallbackIdempotentHits:
+    number;
 }
 
 export interface NotificationProviderMetricSnapshot {
-  readonly provider: string;
-  readonly sent: number;
-  readonly failed: number;
-  readonly retrying: number;
-  readonly idempotentHits: number;
-  readonly providerErrors: number;
-  readonly totalLatencyMs: number;
-  readonly latencySamples: number;
-  readonly averageLatencyMs: number;
+  readonly provider:
+    string;
+
+  readonly sent:
+    number;
+
+  readonly failed:
+    number;
+
+  readonly retrying:
+    number;
+
+  readonly idempotentHits:
+    number;
+
+  readonly providerErrors:
+    number;
+
+  readonly totalLatencyMs:
+    number;
+
+  readonly latencySamples:
+    number;
+
+  readonly averageLatencyMs:
+    number;
 }
 
 const METRIC_NAMES = {
@@ -62,6 +116,24 @@ const METRIC_NAMES = {
 
   LATENCY_SAMPLES:
     'latency_samples',
+
+  FALLBACK_STARTED:
+    'fallback_started',
+
+  FALLBACK_ATTEMPTS:
+    'fallback_attempts',
+
+  FALLBACK_ATTEMPT_FAILURES:
+    'fallback_attempt_failures',
+
+  FALLBACK_RECOVERED:
+    'fallback_recovered',
+
+  FALLBACK_EXHAUSTED:
+    'fallback_exhausted',
+
+  FALLBACK_IDEMPOTENT_HITS:
+    'fallback_idempotent_hits',
 } as const;
 
 const PROVIDER_METRIC_NAMES = {
@@ -139,12 +211,6 @@ export class NotificationMetricsService {
     );
   }
 
-  /*
-   * ---------------------------------------------------------
-   * Global metrics
-   * ---------------------------------------------------------
-   */
-
   incrementQueued(): void {
     this.enqueueIncrement(
       this.key(
@@ -201,14 +267,57 @@ export class NotificationMetricsService {
     );
   }
 
-  /*
-   * ---------------------------------------------------------
-   * Provider metrics
-   * ---------------------------------------------------------
-   */
+  incrementFallbackStarted(): void {
+    this.enqueueIncrement(
+      this.key(
+        METRIC_NAMES.FALLBACK_STARTED,
+      ),
+    );
+  }
+
+  incrementFallbackAttempts(): void {
+    this.enqueueIncrement(
+      this.key(
+        METRIC_NAMES.FALLBACK_ATTEMPTS,
+      ),
+    );
+  }
+
+  incrementFallbackAttemptFailures(): void {
+    this.enqueueIncrement(
+      this.key(
+        METRIC_NAMES.FALLBACK_ATTEMPT_FAILURES,
+      ),
+    );
+  }
+
+  incrementFallbackRecovered(): void {
+    this.enqueueIncrement(
+      this.key(
+        METRIC_NAMES.FALLBACK_RECOVERED,
+      ),
+    );
+  }
+
+  incrementFallbackExhausted(): void {
+    this.enqueueIncrement(
+      this.key(
+        METRIC_NAMES.FALLBACK_EXHAUSTED,
+      ),
+    );
+  }
+
+  incrementFallbackIdempotentHits(): void {
+    this.enqueueIncrement(
+      this.key(
+        METRIC_NAMES.FALLBACK_IDEMPOTENT_HITS,
+      ),
+    );
+  }
 
   incrementProviderSent(
-    provider: string,
+    provider:
+      string,
   ): void {
     this.enqueueIncrement(
       this.providerKey(
@@ -219,7 +328,8 @@ export class NotificationMetricsService {
   }
 
   incrementProviderFailed(
-    provider: string,
+    provider:
+      string,
   ): void {
     this.enqueueIncrement(
       this.providerKey(
@@ -230,7 +340,8 @@ export class NotificationMetricsService {
   }
 
   incrementProviderRetrying(
-    provider: string,
+    provider:
+      string,
   ): void {
     this.enqueueIncrement(
       this.providerKey(
@@ -241,7 +352,8 @@ export class NotificationMetricsService {
   }
 
   incrementProviderIdempotentHits(
-    provider: string,
+    provider:
+      string,
   ): void {
     this.enqueueIncrement(
       this.providerKey(
@@ -252,7 +364,8 @@ export class NotificationMetricsService {
   }
 
   incrementProviderErrorsFor(
-    provider: string,
+    provider:
+      string,
   ): void {
     this.enqueueIncrement(
       this.providerKey(
@@ -262,14 +375,9 @@ export class NotificationMetricsService {
     );
   }
 
-  /*
-   * ---------------------------------------------------------
-   * Global latency
-   * ---------------------------------------------------------
-   */
-
   recordLatency(
-    milliseconds: number,
+    milliseconds:
+      number,
   ): void {
     if (
       !Number.isFinite(
@@ -308,7 +416,8 @@ export class NotificationMetricsService {
         )
         .catch(
           (
-            error: unknown,
+            error:
+              unknown,
           ) => {
             this.logger.error(
               'Failed to record notification latency metric',
@@ -325,15 +434,12 @@ export class NotificationMetricsService {
         );
   }
 
-  /*
-   * ---------------------------------------------------------
-   * Provider latency
-   * ---------------------------------------------------------
-   */
-
   recordProviderLatency(
-    provider: string,
-    milliseconds: number,
+    provider:
+      string,
+
+    milliseconds:
+      number,
   ): void {
     if (
       !Number.isFinite(
@@ -374,7 +480,8 @@ export class NotificationMetricsService {
         )
         .catch(
           (
-            error: unknown,
+            error:
+              unknown,
           ) => {
             this.logger.error(
               `Failed to record provider latency metric for "${provider}"`,
@@ -391,12 +498,6 @@ export class NotificationMetricsService {
         );
   }
 
-  /*
-   * ---------------------------------------------------------
-   * Global snapshot
-   * ---------------------------------------------------------
-   */
-
   async snapshot():
     Promise<NotificationMetricSnapshot> {
     const keys = [
@@ -409,6 +510,12 @@ export class NotificationMetricsService {
       METRIC_NAMES.PROVIDER_ERRORS,
       METRIC_NAMES.LATENCY_TOTAL_MS,
       METRIC_NAMES.LATENCY_SAMPLES,
+      METRIC_NAMES.FALLBACK_STARTED,
+      METRIC_NAMES.FALLBACK_ATTEMPTS,
+      METRIC_NAMES.FALLBACK_ATTEMPT_FAILURES,
+      METRIC_NAMES.FALLBACK_RECOVERED,
+      METRIC_NAMES.FALLBACK_EXHAUSTED,
+      METRIC_NAMES.FALLBACK_IDEMPOTENT_HITS,
     ];
 
     const values:
@@ -478,6 +585,42 @@ export class NotificationMetricsService {
           null,
       );
 
+    const fallbackStarted =
+      this.parseInteger(
+        values[9] ??
+          null,
+      );
+
+    const fallbackAttempts =
+      this.parseInteger(
+        values[10] ??
+          null,
+      );
+
+    const fallbackAttemptFailures =
+      this.parseInteger(
+        values[11] ??
+          null,
+      );
+
+    const fallbackRecovered =
+      this.parseInteger(
+        values[12] ??
+          null,
+      );
+
+    const fallbackExhausted =
+      this.parseInteger(
+        values[13] ??
+          null,
+      );
+
+    const fallbackIdempotentHits =
+      this.parseInteger(
+        values[14] ??
+          null,
+      );
+
     const averageLatencyMs =
       latencySamples > 0
         ? totalLatencyMs /
@@ -495,18 +638,20 @@ export class NotificationMetricsService {
       totalLatencyMs,
       latencySamples,
       averageLatencyMs,
+      fallbackStarted,
+      fallbackAttempts,
+      fallbackAttemptFailures,
+      fallbackRecovered,
+      fallbackExhausted,
+      fallbackIdempotentHits,
     };
   }
 
-  /*
-   * ---------------------------------------------------------
-   * Provider snapshot
-   * ---------------------------------------------------------
-   */
-
   async providerSnapshot(
-    provider: string,
-  ): Promise<NotificationProviderMetricSnapshot> {
+    provider:
+      string,
+  ):
+    Promise<NotificationProviderMetricSnapshot> {
     const keys = [
       PROVIDER_METRIC_NAMES.SENT,
       PROVIDER_METRIC_NAMES.FAILED,
@@ -581,32 +726,19 @@ export class NotificationMetricsService {
 
     return {
       provider,
-
       sent,
-
       failed,
-
       retrying,
-
       idempotentHits,
-
       providerErrors,
-
       totalLatencyMs,
-
       latencySamples,
-
       averageLatencyMs,
     };
   }
 
-  /*
-   * ---------------------------------------------------------
-   * Reset
-   * ---------------------------------------------------------
-   */
-
-  async reset(): Promise<void> {
+  async reset():
+    Promise<void> {
     const keys =
       Object.values(
         METRIC_NAMES,
@@ -641,13 +773,16 @@ export class NotificationMetricsService {
     );
   }
 
-  async close(): Promise<void> {
+  async close():
+    Promise<void> {
     await this.redis.quit();
   }
 
   private enqueueIncrement(
-    key: string,
-  ): void {
+    key:
+      string,
+  ):
+    void {
     this.writeChain =
       this.writeChain
         .then(
@@ -659,7 +794,8 @@ export class NotificationMetricsService {
         )
         .catch(
           (
-            error: unknown,
+            error:
+              unknown,
           ) => {
             this.logger.error(
               `Failed to increment notification metric "${key}"`,
@@ -677,15 +813,21 @@ export class NotificationMetricsService {
   }
 
   private key(
-    metricName: string,
-  ): string {
+    metricName:
+      string,
+  ):
+    string {
     return `${this.prefix}:${metricName}`;
   }
 
   private providerKey(
-    provider: string,
-    metricName: string,
-  ): string {
+    provider:
+      string,
+
+    metricName:
+      string,
+  ):
+    string {
     const normalizedProvider =
       provider
         .trim()
@@ -701,7 +843,8 @@ export class NotificationMetricsService {
   private parseInteger(
     value:
       string | null,
-  ): number {
+  ):
+    number {
     if (
       value ===
       null

@@ -217,13 +217,15 @@ export class NotificationProcessor {
       NotificationMetricsService,
   ) {
     this.fallbackExecutor =
-      new NotificationFallbackExecutor(
-        logger,
+  new NotificationFallbackExecutor(
+    logger,
 
-        providerRegistry,
+    providerRegistry,
 
-        deliveryPersistence,
-      );
+    deliveryPersistence,
+
+    metrics,
+  );
   }
 
   async process(

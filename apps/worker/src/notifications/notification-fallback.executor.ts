@@ -18,6 +18,10 @@ import {
   createNotificationDeliveryKey,
 } from './notification-delivery-key.js';
 
+import {
+  NotificationMetricsService,
+} from './notification-metrics.service.js';
+
 import type {
   NotificationJobData,
   NotificationFallbackMetadata,
@@ -34,6 +38,26 @@ export interface NotificationFallbackExecutionResult {
     string;
 }
 
+const FALLBACK_OPERATIONS = {
+  STARTED:
+    'notification.fallback.started',
+
+  ATTEMPT_STARTED:
+    'notification.fallback.attempt.started',
+
+  ATTEMPT_FAILED:
+    'notification.fallback.attempt.failed',
+
+  ATTEMPT_SUCCEEDED:
+    'notification.fallback.attempt.succeeded',
+
+  EXHAUSTED:
+    'notification.fallback.exhausted',
+
+  IDEMPOTENT_SKIP:
+    'notification.fallback.idempotent_skip',
+} as const;
+
 export class NotificationFallbackExecutor {
   constructor(
     private readonly logger:
@@ -44,6 +68,9 @@ export class NotificationFallbackExecutor {
 
     private readonly deliveryPersistence:
       NotificationDeliveryPersistenceService,
+
+    private readonly metrics:
+      NotificationMetricsService,
   ) {}
 
   async execute(
@@ -59,6 +86,8 @@ export class NotificationFallbackExecutor {
     Promise<
       NotificationFallbackExecutionResult | null
     > {
+    this.metrics.incrementFallbackStarted();
+
     const nextPosition =
       fallbackMetadata.position +
       1;
@@ -68,17 +97,60 @@ export class NotificationFallbackExecutor {
         nextPosition,
       );
 
+    this.logger.info(
+      `Fallback lifecycle started for notification "${notification.notificationId}" using plan "${fallbackMetadata.planId}" from primary channel "${fallbackMetadata.primary}" at position "${fallbackMetadata.position}".`,
+      {
+        operation:
+          FALLBACK_OPERATIONS.STARTED,
+
+        service:
+          notification.channel,
+      },
+    );
+
     if (
       remainingChannels.length ===
       0
     ) {
+      this.metrics.incrementFallbackExhausted();
+
+      this.logger.warn(
+        `Fallback lifecycle exhausted for notification "${notification.notificationId}" using plan "${fallbackMetadata.planId}".`,
+        {
+          operation:
+            FALLBACK_OPERATIONS.EXHAUSTED,
+
+          service:
+            notification.channel,
+        },
+      );
+
       return null;
     }
 
     for (
-      const channel of
-        remainingChannels
+      const [
+        offset,
+        channel,
+      ] of remainingChannels.entries()
     ) {
+      const position =
+        nextPosition +
+        offset;
+
+      this.metrics.incrementFallbackAttempts();
+
+      this.logger.info(
+        `Fallback attempt started for notification "${notification.notificationId}" using plan "${fallbackMetadata.planId}", channel "${channel}", position "${position}".`,
+        {
+          operation:
+            FALLBACK_OPERATIONS.ATTEMPT_STARTED,
+
+          service:
+            channel,
+        },
+      );
+
       const result =
         await this.tryChannel(
           notification,
@@ -86,15 +158,45 @@ export class NotificationFallbackExecutor {
           channel,
 
           attempt,
+
+          fallbackMetadata,
+
+          position,
         );
 
       if (
         result !==
         null
       ) {
+        this.metrics.incrementFallbackRecovered();
+
+        this.logger.info(
+          `Fallback attempt succeeded for notification "${notification.notificationId}" using plan "${fallbackMetadata.planId}", channel "${channel}", position "${position}".`,
+          {
+            operation:
+              FALLBACK_OPERATIONS.ATTEMPT_SUCCEEDED,
+
+            service:
+              result.provider,
+          },
+        );
+
         return result;
       }
     }
+
+    this.metrics.incrementFallbackExhausted();
+
+    this.logger.warn(
+      `Fallback lifecycle exhausted for notification "${notification.notificationId}" using plan "${fallbackMetadata.planId}" after attempting positions "${nextPosition}" through "${fallbackMetadata.sequence.length - 1}".`,
+      {
+        operation:
+          FALLBACK_OPERATIONS.EXHAUSTED,
+
+        service:
+          notification.channel,
+      },
+    );
 
     return null;
   }
@@ -107,6 +209,12 @@ export class NotificationFallbackExecutor {
       NotificationJobData['channel'],
 
     attempt:
+      number,
+
+    fallbackMetadata:
+      NotificationFallbackMetadata,
+
+    position:
       number,
   ):
     Promise<
@@ -153,11 +261,13 @@ export class NotificationFallbackExecutor {
         'SENT' &&
       existing.providerMessageId
     ) {
+      this.metrics.incrementFallbackIdempotentHits();
+
       this.logger.info(
-        `Fallback delivery already completed: ${notification.notificationId}`,
+        `Fallback delivery already completed for notification "${notification.notificationId}" using plan "${fallbackMetadata.planId}", channel "${channel}", position "${position}".`,
         {
           operation:
-            'notification.fallback.idempotent_skip',
+            FALLBACK_OPERATIONS.IDEMPOTENT_SKIP,
 
           service:
             providerName,
@@ -200,7 +310,7 @@ export class NotificationFallbackExecutor {
 
       if (
         delivery.classification !==
-        NotificationFailureClassification.SUCCESS ||
+          NotificationFailureClassification.SUCCESS ||
         delivery.accepted !==
           true
       ) {
@@ -214,11 +324,13 @@ export class NotificationFallbackExecutor {
           reason,
         );
 
+        this.metrics.incrementFallbackAttemptFailures();
+
         this.logger.warn(
-          `Notification fallback channel "${channel}" failed: ${notification.notificationId}`,
+          `Fallback attempt failed for notification "${notification.notificationId}" using plan "${fallbackMetadata.planId}", channel "${channel}", position "${position}", classification "${delivery.classification}".`,
           {
             operation:
-              'notification.fallback.failed',
+              FALLBACK_OPERATIONS.ATTEMPT_FAILED,
 
             service:
               providerName,
@@ -238,17 +350,22 @@ export class NotificationFallbackExecutor {
           .length ===
           0
       ) {
+        const reason =
+          'Fallback provider returned SUCCESS without a valid messageId.';
+
         await this.deliveryPersistence.markFailed(
           deliveryKey,
 
-          'Fallback provider returned SUCCESS without a valid messageId.',
+          reason,
         );
 
+        this.metrics.incrementFallbackAttemptFailures();
+
         this.logger.warn(
-          `Notification fallback channel "${channel}" returned SUCCESS without a messageId: ${notification.notificationId}`,
+          `Fallback attempt failed for notification "${notification.notificationId}" using plan "${fallbackMetadata.planId}", channel "${channel}", position "${position}" because the provider returned no valid messageId.`,
           {
             operation:
-              'notification.fallback.failed',
+              FALLBACK_OPERATIONS.ATTEMPT_FAILED,
 
             service:
               providerName,
@@ -262,17 +379,6 @@ export class NotificationFallbackExecutor {
         deliveryKey,
 
         messageId,
-      );
-
-      this.logger.info(
-        `Notification fallback delivered through "${channel}": ${notification.notificationId}`,
-        {
-          operation:
-            'notification.fallback.delivered',
-
-          service:
-            providerName,
-        },
       );
 
       return {
@@ -299,11 +405,13 @@ export class NotificationFallbackExecutor {
         message,
       );
 
+      this.metrics.incrementFallbackAttemptFailures();
+
       this.logger.warn(
-        `Notification fallback transport failed through "${channel}": ${notification.notificationId}`,
+        `Fallback attempt failed for notification "${notification.notificationId}" using plan "${fallbackMetadata.planId}", channel "${channel}", position "${position}": ${message}`,
         {
           operation:
-            'notification.fallback.failed',
+            FALLBACK_OPERATIONS.ATTEMPT_FAILED,
 
           service:
             providerName,

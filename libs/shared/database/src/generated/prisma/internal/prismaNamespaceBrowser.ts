@@ -55,7 +55,9 @@ export const ModelName = {
   NotificationTemplateVersion: 'NotificationTemplateVersion',
   Notification: 'Notification',
   NotificationDelivery: 'NotificationDelivery',
-  OutboxEvent: 'OutboxEvent'
+  OutboxEvent: 'OutboxEvent',
+  NotificationAggregation: 'NotificationAggregation',
+  NotificationAggregationItem: 'NotificationAggregationItem'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -182,6 +184,38 @@ export const OutboxEventScalarFieldEnum = {
 } as const
 
 export type OutboxEventScalarFieldEnum = (typeof OutboxEventScalarFieldEnum)[keyof typeof OutboxEventScalarFieldEnum]
+
+
+export const NotificationAggregationScalarFieldEnum = {
+  id: 'id',
+  aggregationId: 'aggregationId',
+  groupKey: 'groupKey',
+  userId: 'userId',
+  channel: 'channel',
+  category: 'category',
+  aggregationKey: 'aggregationKey',
+  locale: 'locale',
+  status: 'status',
+  windowStart: 'windowStart',
+  windowEnd: 'windowEnd',
+  itemCount: 'itemCount',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type NotificationAggregationScalarFieldEnum = (typeof NotificationAggregationScalarFieldEnum)[keyof typeof NotificationAggregationScalarFieldEnum]
+
+
+export const NotificationAggregationItemScalarFieldEnum = {
+  id: 'id',
+  aggregationId: 'aggregationId',
+  sourceEventId: 'sourceEventId',
+  occurredAt: 'occurredAt',
+  orderingKey: 'orderingKey',
+  createdAt: 'createdAt'
+} as const
+
+export type NotificationAggregationItemScalarFieldEnum = (typeof NotificationAggregationItemScalarFieldEnum)[keyof typeof NotificationAggregationItemScalarFieldEnum]
 
 
 export const SortOrder = {

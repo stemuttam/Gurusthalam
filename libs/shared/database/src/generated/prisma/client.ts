@@ -66,3 +66,13 @@ export type NotificationDelivery = Prisma.NotificationDeliveryModel
  *
  */
 export type OutboxEvent = Prisma.OutboxEventModel
+/**
+ * Model NotificationAggregation
+ *
+ */
+export type NotificationAggregation = Prisma.NotificationAggregationModel
+/**
+ * Model NotificationAggregationItem
+ *
+ */
+export type NotificationAggregationItem = Prisma.NotificationAggregationItemModel

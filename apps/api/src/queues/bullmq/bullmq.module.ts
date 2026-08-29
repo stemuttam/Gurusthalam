@@ -39,10 +39,16 @@ import {
   NotificationApplicationService,
 } from '../notifications/notification.application.service.js';
 
+import {
+  NotificationAggregationModule,
+} from '../notifications/notification-aggregation.module.js';
+
 @Global()
 @Module({
   imports: [
     NotificationTemplateModule,
+
+    NotificationAggregationModule,
   ],
 
   controllers: [

@@ -50,6 +50,16 @@ export const OutboxStatus = {
 export type OutboxStatus = (typeof OutboxStatus)[keyof typeof OutboxStatus]
 
 
+export const NotificationAggregationStatus = {
+  OPEN: 'OPEN',
+  FLUSHING: 'FLUSHING',
+  FLUSHED: 'FLUSHED',
+  FAILED: 'FAILED'
+} as const
+
+export type NotificationAggregationStatus = (typeof NotificationAggregationStatus)[keyof typeof NotificationAggregationStatus]
+
+
 export const NotificationTemplateChannel = {
   EMAIL: 'EMAIL',
   IN_APP: 'IN_APP',

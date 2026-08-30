@@ -19,6 +19,7 @@ interface MockPrismaClient {
     create?: ReturnType<typeof vi.fn>;
     upsert?: ReturnType<typeof vi.fn>;
     update?: ReturnType<typeof vi.fn>;
+    updateMany?: ReturnType<typeof vi.fn>;
     findMany?: ReturnType<typeof vi.fn>;
   };
 
@@ -44,11 +45,21 @@ function createRepository(
 
 function createIdentity(): NotificationAggregationGroupIdentity {
   return {
-    userId: 'user-001',
-    channel: 'email',
-    category: 'course.activity',
-    aggregationKey: 'course-001',
-    locale: 'en-IN',
+    userId:
+      'user-001',
+
+    channel:
+      'email',
+
+    category:
+      'course.activity',
+
+    aggregationKey:
+      'course-001',
+
+    locale:
+      'en-IN',
+
     groupKey:
       'user-001|email|course.activity|course-001|en-IN',
   };
@@ -62,12 +73,14 @@ function createIdentity(): NotificationAggregationGroupIdentity {
  * exposed by the repository.
  */
 function createGroup() {
-  const createdAt = new Date(
-    '2026-08-26T09:00:00.000Z',
-  );
+  const createdAt =
+    new Date(
+      '2026-08-26T09:00:00.000Z',
+    );
 
   return {
-    id: 'db-aggregation-001',
+    id:
+      'db-aggregation-001',
 
     aggregationId:
       'aggregation-001',
@@ -75,51 +88,65 @@ function createGroup() {
     groupKey:
       'user-001|email|course.activity|course-001|en-IN',
 
-    userId: 'user-001',
+    userId:
+      'user-001',
 
-    channel: 'EMAIL' as const,
+    channel:
+      'EMAIL' as const,
 
-    category: 'course.activity',
+    category:
+      'course.activity',
 
-    aggregationKey: 'course-001',
+    aggregationKey:
+      'course-001',
 
-    locale: 'en-IN',
+    locale:
+      'en-IN',
 
-    status: 'OPEN' as const,
+    status:
+      'OPEN' as const,
 
-    windowStart: createdAt,
+    windowStart:
+      createdAt,
 
-    windowEnd: new Date(
-      '2026-08-26T09:05:00.000Z',
-    ),
+    windowEnd:
+      new Date(
+        '2026-08-26T09:05:00.000Z',
+      ),
 
-    itemCount: 0,
+    itemCount:
+      0,
 
     createdAt,
 
-    updatedAt: createdAt,
+    updatedAt:
+      createdAt,
   };
 }
 
 function createItem() {
   return {
-    id: 'item-001',
+    id:
+      'item-001',
 
     aggregationId:
       'db-aggregation-001',
 
-    sourceEventId: 'event-001',
+    sourceEventId:
+      'event-001',
 
-    occurredAt: new Date(
-      '2026-08-26T09:00:00.000Z',
-    ),
+    occurredAt:
+      new Date(
+        '2026-08-26T09:00:00.000Z',
+      ),
 
     orderingKey:
       '1756198800000|event-001',
 
-    createdAt: new Date(
-      '2026-08-26T09:00:01.000Z',
-    ),
+    createdAt:
+      new Date(
+        '2026-08-26T09:00:01.000Z',
+      ),
   };
 }
 
@@ -129,20 +156,27 @@ describe(
     it(
       'finds an aggregation group by deterministic group key',
       async () => {
-        const persisted = createGroup();
+        const persisted =
+          createGroup();
 
-        const findUnique = vi
-          .fn()
-          .mockResolvedValue(persisted);
+        const findUnique =
+          vi
+            .fn()
+            .mockResolvedValue(
+              persisted,
+            );
 
-        const prisma: MockPrismaClient = {
+        const prisma:
+          MockPrismaClient = {
           notificationAggregation: {
             findUnique,
           },
         };
 
         const repository =
-          createRepository(prisma);
+          createRepository(
+            prisma,
+          );
 
         await expect(
           repository.findByGroupKey(
@@ -158,7 +192,8 @@ describe(
           userId:
             persisted.userId,
 
-          channel: 'email',
+          channel:
+            'email',
 
           category:
             persisted.category,
@@ -169,7 +204,8 @@ describe(
           locale:
             persisted.locale,
 
-          status: 'OPEN',
+          status:
+            'OPEN',
 
           windowStart:
             persisted.windowStart,
@@ -177,7 +213,8 @@ describe(
           windowEnd:
             persisted.windowEnd,
 
-          itemCount: 0,
+          itemCount:
+            0,
 
           createdAt:
             persisted.createdAt,
@@ -200,18 +237,24 @@ describe(
     it(
       'returns null when the aggregation group does not exist',
       async () => {
-        const findUnique = vi
-          .fn()
-          .mockResolvedValue(null);
+        const findUnique =
+          vi
+            .fn()
+            .mockResolvedValue(
+              null,
+            );
 
-        const prisma: MockPrismaClient = {
+        const prisma:
+          MockPrismaClient = {
           notificationAggregation: {
             findUnique,
           },
         };
 
         const repository =
-          createRepository(prisma);
+          createRepository(
+            prisma,
+          );
 
         await expect(
           repository.findByGroupKey(
@@ -223,7 +266,8 @@ describe(
           findUnique,
         ).toHaveBeenCalledWith({
           where: {
-            groupKey: 'missing-group',
+            groupKey:
+              'missing-group',
           },
         });
       },
@@ -232,27 +276,36 @@ describe(
     it(
       'finds an aggregation group by aggregation id',
       async () => {
-        const persisted = createGroup();
+        const persisted =
+          createGroup();
 
-        const findUnique = vi
-          .fn()
-          .mockResolvedValue(persisted);
+        const findUnique =
+          vi
+            .fn()
+            .mockResolvedValue(
+              persisted,
+            );
 
-        const prisma: MockPrismaClient = {
+        const prisma:
+          MockPrismaClient = {
           notificationAggregation: {
             findUnique,
           },
         };
 
         const repository =
-          createRepository(prisma);
+          createRepository(
+            prisma,
+          );
 
         const result =
           await repository.findByAggregationId(
             persisted.aggregationId,
           );
 
-        expect(result).toEqual({
+        expect(
+          result,
+        ).toEqual({
           aggregationId:
             persisted.aggregationId,
 
@@ -262,7 +315,8 @@ describe(
           userId:
             persisted.userId,
 
-          channel: 'email',
+          channel:
+            'email',
 
           category:
             persisted.category,
@@ -273,7 +327,8 @@ describe(
           locale:
             persisted.locale,
 
-          status: 'OPEN',
+          status:
+            'OPEN',
 
           windowStart:
             persisted.windowStart,
@@ -281,7 +336,8 @@ describe(
           windowEnd:
             persisted.windowEnd,
 
-          itemCount: 0,
+          itemCount:
+            0,
 
           createdAt:
             persisted.createdAt,
@@ -304,25 +360,30 @@ describe(
     it(
       'creates a new aggregation group',
       async () => {
-        const persisted = createGroup();
+        const persisted =
+          createGroup();
 
         const identity =
           createIdentity();
 
-        const create = vi
-          .fn()
-          .mockResolvedValue(
-            persisted,
-          );
+        const create =
+          vi
+            .fn()
+            .mockResolvedValue(
+              persisted,
+            );
 
-        const prisma: MockPrismaClient = {
+        const prisma:
+          MockPrismaClient = {
           notificationAggregation: {
             create,
           },
         };
 
         const repository =
-          createRepository(prisma);
+          createRepository(
+            prisma,
+          );
 
         const windowStart =
           persisted.windowStart;
@@ -350,9 +411,13 @@ describe(
 
         expect(
           result.channel,
-        ).toBe('email');
+        ).toBe(
+          'email',
+        );
 
-        expect(create).toHaveBeenCalledWith({
+        expect(
+          create,
+        ).toHaveBeenCalledWith({
           data: {
             aggregationId:
               persisted.aggregationId,
@@ -363,7 +428,8 @@ describe(
             userId:
               identity.userId,
 
-            channel: 'EMAIL',
+            channel:
+              'EMAIL',
 
             category:
               identity.category,
@@ -374,13 +440,15 @@ describe(
             locale:
               identity.locale,
 
-            status: 'OPEN',
+            status:
+              'OPEN',
 
             windowStart,
 
             windowEnd,
 
-            itemCount: 0,
+            itemCount:
+              0,
           },
         });
       },
@@ -395,20 +463,24 @@ describe(
         const identity =
           createIdentity();
 
-        const upsert = vi
-          .fn()
-          .mockResolvedValue(
-            persisted,
-          );
+        const upsert =
+          vi
+            .fn()
+            .mockResolvedValue(
+              persisted,
+            );
 
-        const prisma: MockPrismaClient = {
+        const prisma:
+          MockPrismaClient = {
           notificationAggregation: {
             upsert,
           },
         };
 
         const repository =
-          createRepository(prisma);
+          createRepository(
+            prisma,
+          );
 
         const result =
           await repository.createGroupIfAbsent({
@@ -452,7 +524,8 @@ describe(
             userId:
               identity.userId,
 
-            channel: 'EMAIL',
+            channel:
+              'EMAIL',
 
             category:
               identity.category,
@@ -463,7 +536,8 @@ describe(
             locale:
               identity.locale,
 
-            status: 'OPEN',
+            status:
+              'OPEN',
 
             windowStart:
               persisted.windowStart,
@@ -471,7 +545,8 @@ describe(
             windowEnd:
               persisted.windowEnd,
 
-            itemCount: 0,
+            itemCount:
+              0,
           },
 
           update: {},
@@ -488,28 +563,21 @@ describe(
         const existing =
           createItem();
 
-        const createMany = vi
-          .fn()
-          .mockResolvedValue({
-            count: 0,
-          });
+        const createMany =
+          vi
+            .fn()
+            .mockResolvedValue({
+              count:
+                0,
+            });
 
-        /*
-         * The repository uses findFirst() after createMany()
-         * reports that no row was inserted. This resolves the
-         * already-persisted item for an idempotent duplicate event.
-         */
-        const findFirstItem = vi
-          .fn()
-          .mockResolvedValue(
-            existing,
-          );
+        const findFirstItem =
+          vi
+            .fn()
+            .mockResolvedValue(
+              existing,
+            );
 
-        /*
-         * The repository resolves the public aggregationId
-         * to the actual NotificationAggregation database id before
-         * operating on NotificationAggregationItem.
-         */
         const findUniqueAggregation =
           vi
             .fn()
@@ -531,33 +599,41 @@ describe(
           },
         };
 
-        const prisma: MockPrismaClient = {
+        const prisma:
+          MockPrismaClient = {
           notificationAggregation: {},
 
           notificationAggregationItem: {},
 
-          $transaction: vi
-            .fn()
-            .mockImplementation(
-              async (
-                callback: (
-                  client:
-                    typeof transaction,
-                ) => Promise<unknown>,
-              ) =>
-                callback(transaction),
-            ),
+          $transaction:
+            vi
+              .fn()
+              .mockImplementation(
+                async (
+                  callback: (
+                    client:
+                      typeof transaction,
+                  ) =>
+                    Promise<unknown>,
+                ) =>
+                  callback(
+                    transaction,
+                  ),
+              ),
         };
 
         const repository =
-          createRepository(prisma);
+          createRepository(
+            prisma,
+          );
 
         const result =
           await repository.addItem({
             aggregationId:
               group.aggregationId,
 
-            itemId: 'item-002',
+            itemId:
+              'item-002',
 
             sourceEventId:
               existing.sourceEventId,
@@ -569,8 +645,11 @@ describe(
               existing.orderingKey,
           });
 
-        expect(result).toEqual({
-          inserted: false,
+        expect(
+          result,
+        ).toEqual({
+          inserted:
+            false,
 
           item: {
             itemId:
@@ -624,11 +703,13 @@ describe(
         const item =
           createItem();
 
-        const createMany = vi
-          .fn()
-          .mockResolvedValue({
-            count: 1,
-          });
+        const createMany =
+          vi
+            .fn()
+            .mockResolvedValue({
+              count:
+                1,
+            });
 
         const findUniqueAggregation =
           vi
@@ -644,12 +725,15 @@ describe(
               item,
             );
 
-        const update = vi
-          .fn()
-          .mockResolvedValue({
-            ...group,
-            itemCount: 1,
-          });
+        const update =
+          vi
+            .fn()
+            .mockResolvedValue({
+              ...group,
+
+              itemCount:
+                1,
+            });
 
         const transaction = {
           notificationAggregation: {
@@ -666,26 +750,33 @@ describe(
           },
         };
 
-        const prisma: MockPrismaClient = {
+        const prisma:
+          MockPrismaClient = {
           notificationAggregation: {},
 
           notificationAggregationItem: {},
 
-          $transaction: vi
-            .fn()
-            .mockImplementation(
-              async (
-                callback: (
-                  client:
-                    typeof transaction,
-                ) => Promise<unknown>,
-              ) =>
-                callback(transaction),
-            ),
+          $transaction:
+            vi
+              .fn()
+              .mockImplementation(
+                async (
+                  callback: (
+                    client:
+                      typeof transaction,
+                  ) =>
+                    Promise<unknown>,
+                ) =>
+                  callback(
+                    transaction,
+                  ),
+              ),
         };
 
         const repository =
-          createRepository(prisma);
+          createRepository(
+            prisma,
+          );
 
         const result =
           await repository.addItem({
@@ -707,7 +798,9 @@ describe(
 
         expect(
           result.inserted,
-        ).toBe(true);
+        ).toBe(
+          true,
+        );
 
         expect(
           result.item?.itemId,
@@ -735,12 +828,14 @@ describe(
           update,
         ).toHaveBeenCalledWith({
           where: {
-            id: group.id,
+            id:
+              group.id,
           },
 
           data: {
             itemCount: {
-              increment: 1,
+              increment:
+                1,
             },
           },
         });
@@ -756,7 +851,8 @@ describe(
         const first = {
           ...createItem(),
 
-          id: 'item-a',
+          id:
+            'item-a',
 
           sourceEventId:
             'event-a',
@@ -771,7 +867,8 @@ describe(
         const second = {
           ...createItem(),
 
-          id: 'item-b',
+          id:
+            'item-b',
 
           sourceEventId:
             'event-b',
@@ -790,14 +887,16 @@ describe(
               group,
             );
 
-        const findMany = vi
-          .fn()
-          .mockResolvedValue([
-            first,
-            second,
-          ]);
+        const findMany =
+          vi
+            .fn()
+            .mockResolvedValue([
+              first,
+              second,
+            ]);
 
-        const prisma: MockPrismaClient = {
+        const prisma:
+          MockPrismaClient = {
           notificationAggregation: {
             findUnique:
               findUniqueAggregation,
@@ -809,7 +908,9 @@ describe(
         };
 
         const repository =
-          createRepository(prisma);
+          createRepository(
+            prisma,
+          );
 
         const result =
           await repository.listItems(
@@ -818,7 +919,9 @@ describe(
 
         expect(
           result.map(
-            (item) =>
+            (
+              item,
+            ) =>
               item.sourceEventId,
           ),
         ).toEqual([
@@ -840,11 +943,13 @@ describe(
 
           orderBy: [
             {
-              orderingKey: 'asc',
+              orderingKey:
+                'asc',
             },
 
             {
-              id: 'asc',
+              id:
+                'asc',
             },
           ],
         });
@@ -857,9 +962,12 @@ describe(
         const group =
           createGroup();
 
-        const count = vi
-          .fn()
-          .mockResolvedValue(3);
+        const count =
+          vi
+            .fn()
+            .mockResolvedValue(
+              3,
+            );
 
         const findUniqueAggregation =
           vi
@@ -868,7 +976,8 @@ describe(
               group,
             );
 
-        const prisma: MockPrismaClient = {
+        const prisma:
+          MockPrismaClient = {
           notificationAggregation: {
             findUnique:
               findUniqueAggregation,
@@ -880,13 +989,17 @@ describe(
         };
 
         const repository =
-          createRepository(prisma);
+          createRepository(
+            prisma,
+          );
 
         await expect(
           repository.getItemCount(
             group.aggregationId,
           ),
-        ).resolves.toBe(3);
+        ).resolves.toBe(
+          3,
+        );
 
         expect(
           findUniqueAggregation,
@@ -913,20 +1026,24 @@ describe(
             'FLUSHING' as const,
         };
 
-        const update = vi
-          .fn()
-          .mockResolvedValue(
-            persisted,
-          );
+        const update =
+          vi
+            .fn()
+            .mockResolvedValue(
+              persisted,
+            );
 
-        const prisma: MockPrismaClient = {
+        const prisma:
+          MockPrismaClient = {
           notificationAggregation: {
             update,
           },
         };
 
         const repository =
-          createRepository(prisma);
+          createRepository(
+            prisma,
+          );
 
         const result =
           await repository.updateStatus(
@@ -936,7 +1053,9 @@ describe(
 
         expect(
           result.status,
-        ).toBe('FLUSHING');
+        ).toBe(
+          'FLUSHING',
+        );
 
         expect(
           update,
@@ -947,9 +1066,216 @@ describe(
           },
 
           data: {
-            status: 'FLUSHING',
+            status:
+              'FLUSHING',
           },
         });
+      },
+    );
+
+    it(
+      'atomically claims an expired OPEN aggregation',
+      async () => {
+        const group =
+          createGroup();
+
+        const updateMany =
+          vi
+            .fn()
+            .mockResolvedValue({
+              count:
+                1,
+            });
+
+        const findUnique =
+          vi
+            .fn()
+            .mockResolvedValue({
+              ...group,
+
+              status:
+                'FLUSHING',
+            });
+
+        const prisma:
+          MockPrismaClient = {
+          notificationAggregation: {
+            updateMany,
+
+            findUnique,
+          },
+        };
+
+        const repository =
+          createRepository(
+            prisma,
+          );
+
+        const now =
+          new Date(
+            '2026-08-26T09:05:00.000Z',
+          );
+
+        const result =
+          await repository.claimExpiredForFlushing(
+            group.aggregationId,
+            now,
+          );
+
+        expect(
+          result?.status,
+        ).toBe(
+          'FLUSHING',
+        );
+
+        expect(
+          updateMany,
+        ).toHaveBeenCalledWith({
+          where: {
+            aggregationId:
+              group.aggregationId,
+
+            status:
+              'OPEN',
+
+            windowEnd: {
+              lte:
+                now,
+            },
+          },
+
+          data: {
+            status:
+              'FLUSHING',
+          },
+        });
+
+        expect(
+          findUnique,
+        ).toHaveBeenCalledWith({
+          where: {
+            aggregationId:
+              group.aggregationId,
+          },
+        });
+      },
+    );
+
+    it(
+      'returns null when another caller already claimed the aggregation',
+      async () => {
+        const updateMany =
+          vi
+            .fn()
+            .mockResolvedValue({
+              count:
+                0,
+            });
+
+        const findUnique =
+          vi.fn();
+
+        const prisma:
+          MockPrismaClient = {
+          notificationAggregation: {
+            updateMany,
+
+            findUnique,
+          },
+        };
+
+        const repository =
+          createRepository(
+            prisma,
+          );
+
+        const now =
+          new Date(
+            '2026-08-26T09:05:00.000Z',
+          );
+
+        await expect(
+          repository.claimExpiredForFlushing(
+            'aggregation-001',
+            now,
+          ),
+        ).resolves.toBeNull();
+
+        expect(
+          updateMany,
+        ).toHaveBeenCalledOnce();
+
+        expect(
+          findUnique,
+        ).not.toHaveBeenCalled();
+      },
+    );
+
+    it(
+      'does not claim an unexpired aggregation',
+      async () => {
+        const updateMany =
+          vi
+            .fn()
+            .mockResolvedValue({
+              count:
+                0,
+            });
+
+        const findUnique =
+          vi.fn();
+
+        const prisma:
+          MockPrismaClient = {
+          notificationAggregation: {
+            updateMany,
+
+            findUnique,
+          },
+        };
+
+        const repository =
+          createRepository(
+            prisma,
+          );
+
+        const now =
+          new Date(
+            '2026-08-26T09:04:59.999Z',
+          );
+
+        await expect(
+          repository.claimExpiredForFlushing(
+            'aggregation-001',
+            now,
+          ),
+        ).resolves.toBeNull();
+
+        expect(
+          updateMany,
+        ).toHaveBeenCalledWith({
+          where: {
+            aggregationId:
+              'aggregation-001',
+
+            status:
+              'OPEN',
+
+            windowEnd: {
+              lte:
+                now,
+            },
+          },
+
+          data: {
+            status:
+              'FLUSHING',
+          },
+        });
+
+        expect(
+          findUnique,
+        ).not.toHaveBeenCalled();
       },
     );
 
@@ -959,29 +1285,35 @@ describe(
         const expired = {
           ...createGroup(),
 
-          windowEnd: new Date(
-            '2026-08-26T09:04:00.000Z',
-          ),
+          windowEnd:
+            new Date(
+              '2026-08-26T09:04:00.000Z',
+            ),
         };
 
-        const findMany = vi
-          .fn()
-          .mockResolvedValue([
-            expired,
-          ]);
+        const findMany =
+          vi
+            .fn()
+            .mockResolvedValue([
+              expired,
+            ]);
 
-        const prisma: MockPrismaClient = {
+        const prisma:
+          MockPrismaClient = {
           notificationAggregation: {
             findMany,
           },
         };
 
         const repository =
-          createRepository(prisma);
+          createRepository(
+            prisma,
+          );
 
-        const now = new Date(
-          '2026-08-26T09:05:00.000Z',
-        );
+        const now =
+          new Date(
+            '2026-08-26T09:05:00.000Z',
+          );
 
         const result =
           await repository.findOpenExpiredGroups(
@@ -990,7 +1322,9 @@ describe(
 
         expect(
           result,
-        ).toHaveLength(1);
+        ).toHaveLength(
+          1,
+        );
 
         expect(
           result[0]?.aggregationId,
@@ -1002,24 +1336,29 @@ describe(
           findMany,
         ).toHaveBeenCalledWith({
           where: {
-            status: 'OPEN',
+            status:
+              'OPEN',
 
             windowEnd: {
-              lte: now,
+              lte:
+                now,
             },
           },
 
           orderBy: [
             {
-              windowEnd: 'asc',
+              windowEnd:
+                'asc',
             },
 
             {
-              createdAt: 'asc',
+              createdAt:
+                'asc',
             },
 
             {
-              aggregationId: 'asc',
+              aggregationId:
+                'asc',
             },
           ],
         });

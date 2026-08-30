@@ -22,10 +22,14 @@ function createGroup(
   overrides: Partial<NotificationAggregationRepositoryGroup> = {},
 ): NotificationAggregationRepositoryGroup {
   const windowStart =
-    new Date('2026-08-28T10:00:00.000Z');
+    new Date(
+      '2026-08-28T10:00:00.000Z',
+    );
 
   const windowEnd =
-    new Date('2026-08-28T10:05:00.000Z');
+    new Date(
+      '2026-08-28T10:05:00.000Z',
+    );
 
   return {
     aggregationId:
@@ -110,7 +114,7 @@ function createServiceMock() {
     findExpiredGroups:
       vi.fn(),
 
-    markFlushing:
+    claimExpiredForFlushing:
       vi.fn(),
 
     markFlushed:
@@ -176,7 +180,9 @@ describe(
             now,
           );
 
-        expect(result).toEqual({
+        expect(
+          result,
+        ).toEqual({
           group,
           items,
         });
@@ -215,12 +221,15 @@ describe(
         const result =
           await service.getExpiredSnapshot(
             'aggregation-missing',
+
             new Date(
               '2026-08-28T10:10:00.000Z',
             ),
           );
 
-        expect(result).toBeNull();
+        expect(
+          result,
+        ).toBeNull();
 
         expect(
           aggregationService.getItems,
@@ -251,12 +260,15 @@ describe(
         const result =
           await service.getExpiredSnapshot(
             'aggregation-test-001',
+
             new Date(
               '2026-08-28T10:10:00.000Z',
             ),
           );
 
-        expect(result).toBeNull();
+        expect(
+          result,
+        ).toBeNull();
 
         expect(
           aggregationService.getItems,
@@ -284,12 +296,15 @@ describe(
         const result =
           await service.getExpiredSnapshot(
             'aggregation-test-001',
+
             new Date(
               '2026-08-28T10:04:59.999Z',
             ),
           );
 
-        expect(result).toBeNull();
+        expect(
+          result,
+        ).toBeNull();
 
         expect(
           aggregationService.getItems,
@@ -333,7 +348,9 @@ describe(
             group.windowEnd,
           );
 
-        expect(result).toEqual({
+        expect(
+          result,
+        ).toEqual({
           group,
           items,
         });
@@ -416,7 +433,9 @@ describe(
             now,
           );
 
-        expect(result).toEqual([
+        expect(
+          result,
+        ).toEqual([
           {
             group:
               firstGroup,
@@ -444,6 +463,7 @@ describe(
           aggregationService.getItems,
         ).toHaveBeenNthCalledWith(
           1,
+
           firstGroup.aggregationId,
         );
 
@@ -451,6 +471,7 @@ describe(
           aggregationService.getItems,
         ).toHaveBeenNthCalledWith(
           2,
+
           secondGroup.aggregationId,
         );
       },
@@ -464,7 +485,9 @@ describe(
 
         vi.mocked(
           aggregationService.findExpiredGroups,
-        ).mockResolvedValue([]);
+        ).mockResolvedValue(
+          [],
+        );
 
         const service =
           new NotificationAggregationFlushService(
@@ -478,7 +501,9 @@ describe(
             ),
           );
 
-        expect(result).toEqual([]);
+        expect(
+          result,
+        ).toEqual([]);
 
         expect(
           aggregationService.getItems,
@@ -487,7 +512,7 @@ describe(
     );
 
     it(
-      'delegates markFlushing',
+      'delegates atomic expired aggregation claiming',
       async () => {
         const aggregationService =
           createServiceMock();
@@ -498,8 +523,13 @@ describe(
               'FLUSHING',
           });
 
+        const now =
+          new Date(
+            '2026-08-28T10:10:00.000Z',
+          );
+
         vi.mocked(
-          aggregationService.markFlushing,
+          aggregationService.claimExpiredForFlushing,
         ).mockResolvedValue(
           group,
         );
@@ -510,16 +540,61 @@ describe(
           );
 
         const result =
-          await service.markFlushing(
+          await service.claimExpiredForFlushing(
             group.aggregationId,
+            now,
           );
 
-        expect(result).toBe(group);
+        expect(
+          result,
+        ).toBe(group);
 
         expect(
-          aggregationService.markFlushing,
+          aggregationService.claimExpiredForFlushing,
         ).toHaveBeenCalledWith(
           group.aggregationId,
+          now,
+        );
+      },
+    );
+
+    it(
+      'returns null when atomic expired aggregation claiming fails',
+      async () => {
+        const aggregationService =
+          createServiceMock();
+
+        const now =
+          new Date(
+            '2026-08-28T10:10:00.000Z',
+          );
+
+        vi.mocked(
+          aggregationService.claimExpiredForFlushing,
+        ).mockResolvedValue(
+          null,
+        );
+
+        const service =
+          new NotificationAggregationFlushService(
+            aggregationService,
+          );
+
+        const result =
+          await service.claimExpiredForFlushing(
+            'aggregation-test-001',
+            now,
+          );
+
+        expect(
+          result,
+        ).toBeNull();
+
+        expect(
+          aggregationService.claimExpiredForFlushing,
+        ).toHaveBeenCalledWith(
+          'aggregation-test-001',
+          now,
         );
       },
     );
@@ -552,7 +627,9 @@ describe(
             group.aggregationId,
           );
 
-        expect(result).toBe(group);
+        expect(
+          result,
+        ).toBe(group);
 
         expect(
           aggregationService.markFlushed,
@@ -590,12 +667,52 @@ describe(
             group.aggregationId,
           );
 
-        expect(result).toBe(group);
+        expect(
+          result,
+        ).toBe(group);
 
         expect(
           aggregationService.markFailed,
         ).toHaveBeenCalledWith(
           group.aggregationId,
+        );
+      },
+    );
+
+    it(
+      'returns items through the flush service',
+      async () => {
+        const aggregationService =
+          createServiceMock();
+
+        const items = [
+          createItem(),
+        ];
+
+        vi.mocked(
+          aggregationService.getItems,
+        ).mockResolvedValue(
+          items,
+        );
+
+        const service =
+          new NotificationAggregationFlushService(
+            aggregationService,
+          );
+
+        const result =
+          await service.getItems(
+            'aggregation-test-001',
+          );
+
+        expect(
+          result,
+        ).toEqual(items);
+
+        expect(
+          aggregationService.getItems,
+        ).toHaveBeenCalledWith(
+          'aggregation-test-001',
         );
       },
     );
@@ -683,7 +800,9 @@ describe(
 
         vi.mocked(
           aggregationService.findExpiredGroups,
-        ).mockResolvedValue([]);
+        ).mockResolvedValue(
+          [],
+        );
 
         const service =
           new NotificationAggregationFlushService(
@@ -704,6 +823,88 @@ describe(
         ).toHaveBeenCalledWith(
           now,
         );
+      },
+    );
+
+    it(
+      'rejects an invalid aggregation ID when claiming',
+      async () => {
+        const aggregationService =
+          createServiceMock();
+
+        const service =
+          new NotificationAggregationFlushService(
+            aggregationService,
+          );
+
+        await expect(
+          service.claimExpiredForFlushing(
+            '   ',
+            new Date(
+              '2026-08-28T10:10:00.000Z',
+            ),
+          ),
+        ).rejects.toThrow(
+          'aggregationId must be non-empty.',
+        );
+
+        expect(
+          aggregationService.claimExpiredForFlushing,
+        ).not.toHaveBeenCalled();
+      },
+    );
+
+    it(
+      'rejects an invalid now date when claiming',
+      async () => {
+        const aggregationService =
+          createServiceMock();
+
+        const service =
+          new NotificationAggregationFlushService(
+            aggregationService,
+          );
+
+        await expect(
+          service.claimExpiredForFlushing(
+            'aggregation-test-001',
+
+            new Date(
+              'invalid',
+            ),
+          ),
+        ).rejects.toThrow(
+          'now must be a valid Date.',
+        );
+
+        expect(
+          aggregationService.claimExpiredForFlushing,
+        ).not.toHaveBeenCalled();
+      },
+    );
+
+    it(
+      'rejects an invalid aggregation ID when loading items',
+      async () => {
+        const aggregationService =
+          createServiceMock();
+
+        const service =
+          new NotificationAggregationFlushService(
+            aggregationService,
+          );
+
+        await expect(
+          service.getItems(
+            '   ',
+          ),
+        ).rejects.toThrow(
+          'aggregationId must be non-empty.',
+        );
+
+        expect(
+          aggregationService.getItems,
+        ).not.toHaveBeenCalled();
       },
     );
   },

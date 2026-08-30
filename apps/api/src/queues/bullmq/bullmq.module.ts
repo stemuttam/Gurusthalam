@@ -20,8 +20,8 @@ import {
 } from '../notifications/notification.command.controller.js';
 
 import {
-  NotificationQueueService,
-} from '../notifications/notification.queue.js';
+  NotificationQueueModule,
+} from '../notifications/notification-queue.module.js';
 
 import {
   SystemQueueController,
@@ -48,6 +48,8 @@ import {
   imports: [
     NotificationTemplateModule,
 
+    NotificationQueueModule,
+
     NotificationAggregationModule,
   ],
 
@@ -66,8 +68,6 @@ import {
 
     SystemQueueService,
 
-    NotificationQueueService,
-
     NotificationApplicationService,
   ],
 
@@ -76,9 +76,9 @@ import {
 
     SystemQueueService,
 
-    NotificationQueueService,
-
     NotificationApplicationService,
+
+    NotificationQueueModule,
   ],
 })
 export class BullMqModule {}

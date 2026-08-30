@@ -62,116 +62,117 @@ describe(
         aggregationId,
       );
 
-    const items =
-      [
-        createItem(
-          'source-event-001',
-          '2026-08-29T09:50:00.000Z',
-        ),
-        createItem(
-          'source-event-002',
-          '2026-08-29T09:51:00.000Z',
-        ),
-      ];
+    const claimedGroup:
+      NotificationAggregationRepositoryGroup = {
+      ...group,
+
+      status:
+        'FLUSHING',
+    };
+
+    const items = [
+      createItem(
+        'source-event-001',
+        '2026-08-29T09:50:00.000Z',
+      ),
+
+      createItem(
+        'source-event-002',
+        '2026-08-29T09:51:00.000Z',
+      ),
+    ];
 
     const snapshot:
-      NotificationAggregationFlushSnapshot =
-      {
-        group,
-        items,
-      };
+      NotificationAggregationFlushSnapshot = {
+      group,
 
-    const sourceEvents =
-      [
-        createSourceEvent(
-          'source-event-001',
-          'First notification',
-        ),
-        createSourceEvent(
-          'source-event-002',
-          'Second notification',
-        ),
-      ];
+      items,
+    };
+
+    const sourceEvents = [
+      createSourceEvent(
+        'source-event-001',
+        'First notification',
+      ),
+
+      createSourceEvent(
+        'source-event-002',
+        'Second notification',
+      ),
+    ];
 
     const notificationData:
-      NotificationJobData =
-      {
-        notificationId:
-          'aggregation-notification-001',
+      NotificationJobData = {
+      notificationId:
+        'aggregation-notification-001',
 
-        channel:
-          'email',
+      channel:
+        'email',
 
-        recipient:
-          {
-            userId:
-              'user-001',
+      recipient: {
+        userId:
+          'user-001',
 
-            email:
-              'student@example.com',
-          },
+        email:
+          'student@example.com',
+      },
 
-        body:
-          'First notification\nSecond notification',
+      body:
+        'First notification\nSecond notification',
 
-        idempotencyKey:
-          `notification-aggregation:${aggregationId}`,
-      };
+      idempotencyKey:
+        `notification-aggregation:${aggregationId}`,
+    };
 
-    const enqueueResult =
-      {
-        jobId:
-          notificationData.idempotencyKey,
+    const enqueueResult = {
+      jobId:
+        notificationData.idempotencyKey,
 
-        queue:
-          'notifications',
+      queue:
+        'notifications',
 
-        notificationId:
-          notificationData.notificationId,
+      notificationId:
+        notificationData.notificationId,
 
-        status:
-          'QUEUED',
+      status:
+        'QUEUED',
 
-        outboxEventId:
-          'outbox-event-001',
-      };
+      outboxEventId:
+        'outbox-event-001',
+    };
 
     function createService() {
-      const flushService =
-        {
-          getExpiredSnapshot:
-            vi.fn(),
+      const flushService = {
+        findExpiredSnapshots:
+          vi.fn(),
 
-          findExpiredSnapshots:
-            vi.fn(),
+        claimExpiredForFlushing:
+          vi.fn(),
 
-          markFlushing:
-            vi.fn(),
+        getItems:
+          vi.fn(),
 
-          markFlushed:
-            vi.fn(),
+        markFlushed:
+          vi.fn(),
 
-          markFailed:
-            vi.fn(),
-        } as unknown as NotificationAggregationFlushService;
+        markFailed:
+          vi.fn(),
+      } as unknown as NotificationAggregationFlushService;
 
-      const sourceEventResolver =
-        {
-          resolveMany:
-            vi.fn(),
-        } as unknown as NotificationAggregationSourceEventResolver;
+      const sourceEventResolver = {
+        resolveMany:
+          vi.fn(),
+      } as unknown as NotificationAggregationSourceEventResolver;
 
-      const builder =
-        {
-          build:
-            vi.fn(),
-        } as unknown as NotificationAggregationBuilder;
+      const builder = {
+        build:
+          vi.fn(),
+      } as unknown as NotificationAggregationBuilder;
 
-      const notificationQueue =
-        {
-          enqueue:
-            vi.fn(),
-        } as unknown as NotificationQueueService;
+      const notificationQueue = {
+        enqueue:
+          vi.fn(),
+      } as unknown as NotificationQueueService;
 
       const service =
         new NotificationAggregationQueueIntegrationService(
@@ -183,9 +184,13 @@ describe(
 
       return {
         service,
+
         flushService,
+
         sourceEventResolver,
+
         builder,
+
         notificationQueue,
       };
     }
@@ -195,27 +200,27 @@ describe(
       async () => {
         const {
           service,
+
           flushService,
+
           sourceEventResolver,
+
           builder,
+
           notificationQueue,
         } =
           createService();
 
         vi.mocked(
-          flushService.getExpiredSnapshot,
+          flushService.claimExpiredForFlushing,
         ).mockResolvedValue(
-          snapshot,
+          claimedGroup,
         );
 
         vi.mocked(
-          flushService.markFlushing,
+          flushService.getItems,
         ).mockResolvedValue(
-          {
-            ...group,
-            status:
-              'FLUSHING',
-          },
+          items,
         );
 
         vi.mocked(
@@ -240,7 +245,8 @@ describe(
           flushService.markFlushed,
         ).mockResolvedValue(
           {
-            ...group,
+            ...claimedGroup,
+
             status:
               'FLUSHED',
           },
@@ -249,18 +255,20 @@ describe(
         const result =
           await service.flush(
             aggregationId,
+
             now,
           );
 
         expect(
-          flushService.getExpiredSnapshot,
+          flushService.claimExpiredForFlushing,
         ).toHaveBeenCalledWith(
           aggregationId,
+
           now,
         );
 
         expect(
-          flushService.markFlushing,
+          flushService.getItems,
         ).toHaveBeenCalledWith(
           aggregationId,
         );
@@ -270,19 +278,26 @@ describe(
         ).toHaveBeenCalledWith(
           [
             'source-event-001',
+
             'source-event-002',
           ],
         );
 
+        /*
+         * The aggregation is atomically claimed before the
+         * notification is built.
+         *
+         * Therefore the builder must receive the claimed
+         * FLUSHING group rather than the original OPEN group.
+         */
         expect(
           builder.build,
         ).toHaveBeenCalledWith(
           {
             group:
-              snapshot.group,
+              claimedGroup,
 
-            items:
-              snapshot.items,
+            items,
 
             sourceEvents,
           },
@@ -333,27 +348,27 @@ describe(
       async () => {
         const {
           service,
+
           flushService,
+
           sourceEventResolver,
+
           builder,
+
           notificationQueue,
         } =
           createService();
 
         vi.mocked(
-          flushService.getExpiredSnapshot,
+          flushService.claimExpiredForFlushing,
         ).mockResolvedValue(
-          snapshot,
+          claimedGroup,
         );
 
         vi.mocked(
-          flushService.markFlushing,
+          flushService.getItems,
         ).mockResolvedValue(
-          {
-            ...group,
-            status:
-              'FLUSHING',
-          },
+          items,
         );
 
         vi.mocked(
@@ -378,7 +393,8 @@ describe(
           flushService.markFlushed,
         ).mockResolvedValue(
           {
-            ...group,
+            ...claimedGroup,
+
             status:
               'FLUSHED',
           },
@@ -386,6 +402,7 @@ describe(
 
         await service.flush(
           aggregationId,
+
           now,
         );
 
@@ -409,7 +426,11 @@ describe(
         ).toHaveBeenCalledWith(
           expect.objectContaining(
             {
+              group:
+                claimedGroup,
+
               items,
+
               sourceEvents,
             },
           ),
@@ -422,9 +443,13 @@ describe(
       async () => {
         const {
           service,
+
           flushService,
+
           sourceEventResolver,
+
           builder,
+
           notificationQueue,
         } =
           createService();
@@ -435,19 +460,15 @@ describe(
           );
 
         vi.mocked(
-          flushService.getExpiredSnapshot,
+          flushService.claimExpiredForFlushing,
         ).mockResolvedValue(
-          snapshot,
+          claimedGroup,
         );
 
         vi.mocked(
-          flushService.markFlushing,
+          flushService.getItems,
         ).mockResolvedValue(
-          {
-            ...group,
-            status:
-              'FLUSHING',
-          },
+          items,
         );
 
         vi.mocked(
@@ -460,7 +481,8 @@ describe(
           flushService.markFailed,
         ).mockResolvedValue(
           {
-            ...group,
+            ...claimedGroup,
+
             status:
               'FAILED',
           },
@@ -469,6 +491,7 @@ describe(
         await expect(
           service.flush(
             aggregationId,
+
             now,
           ),
         ).rejects.toBe(
@@ -500,32 +523,32 @@ describe(
       async () => {
         const {
           service,
+
           flushService,
+
           sourceEventResolver,
+
           builder,
+
           notificationQueue,
         } =
           createService();
 
         const error =
           new Error(
-            'notification build failed',
+            'notification building failed',
           );
 
         vi.mocked(
-          flushService.getExpiredSnapshot,
+          flushService.claimExpiredForFlushing,
         ).mockResolvedValue(
-          snapshot,
+          claimedGroup,
         );
 
         vi.mocked(
-          flushService.markFlushing,
+          flushService.getItems,
         ).mockResolvedValue(
-          {
-            ...group,
-            status:
-              'FLUSHING',
-          },
+          items,
         );
 
         vi.mocked(
@@ -546,7 +569,8 @@ describe(
           flushService.markFailed,
         ).mockResolvedValue(
           {
-            ...group,
+            ...claimedGroup,
+
             status:
               'FAILED',
           },
@@ -555,6 +579,7 @@ describe(
         await expect(
           service.flush(
             aggregationId,
+
             now,
           ),
         ).rejects.toBe(
@@ -570,6 +595,10 @@ describe(
         ).toHaveBeenCalledWith(
           aggregationId,
         );
+
+        expect(
+          flushService.markFlushed,
+        ).not.toHaveBeenCalled();
       },
     );
 
@@ -578,9 +607,13 @@ describe(
       async () => {
         const {
           service,
+
           flushService,
+
           sourceEventResolver,
+
           builder,
+
           notificationQueue,
         } =
           createService();
@@ -591,19 +624,15 @@ describe(
           );
 
         vi.mocked(
-          flushService.getExpiredSnapshot,
+          flushService.claimExpiredForFlushing,
         ).mockResolvedValue(
-          snapshot,
+          claimedGroup,
         );
 
         vi.mocked(
-          flushService.markFlushing,
+          flushService.getItems,
         ).mockResolvedValue(
-          {
-            ...group,
-            status:
-              'FLUSHING',
-          },
+          items,
         );
 
         vi.mocked(
@@ -628,7 +657,8 @@ describe(
           flushService.markFailed,
         ).mockResolvedValue(
           {
-            ...group,
+            ...claimedGroup,
+
             status:
               'FAILED',
           },
@@ -637,6 +667,7 @@ describe(
         await expect(
           service.flush(
             aggregationId,
+
             now,
           ),
         ).rejects.toBe(
@@ -660,15 +691,19 @@ describe(
       async () => {
         const {
           service,
+
           flushService,
+
           sourceEventResolver,
+
           builder,
+
           notificationQueue,
         } =
           createService();
 
         vi.mocked(
-          flushService.getExpiredSnapshot,
+          flushService.claimExpiredForFlushing,
         ).mockResolvedValue(
           null,
         );
@@ -676,6 +711,7 @@ describe(
         await expect(
           service.flush(
             aggregationId,
+
             now,
           ),
         ).rejects.toThrow(
@@ -683,7 +719,15 @@ describe(
         );
 
         expect(
-          flushService.markFlushing,
+          flushService.claimExpiredForFlushing,
+        ).toHaveBeenCalledWith(
+          aggregationId,
+
+          now,
+        );
+
+        expect(
+          flushService.getItems,
         ).not.toHaveBeenCalled();
 
         expect(
@@ -713,42 +757,35 @@ describe(
       async () => {
         const {
           service,
+
           flushService,
+
           sourceEventResolver,
+
           builder,
+
           notificationQueue,
         } =
           createService();
 
-        const emptySnapshot:
-          NotificationAggregationFlushSnapshot =
-          {
-            group,
-
-            items: [],
-          };
-
         vi.mocked(
-          flushService.getExpiredSnapshot,
+          flushService.claimExpiredForFlushing,
         ).mockResolvedValue(
-          emptySnapshot,
+          claimedGroup,
         );
 
         vi.mocked(
-          flushService.markFlushing,
+          flushService.getItems,
         ).mockResolvedValue(
-          {
-            ...group,
-            status:
-              'FLUSHING',
-          },
+          [],
         );
 
         vi.mocked(
           flushService.markFailed,
         ).mockResolvedValue(
           {
-            ...group,
+            ...claimedGroup,
+
             status:
               'FAILED',
           },
@@ -757,10 +794,25 @@ describe(
         await expect(
           service.flush(
             aggregationId,
+
             now,
           ),
         ).rejects.toThrow(
           `Notification aggregation "${aggregationId}" contains no items.`,
+        );
+
+        expect(
+          flushService.claimExpiredForFlushing,
+        ).toHaveBeenCalledWith(
+          aggregationId,
+
+          now,
+        );
+
+        expect(
+          flushService.getItems,
+        ).toHaveBeenCalledWith(
+          aggregationId,
         );
 
         expect(
@@ -788,9 +840,13 @@ describe(
       async () => {
         const {
           service,
+
           flushService,
+
           sourceEventResolver,
+
           builder,
+
           notificationQueue,
         } =
           createService();
@@ -800,55 +856,63 @@ describe(
             'aggregation-test-002',
           );
 
-        const secondSnapshot:
-          NotificationAggregationFlushSnapshot =
-          {
-            group:
-              secondGroup,
+        const secondClaimedGroup:
+          NotificationAggregationRepositoryGroup = {
+          ...secondGroup,
 
-            items:
-              [
-                createItem(
-                  'source-event-003',
-                  '2026-08-29T09:52:00.000Z',
-                ),
-              ],
-          };
+          status:
+            'FLUSHING',
+        };
+
+        const secondSnapshot:
+          NotificationAggregationFlushSnapshot = {
+          group:
+            secondGroup,
+
+          items: [
+            createItem(
+              'source-event-003',
+              '2026-08-29T09:52:00.000Z',
+            ),
+          ],
+        };
 
         vi.mocked(
           flushService.findExpiredSnapshots,
         ).mockResolvedValue(
           [
             snapshot,
+
             secondSnapshot,
           ],
         );
 
         vi.mocked(
-          flushService.getExpiredSnapshot,
+          flushService.claimExpiredForFlushing,
         )
           .mockResolvedValueOnce(
-            snapshot,
+            claimedGroup,
           )
           .mockResolvedValueOnce(
-            secondSnapshot,
+            secondClaimedGroup,
           );
 
         vi.mocked(
-          flushService.markFlushing,
-        ).mockResolvedValue(
-          {
-            ...group,
-            status:
-              'FLUSHING',
-          },
-        );
+          flushService.getItems,
+        )
+          .mockResolvedValueOnce(
+            items,
+          )
+          .mockResolvedValueOnce(
+            [...secondSnapshot.items],
+          );
 
         vi.mocked(
           flushService.markFlushed,
         ).mockResolvedValue(
           {
-            ...group,
+            ...claimedGroup,
+
             status:
               'FLUSHED',
           },
@@ -858,7 +922,8 @@ describe(
           flushService.markFailed,
         ).mockResolvedValue(
           {
-            ...group,
+            ...secondClaimedGroup,
+
             status:
               'FAILED',
           },
@@ -912,6 +977,26 @@ describe(
         );
 
         expect(
+          flushService.claimExpiredForFlushing,
+        ).toHaveBeenNthCalledWith(
+          1,
+
+          aggregationId,
+
+          now,
+        );
+
+        expect(
+          flushService.claimExpiredForFlushing,
+        ).toHaveBeenNthCalledWith(
+          2,
+
+          'aggregation-test-002',
+
+          now,
+        );
+
+        expect(
           flushService.markFailed,
         ).toHaveBeenCalledWith(
           'aggregation-test-002',
@@ -924,9 +1009,13 @@ describe(
       async () => {
         const {
           service,
+
           flushService,
+
           sourceEventResolver,
+
           builder,
+
           notificationQueue,
         } =
           createService();
@@ -934,6 +1023,7 @@ describe(
         await expect(
           service.flush(
             '   ',
+
             now,
           ),
         ).rejects.toThrow(
@@ -941,7 +1031,11 @@ describe(
         );
 
         expect(
-          flushService.getExpiredSnapshot,
+          flushService.claimExpiredForFlushing,
+        ).not.toHaveBeenCalled();
+
+        expect(
+          flushService.getItems,
         ).not.toHaveBeenCalled();
 
         expect(
@@ -1028,28 +1122,26 @@ describe(
         notificationId:
           sourceEventId,
 
-        data:
-          {
-            notificationId:
-              sourceEventId,
+        data: {
+          notificationId:
+            sourceEventId,
 
-            channel:
-              'email',
+          channel:
+            'email',
 
-            recipient:
-              {
-                userId:
-                  'user-001',
+          recipient: {
+            userId:
+              'user-001',
 
-                email:
-                  'student@example.com',
-              },
-
-            body,
-
-            idempotencyKey:
-              `notification:${sourceEventId}`,
+            email:
+              'student@example.com',
           },
+
+          body,
+
+          idempotencyKey:
+            `notification:${sourceEventId}`,
+        },
       };
     }
   },

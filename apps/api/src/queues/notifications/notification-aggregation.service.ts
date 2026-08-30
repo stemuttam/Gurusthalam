@@ -108,9 +108,8 @@ export class NotificationAggregationService {
    *
    * Returns null when the group does not exist.
    *
-   * This method keeps the flush workflow behind the
-   * application-service boundary instead of allowing the
-   * flush service to access the repository directly.
+   * This method keeps repository access behind the
+   * application-service boundary.
    */
   async findByAggregationId(
     aggregationId:
@@ -120,6 +119,31 @@ export class NotificationAggregationService {
   > {
     return this.repository.findByAggregationId(
       aggregationId,
+    );
+  }
+   /**
+   * Atomically claims an expired OPEN aggregation for
+   * flushing.
+   *
+   * The repository performs the authoritative conditional
+   * database update:
+   *
+   *   OPEN -> FLUSHING
+   *
+   * Returns null when the aggregation cannot be claimed.
+   */
+  async claimExpiredForFlushing(
+    aggregationId:
+      string,
+
+    now:
+      Date,
+  ): Promise<
+    NotificationAggregationRepositoryGroup | null
+  > {
+    return this.repository.claimExpiredForFlushing(
+      aggregationId,
+      now,
     );
   }
 
@@ -243,7 +267,9 @@ export class NotificationAggregationService {
      *
      * A duplicate must never increment itemCount.
      */
-    if (!result.inserted) {
+    if (
+      !result.inserted
+    ) {
       return {
         group,
 
@@ -304,6 +330,10 @@ export class NotificationAggregationService {
 
   /**
    * Marks an aggregation group as currently being flushed.
+   *
+   * This method remains available for existing callers and
+   * compatibility, but new expiry-triggered workflows should
+   * use claimExpiredForFlushing() instead.
    */
   async markFlushing(
     aggregationId:

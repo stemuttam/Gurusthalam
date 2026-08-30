@@ -59,7 +59,9 @@ export interface AddNotificationAggregationItemInput {
 
 export interface AddNotificationAggregationItemResult {
   readonly inserted: boolean;
-  readonly item: NotificationAggregationRepositoryItem | null;
+  readonly item:
+    | NotificationAggregationRepositoryItem
+    | null;
 }
 
 type PersistedAggregationChannel =
@@ -144,31 +146,63 @@ function toRepositoryGroup(
   group: PersistedAggregationGroup,
 ): NotificationAggregationRepositoryGroup {
   return {
-    aggregationId: group.aggregationId,
-    groupKey: group.groupKey,
-    userId: group.userId,
-    channel: fromPrismaChannel(group.channel),
-    category: group.category,
-    aggregationKey: group.aggregationKey,
-    locale: group.locale,
-    status: fromPersistedStatus(group.status),
-    windowStart: group.windowStart,
-    windowEnd: group.windowEnd,
-    itemCount: group.itemCount,
-    createdAt: group.createdAt,
-    updatedAt: group.updatedAt,
+    aggregationId:
+      group.aggregationId,
+
+    groupKey:
+      group.groupKey,
+
+    userId:
+      group.userId,
+
+    channel:
+      fromPrismaChannel(
+        group.channel,
+      ),
+
+    category:
+      group.category,
+
+    aggregationKey:
+      group.aggregationKey,
+
+    locale:
+      group.locale,
+
+    status:
+      fromPersistedStatus(
+        group.status,
+      ),
+
+    windowStart:
+      group.windowStart,
+
+    windowEnd:
+      group.windowEnd,
+
+    itemCount:
+      group.itemCount,
+
+    createdAt:
+      group.createdAt,
+
+    updatedAt:
+      group.updatedAt,
   };
 }
 
 @Injectable()
 export class NotificationAggregationRepository {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly prisma:
+      PrismaService,
   ) {}
 
   async findByGroupKey(
     groupKey: string,
-  ): Promise<NotificationAggregationRepositoryGroup | null> {
+  ): Promise<
+    NotificationAggregationRepositoryGroup | null
+  > {
     const group =
       await this.prisma.notificationAggregation.findUnique({
         where: {
@@ -178,12 +212,16 @@ export class NotificationAggregationRepository {
 
     return group === null
       ? null
-      : toRepositoryGroup(group);
+      : toRepositoryGroup(
+          group,
+        );
   }
 
   async findByAggregationId(
     aggregationId: string,
-  ): Promise<NotificationAggregationRepositoryGroup | null> {
+  ): Promise<
+    NotificationAggregationRepositoryGroup | null
+  > {
     const group =
       await this.prisma.notificationAggregation.findUnique({
         where: {
@@ -193,12 +231,17 @@ export class NotificationAggregationRepository {
 
     return group === null
       ? null
-      : toRepositoryGroup(group);
+      : toRepositoryGroup(
+          group,
+        );
   }
 
   async createGroup(
-    input: CreateNotificationAggregationGroupInput,
-  ): Promise<NotificationAggregationRepositoryGroup> {
+    input:
+      CreateNotificationAggregationGroupInput,
+  ): Promise<
+    NotificationAggregationRepositoryGroup
+  > {
     const group =
       await this.prisma.notificationAggregation.create({
         data: {
@@ -239,12 +282,17 @@ export class NotificationAggregationRepository {
         },
       });
 
-    return toRepositoryGroup(group);
+    return toRepositoryGroup(
+      group,
+    );
   }
 
   async createGroupIfAbsent(
-    input: CreateNotificationAggregationGroupInput,
-  ): Promise<NotificationAggregationRepositoryGroup> {
+    input:
+      CreateNotificationAggregationGroupInput,
+  ): Promise<
+    NotificationAggregationRepositoryGroup
+  > {
     const group =
       await this.prisma.notificationAggregation.upsert({
         where: {
@@ -292,30 +340,30 @@ export class NotificationAggregationRepository {
         update: {},
       });
 
-    return toRepositoryGroup(group);
+    return toRepositoryGroup(
+      group,
+    );
   }
 
   /**
    * Adds an item to an aggregation group exactly once.
    *
-   * Important:
+   * NotificationAggregation.aggregationId is the public
+   * application-level identifier.
    *
-   * `NotificationAggregation.aggregationId` is the
-   * domain/public identifier.
-   *
-   * `NotificationAggregationItem.aggregationId` is the
-   * relational foreign key and references
-   * `NotificationAggregation.id`.
-   *
-   * Therefore we first resolve the domain aggregationId
-   * to the internal database id and use that id for the
-   * child record.
+   * NotificationAggregationItem.aggregationId references
+   * the internal NotificationAggregation.id primary key.
    */
   async addItem(
-    input: AddNotificationAggregationItemInput,
-  ): Promise<AddNotificationAggregationItemResult> {
+    input:
+      AddNotificationAggregationItemInput,
+  ): Promise<
+    AddNotificationAggregationItemResult
+  > {
     return this.prisma.$transaction(
-      async (transaction) => {
+      async (
+        transaction,
+      ) => {
         const aggregation =
           await transaction.notificationAggregation.findUnique({
             where: {
@@ -328,7 +376,9 @@ export class NotificationAggregationRepository {
             },
           });
 
-        if (aggregation === null) {
+        if (
+          aggregation === null
+        ) {
           throw new Error(
             `Notification aggregation "${input.aggregationId}" was not found.`,
           );
@@ -340,13 +390,6 @@ export class NotificationAggregationRepository {
               id:
                 input.itemId,
 
-              /*
-               * IMPORTANT:
-               *
-               * The child FK references
-               * NotificationAggregation.id,
-               * not NotificationAggregation.aggregationId.
-               */
               aggregationId:
                 aggregation.id,
 
@@ -364,13 +407,9 @@ export class NotificationAggregationRepository {
               true,
           });
 
-        /*
-         * The source event already exists for this
-         * aggregation.
-         *
-         * Do not increment itemCount again.
-         */
-        if (result.count === 0) {
+        if (
+          result.count === 0
+        ) {
           const existing =
             await transaction.notificationAggregationItem.findFirst({
               where: {
@@ -382,22 +421,21 @@ export class NotificationAggregationRepository {
               },
             });
 
-          if (existing === null) {
+          if (
+            existing === null
+          ) {
             return {
-              inserted: false,
-              item: null,
+              inserted:
+                false,
+
+              item:
+                null,
             };
           }
 
-          /*
-           * The persisted child contains the internal
-           * database aggregation id.
-           *
-           * The repository contract exposes the domain
-           * aggregationId, so translate it back here.
-           */
           return {
-            inserted: false,
+            inserted:
+              false,
 
             item: {
               itemId:
@@ -429,10 +467,6 @@ export class NotificationAggregationRepository {
             },
           });
 
-        /*
-         * Increment the denormalized counter only
-         * after successfully inserting the item.
-         */
         await transaction.notificationAggregation.update({
           where: {
             id:
@@ -441,13 +475,15 @@ export class NotificationAggregationRepository {
 
           data: {
             itemCount: {
-              increment: 1,
+              increment:
+                1,
             },
           },
         });
 
         return {
-          inserted: true,
+          inserted:
+            true,
 
           item: {
             itemId:
@@ -475,11 +511,9 @@ export class NotificationAggregationRepository {
 
   async listItems(
     aggregationId: string,
-  ): Promise<NotificationAggregationRepositoryItem[]> {
-    /*
-     * Resolve the public/domain aggregationId to the
-     * internal parent id before querying child rows.
-     */
+  ): Promise<
+    NotificationAggregationRepositoryItem[]
+  > {
     const aggregation =
       await this.prisma.notificationAggregation.findUnique({
         where: {
@@ -491,7 +525,9 @@ export class NotificationAggregationRepository {
         },
       });
 
-    if (aggregation === null) {
+    if (
+      aggregation === null
+    ) {
       return [];
     }
 
@@ -516,12 +552,13 @@ export class NotificationAggregationRepository {
       });
 
     return items.map(
-      (item) => ({
+      (
+        item,
+      ) => ({
         itemId:
           item.id,
 
-        aggregationId:
-          aggregationId,
+        aggregationId,
 
         sourceEventId:
           item.sourceEventId,
@@ -541,11 +578,6 @@ export class NotificationAggregationRepository {
   async getItemCount(
     aggregationId: string,
   ): Promise<number> {
-    /*
-     * The repository accepts the public/domain
-     * aggregationId, while the child table stores
-     * the parent's internal id.
-     */
     const aggregation =
       await this.prisma.notificationAggregation.findUnique({
         where: {
@@ -557,7 +589,9 @@ export class NotificationAggregationRepository {
         },
       });
 
-    if (aggregation === null) {
+    if (
+      aggregation === null
+    ) {
       return 0;
     }
 
@@ -569,10 +603,84 @@ export class NotificationAggregationRepository {
     });
   }
 
+  /**
+   * Atomically claims an expired OPEN aggregation.
+   *
+   * Exactly one concurrent caller can transition the same
+   * aggregation from OPEN to FLUSHING.
+   *
+   * The database conditional UPDATE is the authoritative
+   * concurrency boundary.
+   *
+   * Returns the claimed group when this caller successfully
+   * changed OPEN -> FLUSHING.
+   *
+   * Returns null when:
+   *
+   * - the aggregation does not exist;
+   * - it is no longer OPEN;
+   * - its window has not expired; or
+   * - another concurrent caller already claimed it.
+   */
+  async claimExpiredForFlushing(
+    aggregationId: string,
+    now: Date,
+  ): Promise<
+    NotificationAggregationRepositoryGroup | null
+  > {
+    const result =
+      await this.prisma.notificationAggregation.updateMany({
+        where: {
+          aggregationId,
+
+          status:
+            'OPEN',
+
+          windowEnd: {
+            lte:
+              now,
+          },
+        },
+
+        data: {
+          status:
+            'FLUSHING',
+        },
+      });
+
+    if (
+      result.count !== 1
+    ) {
+      return null;
+    }
+
+    const claimed =
+      await this.prisma.notificationAggregation.findUnique({
+        where: {
+          aggregationId,
+        },
+      });
+
+    if (
+      claimed === null
+    ) {
+      throw new Error(
+        `Notification aggregation "${aggregationId}" disappeared after being claimed.`,
+      );
+    }
+
+    return toRepositoryGroup(
+      claimed,
+    );
+  }
+
   async updateStatus(
     aggregationId: string,
-    status: NotificationAggregationStatus,
-  ): Promise<NotificationAggregationRepositoryGroup> {
+    status:
+      NotificationAggregationStatus,
+  ): Promise<
+    NotificationAggregationRepositoryGroup
+  > {
     const group =
       await this.prisma.notificationAggregation.update({
         where: {
@@ -584,12 +692,16 @@ export class NotificationAggregationRepository {
         },
       });
 
-    return toRepositoryGroup(group);
+    return toRepositoryGroup(
+      group,
+    );
   }
 
   async findOpenExpiredGroups(
     now: Date,
-  ): Promise<NotificationAggregationRepositoryGroup[]> {
+  ): Promise<
+    NotificationAggregationRepositoryGroup[]
+  > {
     const groups =
       await this.prisma.notificationAggregation.findMany({
         where: {

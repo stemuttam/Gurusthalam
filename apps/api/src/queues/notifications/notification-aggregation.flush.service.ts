@@ -47,11 +47,20 @@ export class NotificationAggregationFlushService {
    * - it exists;
    * - it is OPEN;
    * - and its aggregation window has expired.
+   *
+   * This method is read-only.
+   *
+   * It does NOT claim the aggregation.
    */
   async getExpiredSnapshot(
-    aggregationId: string,
-    now: Date = new Date(),
-  ): Promise<NotificationAggregationFlushSnapshot | null> {
+    aggregationId:
+      string,
+
+    now:
+      Date = new Date(),
+  ): Promise<
+    NotificationAggregationFlushSnapshot | null
+  > {
     this.validateAggregationId(
       aggregationId,
     );
@@ -87,8 +96,74 @@ export class NotificationAggregationFlushService {
 
     return {
       group,
+
       items,
     };
+  }
+
+  /**
+   * Atomically claims an expired OPEN aggregation for flushing.
+   *
+   * The repository performs the authoritative conditional
+   * database transition:
+   *
+   *   OPEN -> FLUSHING
+   *
+   * only when:
+   *
+   *   aggregationId matches
+   *   status is OPEN
+   *   windowEnd <= now
+   *
+   * Returns null when the aggregation cannot be claimed.
+   */
+  async claimExpiredForFlushing(
+    aggregationId:
+      string,
+
+    now:
+      Date = new Date(),
+  ): Promise<
+    NotificationAggregationRepositoryGroup | null
+  > {
+    this.validateAggregationId(
+      aggregationId,
+    );
+
+    this.validateDate(
+      now,
+      'now',
+    );
+
+    return this.aggregationService.claimExpiredForFlushing(
+      aggregationId,
+      now,
+    );
+  }
+
+  /**
+   * Returns aggregation items in deterministic repository-defined
+   * ordering.
+   *
+   * This method is specifically useful after an aggregation has
+   * already been atomically claimed and is therefore FLUSHING.
+   *
+   * It deliberately does not use getExpiredSnapshot(), because
+   * getExpiredSnapshot() only accepts OPEN aggregations.
+   */
+  async getItems(
+    aggregationId:
+      string,
+  ): Promise<
+    NotificationAggregationRepositoryItem[]
+  > {
+    this.validateAggregationId(
+      aggregationId,
+    );
+
+    return this.aggregationService.getItems(
+      aggregationId,
+    );
   }
 
   /**
@@ -97,9 +172,15 @@ export class NotificationAggregationFlushService {
    *
    * The groups themselves are already ordered by the repository,
    * while each group's items are ordered by orderingKey and id.
+   *
+   * This method is discovery only.
+   *
+   * Each discovered aggregation must still be atomically claimed
+   * before it is processed.
    */
   async findExpiredSnapshots(
-    now: Date = new Date(),
+    now:
+      Date = new Date(),
   ): Promise<
     NotificationAggregationFlushSnapshot[]
   > {
@@ -114,7 +195,8 @@ export class NotificationAggregationFlushService {
       );
 
     const snapshots:
-      NotificationAggregationFlushSnapshot[] = [];
+      NotificationAggregationFlushSnapshot[] =
+      [];
 
     for (
       const group of groups
@@ -126,6 +208,7 @@ export class NotificationAggregationFlushService {
 
       snapshots.push({
         group,
+
         items,
       });
     }
@@ -134,26 +217,14 @@ export class NotificationAggregationFlushService {
   }
 
   /**
-   * Claims a group for flushing.
-   */
-  async markFlushing(
-    aggregationId: string,
-  ): Promise<NotificationAggregationRepositoryGroup> {
-    this.validateAggregationId(
-      aggregationId,
-    );
-
-    return this.aggregationService.markFlushing(
-      aggregationId,
-    );
-  }
-
-  /**
    * Marks a successfully completed aggregation flush.
    */
   async markFlushed(
-    aggregationId: string,
-  ): Promise<NotificationAggregationRepositoryGroup> {
+    aggregationId:
+      string,
+  ): Promise<
+    NotificationAggregationRepositoryGroup
+  > {
     this.validateAggregationId(
       aggregationId,
     );
@@ -167,8 +238,11 @@ export class NotificationAggregationFlushService {
    * Marks an aggregation flush as failed.
    */
   async markFailed(
-    aggregationId: string,
-  ): Promise<NotificationAggregationRepositoryGroup> {
+    aggregationId:
+      string,
+  ): Promise<
+    NotificationAggregationRepositoryGroup
+  > {
     this.validateAggregationId(
       aggregationId,
     );
@@ -179,11 +253,14 @@ export class NotificationAggregationFlushService {
   }
 
   private validateAggregationId(
-    aggregationId: string,
+    aggregationId:
+      string,
   ): void {
     if (
-      typeof aggregationId !== 'string' ||
-      aggregationId.trim().length === 0
+      typeof aggregationId !==
+        'string' ||
+      aggregationId.trim().length ===
+        0
     ) {
       throw new BadRequestException(
         'aggregationId must be non-empty.',
@@ -192,12 +269,17 @@ export class NotificationAggregationFlushService {
   }
 
   private validateDate(
-    value: Date,
-    field: string,
+    value:
+      Date,
+
+    field:
+      string,
   ): void {
     if (
       !(value instanceof Date) ||
-      Number.isNaN(value.getTime())
+      Number.isNaN(
+        value.getTime(),
+      )
     ) {
       throw new BadRequestException(
         `${field} must be a valid Date.`,

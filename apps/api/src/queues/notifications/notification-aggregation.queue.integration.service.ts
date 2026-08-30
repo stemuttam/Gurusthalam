@@ -20,19 +20,26 @@ import {
 } from './notification.queue.js';
 
 export interface NotificationAggregationQueueIntegrationResult {
-  readonly aggregationId: string;
+  readonly aggregationId:
+    string;
 
-  readonly notificationId: string;
+  readonly notificationId:
+    string;
 
-  readonly queue: string;
+  readonly queue:
+    string;
 
-  readonly jobId: string;
+  readonly jobId:
+    string;
 
-  readonly outboxEventId: string;
+  readonly outboxEventId:
+    string;
 
-  readonly itemCount: number;
+  readonly itemCount:
+    number;
 
-  readonly status: 'FLUSHED';
+  readonly status:
+    'FLUSHED';
 }
 
 /**
@@ -41,13 +48,12 @@ export interface NotificationAggregationQueueIntegrationResult {
  *
  * Responsibilities:
  *
- * 1. Resolve an expired aggregation snapshot.
- * 2. Claim the aggregation for flushing.
- * 3. Resolve persisted source-event identities.
- * 4. Build one NotificationJobData object.
- * 5. Submit that NotificationJobData through the existing
+ * 1. Atomically claim an expired aggregation.
+ * 2. Resolve persisted source-event identities.
+ * 3. Build one NotificationJobData object.
+ * 4. Submit that NotificationJobData through the existing
  *    NotificationQueueService.
- * 6. Mark the aggregation as FLUSHED after successful enqueue.
+ * 5. Mark the aggregation as FLUSHED after successful enqueue.
  *
  * This service deliberately does not access BullMQ directly.
  *
@@ -74,14 +80,21 @@ export class NotificationAggregationQueueIntegrationService {
    * Flushes one expired aggregation into the existing
    * notification queue pipeline.
    *
-   * The operation is intentionally idempotent at the queue
-   * boundary because NotificationQueueService already protects
-   * notification creation through its idempotency key.
+   * The aggregation is atomically claimed before any
+   * source-event resolution, notification building, or
+   * queue submission occurs.
+   *
+   * This makes OPEN -> FLUSHING the concurrency boundary.
    */
   async flush(
-    aggregationId: string,
-    now: Date = new Date(),
-  ): Promise<NotificationAggregationQueueIntegrationResult> {
+    aggregationId:
+      string,
+
+    now:
+      Date = new Date(),
+  ): Promise<
+    NotificationAggregationQueueIntegrationResult
+  > {
     this.validateAggregationId(
       aggregationId,
     );
@@ -91,34 +104,66 @@ export class NotificationAggregationQueueIntegrationService {
       'now',
     );
 
-    const snapshot =
-      await this.flushService.getExpiredSnapshot(
+    /*
+     * IMPORTANT:
+     *
+     * Do not perform:
+     *
+     *   getExpiredSnapshot()
+     *   markFlushing()
+     *
+     * because that sequence is not atomic.
+     *
+     * Instead the repository performs one conditional
+     * database update:
+     *
+     *   WHERE aggregationId = ...
+     *     AND status = OPEN
+     *     AND windowEnd <= now
+     *
+     *   SET status = FLUSHING
+     *
+     * Only the caller that receives count = 1 owns
+     * the aggregation.
+     */
+    const claimedGroup =
+      await this.flushService.claimExpiredForFlushing(
         aggregationId,
         now,
       );
 
+    /*
+     * Another scheduler/API instance may already have
+     * claimed the aggregation.
+     *
+     * There is nothing for this caller to process.
+     */
     if (
-      snapshot === null
+      claimedGroup === null
     ) {
       throw new BadRequestException(
         `Notification aggregation "${aggregationId}" is not eligible for flushing.`,
       );
     }
 
-    /*
-     * Claim the aggregation before doing the potentially
-     * expensive source-event resolution and notification build.
-     *
-     * The repository/service layer remains authoritative for
-     * the persisted status transition.
-     */
-    await this.flushService.markFlushing(
-      aggregationId,
-    );
-
     try {
+      /*
+       * The aggregation is now FLUSHING.
+       *
+       * Therefore getExpiredSnapshot() must NOT be called
+       * here because it intentionally only returns OPEN
+       * aggregations.
+       *
+       * Read the persisted items directly after ownership
+       * has been established.
+       */
+      const aggregationItems =
+        await this.flushService.getItems(
+          aggregationId,
+        );
+
       if (
-        snapshot.items.length ===
+        aggregationItems.length ===
         0
       ) {
         throw new BadRequestException(
@@ -127,7 +172,7 @@ export class NotificationAggregationQueueIntegrationService {
       }
 
       const sourceEventIds =
-        snapshot.items.map(
+        aggregationItems.map(
           (
             item,
           ) =>
@@ -142,10 +187,10 @@ export class NotificationAggregationQueueIntegrationService {
       const notificationData =
         this.builder.build({
           group:
-            snapshot.group,
+            claimedGroup,
 
           items:
-            snapshot.items,
+            aggregationItems,
 
           sourceEvents,
         });
@@ -190,7 +235,7 @@ export class NotificationAggregationQueueIntegrationService {
           enqueueResult.outboxEventId,
 
         itemCount:
-          snapshot.items.length,
+          aggregationItems.length,
 
         status:
           'FLUSHED',
@@ -231,9 +276,12 @@ export class NotificationAggregationQueueIntegrationService {
    *
    * A failure in one aggregation does not prevent subsequent
    * aggregations from being attempted.
+   *
+   * Each individual flush() performs its own atomic claim.
    */
   async flushExpired(
-    now: Date = new Date(),
+    now:
+      Date = new Date(),
   ): Promise<
     NotificationAggregationQueueIntegrationResult[]
   > {
@@ -269,9 +317,13 @@ export class NotificationAggregationQueueIntegrationService {
       ) {
         /*
          * Continue processing the remaining expired
-         * aggregations. The individual flush() call has
-         * already transitioned the failed aggregation to
-         * FAILED.
+         * aggregations.
+         *
+         * If the claim returns null, another caller already
+         * owns that aggregation.
+         *
+         * If the claim succeeds and a later operation fails,
+         * flush() attempts to mark it FAILED.
          */
         void error;
       }
@@ -281,7 +333,8 @@ export class NotificationAggregationQueueIntegrationService {
   }
 
   private validateAggregationId(
-    aggregationId: string,
+    aggregationId:
+      string,
   ): void {
     if (
       typeof aggregationId !==
@@ -296,8 +349,11 @@ export class NotificationAggregationQueueIntegrationService {
   }
 
   private validateDate(
-    value: Date,
-    field: string,
+    value:
+      Date,
+
+    field:
+      string,
   ): void {
     if (
       !(value instanceof Date) ||

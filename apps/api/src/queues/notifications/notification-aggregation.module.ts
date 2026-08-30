@@ -3,6 +3,10 @@ import {
 } from '@nestjs/common';
 
 import {
+  NotificationQueueModule,
+} from './notification-queue.module.js';
+
+import {
   NotificationAggregationBuilder,
 } from './notification-aggregation.builder.js';
 
@@ -15,8 +19,16 @@ import {
 } from './notification-aggregation.policy.js';
 
 import {
+  NotificationAggregationQueueIntegrationService,
+} from './notification-aggregation.queue.integration.service.js';
+
+import {
   NotificationAggregationRepository,
 } from './notification-aggregation.repository.js';
+
+import {
+  NotificationAggregationSchedulerService,
+} from './notification-aggregation.scheduler.js';
 
 import {
   NotificationAggregationService,
@@ -26,11 +38,11 @@ import {
   NotificationAggregationSourceEventResolver,
 } from './notification-aggregation.source-event.resolver.js';
 
-import {
-  NotificationAggregationQueueIntegrationService,
-} from './notification-aggregation.queue.integration.service.js';
-
 @Module({
+  imports: [
+    NotificationQueueModule,
+  ],
+
   providers: [
     NotificationAggregationRepository,
 
@@ -45,6 +57,8 @@ import {
     NotificationAggregationBuilder,
 
     NotificationAggregationQueueIntegrationService,
+
+    NotificationAggregationSchedulerService,
   ],
 
   exports: [
@@ -53,6 +67,8 @@ import {
     NotificationAggregationFlushService,
 
     NotificationAggregationQueueIntegrationService,
+
+    NotificationAggregationSchedulerService,
   ],
 })
 export class NotificationAggregationModule {}

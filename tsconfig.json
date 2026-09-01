@@ -40,6 +40,9 @@
     },
     {
       "path": "./libs/shared"
+    },
+    {
+      "path": "./libs/courses"
     }
   ]
 }

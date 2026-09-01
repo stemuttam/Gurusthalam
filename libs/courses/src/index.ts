@@ -37,3 +37,24 @@ export {
 export type {
   CourseType as CourseTypeValue,
 } from './domain/enums/course-type.js';
+
+export {
+  CourseDomainError,
+  CourseDomainErrorCode,
+} from './domain/errors/course-domain.error.js';
+
+export type {
+  CourseDomainErrorCode as CourseDomainErrorCodeValue,
+} from './domain/errors/course-domain.error.js';
+
+export {
+  CourseValidationError,
+} from './domain/errors/course-validation.error.js';
+
+export type {
+  CourseValidationIssue,
+} from './domain/errors/course-validation.error.js';
+
+export {
+  InvalidCourseStateTransitionError,
+} from './domain/errors/invalid-course-state-transition.error.js';

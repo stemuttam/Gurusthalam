@@ -58,3 +58,17 @@ export type {
 export {
   InvalidCourseStateTransitionError,
 } from './domain/errors/invalid-course-state-transition.error.js';
+
+export {
+  Course,
+} from './domain/entities/course.js';
+
+export type {
+  CourseProps,
+  CreateCourseProps,
+  UpdateCourseMetadataProps,
+} from './domain/entities/course.js';
+
+export {
+  CourseId,
+} from './domain/value-objects/course-id.js';

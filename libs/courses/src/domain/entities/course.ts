@@ -1,0 +1,457 @@
+import {
+  CourseStatus,
+  type CourseStatus as CourseStatusValue,
+} from '../enums/course-status.js';
+import {
+  CourseVisibility,
+  type CourseVisibility as CourseVisibilityValue,
+} from '../enums/course-visibility.js';
+import type { CourseLevel as CourseLevelValue } from '../enums/course-level.js';
+import type { CourseType as CourseTypeValue } from '../enums/course-type.js';
+import {
+  CourseValidationError,
+  InvalidCourseStateTransitionError,
+} from '../errors/index.js';
+import { CourseId } from '../value-objects/course-id.js';
+
+export interface CourseProps {
+  readonly id: CourseId;
+  readonly title: string;
+  readonly description: string | null;
+  readonly level: CourseLevelValue;
+  readonly type: CourseTypeValue;
+  readonly visibility: CourseVisibilityValue;
+  readonly status: CourseStatusValue;
+  readonly instructorId: string;
+  readonly createdAt: Date;
+  readonly updatedAt: Date;
+}
+
+export interface CreateCourseProps {
+  readonly title: string;
+  readonly description?: string | null;
+  readonly level: CourseLevelValue;
+  readonly type: CourseTypeValue;
+  readonly visibility?: CourseVisibilityValue;
+  readonly instructorId: string;
+}
+
+export interface UpdateCourseMetadataProps {
+  readonly title?: string;
+  readonly description?: string | null;
+  readonly level?: CourseLevelValue;
+  readonly type?: CourseTypeValue;
+  readonly visibility?: CourseVisibilityValue;
+}
+
+type MutableCourseProps = {
+  -readonly [Key in keyof CourseProps]: CourseProps[Key];
+};
+
+/**
+ * Course aggregate root.
+ *
+ * The aggregate owns lifecycle and metadata invariants.
+ * It deliberately has no dependency on Prisma, NestJS, HTTP, or
+ * infrastructure concerns.
+ */
+export class Course {
+  private readonly props: MutableCourseProps;
+
+  private constructor(props: CourseProps) {
+    this.validateProps(props);
+
+    this.props = {
+      ...props,
+      createdAt: new Date(props.createdAt),
+      updatedAt: new Date(props.updatedAt),
+    };
+  }
+
+  static create(input: CreateCourseProps): Course {
+    const now = new Date();
+
+    return new Course({
+      id: CourseId.generate(),
+      title: input.title,
+      description: input.description ?? null,
+      level: input.level,
+      type: input.type,
+      visibility: input.visibility ?? CourseVisibility.PRIVATE,
+      status: CourseStatus.DRAFT,
+      instructorId: input.instructorId,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  static rehydrate(props: CourseProps): Course {
+    return new Course(props);
+  }
+
+  get id(): CourseId {
+    return this.props.id;
+  }
+
+  get title(): string {
+    return this.props.title;
+  }
+
+  get description(): string | null {
+    return this.props.description;
+  }
+
+  get level(): CourseLevelValue {
+    return this.props.level;
+  }
+
+  get type(): CourseTypeValue {
+    return this.props.type;
+  }
+
+  get visibility(): CourseVisibilityValue {
+    return this.props.visibility;
+  }
+
+  get status(): CourseStatusValue {
+    return this.props.status;
+  }
+
+  get instructorId(): string {
+    return this.props.instructorId;
+  }
+
+  get createdAt(): Date {
+    return new Date(this.props.createdAt);
+  }
+
+  get updatedAt(): Date {
+    return new Date(this.props.updatedAt);
+  }
+
+  updateMetadata(input: UpdateCourseMetadataProps): void {
+    this.assertDraftMetadataMutationAllowed();
+
+    const title = input.title ?? this.props.title;
+    const description =
+      input.description === undefined
+        ? this.props.description
+        : input.description;
+    const level = input.level ?? this.props.level;
+    const type = input.type ?? this.props.type;
+    const visibility = input.visibility ?? this.props.visibility;
+
+    this.validateTitle(title);
+    this.validateDescription(description);
+
+    this.replaceProps({
+      title,
+      description,
+      level,
+      type,
+      visibility,
+    });
+  }
+
+  submitForReview(): void {
+    this.transitionStatus(CourseStatus.IN_REVIEW);
+  }
+
+  publish(): void {
+    if (this.props.status !== CourseStatus.IN_REVIEW) {
+      throw new InvalidCourseStateTransitionError(
+        this.props.status,
+        CourseStatus.PUBLISHED,
+      );
+    }
+
+    this.validatePublicationReadiness();
+
+    this.replaceProps({
+      status: CourseStatus.PUBLISHED,
+    });
+  }
+
+  unpublish(): void {
+    if (this.props.status !== CourseStatus.PUBLISHED) {
+      throw new InvalidCourseStateTransitionError(
+        this.props.status,
+        CourseStatus.UNPUBLISHED,
+      );
+    }
+
+    this.replaceProps({
+      status: CourseStatus.UNPUBLISHED,
+    });
+  }
+
+  archive(): void {
+    if (
+      this.props.status !== CourseStatus.PUBLISHED &&
+      this.props.status !== CourseStatus.UNPUBLISHED
+    ) {
+      throw new InvalidCourseStateTransitionError(
+        this.props.status,
+        CourseStatus.ARCHIVED,
+      );
+    }
+
+    this.replaceProps({
+      status: CourseStatus.ARCHIVED,
+    });
+  }
+
+  toPrimitives(): CourseProps {
+    return {
+      id: this.props.id,
+      title: this.props.title,
+      description: this.props.description,
+      level: this.props.level,
+      type: this.props.type,
+      visibility: this.props.visibility,
+      status: this.props.status,
+      instructorId: this.props.instructorId,
+      createdAt: new Date(this.props.createdAt),
+      updatedAt: new Date(this.props.updatedAt),
+    };
+  }
+
+  private transitionStatus(nextStatus: CourseStatusValue): void {
+    if (!this.isValidTransition(this.props.status, nextStatus)) {
+      throw new InvalidCourseStateTransitionError(
+        this.props.status,
+        nextStatus,
+      );
+    }
+
+    this.replaceProps({
+      status: nextStatus,
+    });
+  }
+
+  private isValidTransition(
+    current: CourseStatusValue,
+    next: CourseStatusValue,
+  ): boolean {
+    switch (current) {
+      case CourseStatus.DRAFT:
+        return next === CourseStatus.IN_REVIEW;
+
+      case CourseStatus.IN_REVIEW:
+        return next === CourseStatus.PUBLISHED;
+
+      case CourseStatus.PUBLISHED:
+        return (
+          next === CourseStatus.UNPUBLISHED ||
+          next === CourseStatus.ARCHIVED
+        );
+
+      case CourseStatus.UNPUBLISHED:
+        return next === CourseStatus.ARCHIVED;
+
+      case CourseStatus.ARCHIVED:
+        return false;
+
+      default:
+        return false;
+    }
+  }
+
+  private assertDraftMetadataMutationAllowed(): void {
+    if (this.props.status !== CourseStatus.DRAFT) {
+      throw new CourseValidationError(
+        'Course metadata can only be changed while the Course is in DRAFT status.',
+        [
+          {
+            field: 'status',
+            message:
+              'Course metadata cannot be changed after the Course leaves DRAFT status.',
+          },
+        ],
+      );
+    }
+  }
+
+  private validatePublicationReadiness(): void {
+    const issues = [];
+
+    if (this.props.title.trim().length === 0) {
+      issues.push({
+        field: 'title',
+        message: 'Course title is required for publication.',
+      });
+    }
+
+    if (
+      this.props.description !== null &&
+      this.props.description.trim().length === 0
+    ) {
+      issues.push({
+        field: 'description',
+        message: 'Course description cannot be empty.',
+      });
+    }
+
+    if (issues.length > 0) {
+      throw new CourseValidationError(
+        'Course is not ready for publication.',
+        issues,
+      );
+    }
+  }
+
+  private validateProps(props: CourseProps): void {
+    const issues = [];
+
+    if (!props.id) {
+      issues.push({
+        field: 'id',
+        message: 'Course identifier is required.',
+      });
+    }
+
+    if (!this.isValidDate(props.createdAt)) {
+      issues.push({
+        field: 'createdAt',
+        message: 'Course creation timestamp must be a valid Date.',
+      });
+    }
+
+    if (!this.isValidDate(props.updatedAt)) {
+      issues.push({
+        field: 'updatedAt',
+        message: 'Course update timestamp must be a valid Date.',
+      });
+    }
+
+    try {
+      this.validateTitle(props.title);
+    } catch (error) {
+      if (error instanceof CourseValidationError) {
+        issues.push(...error.issues);
+      } else {
+        throw error;
+      }
+    }
+
+    try {
+      this.validateDescription(props.description);
+    } catch (error) {
+      if (error instanceof CourseValidationError) {
+        issues.push(...error.issues);
+      } else {
+        throw error;
+      }
+    }
+
+    try {
+      this.validateInstructorId(props.instructorId);
+    } catch (error) {
+      if (error instanceof CourseValidationError) {
+        issues.push(...error.issues);
+      } else {
+        throw error;
+      }
+    }
+
+    if (issues.length > 0) {
+      throw new CourseValidationError(
+        'Course validation failed.',
+        issues,
+      );
+    }
+  }
+
+  private isValidDate(value: Date): boolean {
+    return value instanceof Date && !Number.isNaN(value.getTime());
+  }
+
+  private validateTitle(title: string): void {
+    if (typeof title !== 'string' || title.trim().length === 0) {
+      throw new CourseValidationError(
+        'Course title is required.',
+        [
+          {
+            field: 'title',
+            message: 'Course title must be a non-empty string.',
+          },
+        ],
+      );
+    }
+
+    if (title.trim().length > 200) {
+      throw new CourseValidationError(
+        'Course title is too long.',
+        [
+          {
+            field: 'title',
+            message: 'Course title must not exceed 200 characters.',
+          },
+        ],
+      );
+    }
+  }
+
+  private validateDescription(description: string | null): void {
+    if (description !== null && description.trim().length === 0) {
+      throw new CourseValidationError(
+        'Course description cannot be an empty string.',
+        [
+          {
+            field: 'description',
+            message:
+              'Course description must be null or a non-empty string.',
+          },
+        ],
+      );
+    }
+
+    if (description !== null && description.trim().length > 10_000) {
+      throw new CourseValidationError(
+        'Course description is too long.',
+        [
+          {
+            field: 'description',
+            message:
+              'Course description must not exceed 10000 characters.',
+          },
+        ],
+      );
+    }
+  }
+
+  private validateInstructorId(instructorId: string): void {
+    if (
+      typeof instructorId !== 'string' ||
+      instructorId.trim().length === 0
+    ) {
+      throw new CourseValidationError(
+        'Course instructor identifier is required.',
+        [
+          {
+            field: 'instructorId',
+            message:
+              'Instructor identifier must be a non-empty string.',
+          },
+        ],
+      );
+    }
+  }
+
+  private replaceProps(
+    changes: Partial<
+      Pick<
+        MutableCourseProps,
+        | 'title'
+        | 'description'
+        | 'level'
+        | 'type'
+        | 'visibility'
+        | 'status'
+      >
+    >,
+  ): void {
+    Object.assign(this.props, changes);
+    this.props.updatedAt = new Date();
+  }
+}

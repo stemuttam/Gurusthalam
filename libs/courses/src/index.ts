@@ -70,5 +70,16 @@ export type {
 } from './domain/entities/course.js';
 
 export {
+  CourseVersion,
+} from './domain/entities/course-version.js';
+
+export type {
+  CourseVersionProps,
+  CreateCourseVersionProps,
+  CourseVersionStatus,
+} from './domain/entities/course-version.js';
+
+export {
   CourseId,
-} from './domain/value-objects/course-id.js';
+  CourseVersionId,
+} from './domain/value-objects/index.js';

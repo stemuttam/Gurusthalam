@@ -83,3 +83,8 @@ export {
   CourseId,
   CourseVersionId,
 } from './domain/value-objects/index.js';
+
+export type {
+  CourseRepository,
+  CourseVersionRepository,
+} from './domain/repositories/index.js';

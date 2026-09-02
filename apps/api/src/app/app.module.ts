@@ -14,6 +14,10 @@ import {
 } from '../database/database.module.js';
 
 import {
+  CoursesPersistenceModule,
+} from '../database/prisma/repositories/index.js';
+
+import {
   HealthModule,
 } from '../health/health.module.js';
 
@@ -99,6 +103,8 @@ import {
     AppConfigModule,
 
     DatabaseModule,
+
+    CoursesPersistenceModule,
 
     RedisModule,
 

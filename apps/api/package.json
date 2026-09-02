@@ -5,6 +5,7 @@
   "type": "module",
   "dependencies": {
     "@gurusthalam/config": "workspace:*",
+    "@gurusthalam/courses": "workspace:*",
     "@gurusthalam/database": "workspace:*",
     "@gurusthalam/logger": "workspace:*",
     "@gurusthalam/shared": "workspace:*",

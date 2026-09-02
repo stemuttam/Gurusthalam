@@ -226,6 +226,9 @@ importers:
       '@gurusthalam/config':
         specifier: workspace:*
         version: link:../../libs/shared/config
+      '@gurusthalam/courses':
+        specifier: workspace:*
+        version: link:../../libs/courses
       '@gurusthalam/database':
         specifier: workspace:*
         version: link:../../libs/shared/database

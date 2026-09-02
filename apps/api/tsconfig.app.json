@@ -21,8 +21,15 @@
     "skipLibCheck": true
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist", "out-tsc"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "out-tsc"
+  ],
   "references": [
+    {
+      "path": "../../libs/courses/tsconfig.lib.json"
+    },
     {
       "path": "../../libs/shared/tsconfig.lib.json"
     },

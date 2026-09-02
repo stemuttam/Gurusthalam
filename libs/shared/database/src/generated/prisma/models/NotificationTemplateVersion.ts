@@ -535,10 +535,6 @@ export type NotificationTemplateVersionUncheckedUpdateManyWithoutTemplateNestedI
   deleteMany?: Prisma.NotificationTemplateVersionScalarWhereInput | Prisma.NotificationTemplateVersionScalarWhereInput[]
 }
 
-export type NullableDateTimeFieldUpdateOperationsInput = {
-  set?: Date | string | null
-}
-
 export type NotificationTemplateVersionCreateWithoutTemplateInput = {
   id?: string
   version: number

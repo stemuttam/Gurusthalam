@@ -528,11 +528,6 @@ export type NotificationAggregationItemIncludeUpdateManyAndReturn<ExtArgs extend
 export type $NotificationAggregationItemPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "NotificationAggregationItem"
   objects: {
-    /**
-     * * Keep the relation declaration on one line.
-     *    * This avoids the Prisma parser failure currently
-     *    * preventing Prisma Client generation.
-     */
     aggregation: Prisma.$NotificationAggregationPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{

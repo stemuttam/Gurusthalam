@@ -51,6 +51,8 @@ export const AnyNull = runtime.AnyNull
 
 
 export const ModelName = {
+  Course: 'Course',
+  CourseVersion: 'CourseVersion',
   NotificationTemplate: 'NotificationTemplate',
   NotificationTemplateVersion: 'NotificationTemplateVersion',
   Notification: 'Notification',
@@ -74,6 +76,37 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 } as const)
 
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
+
+
+export const CourseScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
+  description: 'description',
+  level: 'level',
+  type: 'type',
+  visibility: 'visibility',
+  status: 'status',
+  instructorId: 'instructorId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CourseScalarFieldEnum = (typeof CourseScalarFieldEnum)[keyof typeof CourseScalarFieldEnum]
+
+
+export const CourseVersionScalarFieldEnum = {
+  id: 'id',
+  courseId: 'courseId',
+  version: 'version',
+  status: 'status',
+  title: 'title',
+  description: 'description',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  publishedAt: 'publishedAt'
+} as const
+
+export type CourseVersionScalarFieldEnum = (typeof CourseVersionScalarFieldEnum)[keyof typeof CourseVersionScalarFieldEnum]
 
 
 export const NotificationTemplateScalarFieldEnum = {

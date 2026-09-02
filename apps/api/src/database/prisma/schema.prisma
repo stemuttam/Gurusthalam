@@ -7,6 +7,97 @@ datasource db {
   provider = "postgresql"
 }
 
+// =============================================================
+// Course Domain
+// =============================================================
+
+enum CourseLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  ALL_LEVELS
+}
+
+enum CourseType {
+  SELF_PACED
+  LIVE
+  BLENDED
+}
+
+enum CourseVisibility {
+  PRIVATE
+  UNLISTED
+  PUBLIC
+}
+
+enum CourseStatus {
+  DRAFT
+  IN_REVIEW
+  PUBLISHED
+  UNPUBLISHED
+  ARCHIVED
+}
+
+enum CourseVersionStatus {
+  DRAFT
+  IN_REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
+model Course {
+  id String @id @default(uuid())
+
+  title       String
+  description String?
+
+  level CourseLevel
+  type  CourseType
+
+  visibility CourseVisibility @default(PRIVATE)
+  status     CourseStatus     @default(DRAFT)
+
+  instructorId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  versions CourseVersion[]
+
+  @@index([instructorId])
+  @@index([status])
+  @@index([visibility])
+  @@index([status, visibility])
+  @@index([instructorId, status])
+}
+
+model CourseVersion {
+  id String @id @default(uuid())
+
+  courseId String
+  version  Int
+
+  status CourseVersionStatus @default(DRAFT)
+
+  title       String
+  description String?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  publishedAt DateTime?
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([courseId, version])
+  @@index([courseId, status])
+  @@index([status, publishedAt])
+  @@index([courseId, status, version])
+}
+
+// =============================================================
+// Notification Domain
+// =============================================================
+
 enum NotificationChannel {
   EMAIL
   IN_APP
@@ -36,6 +127,10 @@ enum OutboxStatus {
   DEAD_LETTER
 }
 
+// =============================================================
+// Notification Aggregation Domain
+// =============================================================
+
 enum NotificationAggregationStatus {
   OPEN
   FLUSHING
@@ -43,11 +138,9 @@ enum NotificationAggregationStatus {
   FAILED
 }
 
-/**
- * =============================================================
- * Notification Template Domain
- * =============================================================
- */
+// =============================================================
+// Notification Template Domain
+// =============================================================
 
 enum NotificationTemplateChannel {
   EMAIL
@@ -128,11 +221,9 @@ model NotificationTemplateVersion {
   @@index([createdBy, createdAt])
 }
 
-/**
- * =============================================================
- * Existing Notification Domain
- * =============================================================
- */
+// =============================================================
+// Existing Notification Domain
+// =============================================================
 
 model Notification {
   id String @id @default(uuid())
@@ -141,7 +232,7 @@ model Notification {
   userId         String
 
   channel NotificationChannel
-  status  NotificationStatus @default(QUEUED)
+  status  NotificationStatus  @default(QUEUED)
 
   subject String?
   title   String?
@@ -193,9 +284,9 @@ model NotificationDelivery {
   providerMessageId String?
 
   lastAttemptAt DateTime?
-  sentAt         DateTime?
-  failedAt       DateTime?
-  failureReason  String?
+  sentAt        DateTime?
+  failedAt      DateTime?
+  failureReason String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -246,11 +337,9 @@ model OutboxEvent {
   @@index([deadLetteredAt])
 }
 
-/**
- * =============================================================
- * Notification Aggregation Domain
- * =============================================================
- */
+// =============================================================
+// Notification Aggregation Domain
+// =============================================================
 
 model NotificationAggregation {
   id String @id @default(uuid())
@@ -296,20 +385,14 @@ model NotificationAggregationItem {
 
   createdAt DateTime @default(now())
 
-  /*
-   * Keep the relation declaration on one line.
-   * This avoids the Prisma parser failure currently
-   * preventing Prisma Client generation.
-   */
   aggregation NotificationAggregation @relation(fields: [aggregationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  /*
+  /**
    * Database-level idempotency:
    * one source event can occur only once in an aggregation.
    */
   @@unique([aggregationId, sourceEventId])
-
-  /*
+  /**
    * Deterministic retrieval order.
    */
   @@index([aggregationId, orderingKey])

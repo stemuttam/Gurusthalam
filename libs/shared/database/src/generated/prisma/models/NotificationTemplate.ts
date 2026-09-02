@@ -515,14 +515,6 @@ export type NotificationTemplateScalarRelationFilter = {
   isNot?: Prisma.NotificationTemplateWhereInput
 }
 
-export type StringFieldUpdateOperationsInput = {
-  set?: string
-}
-
-export type NullableStringFieldUpdateOperationsInput = {
-  set?: string | null
-}
-
 export type EnumNotificationTemplateChannelFieldUpdateOperationsInput = {
   set?: $Enums.NotificationTemplateChannel
 }
@@ -533,18 +525,6 @@ export type EnumNotificationTemplateCategoryFieldUpdateOperationsInput = {
 
 export type EnumNotificationTemplateStatusFieldUpdateOperationsInput = {
   set?: $Enums.NotificationTemplateStatus
-}
-
-export type IntFieldUpdateOperationsInput = {
-  set?: number
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
-}
-
-export type DateTimeFieldUpdateOperationsInput = {
-  set?: Date | string
 }
 
 export type NotificationTemplateCreateNestedOneWithoutVersionsInput = {

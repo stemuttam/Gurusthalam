@@ -9,6 +9,55 @@
 * 🟢 You can import this file directly.
 */
 
+export const CourseLevel = {
+  BEGINNER: 'BEGINNER',
+  INTERMEDIATE: 'INTERMEDIATE',
+  ADVANCED: 'ADVANCED',
+  ALL_LEVELS: 'ALL_LEVELS'
+} as const
+
+export type CourseLevel = (typeof CourseLevel)[keyof typeof CourseLevel]
+
+
+export const CourseType = {
+  SELF_PACED: 'SELF_PACED',
+  LIVE: 'LIVE',
+  BLENDED: 'BLENDED'
+} as const
+
+export type CourseType = (typeof CourseType)[keyof typeof CourseType]
+
+
+export const CourseVisibility = {
+  PRIVATE: 'PRIVATE',
+  UNLISTED: 'UNLISTED',
+  PUBLIC: 'PUBLIC'
+} as const
+
+export type CourseVisibility = (typeof CourseVisibility)[keyof typeof CourseVisibility]
+
+
+export const CourseStatus = {
+  DRAFT: 'DRAFT',
+  IN_REVIEW: 'IN_REVIEW',
+  PUBLISHED: 'PUBLISHED',
+  UNPUBLISHED: 'UNPUBLISHED',
+  ARCHIVED: 'ARCHIVED'
+} as const
+
+export type CourseStatus = (typeof CourseStatus)[keyof typeof CourseStatus]
+
+
+export const CourseVersionStatus = {
+  DRAFT: 'DRAFT',
+  IN_REVIEW: 'IN_REVIEW',
+  PUBLISHED: 'PUBLISHED',
+  ARCHIVED: 'ARCHIVED'
+} as const
+
+export type CourseVersionStatus = (typeof CourseVersionStatus)[keyof typeof CourseVersionStatus]
+
+
 export const NotificationChannel = {
   EMAIL: 'EMAIL',
   IN_APP: 'IN_APP',

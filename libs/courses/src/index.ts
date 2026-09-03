@@ -88,3 +88,20 @@ export type {
   CourseRepository,
   CourseVersionRepository,
 } from './domain/repositories/index.js';
+
+/**
+ * Application layer.
+ *
+ * Application services orchestrate use cases while remaining independent
+ * from infrastructure concerns such as NestJS and Prisma.
+ */
+export {
+  DefaultCourseApplicationService,
+} from './application/index.js';
+
+export type {
+  CourseApplicationService,
+  CreateCourseInput,
+  GetCourseInput,
+  SaveCourseInput,
+} from './application/index.js';

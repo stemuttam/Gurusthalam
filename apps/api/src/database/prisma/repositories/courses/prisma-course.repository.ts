@@ -12,11 +12,15 @@ import {
   CoursePrismaMapper,
 } from '../../mappers/courses/index.js';
 
+import {
+  withPrismaRepositoryErrorBoundary,
+} from '../prisma-repository-error.mapper.js';
+
 /**
  * Prisma-backed implementation of the domain CourseRepository.
  *
- * This adapter is the infrastructure boundary between the Course domain
- * aggregate and PostgreSQL persistence through Prisma.
+ * This adapter is the infrastructure boundary between the
+ * Course domain aggregate and PostgreSQL persistence through Prisma.
  *
  * Prisma types and persistence concerns intentionally remain outside
  * the Course domain package.
@@ -36,19 +40,24 @@ export class PrismaCourseRepository
   async findById(
     id: CourseId,
   ): Promise<Course | null> {
-    const record =
-      await this.prisma.course.findUnique({
-        where: {
-          id: id.value,
-        },
-      });
+    return withPrismaRepositoryErrorBoundary(
+      'CourseRepository.findById',
+      async () => {
+        const record =
+          await this.prisma.course.findUnique({
+            where: {
+              id: id.value,
+            },
+          });
 
-    if (record === null) {
-      return null;
-    }
+        if (record === null) {
+          return null;
+        }
 
-    return CoursePrismaMapper.toDomain(
-      record,
+        return CoursePrismaMapper.toDomain(
+          record,
+        );
+      },
     );
   }
 
@@ -61,17 +70,22 @@ export class PrismaCourseRepository
   async exists(
     id: CourseId,
   ): Promise<boolean> {
-    const record =
-      await this.prisma.course.findUnique({
-        where: {
-          id: id.value,
-        },
-        select: {
-          id: true,
-        },
-      });
+    return withPrismaRepositoryErrorBoundary(
+      'CourseRepository.exists',
+      async () => {
+        const record =
+          await this.prisma.course.findUnique({
+            where: {
+              id: id.value,
+            },
+            select: {
+              id: true,
+            },
+          });
 
-    return record !== null;
+        return record !== null;
+      },
+    );
   }
 
   /**
@@ -83,37 +97,51 @@ export class PrismaCourseRepository
   async save(
     course: Course,
   ): Promise<void> {
-    const persistence =
-      CoursePrismaMapper.toPersistence(
-        course,
-      );
+    await withPrismaRepositoryErrorBoundary(
+      'CourseRepository.save',
+      async () => {
+        const persistence =
+          CoursePrismaMapper.toPersistence(
+            course,
+          );
 
-    await this.prisma.course.upsert({
-      where: {
-        id: persistence.id,
+        await this.prisma.course.upsert({
+          where: {
+            id: persistence.id,
+          },
+          create: {
+            id: persistence.id,
+            title: persistence.title,
+            description:
+              persistence.description,
+            level: persistence.level,
+            type: persistence.type,
+            visibility:
+              persistence.visibility,
+            status: persistence.status,
+            instructorId:
+              persistence.instructorId,
+            createdAt:
+              persistence.createdAt,
+            updatedAt:
+              persistence.updatedAt,
+          },
+          update: {
+            title: persistence.title,
+            description:
+              persistence.description,
+            level: persistence.level,
+            type: persistence.type,
+            visibility:
+              persistence.visibility,
+            status: persistence.status,
+            instructorId:
+              persistence.instructorId,
+            updatedAt:
+              persistence.updatedAt,
+          },
+        });
       },
-      create: {
-        id: persistence.id,
-        title: persistence.title,
-        description: persistence.description,
-        level: persistence.level,
-        type: persistence.type,
-        visibility: persistence.visibility,
-        status: persistence.status,
-        instructorId: persistence.instructorId,
-        createdAt: persistence.createdAt,
-        updatedAt: persistence.updatedAt,
-      },
-      update: {
-        title: persistence.title,
-        description: persistence.description,
-        level: persistence.level,
-        type: persistence.type,
-        visibility: persistence.visibility,
-        status: persistence.status,
-        instructorId: persistence.instructorId,
-        updatedAt: persistence.updatedAt,
-      },
-    });
+    );
   }
 }

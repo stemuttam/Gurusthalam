@@ -28,23 +28,19 @@ import {
 describe(
   'CoursesPersistenceModule',
   () => {
-    const createTestingModule = async () =>
-      Test
-        .createTestingModule({
-          imports: [
-            CoursesPersistenceModule,
-          ],
-
-          providers: [
-            {
-              provide:
-                PrismaService,
-
-              useValue: {},
-            },
-          ],
-        })
-        .compile();
+    const createTestingModule =
+      async () =>
+        Test
+          .createTestingModule({
+            imports: [
+              CoursesPersistenceModule,
+            ],
+          })
+          .overrideProvider(
+            PrismaService,
+          )
+          .useValue({})
+          .compile();
 
     it(
       'resolves the CourseRepository provider',

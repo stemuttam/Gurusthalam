@@ -1,22 +1,12 @@
 export {
-  CourseStatus,
-  COURSE_STATUSES,
-  isCourseStatus,
-} from './domain/enums/course-status.js';
+  Course,
+} from './domain/entities/course.js';
 
 export type {
-  CourseStatus as CourseStatusValue,
-} from './domain/enums/course-status.js';
-
-export {
-  CourseVisibility,
-  COURSE_VISIBILITIES,
-  isCourseVisibility,
-} from './domain/enums/course-visibility.js';
-
-export type {
-  CourseVisibility as CourseVisibilityValue,
-} from './domain/enums/course-visibility.js';
+  CourseProps,
+  CreateCourseProps,
+  UpdateCourseMetadataProps,
+} from './domain/entities/course.js';
 
 export {
   CourseLevel,
@@ -29,6 +19,16 @@ export type {
 } from './domain/enums/course-level.js';
 
 export {
+  CourseStatus,
+  COURSE_STATUSES,
+  isCourseStatus,
+} from './domain/enums/course-status.js';
+
+export type {
+  CourseStatus as CourseStatusValue,
+} from './domain/enums/course-status.js';
+
+export {
   CourseType,
   COURSE_TYPES,
   isCourseType,
@@ -39,35 +39,29 @@ export type {
 } from './domain/enums/course-type.js';
 
 export {
-  CourseDomainError,
+  CourseVisibility,
+  COURSE_VISIBILITIES,
+  isCourseVisibility,
+} from './domain/enums/course-visibility.js';
+
+export type {
+  CourseVisibility as CourseVisibilityValue,
+} from './domain/enums/course-visibility.js';
+
+export {
   CourseDomainErrorCode,
-} from './domain/errors/course-domain.error.js';
-
-export type {
-  CourseDomainErrorCode as CourseDomainErrorCodeValue,
-} from './domain/errors/course-domain.error.js';
-
-export {
   CourseValidationError,
-} from './domain/errors/course-validation.error.js';
-
-export type {
-  CourseValidationIssue,
-} from './domain/errors/course-validation.error.js';
-
-export {
   InvalidCourseStateTransitionError,
-} from './domain/errors/invalid-course-state-transition.error.js';
-
-export {
-  Course,
-} from './domain/entities/course.js';
+} from './domain/errors/index.js';
 
 export type {
-  CourseProps,
-  CreateCourseProps,
-  UpdateCourseMetadataProps,
-} from './domain/entities/course.js';
+  CourseDomainError,
+  CourseValidationIssue,
+} from './domain/errors/index.js';
+
+export {
+  CourseId,
+} from './domain/value-objects/course-id.js';
 
 export {
   CourseVersion,
@@ -76,24 +70,57 @@ export {
 export type {
   CourseVersionProps,
   CreateCourseVersionProps,
-  CourseVersionStatus,
 } from './domain/entities/course-version.js';
 
 export {
-  CourseId,
   CourseVersionId,
-} from './domain/value-objects/index.js';
+} from './domain/value-objects/course-version-id.js';
+
+/**
+ * CourseVersion lifecycle status
+ */
+export {
+  CourseVersionStatus,
+  COURSE_VERSION_STATUSES,
+  isCourseVersionStatus,
+} from './domain/enums/course-version-status.js';
+
+export type {
+  CourseVersionStatus as CourseVersionStatusValue,
+} from './domain/enums/course-version-status.js';
 
 export type {
   CourseRepository,
+} from './domain/repositories/course-repository.js';
+
+export type {
   CourseVersionRepository,
-} from './domain/repositories/index.js';
+} from './domain/repositories/course-version-repository.js';
 
 /**
- * Application layer.
- *
- * Application services orchestrate use cases while remaining independent
- * from infrastructure concerns such as NestJS and Prisma.
+ * Domain events
+ */
+export {
+  createDomainEvent,
+  CourseDomainEventName,
+} from './domain/events/index.js';
+
+export type {
+  DomainEvent,
+  CourseArchivedEvent,
+  CourseCreatedEvent,
+  CourseCreatedPayload,
+  CourseDomainEvent,
+  CourseMetadataUpdatedEvent,
+  CourseMetadataUpdatedPayload,
+  CoursePublishedEvent,
+  CourseStatusChangedPayload,
+  CourseSubmittedForReviewEvent,
+  CourseUnpublishedEvent,
+} from './domain/events/index.js';
+
+/**
+ * Application layer
  */
 export {
   DefaultCourseApplicationService,

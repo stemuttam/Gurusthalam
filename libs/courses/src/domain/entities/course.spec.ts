@@ -1,22 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  CourseLevel,
-} from '../enums/course-level.js';
-import {
-  CourseStatus,
-} from '../enums/course-status.js';
-import {
-  CourseType,
-} from '../enums/course-type.js';
-import {
-  CourseVisibility,
-} from '../enums/course-visibility.js';
+import { Course } from './course.js';
+
+import { CourseLevel } from '../enums/course-level.js';
+import { CourseStatus } from '../enums/course-status.js';
+import { CourseType } from '../enums/course-type.js';
+import { CourseVisibility } from '../enums/course-visibility.js';
+
 import {
   CourseValidationError,
   InvalidCourseStateTransitionError,
 } from '../errors/index.js';
-import { Course } from './course.js';
+
+import { CourseDomainEventName } from '../events/course.events.js';
 
 const createCourse = () =>
   Course.create({
@@ -45,6 +41,19 @@ describe('Course aggregate', () => {
       expect(course.instructorId).toBe('instructor-123');
     });
 
+    it('records CourseCreated', () => {
+      const course = createCourse();
+
+      const [event] = course.getDomainEvents();
+
+      expect(event?.eventName).toBe(
+        CourseDomainEventName.CREATED,
+      );
+      expect(event?.aggregateId).toBe(
+        course.id.toString(),
+      );
+    });
+
     it('defaults visibility to PRIVATE', () => {
       const course = Course.create({
         title: 'Test Course',
@@ -53,7 +62,9 @@ describe('Course aggregate', () => {
         instructorId: 'instructor-123',
       });
 
-      expect(course.visibility).toBe(CourseVisibility.PRIVATE);
+      expect(course.visibility).toBe(
+        CourseVisibility.PRIVATE,
+      );
     });
 
     it('creates distinct Course identifiers', () => {
@@ -111,13 +122,37 @@ describe('Course aggregate', () => {
         visibility: CourseVisibility.PUBLIC,
       });
 
-      expect(course.title).toBe('Advanced TypeScript Fundamentals');
-      expect(course.description).toBe('Updated description.');
-      expect(course.level).toBe(CourseLevel.INTERMEDIATE);
+      expect(course.title).toBe(
+        'Advanced TypeScript Fundamentals',
+      );
+      expect(course.description).toBe(
+        'Updated description.',
+      );
+      expect(course.level).toBe(
+        CourseLevel.INTERMEDIATE,
+      );
       expect(course.type).toBe(CourseType.BLENDED);
-      expect(course.visibility).toBe(CourseVisibility.PUBLIC);
+      expect(course.visibility).toBe(
+        CourseVisibility.PUBLIC,
+      );
       expect(course.updatedAt.getTime()).toBeGreaterThanOrEqual(
         previousUpdatedAt.getTime(),
+      );
+    });
+
+    it('records CourseMetadataUpdated after a successful update', () => {
+      const course = createCourse();
+
+      course.pullDomainEvents();
+
+      course.updateMetadata({
+        title: 'Updated Course',
+      });
+
+      const [event] = course.getDomainEvents();
+
+      expect(event?.eventName).toBe(
+        CourseDomainEventName.METADATA_UPDATED,
       );
     });
 
@@ -155,7 +190,9 @@ describe('Course aggregate', () => {
 
       course.submitForReview();
 
-      expect(course.status).toBe(CourseStatus.IN_REVIEW);
+      expect(course.status).toBe(
+        CourseStatus.IN_REVIEW,
+      );
     });
 
     it('transitions IN_REVIEW to PUBLISHED', () => {
@@ -164,7 +201,9 @@ describe('Course aggregate', () => {
       course.submitForReview();
       course.publish();
 
-      expect(course.status).toBe(CourseStatus.PUBLISHED);
+      expect(course.status).toBe(
+        CourseStatus.PUBLISHED,
+      );
     });
 
     it('transitions PUBLISHED to UNPUBLISHED', () => {
@@ -174,7 +213,9 @@ describe('Course aggregate', () => {
       course.publish();
       course.unpublish();
 
-      expect(course.status).toBe(CourseStatus.UNPUBLISHED);
+      expect(course.status).toBe(
+        CourseStatus.UNPUBLISHED,
+      );
     });
 
     it('transitions PUBLISHED to ARCHIVED', () => {
@@ -184,7 +225,9 @@ describe('Course aggregate', () => {
       course.publish();
       course.archive();
 
-      expect(course.status).toBe(CourseStatus.ARCHIVED);
+      expect(course.status).toBe(
+        CourseStatus.ARCHIVED,
+      );
     });
 
     it('transitions UNPUBLISHED to ARCHIVED', () => {
@@ -195,7 +238,9 @@ describe('Course aggregate', () => {
       course.unpublish();
       course.archive();
 
-      expect(course.status).toBe(CourseStatus.ARCHIVED);
+      expect(course.status).toBe(
+        CourseStatus.ARCHIVED,
+      );
     });
 
     it('rejects submitting an archived Course for review', () => {
@@ -256,8 +301,12 @@ describe('Course aggregate', () => {
       expect(primitives.title).toBe(course.title);
       expect(primitives.status).toBe(course.status);
 
-      expect(primitives.createdAt).not.toBe(course.createdAt);
-      expect(primitives.updatedAt).not.toBe(course.updatedAt);
+      expect(primitives.createdAt).not.toBe(
+        course.createdAt,
+      );
+      expect(primitives.updatedAt).not.toBe(
+        course.updatedAt,
+      );
     });
   });
 
@@ -265,11 +314,23 @@ describe('Course aggregate', () => {
     it('rehydrates a Course without generating a new identity', () => {
       const course = createCourse();
 
-      const rehydrated = Course.rehydrate(course.toPrimitives());
+      const rehydrated = Course.rehydrate(
+        course.toPrimitives(),
+      );
 
       expect(rehydrated.id.equals(course.id)).toBe(true);
       expect(rehydrated.title).toBe(course.title);
       expect(rehydrated.status).toBe(course.status);
+    });
+
+    it('does not generate a domain event during rehydration', () => {
+      const course = createCourse();
+
+      const rehydrated = Course.rehydrate(
+        course.toPrimitives(),
+      );
+
+      expect(rehydrated.getDomainEvents()).toHaveLength(0);
     });
   });
 });

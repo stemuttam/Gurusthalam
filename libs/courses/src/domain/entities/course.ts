@@ -12,6 +12,13 @@ import {
   CourseValidationError,
   InvalidCourseStateTransitionError,
 } from '../errors/index.js';
+import {
+  CourseDomainEventName,
+  type CourseDomainEvent,
+  type CourseCreatedPayload,
+  type CourseMetadataUpdatedPayload,
+} from '../events/index.js';
+import { createDomainEvent } from '../events/domain-event.js';
 import { CourseId } from '../value-objects/course-id.js';
 
 export interface CourseProps {
@@ -51,12 +58,16 @@ type MutableCourseProps = {
 /**
  * Course aggregate root.
  *
- * The aggregate owns lifecycle and metadata invariants.
- * It deliberately has no dependency on Prisma, NestJS, HTTP, or
- * infrastructure concerns.
+ * The aggregate owns lifecycle, metadata invariants,
+ * and pending domain events.
+ *
+ * It deliberately has no dependency on Prisma, NestJS,
+ * HTTP, queues, or other infrastructure concerns.
  */
 export class Course {
   private readonly props: MutableCourseProps;
+
+  private readonly domainEvents: CourseDomainEvent[] = [];
 
   private constructor(props: CourseProps) {
     this.validateProps(props);
@@ -71,7 +82,7 @@ export class Course {
   static create(input: CreateCourseProps): Course {
     const now = new Date();
 
-    return new Course({
+    const course = new Course({
       id: CourseId.generate(),
       title: input.title,
       description: input.description ?? null,
@@ -83,8 +94,18 @@ export class Course {
       createdAt: now,
       updatedAt: now,
     });
+
+    course.recordCourseCreatedEvent();
+
+    return course;
   }
 
+  /**
+   * Rehydrates an aggregate from persistence.
+   *
+   * Rehydration never creates domain events because no new
+   * domain action has occurred.
+   */
   static rehydrate(props: CourseProps): Course {
     return new Course(props);
   }
@@ -129,16 +150,42 @@ export class Course {
     return new Date(this.props.updatedAt);
   }
 
+  /**
+   * Returns a read-only snapshot of currently pending events.
+   *
+   * This method does not clear the pending event collection.
+   */
+  getDomainEvents(): readonly CourseDomainEvent[] {
+    return [...this.domainEvents];
+  }
+
+  /**
+   * Returns all currently pending events and clears them.
+   *
+   * This is intended for the application/integration boundary.
+   */
+  pullDomainEvents(): CourseDomainEvent[] {
+    const events = [...this.domainEvents];
+
+    this.domainEvents.length = 0;
+
+    return events;
+  }
+
   updateMetadata(input: UpdateCourseMetadataProps): void {
     this.assertDraftMetadataMutationAllowed();
 
     const title = input.title ?? this.props.title;
+
     const description =
       input.description === undefined
         ? this.props.description
         : input.description;
+
     const level = input.level ?? this.props.level;
+
     const type = input.type ?? this.props.type;
+
     const visibility = input.visibility ?? this.props.visibility;
 
     this.validateTitle(title);
@@ -151,10 +198,20 @@ export class Course {
       type,
       visibility,
     });
+
+    this.recordCourseMetadataUpdatedEvent();
   }
 
   submitForReview(): void {
+    const previousStatus = this.props.status;
+
     this.transitionStatus(CourseStatus.IN_REVIEW);
+
+    this.recordStatusChangedEvent(
+      CourseDomainEventName.SUBMITTED_FOR_REVIEW,
+      previousStatus,
+      this.props.status,
+    );
   }
 
   publish(): void {
@@ -167,9 +224,17 @@ export class Course {
 
     this.validatePublicationReadiness();
 
+    const previousStatus = this.props.status;
+
     this.replaceProps({
       status: CourseStatus.PUBLISHED,
     });
+
+    this.recordStatusChangedEvent(
+      CourseDomainEventName.PUBLISHED,
+      previousStatus,
+      this.props.status,
+    );
   }
 
   unpublish(): void {
@@ -180,9 +245,17 @@ export class Course {
       );
     }
 
+    const previousStatus = this.props.status;
+
     this.replaceProps({
       status: CourseStatus.UNPUBLISHED,
     });
+
+    this.recordStatusChangedEvent(
+      CourseDomainEventName.UNPUBLISHED,
+      previousStatus,
+      this.props.status,
+    );
   }
 
   archive(): void {
@@ -196,9 +269,17 @@ export class Course {
       );
     }
 
+    const previousStatus = this.props.status;
+
     this.replaceProps({
       status: CourseStatus.ARCHIVED,
     });
+
+    this.recordStatusChangedEvent(
+      CourseDomainEventName.ARCHIVED,
+      previousStatus,
+      this.props.status,
+    );
   }
 
   toPrimitives(): CourseProps {
@@ -385,15 +466,21 @@ export class Course {
         [
           {
             field: 'title',
-            message: 'Course title must not exceed 200 characters.',
+            message:
+              'Course title must not exceed 200 characters.',
           },
         ],
       );
     }
   }
 
-  private validateDescription(description: string | null): void {
-    if (description !== null && description.trim().length === 0) {
+  private validateDescription(
+    description: string | null,
+  ): void {
+    if (
+      description !== null &&
+      description.trim().length === 0
+    ) {
       throw new CourseValidationError(
         'Course description cannot be an empty string.',
         [
@@ -406,7 +493,10 @@ export class Course {
       );
     }
 
-    if (description !== null && description.trim().length > 10_000) {
+    if (
+      description !== null &&
+      description.trim().length > 10_000
+    ) {
       throw new CourseValidationError(
         'Course description is too long.',
         [
@@ -452,6 +542,65 @@ export class Course {
     >,
   ): void {
     Object.assign(this.props, changes);
+
     this.props.updatedAt = new Date();
+  }
+
+  private recordCourseCreatedEvent(): void {
+    const payload: CourseCreatedPayload = {
+      courseId: this.id.toString(),
+      title: this.title,
+      description: this.description,
+      level: this.level,
+      type: this.type,
+      visibility: this.visibility,
+      status: this.status,
+      instructorId: this.instructorId,
+    };
+
+    this.domainEvents.push(
+      createDomainEvent(
+        CourseDomainEventName.CREATED,
+        this.id.toString(),
+        payload,
+      ),
+    );
+  }
+
+  private recordCourseMetadataUpdatedEvent(): void {
+    const payload: CourseMetadataUpdatedPayload = {
+      courseId: this.id.toString(),
+      title: this.title,
+      description: this.description,
+      level: this.level,
+      type: this.type,
+      visibility: this.visibility,
+    };
+
+    this.domainEvents.push(
+      createDomainEvent(
+        CourseDomainEventName.METADATA_UPDATED,
+        this.id.toString(),
+        payload,
+      ),
+    );
+  }
+
+  private recordStatusChangedEvent(
+    eventName:
+      | typeof CourseDomainEventName.SUBMITTED_FOR_REVIEW
+      | typeof CourseDomainEventName.PUBLISHED
+      | typeof CourseDomainEventName.UNPUBLISHED
+      | typeof CourseDomainEventName.ARCHIVED,
+    previousStatus: CourseStatusValue,
+    currentStatus: CourseStatusValue,
+  ): void {
+    this.domainEvents.push(
+      createDomainEvent(eventName, this.id.toString(), {
+        courseId: this.id.toString(),
+        previousStatus,
+        currentStatus,
+      }),
+    );
   }
 }

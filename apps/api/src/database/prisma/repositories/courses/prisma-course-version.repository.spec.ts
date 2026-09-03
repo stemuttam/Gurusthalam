@@ -96,7 +96,7 @@ describe(
     /**
      * Explicitly typed against the mapper persistence contract.
      *
-     * This ensures the repository test remains coupled to the actual
+     * This keeps the repository tests coupled to the actual
      * persistence boundary rather than the mapper implementation's
      * inferred return type.
      */
@@ -238,6 +238,12 @@ describe(
 
         expect(
           findUnique,
+        ).toHaveBeenCalledTimes(
+          1,
+        );
+
+        expect(
+          findUnique,
         ).toHaveBeenCalledWith({
           where: {
             id:
@@ -309,6 +315,12 @@ describe(
             courseId,
           ),
         ).resolves.toBeNull();
+
+        expect(
+          findFirst,
+        ).toHaveBeenCalledTimes(
+          1,
+        );
 
         expect(
           findFirst,
@@ -422,6 +434,12 @@ describe(
 
         expect(
           findFirst,
+        ).toHaveBeenCalledTimes(
+          1,
+        );
+
+        expect(
+          findFirst,
         ).toHaveBeenCalledWith({
           where: {
             courseId:
@@ -501,6 +519,12 @@ describe(
           ),
         ).resolves.toBe(
           false,
+        );
+
+        expect(
+          findUnique,
+        ).toHaveBeenCalledTimes(
+          1,
         );
 
         expect(
@@ -641,6 +665,38 @@ describe(
 
     it(
       'does not execute additional Prisma operations during save',
+      async () => {
+        resetMocks();
+
+        const courseVersion =
+          createCourseVersion();
+
+        upsert.mockResolvedValue(
+          record(),
+        );
+
+        await repository.save(
+          courseVersion,
+        );
+
+        expect(
+          findUnique,
+        ).not.toHaveBeenCalled();
+
+        expect(
+          findFirst,
+        ).not.toHaveBeenCalled();
+
+        expect(
+          upsert,
+        ).toHaveBeenCalledTimes(
+          1,
+        );
+      },
+    );
+
+    it(
+      'does not perform an existence check before persisting',
       async () => {
         resetMocks();
 

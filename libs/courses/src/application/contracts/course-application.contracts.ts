@@ -1,20 +1,13 @@
 import type { Course } from '../../domain/entities/course.js';
-import type { CourseLevel } from '../../domain/enums/course-level.js';
-import type { CourseType } from '../../domain/enums/course-type.js';
-import type { CourseVisibility } from '../../domain/enums/course-visibility.js';
 
-export interface CreateCourseInput {
-  readonly title: string;
-  readonly description?: string | null;
-  readonly level: CourseLevel;
-  readonly type: CourseType;
-  readonly visibility?: CourseVisibility;
-  readonly instructorId: string;
-}
+import type {
+  CreateCourseInputSchema,
+  GetCourseInputSchema,
+} from './course-application.validation.js';
 
-export interface GetCourseInput {
-  readonly courseId: string;
-}
+export type CreateCourseInput = CreateCourseInputSchema;
+
+export type GetCourseInput = GetCourseInputSchema;
 
 export interface SaveCourseInput {
   readonly course: Course;

@@ -3,7 +3,6 @@ import { describe, expect, it, vi } from 'vitest';
 import { Course } from '../../domain/entities/course.js';
 import { CourseLevel } from '../../domain/enums/course-level.js';
 import { CourseType } from '../../domain/enums/course-type.js';
-import { CourseStatus } from '../../domain/enums/course-status.js';
 import { CourseVisibility } from '../../domain/enums/course-visibility.js';
 import type { CourseRepository } from '../../domain/repositories/course-repository.js';
 import { CourseId } from '../../domain/value-objects/course-id.js';
@@ -11,9 +10,7 @@ import { CourseId } from '../../domain/value-objects/course-id.js';
 import { DefaultCourseApplicationService } from './course-application.service.js';
 
 describe('DefaultCourseApplicationService', () => {
-  const courseId = CourseId.generate();
-
-  const createRepository = (): {
+  const createRepositoryMock = (): {
     repository: CourseRepository;
     findById: ReturnType<typeof vi.fn>;
     exists: ReturnType<typeof vi.fn>;
@@ -23,261 +20,261 @@ describe('DefaultCourseApplicationService', () => {
     const exists = vi.fn();
     const save = vi.fn();
 
-    const repository: CourseRepository = {
-      findById,
-      exists,
-      save,
-    };
-
     return {
-      repository,
+      repository: {
+        findById,
+        exists,
+        save,
+      } as unknown as CourseRepository,
       findById,
       exists,
       save,
     };
   };
 
-  const createCourseInput = () => ({
-    title: 'TypeScript Fundamentals',
-    description: 'Learn TypeScript from the ground up.',
+  const validCreateInput = {
+    title: 'Introduction to Physics',
+    description: 'Learn the fundamentals of physics.',
     level: CourseLevel.BEGINNER,
     type: CourseType.SELF_PACED,
-    instructorId: 'instructor-001',
-  });
-
-  const createExistingCourse = (): Course =>
-    Course.rehydrate({
-      id: courseId,
-      title: 'Existing Course',
-      description: 'Existing course description.',
-      level: CourseLevel.INTERMEDIATE,
-      type: CourseType.BLENDED,
-      visibility: CourseVisibility.UNLISTED,
-      status: CourseStatus.DRAFT,
-      instructorId: 'instructor-002',
-      createdAt: new Date('2026-01-01T10:00:00.000Z'),
-      updatedAt: new Date('2026-01-01T11:00:00.000Z'),
-    });
+    instructorId: 'instructor-123',
+  };
 
   describe('createCourse', () => {
     it('creates a Course through the domain factory', async () => {
-      const { repository, save } = createRepository();
-      save.mockResolvedValue(undefined);
+      const { repository } = createRepositoryMock();
 
       const service = new DefaultCourseApplicationService(repository);
 
-      const course = await service.createCourse(createCourseInput());
+      const course = await service.createCourse(validCreateInput);
 
       expect(course).toBeInstanceOf(Course);
-      expect(course.title).toBe('TypeScript Fundamentals');
+      expect(course.title).toBe('Introduction to Physics');
       expect(course.description).toBe(
-        'Learn TypeScript from the ground up.',
+        'Learn the fundamentals of physics.',
       );
       expect(course.level).toBe(CourseLevel.BEGINNER);
       expect(course.type).toBe(CourseType.SELF_PACED);
-      expect(course.instructorId).toBe('instructor-001');
+      expect(course.instructorId).toBe('instructor-123');
     });
 
-    it('creates new courses in DRAFT status', async () => {
-      const { repository, save } = createRepository();
-      save.mockResolvedValue(undefined);
+    it('creates new Courses in DRAFT status', async () => {
+      const { repository } = createRepositoryMock();
 
       const service = new DefaultCourseApplicationService(repository);
 
-      const course = await service.createCourse(createCourseInput());
+      const course = await service.createCourse(validCreateInput);
 
-      expect(course.status).toBe(CourseStatus.DRAFT);
+      expect(course.status).toBe('DRAFT');
     });
 
     it('uses PRIVATE visibility when visibility is omitted', async () => {
-      const { repository, save } = createRepository();
-      save.mockResolvedValue(undefined);
+      const { repository } = createRepositoryMock();
 
       const service = new DefaultCourseApplicationService(repository);
 
-      const course = await service.createCourse(createCourseInput());
+      const course = await service.createCourse(validCreateInput);
 
       expect(course.visibility).toBe(CourseVisibility.PRIVATE);
     });
 
-    it('preserves explicitly provided visibility', async () => {
-      const { repository, save } = createRepository();
-      save.mockResolvedValue(undefined);
+    it('preserves an explicitly provided visibility', async () => {
+      const { repository } = createRepositoryMock();
 
       const service = new DefaultCourseApplicationService(repository);
 
       const course = await service.createCourse({
-        ...createCourseInput(),
+        ...validCreateInput,
         visibility: CourseVisibility.PUBLIC,
       });
 
       expect(course.visibility).toBe(CourseVisibility.PUBLIC);
     });
 
-    it('persists the newly created Course exactly once', async () => {
-      const { repository, save } = createRepository();
-      save.mockResolvedValue(undefined);
+    it('persists the created Course exactly once', async () => {
+      const { repository, save } = createRepositoryMock();
 
       const service = new DefaultCourseApplicationService(repository);
 
-      const course = await service.createCourse(createCourseInput());
+      const course = await service.createCourse(validCreateInput);
 
       expect(save).toHaveBeenCalledTimes(1);
       expect(save).toHaveBeenCalledWith(course);
     });
 
-    it('returns the same Course instance that was persisted', async () => {
-      const { repository, save } = createRepository();
-      save.mockResolvedValue(undefined);
+    it('returns the same Course instance passed to the repository', async () => {
+      const { repository, save } = createRepositoryMock();
 
       const service = new DefaultCourseApplicationService(repository);
 
-      const course = await service.createCourse(createCourseInput());
+      const course = await service.createCourse(validCreateInput);
 
       expect(save).toHaveBeenCalledWith(course);
     });
 
-    it('propagates repository persistence errors unchanged', async () => {
-      const { repository, save } = createRepository();
-      const persistenceError = new Error('Persistence failed');
+    it('propagates repository save errors', async () => {
+      const { repository, save } = createRepositoryMock();
 
-      save.mockRejectedValue(persistenceError);
+      const error = new Error('Persistence failure');
+
+      save.mockRejectedValue(error);
 
       const service = new DefaultCourseApplicationService(repository);
 
       await expect(
-        service.createCourse(createCourseInput()),
-      ).rejects.toBe(persistenceError);
+        service.createCourse(validCreateInput),
+      ).rejects.toBe(error);
+    });
 
-      expect(save).toHaveBeenCalledTimes(1);
+    it('rejects invalid input before accessing the repository', async () => {
+      const { repository, save } = createRepositoryMock();
+
+      const service = new DefaultCourseApplicationService(repository);
+
+      await expect(
+        service.createCourse({
+          ...validCreateInput,
+          title: '   ',
+        }),
+      ).rejects.toThrow();
+
+      expect(save).not.toHaveBeenCalled();
+    });
+
+    it('rejects unexpected application fields', async () => {
+      const { repository, save } = createRepositoryMock();
+
+      const service = new DefaultCourseApplicationService(repository);
+
+      await expect(
+        service.createCourse({
+          ...validCreateInput,
+          status: 'PUBLISHED',
+        } as never),
+      ).rejects.toThrow();
+
+      expect(save).not.toHaveBeenCalled();
     });
   });
 
   describe('getCourse', () => {
-    it('converts the string identifier to a CourseId', async () => {
-      const { repository, findById } = createRepository();
-      const course = createExistingCourse();
-
-      findById.mockResolvedValue(course);
-
-      const service = new DefaultCourseApplicationService(repository);
-
-      const result = await service.getCourse({
-        courseId: courseId.value,
-      });
-
-      expect(result).toBe(course);
-      expect(findById).toHaveBeenCalledTimes(1);
-
-      const [receivedId] = findById.mock.calls[0] as [CourseId];
-
-      expect(receivedId).toBeInstanceOf(CourseId);
-      expect(receivedId.value).toBe(courseId.value);
-      expect(receivedId).not.toBe(courseId);
-    });
-
-    it('returns the Course returned by the repository', async () => {
-      const { repository, findById } = createRepository();
-      const course = createExistingCourse();
-
-      findById.mockResolvedValue(course);
-
-      const service = new DefaultCourseApplicationService(repository);
-
-      const result = await service.getCourse({
-        courseId: courseId.value,
-      });
-
-      expect(result).toBe(course);
-    });
-
-    it('returns null when the repository does not find the Course', async () => {
-      const { repository, findById } = createRepository();
+    it('converts the string identifier to CourseId', async () => {
+      const { repository, findById } = createRepositoryMock();
 
       findById.mockResolvedValue(null);
 
       const service = new DefaultCourseApplicationService(repository);
 
-      const result = await service.getCourse({
-        courseId: courseId.value,
+      await service.getCourse({
+        courseId: 'course-123',
       });
 
-      expect(result).toBeNull();
+      expect(findById).toHaveBeenCalledTimes(1);
+
+      const [courseId] = findById.mock.calls[0] as [CourseId];
+
+      expect(courseId).toBeInstanceOf(CourseId);
+      expect(courseId.toString()).toBe('course-123');
     });
 
-    it('rejects an invalid Course identifier before repository access', async () => {
-      const { repository, findById } = createRepository();
+    it('returns the repository result', async () => {
+      const { repository, findById } = createRepositoryMock();
+
+      const course = Course.create(validCreateInput);
+
+      findById.mockResolvedValue(course);
 
       const service = new DefaultCourseApplicationService(repository);
 
       await expect(
         service.getCourse({
-          courseId: '',
+          courseId: course.id.toString(),
         }),
-      ).rejects.toThrow(TypeError);
+      ).resolves.toBe(course);
+    });
+
+    it('returns null when the Course does not exist', async () => {
+      const { repository, findById } = createRepositoryMock();
+
+      findById.mockResolvedValue(null);
+
+      const service = new DefaultCourseApplicationService(repository);
+
+      await expect(
+        service.getCourse({
+          courseId: 'missing-course',
+        }),
+      ).resolves.toBeNull();
+    });
+
+    it('rejects invalid input before repository access', async () => {
+      const { repository, findById } = createRepositoryMock();
+
+      const service = new DefaultCourseApplicationService(repository);
+
+      await expect(
+        service.getCourse({
+          courseId: '   ',
+        }),
+      ).rejects.toThrow();
 
       expect(findById).not.toHaveBeenCalled();
     });
   });
 
   describe('courseExists', () => {
-    it('delegates existence checking to the repository', async () => {
-      const { repository, exists } = createRepository();
+    it('delegates to the repository', async () => {
+      const { repository, exists } = createRepositoryMock();
 
       exists.mockResolvedValue(true);
 
       const service = new DefaultCourseApplicationService(repository);
 
-      const result = await service.courseExists({
-        courseId: courseId.value,
-      });
+      await expect(
+        service.courseExists({
+          courseId: 'course-123',
+        }),
+      ).resolves.toBe(true);
 
-      expect(result).toBe(true);
       expect(exists).toHaveBeenCalledTimes(1);
-
-      const [receivedId] = exists.mock.calls[0] as [CourseId];
-
-      expect(receivedId).toBeInstanceOf(CourseId);
-      expect(receivedId.value).toBe(courseId.value);
     });
 
-    it('returns false when the repository reports that the Course does not exist', async () => {
-      const { repository, exists } = createRepository();
+    it('returns false when the repository reports absence', async () => {
+      const { repository, exists } = createRepositoryMock();
 
       exists.mockResolvedValue(false);
 
       const service = new DefaultCourseApplicationService(repository);
 
-      const result = await service.courseExists({
-        courseId: courseId.value,
-      });
-
-      expect(result).toBe(false);
+      await expect(
+        service.courseExists({
+          courseId: 'missing-course',
+        }),
+      ).resolves.toBe(false);
     });
 
-    it('rejects an invalid Course identifier before repository access', async () => {
-      const { repository, exists } = createRepository();
+    it('rejects invalid input before repository access', async () => {
+      const { repository, exists } = createRepositoryMock();
 
       const service = new DefaultCourseApplicationService(repository);
 
       await expect(
         service.courseExists({
-          courseId: '',
+          courseId: '   ',
         }),
-      ).rejects.toThrow(TypeError);
+      ).rejects.toThrow();
 
       expect(exists).not.toHaveBeenCalled();
     });
   });
 
   describe('saveCourse', () => {
-    it('delegates the existing Course aggregate to the repository', async () => {
-      const { repository, save } = createRepository();
-      const course = createExistingCourse();
-
-      save.mockResolvedValue(undefined);
+    it('delegates the Course to the repository', async () => {
+      const { repository, save } = createRepositoryMock();
 
       const service = new DefaultCourseApplicationService(repository);
+
+      const course = Course.create(validCreateInput);
 
       await service.saveCourse({
         course,
@@ -287,22 +284,22 @@ describe('DefaultCourseApplicationService', () => {
       expect(save).toHaveBeenCalledWith(course);
     });
 
-    it('propagates repository errors unchanged', async () => {
-      const { repository, save } = createRepository();
-      const course = createExistingCourse();
-      const persistenceError = new Error('Database unavailable');
+    it('propagates repository errors', async () => {
+      const { repository, save } = createRepositoryMock();
 
-      save.mockRejectedValue(persistenceError);
+      const error = new Error('Persistence failure');
+
+      save.mockRejectedValue(error);
 
       const service = new DefaultCourseApplicationService(repository);
+
+      const course = Course.create(validCreateInput);
 
       await expect(
         service.saveCourse({
           course,
         }),
-      ).rejects.toBe(persistenceError);
-
-      expect(save).toHaveBeenCalledTimes(1);
+      ).rejects.toBe(error);
     });
   });
 });

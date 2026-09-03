@@ -104,4 +104,14 @@ export type {
   CreateCourseInput,
   GetCourseInput,
   SaveCourseInput,
+  CourseExistsInputSchema,
+  CreateCourseInputSchema,
+  GetCourseInputSchema,
+} from './application/index.js';
+
+export {
+  courseIdInputSchema,
+  courseExistsInputSchema,
+  createCourseInputSchema,
+  getCourseInputSchema,
 } from './application/index.js';

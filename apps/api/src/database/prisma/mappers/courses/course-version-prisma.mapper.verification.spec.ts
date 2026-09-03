@@ -3,9 +3,11 @@ import {
   CourseVersionId,
   type CourseVersionStatus,
 } from '@gurusthalam/courses';
+
 import type {
   CourseVersionModel,
 } from '@gurusthalam/database';
+
 import {
   describe,
   expect,
@@ -22,9 +24,11 @@ describe(
     const createdAt = new Date(
       '2026-01-01T10:00:00.000Z',
     );
+
     const updatedAt = new Date(
       '2026-01-02T10:00:00.000Z',
     );
+
     const publishedAt = new Date(
       '2026-01-03T10:00:00.000Z',
     );
@@ -35,7 +39,8 @@ describe(
       version: 1,
       status: 'DRAFT',
       title: 'Advanced TypeScript',
-      description: 'A complete TypeScript course.',
+      description:
+        'A complete TypeScript course.',
       createdAt,
       updatedAt,
       publishedAt: null,
@@ -61,10 +66,14 @@ describe(
               version: baseRecord.version,
               status,
               title: baseRecord.title,
-              description: baseRecord.description,
+              description:
+                baseRecord.description,
               createdAt,
               updatedAt,
-              publishedAt,
+              publishedAt:
+                status === 'PUBLISHED'
+                  ? publishedAt
+                  : null,
             });
 
           const persistence =
@@ -77,7 +86,9 @@ describe(
               persistence as CourseVersionModel,
             );
 
-          expect(restored.toPrimitives()).toEqual(
+          expect(
+            restored.toPrimitives(),
+          ).toEqual(
             courseVersion.toPrimitives(),
           );
         }
@@ -94,16 +105,30 @@ describe(
         };
 
         const domain =
-          CourseVersionPrismaMapper.toDomain(record);
+          CourseVersionPrismaMapper.toDomain(
+            record,
+          );
+
         const persistence =
           CourseVersionPrismaMapper.toPersistence(
             domain,
           );
 
-        expect(domain.description).toBeNull();
-        expect(domain.publishedAt).toBeNull();
-        expect(persistence.description).toBeNull();
-        expect(persistence.publishedAt).toBeNull();
+        expect(
+          domain.description,
+        ).toBeNull();
+
+        expect(
+          domain.publishedAt,
+        ).toBeNull();
+
+        expect(
+          persistence.description,
+        ).toBeNull();
+
+        expect(
+          persistence.publishedAt,
+        ).toBeNull();
       },
     );
 
@@ -117,51 +142,62 @@ describe(
         };
 
         const domain =
-          CourseVersionPrismaMapper.toDomain(record);
+          CourseVersionPrismaMapper.toDomain(
+            record,
+          );
+
         const persistence =
           CourseVersionPrismaMapper.toPersistence(
             domain,
           );
 
-        expect(domain.createdAt).toEqual(
-          createdAt,
-        );
-        expect(domain.updatedAt).toEqual(
-          updatedAt,
-        );
-        expect(domain.publishedAt).toEqual(
-          publishedAt,
-        );
-
-        expect(persistence.createdAt).toEqual(
-          createdAt,
-        );
-        expect(persistence.updatedAt).toEqual(
-          updatedAt,
-        );
-        expect(persistence.publishedAt).toEqual(
-          publishedAt,
-        );
-
-        expect(domain.createdAt).not.toBe(
-          record.createdAt,
-        );
-        expect(domain.updatedAt).not.toBe(
-          record.updatedAt,
-        );
-        expect(domain.publishedAt).not.toBe(
-          record.publishedAt,
-        );
-
-        expect(persistence.createdAt).not.toBe(
+        expect(
           domain.createdAt,
-        );
-        expect(persistence.updatedAt).not.toBe(
+        ).toEqual(createdAt);
+
+        expect(
           domain.updatedAt,
-        );
-        expect(persistence.publishedAt).not.toBe(
+        ).toEqual(updatedAt);
+
+        expect(
           domain.publishedAt,
-        );
+        ).toEqual(publishedAt);
+
+        expect(
+          persistence.createdAt,
+        ).toEqual(createdAt);
+
+        expect(
+          persistence.updatedAt,
+        ).toEqual(updatedAt);
+
+        expect(
+          persistence.publishedAt,
+        ).toEqual(publishedAt);
+
+        expect(
+          domain.createdAt,
+        ).not.toBe(record.createdAt);
+
+        expect(
+          domain.updatedAt,
+        ).not.toBe(record.updatedAt);
+
+        expect(
+          domain.publishedAt,
+        ).not.toBe(record.publishedAt);
+
+        expect(
+          persistence.createdAt,
+        ).not.toBe(domain.createdAt);
+
+        expect(
+          persistence.updatedAt,
+        ).not.toBe(domain.updatedAt);
+
+        expect(
+          persistence.publishedAt,
+        ).not.toBe(domain.publishedAt);
       },
     );
 
@@ -185,7 +221,8 @@ describe(
               version,
               status: 'DRAFT',
               title: baseRecord.title,
-              description: baseRecord.description,
+              description:
+                baseRecord.description,
               createdAt,
               updatedAt,
               publishedAt: null,
@@ -201,14 +238,21 @@ describe(
               persistence as CourseVersionModel,
             );
 
-          expect(persistence.courseId).toBe(
-            baseRecord.courseId,
-          );
-          expect(persistence.version).toBe(version);
-          expect(restored.courseId).toBe(
-            baseRecord.courseId,
-          );
-          expect(restored.version).toBe(version);
+          expect(
+            persistence.courseId,
+          ).toBe(baseRecord.courseId);
+
+          expect(
+            persistence.version,
+          ).toBe(version);
+
+          expect(
+            restored.courseId,
+          ).toBe(baseRecord.courseId);
+
+          expect(
+            restored.version,
+          ).toBe(version);
         }
       },
     );

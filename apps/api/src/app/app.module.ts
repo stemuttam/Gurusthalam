@@ -14,12 +14,12 @@ import {
 } from '../database/database.module.js';
 
 import {
-  CoursesPersistenceModule,
-} from '../database/prisma/repositories/index.js';
-
-import {
   HealthModule,
 } from '../health/health.module.js';
+
+import {
+  CoursesApplicationModule,
+} from '../courses/courses-application.module.js';
 
 import {
   RequestIdMiddleware,
@@ -104,7 +104,7 @@ import {
 
     DatabaseModule,
 
-    CoursesPersistenceModule,
+    CoursesApplicationModule,
 
     RedisModule,
 

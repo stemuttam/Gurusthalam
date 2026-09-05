@@ -12,20 +12,18 @@ export interface DomainEvent<
   readonly payload: TPayload;
 }
 
-export function createDomainEvent<
-  TEventName extends string,
-  TPayload,
->(
+export function createDomainEvent<TEventName extends string, TPayload>(
   eventName: TEventName,
   aggregateId: string,
   payload: TPayload,
+  occurredAt: Date = new Date(),
 ): DomainEvent<TEventName, TPayload> {
   return {
     eventId: randomUUID(),
     eventName,
     eventVersion: 1,
     aggregateId,
-    occurredAt: new Date(),
+    occurredAt: new Date(occurredAt),
     payload: structuredClone(payload),
   };
 }

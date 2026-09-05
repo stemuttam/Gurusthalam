@@ -175,28 +175,33 @@ export class Course {
   updateMetadata(input: UpdateCourseMetadataProps): void {
     this.assertDraftMetadataMutationAllowed();
 
-    const title = input.title ?? this.props.title;
+    const nextTitle =
+      input.title === undefined ? this.props.title : input.title.trim();
 
-    const description =
+    const nextDescription =
       input.description === undefined
         ? this.props.description
-        : input.description;
+        : input.description === null
+          ? null
+          : input.description.trim();
 
-    const level = input.level ?? this.props.level;
+    const nextLevel =
+      input.level === undefined ? this.props.level : input.level;
 
-    const type = input.type ?? this.props.type;
+    const nextType = input.type === undefined ? this.props.type : input.type;
 
-    const visibility = input.visibility ?? this.props.visibility;
+    const nextVisibility =
+      input.visibility === undefined ? this.props.visibility : input.visibility;
 
-    this.validateTitle(title);
-    this.validateDescription(description);
+    this.validateTitle(nextTitle);
+    this.validateDescription(nextDescription);
 
     this.replaceProps({
-      title,
-      description,
-      level,
-      type,
-      visibility,
+      title: nextTitle,
+      description: nextDescription,
+      level: nextLevel,
+      type: nextType,
+      visibility: nextVisibility,
     });
 
     this.recordCourseMetadataUpdatedEvent();
@@ -323,8 +328,7 @@ export class Course {
 
       case CourseStatus.PUBLISHED:
         return (
-          next === CourseStatus.UNPUBLISHED ||
-          next === CourseStatus.ARCHIVED
+          next === CourseStatus.UNPUBLISHED || next === CourseStatus.ARCHIVED
         );
 
       case CourseStatus.UNPUBLISHED:
@@ -436,10 +440,7 @@ export class Course {
     }
 
     if (issues.length > 0) {
-      throw new CourseValidationError(
-        'Course validation failed.',
-        issues,
-      );
+      throw new CourseValidationError('Course validation failed.', issues);
     }
   }
 
@@ -449,79 +450,55 @@ export class Course {
 
   private validateTitle(title: string): void {
     if (typeof title !== 'string' || title.trim().length === 0) {
-      throw new CourseValidationError(
-        'Course title is required.',
-        [
-          {
-            field: 'title',
-            message: 'Course title must be a non-empty string.',
-          },
-        ],
-      );
+      throw new CourseValidationError('Course title is required.', [
+        {
+          field: 'title',
+          message: 'Course title must be a non-empty string.',
+        },
+      ]);
     }
 
     if (title.trim().length > 200) {
-      throw new CourseValidationError(
-        'Course title is too long.',
-        [
-          {
-            field: 'title',
-            message:
-              'Course title must not exceed 200 characters.',
-          },
-        ],
-      );
+      throw new CourseValidationError('Course title is too long.', [
+        {
+          field: 'title',
+          message: 'Course title must not exceed 200 characters.',
+        },
+      ]);
     }
   }
 
-  private validateDescription(
-    description: string | null,
-  ): void {
-    if (
-      description !== null &&
-      description.trim().length === 0
-    ) {
+  private validateDescription(description: string | null): void {
+    if (description !== null && description.trim().length === 0) {
       throw new CourseValidationError(
         'Course description cannot be an empty string.',
         [
           {
             field: 'description',
-            message:
-              'Course description must be null or a non-empty string.',
+            message: 'Course description must be null or a non-empty string.',
           },
         ],
       );
     }
 
-    if (
-      description !== null &&
-      description.trim().length > 10_000
-    ) {
-      throw new CourseValidationError(
-        'Course description is too long.',
-        [
-          {
-            field: 'description',
-            message:
-              'Course description must not exceed 10000 characters.',
-          },
-        ],
-      );
+    if (description !== null && description.trim().length > 10_000) {
+      throw new CourseValidationError('Course description is too long.', [
+        {
+          field: 'description',
+          message: 'Course description must not exceed 10000 characters.',
+        },
+      ]);
     }
   }
 
   private validateInstructorId(instructorId: string): void {
-    if (
-      typeof instructorId !== 'string' ||
-      instructorId.trim().length === 0
-    ) {
+    if (typeof instructorId !== 'string' || instructorId.trim().length === 0) {
       throw new CourseValidationError(
         'Course instructor identifier is required.',
         [
           {
             field: 'instructorId',
-            message:
-              'Instructor identifier must be a non-empty string.',
+            message: 'Instructor identifier must be a non-empty string.',
           },
         ],
       );
@@ -532,12 +509,7 @@ export class Course {
     changes: Partial<
       Pick<
         MutableCourseProps,
-        | 'title'
-        | 'description'
-        | 'level'
-        | 'type'
-        | 'visibility'
-        | 'status'
+        'title' | 'description' | 'level' | 'type' | 'visibility' | 'status'
       >
     >,
   ): void {
@@ -563,6 +535,7 @@ export class Course {
         CourseDomainEventName.CREATED,
         this.id.toString(),
         payload,
+        this.props.updatedAt,
       ),
     );
   }
@@ -582,6 +555,7 @@ export class Course {
         CourseDomainEventName.METADATA_UPDATED,
         this.id.toString(),
         payload,
+        this.props.updatedAt,
       ),
     );
   }

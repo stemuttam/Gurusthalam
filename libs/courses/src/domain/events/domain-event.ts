@@ -26,6 +26,6 @@ export function createDomainEvent<
     eventVersion: 1,
     aggregateId,
     occurredAt: new Date(),
-    payload,
+    payload: structuredClone(payload),
   };
 }

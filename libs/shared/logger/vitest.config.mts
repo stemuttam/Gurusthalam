@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitest/config';
 
-export default defineConfig(() => ({
-  root: __dirname,
+export default defineConfig({
+  root: import.meta.dirname,
   cacheDir: '../../../node_modules/.vite/libs/shared/logger',
   test: {
     name: '@gurusthalam/logger',
@@ -15,4 +15,4 @@ export default defineConfig(() => ({
       provider: 'v8' as const,
     },
   },
-}));
+});

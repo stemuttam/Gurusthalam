@@ -1,11 +1,7 @@
 import { defineConfig } from 'vitest/config';
-import { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  root: __dirname,
+  root: import.meta.dirname,
   cacheDir: '../../node_modules/.vite/libs/courses',
 
   test: {
@@ -14,6 +10,6 @@ export default defineConfig({
     environment: 'node',
     include: ['src/**/*.{spec,test}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     reporters: ['default'],
-    passWithNoTests: false
-  }
+    passWithNoTests: false,
+  },
 });

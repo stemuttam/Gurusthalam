@@ -83,6 +83,14 @@ export type {
 
 export { CourseVersionId } from './domain/value-objects/course-version-id.js';
 
+export {
+  CategoryReference,
+  SkillReference,
+  SubcategoryReference,
+  SubjectReference,
+  TopicReference,
+} from './domain/value-objects/index.js';
+
 /**
  * CourseVersion lifecycle status
  */

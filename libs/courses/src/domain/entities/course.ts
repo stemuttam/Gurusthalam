@@ -156,7 +156,7 @@ export class Course {
    * This method does not clear the pending event collection.
    */
   getDomainEvents(): readonly CourseDomainEvent[] {
-  return structuredClone(this.domainEvents);
+    return structuredClone(this.domainEvents);
   }
 
   /**
@@ -165,11 +165,11 @@ export class Course {
    * This is intended for the application/integration boundary.
    */
   pullDomainEvents(): CourseDomainEvent[] {
-  const events = structuredClone(this.domainEvents);
+    const events = structuredClone(this.domainEvents);
 
-  this.domainEvents.length = 0;
+    this.domainEvents.length = 0;
 
-  return events;
+    return events;
   }
 
   updateMetadata(input: UpdateCourseMetadataProps): void {
@@ -570,11 +570,16 @@ export class Course {
     currentStatus: CourseStatusValue,
   ): void {
     this.domainEvents.push(
-      createDomainEvent(eventName, this.id.toString(), {
-        courseId: this.id.toString(),
-        previousStatus,
-        currentStatus,
-      }),
+      createDomainEvent(
+        eventName,
+        this.id.toString(),
+        {
+          courseId: this.id.toString(),
+          previousStatus,
+          currentStatus,
+        },
+        this.props.updatedAt,
+      ),
     );
   }
 }

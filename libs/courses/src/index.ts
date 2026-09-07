@@ -1,6 +1,4 @@
-export {
-  Course,
-} from './domain/entities/course.js';
+export { Course } from './domain/entities/course.js';
 
 export type {
   CourseProps,
@@ -14,9 +12,7 @@ export {
   isCourseLevel,
 } from './domain/enums/course-level.js';
 
-export type {
-  CourseLevel as CourseLevelValue,
-} from './domain/enums/course-level.js';
+export type { CourseLevel as CourseLevelValue } from './domain/enums/course-level.js';
 
 export {
   CourseStatus,
@@ -24,9 +20,7 @@ export {
   isCourseStatus,
 } from './domain/enums/course-status.js';
 
-export type {
-  CourseStatus as CourseStatusValue,
-} from './domain/enums/course-status.js';
+export type { CourseStatus as CourseStatusValue } from './domain/enums/course-status.js';
 
 export {
   CourseType,
@@ -34,9 +28,7 @@ export {
   isCourseType,
 } from './domain/enums/course-type.js';
 
-export type {
-  CourseType as CourseTypeValue,
-} from './domain/enums/course-type.js';
+export type { CourseType as CourseTypeValue } from './domain/enums/course-type.js';
 
 export {
   CourseVisibility,
@@ -44,9 +36,7 @@ export {
   isCourseVisibility,
 } from './domain/enums/course-visibility.js';
 
-export type {
-  CourseVisibility as CourseVisibilityValue,
-} from './domain/enums/course-visibility.js';
+export type { CourseVisibility as CourseVisibilityValue } from './domain/enums/course-visibility.js';
 
 export {
   CourseDomainErrorCode,
@@ -59,22 +49,39 @@ export type {
   CourseValidationIssue,
 } from './domain/errors/index.js';
 
-export {
-  CourseId,
-} from './domain/value-objects/course-id.js';
+export { CourseId } from './domain/value-objects/course-id.js';
 
+/**
+ * Course metadata domain contracts
+ *
+ * These contracts establish the domain boundary for core metadata,
+ * taxonomy metadata, and discovery metadata without coupling the
+ * Course domain to persistence, HTTP, infrastructure, or AI/ML
+ * implementation details.
+ */
 export {
-  CourseVersion,
-} from './domain/entities/course-version.js';
+  createCourseCoreMetadata,
+  createCourseDiscoveryMetadata,
+  createCourseMetadata,
+  createCourseTaxonomyMetadata,
+} from './domain/metadata/index.js';
+
+export type {
+  CourseCoreMetadata,
+  CourseDiscoveryMetadata,
+  CourseMetadata,
+  CourseMetadataPatch,
+  CourseTaxonomyMetadata,
+} from './domain/metadata/index.js';
+
+export { CourseVersion } from './domain/entities/course-version.js';
 
 export type {
   CourseVersionProps,
   CreateCourseVersionProps,
 } from './domain/entities/course-version.js';
 
-export {
-  CourseVersionId,
-} from './domain/value-objects/course-version-id.js';
+export { CourseVersionId } from './domain/value-objects/course-version-id.js';
 
 /**
  * CourseVersion lifecycle status
@@ -85,17 +92,11 @@ export {
   isCourseVersionStatus,
 } from './domain/enums/course-version-status.js';
 
-export type {
-  CourseVersionStatus as CourseVersionStatusValue,
-} from './domain/enums/course-version-status.js';
+export type { CourseVersionStatus as CourseVersionStatusValue } from './domain/enums/course-version-status.js';
 
-export type {
-  CourseRepository,
-} from './domain/repositories/course-repository.js';
+export type { CourseRepository } from './domain/repositories/course-repository.js';
 
-export type {
-  CourseVersionRepository,
-} from './domain/repositories/course-version-repository.js';
+export type { CourseVersionRepository } from './domain/repositories/course-version-repository.js';
 
 /**
  * Domain events
@@ -122,9 +123,7 @@ export type {
 /**
  * Application layer
  */
-export {
-  DefaultCourseApplicationService,
-} from './application/index.js';
+export { DefaultCourseApplicationService } from './application/index.js';
 
 export type {
   CourseApplicationService,

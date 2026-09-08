@@ -66,3 +66,22 @@ export type {
   FutureDiscoverySignal,
   LearningObjective,
 } from './discovery/index.js';
+
+/**
+ * Course metadata validation and domain invariants
+ *
+ * This boundary validates the semantic integrity of an already constructed
+ * CourseMetadata snapshot. It remains independent from persistence, HTTP,
+ * infrastructure, and AI/ML implementation details.
+ */
+export {
+  CourseMetadataValidationError,
+  getCourseMetadataValidationIssues,
+  isValidCourseMetadata,
+  validateCourseMetadata,
+} from './validation/index.js';
+
+export type {
+  CourseMetadataValidationIssue,
+  CourseMetadataValidationPath,
+} from './validation/index.js';

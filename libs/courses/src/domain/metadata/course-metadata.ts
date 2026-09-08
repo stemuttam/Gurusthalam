@@ -1,13 +1,24 @@
 import type { CourseLevel } from '../enums/course-level.js';
 import type { CourseType } from '../enums/course-type.js';
 import type { CourseVisibility } from '../enums/course-visibility.js';
+import {
+  CategoryReference,
+  SkillReference,
+  SubcategoryReference,
+  SubjectReference,
+  TopicReference,
+} from '../value-objects/index.js';
+import {
+  createCourseDiscoveryMetadata,
+  type CourseDiscoveryMetadata,
+} from './discovery/index.js';
 
 /**
  * Core metadata owned directly by the Course domain.
  *
- * This contract mirrors the core metadata currently owned by the
- * Course aggregate while remaining independent from persistence,
- * transport, infrastructure, and AI/ML implementation details.
+ * This contract mirrors the core metadata currently owned by the Course
+ * aggregate while remaining independent from persistence, transport,
+ * infrastructure, and AI/ML implementation details.
  */
 export interface CourseCoreMetadata {
   readonly title: string;
@@ -18,48 +29,28 @@ export interface CourseCoreMetadata {
 }
 
 /**
- * Taxonomy metadata contract.
+ * Taxonomy metadata owned by the Course domain.
  *
- * Taxonomy identifiers are intentionally opaque domain references at
- * this stage. Dedicated taxonomy value objects and vocabulary contracts
- * will be introduced in subsequent 4.2 increments.
- *
- * Collections are always present so consumers receive deterministic
- * collection semantics instead of having to distinguish between
- * `undefined` and an empty collection.
+ * Taxonomy value objects are integrated here so category, subcategory,
+ * subject, topic, and skill identities cannot be accidentally interchanged.
+ * Null category/subcategory values preserve the existing "unclassified"
+ * semantics while collections remain deterministic and always present.
  */
 export interface CourseTaxonomyMetadata {
-  readonly categoryId: string | null;
-  readonly subcategoryId: string | null;
-  readonly subjectIds: readonly string[];
-  readonly topicIds: readonly string[];
-  readonly skillIds: readonly string[];
-}
-
-/**
- * Discovery metadata contract.
- *
- * Discovery metadata is intentionally separated from taxonomy:
- *
- * - taxonomy describes what a course is about;
- * - discovery describes how a course can be discovered and matched.
- *
- * AI-generated scores, embeddings, recommendation signals, ranking
- * signals, model identifiers, and other machine-learning artifacts
- * deliberately do not belong in the transactional Course aggregate.
- */
-export interface CourseDiscoveryMetadata {
-  readonly language: string | null;
-  readonly audience: readonly string[];
+  readonly categoryId: CategoryReference | null;
+  readonly subcategoryId: SubcategoryReference | null;
+  readonly subjectIds: readonly SubjectReference[];
+  readonly topicIds: readonly TopicReference[];
+  readonly skillIds: readonly SkillReference[];
 }
 
 /**
  * Complete Course metadata domain contract.
  *
- * This is a domain-owned structural contract rather than a persistence
- * model. Keeping the contract persistence-independent allows future
- * database, search, recommendation, analytics, and AI/ML systems to
- * evolve independently.
+ * Discovery is now the dedicated 4.2.4 discovery aggregate contract and is
+ * integrated without leaking search indexes, embeddings, ranking scores,
+ * recommendation decisions, model identifiers, or other intelligence
+ * infrastructure into the transactional Course domain.
  */
 export interface CourseMetadata {
   readonly core: CourseCoreMetadata;
@@ -71,12 +62,8 @@ export interface CourseMetadata {
  * Partial Course metadata mutation contract.
  *
  * `undefined` means that a property should not be changed.
- *
- * `null` means that a nullable scalar property should explicitly be
- * cleared.
- *
- * The contract intentionally remains independent from application-layer
- * commands and persistence DTOs.
+ * `null` explicitly clears nullable scalar metadata such as category or
+ * subcategory references and discovery language.
  */
 export interface CourseMetadataPatch {
   readonly core?: Partial<CourseCoreMetadata>;
@@ -86,9 +73,6 @@ export interface CourseMetadataPatch {
 
 /**
  * Creates a detached, immutable core metadata snapshot.
- *
- * The returned object does not share its top-level object reference
- * with the caller's input.
  */
 export function createCourseCoreMetadata(
   input: CourseCoreMetadata,
@@ -105,44 +89,113 @@ export function createCourseCoreMetadata(
 /**
  * Creates a detached, immutable taxonomy metadata snapshot.
  *
- * All collection properties are copied before being frozen so external
- * mutations cannot alter the metadata snapshot.
+ * Every taxonomy collection is copied and every element is required to be
+ * the correct strongly typed taxonomy reference. Runtime checks protect the
+ * domain boundary from malformed JavaScript or deserialized values.
  */
 export function createCourseTaxonomyMetadata(
   input: CourseTaxonomyMetadata,
 ): CourseTaxonomyMetadata {
+  if (input === null || typeof input !== 'object') {
+    throw new TypeError('CourseTaxonomyMetadata input must be an object.');
+  }
+
+  if (
+    input.categoryId !== null &&
+    !(input.categoryId instanceof CategoryReference)
+  ) {
+    throw new TypeError(
+      'CourseTaxonomyMetadata.categoryId must be a CategoryReference or null.',
+    );
+  }
+
+  if (
+    input.subcategoryId !== null &&
+    !(input.subcategoryId instanceof SubcategoryReference)
+  ) {
+    throw new TypeError(
+      'CourseTaxonomyMetadata.subcategoryId must be a SubcategoryReference or null.',
+    );
+  }
+
+  if (!Array.isArray(input.subjectIds)) {
+    throw new TypeError(
+      'CourseTaxonomyMetadata.subjectIds must be an array of SubjectReference values.',
+    );
+  }
+
+  if (!Array.isArray(input.topicIds)) {
+    throw new TypeError(
+      'CourseTaxonomyMetadata.topicIds must be an array of TopicReference values.',
+    );
+  }
+
+  if (!Array.isArray(input.skillIds)) {
+    throw new TypeError(
+      'CourseTaxonomyMetadata.skillIds must be an array of SkillReference values.',
+    );
+  }
+
+  const subjectIds = input.subjectIds.map((reference) => {
+    if (!(reference instanceof SubjectReference)) {
+      throw new TypeError(
+        'CourseTaxonomyMetadata.subjectIds must contain SubjectReference values.',
+      );
+    }
+
+    return reference;
+  });
+
+  const topicIds = input.topicIds.map((reference) => {
+    if (!(reference instanceof TopicReference)) {
+      throw new TypeError(
+        'CourseTaxonomyMetadata.topicIds must contain TopicReference values.',
+      );
+    }
+
+    return reference;
+  });
+
+  const skillIds = input.skillIds.map((reference) => {
+    if (!(reference instanceof SkillReference)) {
+      throw new TypeError(
+        'CourseTaxonomyMetadata.skillIds must contain SkillReference values.',
+      );
+    }
+
+    return reference;
+  });
+
   return Object.freeze({
     categoryId: input.categoryId,
     subcategoryId: input.subcategoryId,
-    subjectIds: Object.freeze([...input.subjectIds]),
-    topicIds: Object.freeze([...input.topicIds]),
-    skillIds: Object.freeze([...input.skillIds]),
+    subjectIds: Object.freeze(subjectIds),
+    topicIds: Object.freeze(topicIds),
+    skillIds: Object.freeze(skillIds),
   });
 }
 
 /**
- * Creates a detached, immutable discovery metadata snapshot.
+ * Re-export the integrated discovery factory from the metadata boundary.
  *
- * The audience collection is copied before being frozen so external
- * mutations cannot alter the metadata snapshot.
+ * The implementation remains owned by the dedicated discovery module so
+ * CourseMetadata integration does not duplicate discovery-domain logic.
  */
-export function createCourseDiscoveryMetadata(
-  input: CourseDiscoveryMetadata,
-): CourseDiscoveryMetadata {
-  return Object.freeze({
-    language: input.language,
-    audience: Object.freeze([...input.audience]),
-  });
-}
+export { createCourseDiscoveryMetadata };
+export type { CourseDiscoveryMetadata } from './discovery/index.js';
 
 /**
  * Creates a complete detached, immutable Course metadata snapshot.
  *
- * Each nested metadata boundary is independently reconstructed so the
- * resulting structure does not retain references to mutable caller-owned
- * objects or arrays.
+ * Each nested metadata boundary is reconstructed independently. This keeps
+ * the aggregate metadata detached from caller-owned collections while
+ * preserving the identity semantics of immutable value objects.
  */
 export function createCourseMetadata(input: CourseMetadata): CourseMetadata {
+  if (input === null || typeof input !== 'object') {
+    throw new TypeError('CourseMetadata input must be an object.');
+  }
+
   return Object.freeze({
     core: createCourseCoreMetadata(input.core),
     taxonomy: createCourseTaxonomyMetadata(input.taxonomy),

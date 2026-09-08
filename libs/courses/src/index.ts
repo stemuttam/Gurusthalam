@@ -6,38 +6,61 @@ export type {
   UpdateCourseMetadataProps,
 } from './domain/entities/course.js';
 
+/**
+ * Course level
+ */
 export {
   CourseLevel,
   COURSE_LEVELS,
   isCourseLevel,
 } from './domain/enums/course-level.js';
 
-export type { CourseLevel as CourseLevelValue } from './domain/enums/course-level.js';
+export type {
+  CourseLevel as CourseLevelValue,
+} from './domain/enums/course-level.js';
 
+/**
+ * Course status
+ */
 export {
   CourseStatus,
   COURSE_STATUSES,
   isCourseStatus,
 } from './domain/enums/course-status.js';
 
-export type { CourseStatus as CourseStatusValue } from './domain/enums/course-status.js';
+export type {
+  CourseStatus as CourseStatusValue,
+} from './domain/enums/course-status.js';
 
+/**
+ * Course type
+ */
 export {
   CourseType,
   COURSE_TYPES,
   isCourseType,
 } from './domain/enums/course-type.js';
 
-export type { CourseType as CourseTypeValue } from './domain/enums/course-type.js';
+export type {
+  CourseType as CourseTypeValue,
+} from './domain/enums/course-type.js';
 
+/**
+ * Course visibility
+ */
 export {
   CourseVisibility,
   COURSE_VISIBILITIES,
   isCourseVisibility,
 } from './domain/enums/course-visibility.js';
 
-export type { CourseVisibility as CourseVisibilityValue } from './domain/enums/course-visibility.js';
+export type {
+  CourseVisibility as CourseVisibilityValue,
+} from './domain/enums/course-visibility.js';
 
+/**
+ * Domain errors
+ */
 export {
   CourseDomainErrorCode,
   CourseValidationError,
@@ -49,7 +72,12 @@ export type {
   CourseValidationIssue,
 } from './domain/errors/index.js';
 
-export { CourseId } from './domain/value-objects/course-id.js';
+/**
+ * Course value objects
+ */
+export {
+  CourseId,
+} from './domain/value-objects/course-id.js';
 
 /**
  * Course metadata domain contracts
@@ -74,15 +102,41 @@ export type {
   CourseTaxonomyMetadata,
 } from './domain/metadata/index.js';
 
-export { CourseVersion } from './domain/entities/course-version.js';
+/**
+ * Course taxonomy vocabulary
+ *
+ * These contracts define the domain vocabulary for taxonomy concepts
+ * without introducing persistence-specific identifiers or
+ * infrastructure dependencies.
+ */
+export {
+  createCategoryVocabularyEntry,
+  createSkillVocabularyEntry,
+  createSubcategoryVocabularyEntry,
+  createSubjectVocabularyEntry,
+  createTaxonomyVocabularyConcept,
+  createTaxonomyVocabularyEntry,
+  createTopicVocabularyEntry,
+} from './domain/metadata/index.js';
 
 export type {
-  CourseVersionProps,
-  CreateCourseVersionProps,
-} from './domain/entities/course-version.js';
+  CategoryVocabularyEntry,
+  CourseTaxonomyVocabularyReferences,
+  SkillVocabularyEntry,
+  SubcategoryVocabularyEntry,
+  SubjectVocabularyEntry,
+  TaxonomyConceptKind,
+  TaxonomyVocabularyConcept,
+  TaxonomyVocabularyEntry,
+  TopicVocabularyEntry,
+} from './domain/metadata/index.js';
 
-export { CourseVersionId } from './domain/value-objects/course-version-id.js';
-
+/**
+ * Course taxonomy value objects
+ *
+ * These strongly typed references protect the domain from accidentally
+ * mixing category, subcategory, subject, topic, and skill identifiers.
+ */
 export {
   CategoryReference,
   SkillReference,
@@ -90,6 +144,54 @@ export {
   SubjectReference,
   TopicReference,
 } from './domain/value-objects/index.js';
+
+/**
+ * Course discovery metadata
+ *
+ * Discovery metadata represents learner-facing discovery semantics such
+ * as language, audience, structured difficulty signals, learning
+ * objectives, and extension-safe future discovery signals.
+ *
+ * AI/ML ranking scores, embeddings, recommendation scores, and model
+ * identifiers intentionally remain outside these transactional domain
+ * contracts.
+ */
+export {
+  AudienceReference,
+  LanguageCode,
+  createCourseDifficultySignal,
+  createCourseDifficultySignals,
+  createFutureDiscoverySignal,
+  createLearningObjective,
+  isValidDiscoverySignalKey,
+  isValidDiscoverySignalValue,
+  isValidLearningObjectiveStatement,
+} from './domain/metadata/index.js';
+
+export type {
+  CourseDifficultySignal,
+  CourseDifficultySignals,
+  DifficultyDimension,
+  DifficultySignalStrength,
+  FutureDiscoverySignal,
+  LearningObjective,
+} from './domain/metadata/index.js';
+
+/**
+ * Course version
+ */
+export {
+  CourseVersion,
+} from './domain/entities/course-version.js';
+
+export type {
+  CourseVersionProps,
+  CreateCourseVersionProps,
+} from './domain/entities/course-version.js';
+
+export {
+  CourseVersionId,
+} from './domain/value-objects/course-version-id.js';
 
 /**
  * CourseVersion lifecycle status
@@ -100,11 +202,20 @@ export {
   isCourseVersionStatus,
 } from './domain/enums/course-version-status.js';
 
-export type { CourseVersionStatus as CourseVersionStatusValue } from './domain/enums/course-version-status.js';
+export type {
+  CourseVersionStatus as CourseVersionStatusValue,
+} from './domain/enums/course-version-status.js';
 
-export type { CourseRepository } from './domain/repositories/course-repository.js';
+/**
+ * Course repositories
+ */
+export type {
+  CourseRepository,
+} from './domain/repositories/course-repository.js';
 
-export type { CourseVersionRepository } from './domain/repositories/course-version-repository.js';
+export type {
+  CourseVersionRepository,
+} from './domain/repositories/course-version-repository.js';
 
 /**
  * Domain events
@@ -131,7 +242,9 @@ export type {
 /**
  * Application layer
  */
-export { DefaultCourseApplicationService } from './application/index.js';
+export {
+  DefaultCourseApplicationService,
+} from './application/index.js';
 
 export type {
   CourseApplicationService,

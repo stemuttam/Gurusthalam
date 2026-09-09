@@ -5,6 +5,7 @@ export {
 
 export {
   CourseDomainEventName,
+  createCourseMetadataUpdatedEvent,
 } from './course.events.js';
 
 export type {

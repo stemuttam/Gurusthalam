@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  Course,
-  type CourseProps,
-} from './course.js';
+import { Course, type CourseProps } from './course.js';
 import { CourseLevel } from '../enums/course-level.js';
 import { CourseStatus } from '../enums/course-status.js';
 import { CourseType } from '../enums/course-type.js';
@@ -55,18 +52,12 @@ function createPersistedArchivedCourseProps(): CourseProps {
   });
 }
 
-function expectDateValueEqual(
-  actual: Date,
-  expected: Date,
-): void {
+function expectDateValueEqual(actual: Date, expected: Date): void {
   expect(actual).toEqual(expected);
   expect(actual.getTime()).toBe(expected.getTime());
 }
 
-function expectCourseStateEqual(
-  course: Course,
-  expected: CourseProps,
-): void {
+function expectCourseStateEqual(course: Course, expected: CourseProps): void {
   expect(course.id.value).toBe(expected.id.value);
   expect(course.title).toBe(expected.title);
   expect(course.description).toBe(expected.description);
@@ -104,9 +95,7 @@ function expectCreatedEvent(
   course: Course,
 ): CourseCreatedEvent {
   if (event.eventName !== CourseDomainEventName.CREATED) {
-    throw new Error(
-      `Expected CREATED event but received ${event.eventName}`,
-    );
+    throw new Error(`Expected CREATED event but received ${event.eventName}`);
   }
 
   expect(event.aggregateId).toBe(course.id.value);
@@ -185,9 +174,7 @@ describe('Course rehydration consistency', () => {
 
       const course = Course.rehydrate(persisted);
 
-      expect(course.description).toBe(
-        'Persisted description content.',
-      );
+      expect(course.description).toBe('Persisted description content.');
     });
 
     it('preserves the level exactly', () => {
@@ -299,21 +286,17 @@ describe('Course rehydration consistency', () => {
 
       const course = Course.rehydrate(persisted);
 
-      expect(course.createdAt.toISOString()).toBe(
-        '2024-05-01T00:00:00.000Z',
-      );
+      expect(course.createdAt.toISOString()).toBe('2024-05-01T00:00:00.000Z');
     });
 
     it('does not replace updatedAt with the current time', () => {
       const persisted = createPersistedCourseProps({
-        updatedAt: new Date('2025-07-15T14:20:30.000Z'),
+        updatedAt: new Date('2026-07-15T14:20:30.000Z'),
       });
 
       const course = Course.rehydrate(persisted);
 
-      expect(course.updatedAt.toISOString()).toBe(
-        '2025-07-15T14:20:30.000Z',
-      );
+      expect(course.updatedAt.toISOString()).toBe('2026-07-15T14:20:30.000Z');
     });
 
     it('defensively copies createdAt from persisted props', () => {
@@ -322,9 +305,7 @@ describe('Course rehydration consistency', () => {
       const course = Course.rehydrate(persisted);
 
       expect(course.createdAt).not.toBe(persisted.createdAt);
-      expect(course.createdAt.getTime()).toBe(
-        persisted.createdAt.getTime(),
-      );
+      expect(course.createdAt.getTime()).toBe(persisted.createdAt.getTime());
     });
 
     it('defensively copies updatedAt from persisted props', () => {
@@ -333,9 +314,7 @@ describe('Course rehydration consistency', () => {
       const course = Course.rehydrate(persisted);
 
       expect(course.updatedAt).not.toBe(persisted.updatedAt);
-      expect(course.updatedAt.getTime()).toBe(
-        persisted.updatedAt.getTime(),
-      );
+      expect(course.updatedAt.getTime()).toBe(persisted.updatedAt.getTime());
     });
 
     it('does not allow mutation of the persisted createdAt object to alter the aggregate', () => {
@@ -370,13 +349,9 @@ describe('Course rehydration consistency', () => {
       createdAt.setTime(0);
       updatedAt.setTime(0);
 
-      expect(course.createdAt.getTime()).toBe(
-        persisted.createdAt.getTime(),
-      );
+      expect(course.createdAt.getTime()).toBe(persisted.createdAt.getTime());
 
-      expect(course.updatedAt.getTime()).toBe(
-        persisted.updatedAt.getTime(),
-      );
+      expect(course.updatedAt.getTime()).toBe(persisted.updatedAt.getTime());
     });
   });
 
@@ -611,14 +586,9 @@ describe('Course rehydration consistency', () => {
 
       expect(events).toHaveLength(1);
 
-      const event = expectMetadataUpdatedEvent(
-        getEventAt(events, 0),
-        course,
-      );
+      const event = expectMetadataUpdatedEvent(getEventAt(events, 0), course);
 
-      expect(event.payload.title).toBe(
-        'Updated After Rehydration',
-      );
+      expect(event.payload.title).toBe('Updated After Rehydration');
 
       expect(event.payload.courseId).toBe(course.id.value);
     });
@@ -636,8 +606,7 @@ describe('Course rehydration consistency', () => {
 
       expect(
         events.some(
-          (event) =>
-            event.eventName === CourseDomainEventName.CREATED,
+          (event) => event.eventName === CourseDomainEventName.CREATED,
         ),
       ).toBe(false);
     });
@@ -777,9 +746,7 @@ describe('Course rehydration consistency', () => {
         title: 'Aggregate Mutation',
       });
 
-      expect(persisted.title).toBe(
-        'Advanced TypeScript Architecture',
-      );
+      expect(persisted.title).toBe('Advanced TypeScript Architecture');
 
       expect(persisted.status).toBe(CourseStatus.DRAFT);
     });
@@ -801,15 +768,9 @@ describe('Course rehydration consistency', () => {
       expect(primitives.status).toBe(persisted.status);
       expect(primitives.instructorId).toBe(persisted.instructorId);
 
-      expectDateValueEqual(
-        primitives.createdAt,
-        persisted.createdAt,
-      );
+      expectDateValueEqual(primitives.createdAt, persisted.createdAt);
 
-      expectDateValueEqual(
-        primitives.updatedAt,
-        persisted.updatedAt,
-      );
+      expectDateValueEqual(primitives.updatedAt, persisted.updatedAt);
     });
 
     it('returns defensive timestamp copies from toPrimitives', () => {
@@ -821,13 +782,9 @@ describe('Course rehydration consistency', () => {
       primitives.createdAt.setTime(0);
       primitives.updatedAt.setTime(0);
 
-      expect(course.createdAt.getTime()).toBe(
-        persisted.createdAt.getTime(),
-      );
+      expect(course.createdAt.getTime()).toBe(persisted.createdAt.getTime());
 
-      expect(course.updatedAt.getTime()).toBe(
-        persisted.updatedAt.getTime(),
-      );
+      expect(course.updatedAt.getTime()).toBe(persisted.updatedAt.getTime());
     });
 
     it('preserves the CourseId value across the primitive round-trip', () => {
@@ -837,9 +794,7 @@ describe('Course rehydration consistency', () => {
       const primitives = course.toPrimitives();
       const rehydratedAgain = Course.rehydrate(primitives);
 
-      expect(rehydratedAgain.id.value).toBe(
-        persisted.id.value,
-      );
+      expect(rehydratedAgain.id.value).toBe(persisted.id.value);
     });
 
     it('preserves complete state across two consecutive round-trips', () => {
@@ -925,9 +880,7 @@ describe('Course rehydration consistency', () => {
         original,
       );
 
-      const rehydrated = Course.rehydrate(
-        original.toPrimitives(),
-      );
+      const rehydrated = Course.rehydrate(original.toPrimitives());
 
       rehydrated.updateMetadata({
         title: 'Fresh Event Identity Course Updated',
@@ -940,9 +893,7 @@ describe('Course rehydration consistency', () => {
         rehydrated,
       );
 
-      expect(metadataEvent.eventId).not.toBe(
-        createdEvent.eventId,
-      );
+      expect(metadataEvent.eventId).not.toBe(createdEvent.eventId);
     });
   });
 });

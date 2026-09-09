@@ -196,8 +196,7 @@ export class Course {
     this.assertDraftMetadataMutationAllowed();
 
     const nextMetadata: CourseMetadataState = {
-      title:
-        input.title === undefined ? this.props.title : input.title.trim(),
+      title: input.title === undefined ? this.props.title : input.title.trim(),
       description:
         input.description === undefined
           ? this.props.description
@@ -350,8 +349,7 @@ export class Course {
 
       case CourseStatus.PUBLISHED:
         return (
-          next === CourseStatus.UNPUBLISHED ||
-          next === CourseStatus.ARCHIVED
+          next === CourseStatus.UNPUBLISHED || next === CourseStatus.ARCHIVED
         );
 
       case CourseStatus.UNPUBLISHED:
@@ -418,17 +416,32 @@ export class Course {
       });
     }
 
-    if (!this.isValidDate(props.createdAt)) {
+    const hasValidCreatedAt = this.isValidDate(props.createdAt);
+    const hasValidUpdatedAt = this.isValidDate(props.updatedAt);
+
+    if (!hasValidCreatedAt) {
       issues.push({
         field: 'createdAt',
         message: 'Course creation timestamp must be a valid Date.',
       });
     }
 
-    if (!this.isValidDate(props.updatedAt)) {
+    if (!hasValidUpdatedAt) {
       issues.push({
         field: 'updatedAt',
         message: 'Course update timestamp must be a valid Date.',
+      });
+    }
+
+    if (
+      hasValidCreatedAt &&
+      hasValidUpdatedAt &&
+      props.createdAt.getTime() > props.updatedAt.getTime()
+    ) {
+      issues.push({
+        field: 'updatedAt',
+        message:
+          'Course update timestamp cannot be earlier than creation timestamp.',
       });
     }
 

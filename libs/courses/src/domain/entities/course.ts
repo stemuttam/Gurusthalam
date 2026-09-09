@@ -61,6 +61,17 @@ type CourseMetadataState = Pick<
   'title' | 'description' | 'level' | 'type' | 'visibility'
 >;
 
+type CourseLifecycleEventName =
+  | typeof CourseDomainEventName.SUBMITTED_FOR_REVIEW
+  | typeof CourseDomainEventName.PUBLISHED
+  | typeof CourseDomainEventName.UNPUBLISHED
+  | typeof CourseDomainEventName.ARCHIVED;
+
+type LifecycleTransitionOptions = {
+  readonly eventName: CourseLifecycleEventName;
+  readonly beforeMutation?: () => void;
+};
+
 /**
  * Course aggregate root.
  *
@@ -85,6 +96,12 @@ export class Course {
     };
   }
 
+  /**
+   * Creates a new Course aggregate in DRAFT status.
+   *
+   * Creation is a domain action and therefore records exactly
+   * one CourseCreated domain event.
+   */
   static create(input: CreateCourseProps): Course {
     const now = new Date();
 
@@ -185,8 +202,8 @@ export class Course {
    * CourseMetadataUpdated represents an actual metadata state transition.
    *
    * Validation is always performed against the proposed state. If the
-   * proposed state is semantically identical to the current state, the
-   * operation becomes a true no-op:
+   * proposed state is semantically identical to the current aggregate state,
+   * the operation becomes a true no-op:
    *
    * - no aggregate mutation
    * - no updatedAt change
@@ -228,86 +245,50 @@ export class Course {
     this.recordCourseMetadataUpdatedEvent();
   }
 
+  /**
+   * Moves the Course from DRAFT to IN_REVIEW.
+   */
   submitForReview(): void {
-    const previousStatus = this.props.status;
-
-    this.transitionStatus(CourseStatus.IN_REVIEW);
-
-    this.recordStatusChangedEvent(
-      CourseDomainEventName.SUBMITTED_FOR_REVIEW,
-      previousStatus,
-      this.props.status,
-    );
+    this.transitionStatus(CourseStatus.IN_REVIEW, {
+      eventName: CourseDomainEventName.SUBMITTED_FOR_REVIEW,
+    });
   }
 
+  /**
+   * Publishes the Course after validating both lifecycle eligibility
+   * and publication readiness.
+   */
   publish(): void {
-    if (this.props.status !== CourseStatus.IN_REVIEW) {
-      throw new InvalidCourseStateTransitionError(
-        this.props.status,
-        CourseStatus.PUBLISHED,
-      );
-    }
-
-    this.validatePublicationReadiness();
-
-    const previousStatus = this.props.status;
-
-    this.replaceProps({
-      status: CourseStatus.PUBLISHED,
+    this.transitionStatus(CourseStatus.PUBLISHED, {
+      eventName: CourseDomainEventName.PUBLISHED,
+      beforeMutation: () => this.validatePublicationReadiness(),
     });
-
-    this.recordStatusChangedEvent(
-      CourseDomainEventName.PUBLISHED,
-      previousStatus,
-      this.props.status,
-    );
   }
 
+  /**
+   * Moves a published Course into UNPUBLISHED status.
+   */
   unpublish(): void {
-    if (this.props.status !== CourseStatus.PUBLISHED) {
-      throw new InvalidCourseStateTransitionError(
-        this.props.status,
-        CourseStatus.UNPUBLISHED,
-      );
-    }
-
-    const previousStatus = this.props.status;
-
-    this.replaceProps({
-      status: CourseStatus.UNPUBLISHED,
+    this.transitionStatus(CourseStatus.UNPUBLISHED, {
+      eventName: CourseDomainEventName.UNPUBLISHED,
     });
-
-    this.recordStatusChangedEvent(
-      CourseDomainEventName.UNPUBLISHED,
-      previousStatus,
-      this.props.status,
-    );
   }
 
+  /**
+   * Archives a published or unpublished Course.
+   */
   archive(): void {
-    if (
-      this.props.status !== CourseStatus.PUBLISHED &&
-      this.props.status !== CourseStatus.UNPUBLISHED
-    ) {
-      throw new InvalidCourseStateTransitionError(
-        this.props.status,
-        CourseStatus.ARCHIVED,
-      );
-    }
-
-    const previousStatus = this.props.status;
-
-    this.replaceProps({
-      status: CourseStatus.ARCHIVED,
+    this.transitionStatus(CourseStatus.ARCHIVED, {
+      eventName: CourseDomainEventName.ARCHIVED,
     });
-
-    this.recordStatusChangedEvent(
-      CourseDomainEventName.ARCHIVED,
-      previousStatus,
-      this.props.status,
-    );
   }
 
+  /**
+   * Returns a persistence-safe snapshot of the aggregate state.
+   *
+   * Date values are defensively copied so callers cannot mutate
+   * the aggregate through returned Date references.
+   */
   toPrimitives(): CourseProps {
     return {
       id: this.props.id,
@@ -323,19 +304,55 @@ export class Course {
     };
   }
 
-  private transitionStatus(nextStatus: CourseStatusValue): void {
-    if (!this.isValidTransition(this.props.status, nextStatus)) {
-      throw new InvalidCourseStateTransitionError(
-        this.props.status,
-        nextStatus,
-      );
+  /**
+   * Single lifecycle mutation boundary.
+   *
+   * Every lifecycle transition follows the same atomic sequence:
+   *
+   * eligibility
+   *   -> transition-specific readiness
+   *   -> status mutation
+   *   -> timestamp mutation
+   *   -> exactly one lifecycle event
+   *
+   * No lifecycle command is allowed to mutate lifecycle state or emit
+   * its lifecycle event outside this boundary.
+   */
+  private transitionStatus(
+    nextStatus: CourseStatusValue,
+    options: LifecycleTransitionOptions,
+  ): void {
+    const previousStatus = this.props.status;
+
+    if (!this.isValidTransition(previousStatus, nextStatus)) {
+      throw new InvalidCourseStateTransitionError(previousStatus, nextStatus);
     }
+
+    options.beforeMutation?.();
 
     this.replaceProps({
       status: nextStatus,
     });
+
+    this.recordStatusChangedEvent(
+      options.eventName,
+      previousStatus,
+      this.props.status,
+    );
   }
 
+  /**
+   * Defines the complete Course lifecycle transition graph.
+   *
+   * DRAFT -> IN_REVIEW -> PUBLISHED
+   *
+   * PUBLISHED -> UNPUBLISHED
+   * PUBLISHED -> ARCHIVED
+   *
+   * UNPUBLISHED -> ARCHIVED
+   *
+   * ARCHIVED is terminal.
+   */
   private isValidTransition(
     current: CourseStatusValue,
     next: CourseStatusValue,
@@ -363,6 +380,10 @@ export class Course {
     }
   }
 
+  /**
+   * Transactional Course metadata is mutable only while the Course
+   * remains in DRAFT status.
+   */
   private assertDraftMetadataMutationAllowed(): void {
     if (this.props.status !== CourseStatus.DRAFT) {
       throw new CourseValidationError(
@@ -378,6 +399,12 @@ export class Course {
     }
   }
 
+  /**
+   * Validates the minimum transactional state required before publication.
+   *
+   * Lifecycle eligibility is intentionally handled separately by
+   * transitionStatus().
+   */
   private validatePublicationReadiness(): void {
     const issues = [];
 
@@ -406,6 +433,12 @@ export class Course {
     }
   }
 
+  /**
+   * Validates the complete persisted aggregate state during construction.
+   *
+   * This protects both newly created and rehydrated aggregates from
+   * entering an invalid in-memory state.
+   */
   private validateProps(props: CourseProps): void {
     const issues = [];
 
@@ -555,6 +588,12 @@ export class Course {
     );
   }
 
+  /**
+   * Applies aggregate state changes and advances updatedAt.
+   *
+   * This method is intentionally internal so all domain mutation remains
+   * behind explicit aggregate behaviors.
+   */
   private replaceProps(
     changes: Partial<
       Pick<
@@ -568,6 +607,9 @@ export class Course {
     this.props.updatedAt = new Date();
   }
 
+  /**
+   * Records the single creation event generated by Course.create().
+   */
   private recordCourseCreatedEvent(): void {
     const payload: CourseCreatedPayload = {
       courseId: this.id.toString(),
@@ -590,6 +632,9 @@ export class Course {
     );
   }
 
+  /**
+   * Records a metadata event only after a real metadata transition.
+   */
   private recordCourseMetadataUpdatedEvent(): void {
     const payload: CourseMetadataUpdatedPayload = {
       courseId: this.id.toString(),
@@ -609,12 +654,15 @@ export class Course {
     );
   }
 
+  /**
+   * Records the lifecycle event associated with a successful lifecycle
+   * transition.
+   *
+   * The event receives the same updatedAt timestamp produced by
+   * replaceProps(), preserving aggregate/event chronology.
+   */
   private recordStatusChangedEvent(
-    eventName:
-      | typeof CourseDomainEventName.SUBMITTED_FOR_REVIEW
-      | typeof CourseDomainEventName.PUBLISHED
-      | typeof CourseDomainEventName.UNPUBLISHED
-      | typeof CourseDomainEventName.ARCHIVED,
+    eventName: CourseLifecycleEventName,
     previousStatus: CourseStatusValue,
     currentStatus: CourseStatusValue,
   ): void {

@@ -20,6 +20,7 @@ import {
   type CourseMetadataUpdatedPayload,
 } from '../events/index.js';
 import { createDomainEvent } from '../events/domain-event.js';
+import { canTransitionCourseLifecycle } from '../lifecycle/course-lifecycle.policy.js';
 import { CourseId } from '../value-objects/course-id.js';
 
 export interface CourseProps {
@@ -324,7 +325,7 @@ export class Course {
   ): void {
     const previousStatus = this.props.status;
 
-    if (!this.isValidTransition(previousStatus, nextStatus)) {
+    if (!canTransitionCourseLifecycle(previousStatus, nextStatus)) {
       throw new InvalidCourseStateTransitionError(previousStatus, nextStatus);
     }
 
@@ -339,45 +340,6 @@ export class Course {
       previousStatus,
       this.props.status,
     );
-  }
-
-  /**
-   * Defines the complete Course lifecycle transition graph.
-   *
-   * DRAFT -> IN_REVIEW -> PUBLISHED
-   *
-   * PUBLISHED -> UNPUBLISHED
-   * PUBLISHED -> ARCHIVED
-   *
-   * UNPUBLISHED -> ARCHIVED
-   *
-   * ARCHIVED is terminal.
-   */
-  private isValidTransition(
-    current: CourseStatusValue,
-    next: CourseStatusValue,
-  ): boolean {
-    switch (current) {
-      case CourseStatus.DRAFT:
-        return next === CourseStatus.IN_REVIEW;
-
-      case CourseStatus.IN_REVIEW:
-        return next === CourseStatus.PUBLISHED;
-
-      case CourseStatus.PUBLISHED:
-        return (
-          next === CourseStatus.UNPUBLISHED || next === CourseStatus.ARCHIVED
-        );
-
-      case CourseStatus.UNPUBLISHED:
-        return next === CourseStatus.ARCHIVED;
-
-      case CourseStatus.ARCHIVED:
-        return false;
-
-      default:
-        return false;
-    }
   }
 
   /**

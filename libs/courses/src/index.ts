@@ -33,6 +33,29 @@ export type {
 } from './domain/enums/course-status.js';
 
 /**
+ * Course lifecycle policy
+ *
+ * Defines the immutable domain-owned lifecycle transition graph
+ * and exposes lifecycle eligibility capabilities without
+ * coupling consumers to Course aggregate internals.
+ *
+ * The policy is intentionally independent of:
+ * - persistence
+ * - Prisma
+ * - HTTP
+ * - NestJS
+ * - queues
+ * - notifications
+ * - AI/ML infrastructure
+ */
+export {
+  COURSE_LIFECYCLE_TRANSITIONS,
+  canTransitionCourseLifecycle,
+  getAllowedCourseLifecycleTransitions,
+  isTerminalCourseLifecycleStatus,
+} from './domain/lifecycle/course-lifecycle.policy.js';
+
+/**
  * Course type
  */
 export {

@@ -6,7 +6,11 @@ import { CourseStatus } from '../enums/course-status.js';
 import { CourseType } from '../enums/course-type.js';
 import { CourseVisibility } from '../enums/course-visibility.js';
 
-import { CourseDomainEventName } from './course.events.js';
+import {
+  CourseDomainEventName,
+  type CourseDomainEvent,
+  type CourseMetadataUpdatedEvent,
+} from './course.events.js';
 
 const createCourse = () =>
   Course.create({
@@ -17,6 +21,12 @@ const createCourse = () =>
     visibility: CourseVisibility.PRIVATE,
     instructorId: 'instructor-123',
   });
+
+function expectMetadataUpdatedEvent(
+  event: CourseDomainEvent | undefined,
+): asserts event is CourseMetadataUpdatedEvent {
+  expect(event?.eventName).toBe(CourseDomainEventName.METADATA_UPDATED);
+}
 
 describe('Course domain events', () => {
   describe('Course.create()', () => {
@@ -37,9 +47,7 @@ describe('Course domain events', () => {
       const [event] = course.getDomainEvents();
 
       expect(event?.aggregateId).toBe(course.id.toString());
-      expect(event?.payload.courseId).toBe(
-        course.id.toString(),
-      );
+      expect(event?.payload.courseId).toBe(course.id.toString());
     });
 
     it('records event version 1', () => {
@@ -158,10 +166,163 @@ describe('Course domain events', () => {
       });
     });
 
-    it('does not create an event when metadata validation fails', () => {
+    it('does not create an event when metadata is unchanged', () => {
       const course = createCourse();
 
       course.pullDomainEvents();
+
+      const updatedAtBefore = course.updatedAt;
+
+      course.updateMetadata({
+        title: course.title,
+        description: course.description,
+        level: course.level,
+        type: course.type,
+        visibility: course.visibility,
+      });
+
+      expect(course.getDomainEvents()).toHaveLength(0);
+      expect(course.updatedAt.getTime()).toBe(
+        updatedAtBefore.getTime(),
+      );
+    });
+
+    it('does not create an event when only metadata whitespace is normalized away', () => {
+      const course = createCourse();
+
+      course.pullDomainEvents();
+
+      const updatedAtBefore = course.updatedAt;
+
+      course.updateMetadata({
+        title: `  ${course.title}  `,
+        description: `  ${course.description}  `,
+      });
+
+      expect(course.getDomainEvents()).toHaveLength(0);
+
+      expect(course.title).toBe('TypeScript Fundamentals');
+      expect(course.description).toBe(
+        'Learn TypeScript from the ground up.',
+      );
+
+      expect(course.updatedAt.getTime()).toBe(
+        updatedAtBefore.getTime(),
+      );
+    });
+
+    it('updates only the changed metadata field and records one event', () => {
+      const course = createCourse();
+
+      course.pullDomainEvents();
+
+      const updatedAtBefore = course.updatedAt;
+
+      course.updateMetadata({
+        title: 'Advanced TypeScript',
+      });
+
+      expect(course.title).toBe('Advanced TypeScript');
+      expect(course.description).toBe(
+        'Learn TypeScript from the ground up.',
+      );
+      expect(course.level).toBe(CourseLevel.BEGINNER);
+      expect(course.type).toBe(CourseType.SELF_PACED);
+      expect(course.visibility).toBe(CourseVisibility.PRIVATE);
+
+      const events = course.getDomainEvents();
+
+      expect(events).toHaveLength(1);
+      expect(events[0]?.eventName).toBe(
+        CourseDomainEventName.METADATA_UPDATED,
+      );
+
+      expect(events[0]?.payload).toEqual({
+        courseId: course.id.toString(),
+        title: 'Advanced TypeScript',
+        description: course.description,
+        level: course.level,
+        type: course.type,
+        visibility: course.visibility,
+      });
+
+      expect(course.updatedAt.getTime()).toBeGreaterThanOrEqual(
+        updatedAtBefore.getTime(),
+      );
+    });
+
+    it('records the event timestamp from the resulting aggregate state', () => {
+      const course = createCourse();
+
+      course.pullDomainEvents();
+
+      course.updateMetadata({
+        title: 'Advanced TypeScript',
+      });
+
+      const [event] = course.getDomainEvents();
+
+      expect(event?.occurredAt.getTime()).toBe(
+        course.updatedAt.getTime(),
+      );
+    });
+
+    it('records metadata events in order for multiple genuine changes', () => {
+      const course = createCourse();
+
+      course.pullDomainEvents();
+
+      course.updateMetadata({
+        title: 'Advanced TypeScript',
+      });
+
+      course.updateMetadata({
+        description: 'Master TypeScript for production applications.',
+      });
+
+      const events = course.getDomainEvents();
+
+      expect(events).toHaveLength(2);
+
+      expect(events.map((event) => event.eventName)).toEqual([
+        CourseDomainEventName.METADATA_UPDATED,
+        CourseDomainEventName.METADATA_UPDATED,
+      ]);
+
+      const firstEvent = events[0];
+      const secondEvent = events[1];
+
+      expectMetadataUpdatedEvent(firstEvent);
+      expectMetadataUpdatedEvent(secondEvent);
+
+      expect(firstEvent.payload.title).toBe('Advanced TypeScript');
+      expect(firstEvent.payload.description).toBe(
+        'Learn TypeScript from the ground up.',
+      );
+
+      expect(secondEvent.payload.title).toBe('Advanced TypeScript');
+      expect(secondEvent.payload.description).toBe(
+        'Master TypeScript for production applications.',
+      );
+
+      expect(firstEvent.eventId).not.toBe(secondEvent.eventId);
+
+      expect(firstEvent.occurredAt.getTime()).toBeLessThanOrEqual(
+        secondEvent.occurredAt.getTime(),
+      );
+    });
+
+    it('does not mutate state or create an event when metadata validation fails', () => {
+      const course = createCourse();
+
+      course.pullDomainEvents();
+
+      const originalTitle = course.title;
+      const originalDescription = course.description;
+      const originalLevel = course.level;
+      const originalType = course.type;
+      const originalVisibility = course.visibility;
+      const originalUpdatedAt = course.updatedAt;
 
       expect(() =>
         course.updateMetadata({
@@ -169,6 +330,14 @@ describe('Course domain events', () => {
         }),
       ).toThrow();
 
+      expect(course.title).toBe(originalTitle);
+      expect(course.description).toBe(originalDescription);
+      expect(course.level).toBe(originalLevel);
+      expect(course.type).toBe(originalType);
+      expect(course.visibility).toBe(originalVisibility);
+      expect(course.updatedAt.getTime()).toBe(
+        originalUpdatedAt.getTime(),
+      );
       expect(course.getDomainEvents()).toHaveLength(0);
     });
 
@@ -187,6 +356,42 @@ describe('Course domain events', () => {
         }),
       ).toThrow();
 
+      expect(course.getDomainEvents()).toHaveLength(0);
+    });
+
+    it('does not mutate metadata when mutation is not allowed', () => {
+      const course = createCourse();
+
+      course.pullDomainEvents();
+
+      course.submitForReview();
+      course.pullDomainEvents();
+
+      const originalTitle = course.title;
+      const originalDescription = course.description;
+      const originalLevel = course.level;
+      const originalType = course.type;
+      const originalVisibility = course.visibility;
+      const originalUpdatedAt = course.updatedAt;
+
+      expect(() =>
+        course.updateMetadata({
+          title: 'Should Not Change',
+          description: 'Should Not Change Either',
+          level: CourseLevel.ADVANCED,
+          type: CourseType.BLENDED,
+          visibility: CourseVisibility.PUBLIC,
+        }),
+      ).toThrow();
+
+      expect(course.title).toBe(originalTitle);
+      expect(course.description).toBe(originalDescription);
+      expect(course.level).toBe(originalLevel);
+      expect(course.type).toBe(originalType);
+      expect(course.visibility).toBe(originalVisibility);
+      expect(course.updatedAt.getTime()).toBe(
+        originalUpdatedAt.getTime(),
+      );
       expect(course.getDomainEvents()).toHaveLength(0);
     });
   });

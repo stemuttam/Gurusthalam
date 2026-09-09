@@ -14,12 +14,12 @@ import {
 } from '../errors/index.js';
 import {
   CourseDomainEventName,
+  createCourseMetadataUpdatedEvent,
   type CourseDomainEvent,
   type CourseCreatedPayload,
   type CourseMetadataUpdatedPayload,
 } from '../events/index.js';
 import { createDomainEvent } from '../events/domain-event.js';
-import { createCourseMetadataUpdatedEvent } from '../events/course.events.js';
 import { CourseId } from '../value-objects/course-id.js';
 
 export interface CourseProps {
@@ -55,6 +55,11 @@ export interface UpdateCourseMetadataProps {
 type MutableCourseProps = {
   -readonly [Key in keyof CourseProps]: CourseProps[Key];
 };
+
+type CourseMetadataState = Pick<
+  CourseProps,
+  'title' | 'description' | 'level' | 'type' | 'visibility'
+>;
 
 /**
  * Course aggregate root.
@@ -173,37 +178,53 @@ export class Course {
     return events;
   }
 
+  /**
+   * Updates transactional Course metadata while the aggregate is in DRAFT.
+   *
+   * Semantic rule:
+   * CourseMetadataUpdated represents an actual metadata state transition.
+   *
+   * Validation is always performed against the proposed state. If the
+   * proposed state is semantically identical to the current state, the
+   * operation becomes a true no-op:
+   *
+   * - no aggregate mutation
+   * - no updatedAt change
+   * - no domain event
+   */
   updateMetadata(input: UpdateCourseMetadataProps): void {
     this.assertDraftMetadataMutationAllowed();
 
-    const nextTitle =
-      input.title === undefined ? this.props.title : input.title.trim();
+    const nextMetadata: CourseMetadataState = {
+      title:
+        input.title === undefined ? this.props.title : input.title.trim(),
+      description:
+        input.description === undefined
+          ? this.props.description
+          : input.description === null
+            ? null
+            : input.description.trim(),
+      level: input.level === undefined ? this.props.level : input.level,
+      type: input.type === undefined ? this.props.type : input.type,
+      visibility:
+        input.visibility === undefined
+          ? this.props.visibility
+          : input.visibility,
+    };
 
-    const nextDescription =
-      input.description === undefined
-        ? this.props.description
-        : input.description === null
-          ? null
-          : input.description.trim();
+    // Validate before comparing or mutating. Invalid input must always
+    // be rejected, even if another representation could resolve to the
+    // current aggregate state.
+    this.validateTitle(nextMetadata.title);
+    this.validateDescription(nextMetadata.description);
 
-    const nextLevel =
-      input.level === undefined ? this.props.level : input.level;
+    // A metadata event represents a real state transition.
+    // Identical resolved metadata is therefore a true no-op.
+    if (!this.hasMetadataChanged(nextMetadata)) {
+      return;
+    }
 
-    const nextType = input.type === undefined ? this.props.type : input.type;
-
-    const nextVisibility =
-      input.visibility === undefined ? this.props.visibility : input.visibility;
-
-    this.validateTitle(nextTitle);
-    this.validateDescription(nextDescription);
-
-    this.replaceProps({
-      title: nextTitle,
-      description: nextDescription,
-      level: nextLevel,
-      type: nextType,
-      visibility: nextVisibility,
-    });
+    this.replaceProps(nextMetadata);
 
     this.recordCourseMetadataUpdatedEvent();
   }
@@ -329,7 +350,8 @@ export class Course {
 
       case CourseStatus.PUBLISHED:
         return (
-          next === CourseStatus.UNPUBLISHED || next === CourseStatus.ARCHIVED
+          next === CourseStatus.UNPUBLISHED ||
+          next === CourseStatus.ARCHIVED
         );
 
       case CourseStatus.UNPUBLISHED:
@@ -504,6 +526,20 @@ export class Course {
         ],
       );
     }
+  }
+
+  /**
+   * Determines whether the proposed transactional metadata represents
+   * a real state transition.
+   */
+  private hasMetadataChanged(nextMetadata: CourseMetadataState): boolean {
+    return (
+      this.props.title !== nextMetadata.title ||
+      this.props.description !== nextMetadata.description ||
+      this.props.level !== nextMetadata.level ||
+      this.props.type !== nextMetadata.type ||
+      this.props.visibility !== nextMetadata.visibility
+    );
   }
 
   private replaceProps(

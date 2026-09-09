@@ -19,6 +19,7 @@ import {
   type CourseMetadataUpdatedPayload,
 } from '../events/index.js';
 import { createDomainEvent } from '../events/domain-event.js';
+import { createCourseMetadataUpdatedEvent } from '../events/course.events.js';
 import { CourseId } from '../value-objects/course-id.js';
 
 export interface CourseProps {
@@ -551,8 +552,7 @@ export class Course {
     };
 
     this.domainEvents.push(
-      createDomainEvent(
-        CourseDomainEventName.METADATA_UPDATED,
+      createCourseMetadataUpdatedEvent(
         this.id.toString(),
         payload,
         this.props.updatedAt,

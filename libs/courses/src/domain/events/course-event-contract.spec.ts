@@ -7,7 +7,9 @@ import { CourseVisibility } from '../enums/course-visibility.js';
 
 import {
   CourseDomainEventName,
+  createCourseMetadataUpdatedEvent,
   type CourseDomainEvent,
+  type CourseMetadataUpdatedPayload,
 } from './course.events.js';
 import { createDomainEvent } from './domain-event.js';
 
@@ -59,13 +61,17 @@ describe('Course domain event contracts', () => {
     const first = createDomainEvent(
       CourseDomainEventName.CREATED,
       'course-123',
-      { courseId: 'course-123' },
+      {
+        courseId: 'course-123',
+      },
     );
 
     const second = createDomainEvent(
       CourseDomainEventName.CREATED,
       'course-123',
-      { courseId: 'course-123' },
+      {
+        courseId: 'course-123',
+      },
     );
 
     expect(first.eventId).not.toBe(second.eventId);
@@ -75,13 +81,17 @@ describe('Course domain event contracts', () => {
     const first = createDomainEvent(
       CourseDomainEventName.CREATED,
       'course-123',
-      { courseId: 'course-123' },
+      {
+        courseId: 'course-123',
+      },
     );
 
     const second = createDomainEvent(
       CourseDomainEventName.CREATED,
       'course-123',
-      { courseId: 'course-123' },
+      {
+        courseId: 'course-123',
+      },
     );
 
     expect(first.occurredAt).toBeInstanceOf(Date);
@@ -92,7 +102,6 @@ describe('Course domain event contracts', () => {
   it('does not expose the original payload object', () => {
     const payload = {
       courseId: 'course-123',
-      title: 'Physics',
     };
 
     const event = createDomainEvent(
@@ -103,6 +112,90 @@ describe('Course domain event contracts', () => {
 
     expect(event.payload).toEqual(payload);
     expect(event.payload).not.toBe(payload);
+
+    payload.courseId = 'changed-course-id';
+
+    expect(event.payload.courseId).toBe('course-123');
+  });
+
+  it('creates the canonical CourseMetadataUpdated event contract', () => {
+    const occurredAt = new Date('2026-09-09T05:30:00.000Z');
+
+    const payload: CourseMetadataUpdatedPayload = {
+      courseId: 'course-123',
+      title: 'Advanced Mathematics',
+      description: 'A mathematics course.',
+      level: CourseLevel.ADVANCED,
+      type: CourseType.SELF_PACED,
+      visibility: CourseVisibility.PUBLIC,
+    };
+
+    const event = createCourseMetadataUpdatedEvent(
+      'course-123',
+      payload,
+      occurredAt,
+    );
+
+    expect(event.eventName).toBe(CourseDomainEventName.METADATA_UPDATED);
+    expect(event.eventVersion).toBe(1);
+    expect(event.aggregateId).toBe('course-123');
+
+    expect(event.occurredAt).toBeInstanceOf(Date);
+    expect(event.occurredAt).not.toBe(occurredAt);
+    expect(event.occurredAt.getTime()).toBe(occurredAt.getTime());
+
+    expect(event.payload).toEqual(payload);
+    expect(event.payload).not.toBe(payload);
+  });
+
+  it('does not expose mutable metadata payload state through the event', () => {
+    const payload = {
+      courseId: 'course-123',
+      title: 'Physics',
+      description: 'Fundamentals',
+      level: CourseLevel.BEGINNER,
+      type: CourseType.SELF_PACED,
+      visibility: CourseVisibility.PRIVATE,
+    };
+
+    const event = createCourseMetadataUpdatedEvent('course-123', payload);
+
+    expect(event.payload).not.toBe(payload);
+
+    payload.title = 'Changed outside event';
+
+    expect(event.payload.title).toBe('Physics');
+  });
+
+  it('uses the supplied aggregate identifier as the canonical event aggregateId', () => {
+    const event = createCourseMetadataUpdatedEvent('course-456', {
+      courseId: 'course-456',
+      title: 'Physics',
+      description: null,
+      level: CourseLevel.BEGINNER,
+      type: CourseType.SELF_PACED,
+      visibility: CourseVisibility.PRIVATE,
+    });
+
+    expect(event.aggregateId).toBe('course-456');
+    expect(event.payload.courseId).toBe('course-456');
+  });
+
+  it('assigns unique event identifiers to independently created metadata events', () => {
+    const payload: CourseMetadataUpdatedPayload = {
+      courseId: 'course-123',
+      title: 'Physics',
+      description: null,
+      level: CourseLevel.BEGINNER,
+      type: CourseType.SELF_PACED,
+      visibility: CourseVisibility.PRIVATE,
+    };
+
+    const first = createCourseMetadataUpdatedEvent('course-123', payload);
+
+    const second = createCourseMetadataUpdatedEvent('course-123', payload);
+
+    expect(first.eventId).not.toBe(second.eventId);
   });
 
   it('produces CourseCreated with the canonical aggregate identifier', () => {
@@ -125,8 +218,7 @@ describe('Course domain event contracts', () => {
   it('keeps Course events compatible with the common DomainEvent contract', () => {
     const course = createCourse();
 
-    const events: readonly CourseDomainEvent[] =
-      course.getDomainEvents();
+    const events: readonly CourseDomainEvent[] = course.getDomainEvents();
 
     expect(events).toHaveLength(1);
 
@@ -140,7 +232,7 @@ describe('Course domain event contracts', () => {
     }
   });
 
-  it('keeps event timestamps detached from the aggregate timestamp objects', () => {
+  it('keeps event timestamps detached from aggregate timestamp objects', () => {
     const course = createCourse();
 
     const [event] = course.getDomainEvents();

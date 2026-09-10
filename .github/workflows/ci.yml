@@ -41,8 +41,11 @@ jobs:
 
     env:
       NODE_ENV: test
+      PORT: 3000
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/gurusthalam?schema=public
+      DATABASE_NAME: gurusthalam
       REDIS_URL: redis://localhost:6379
+      INTERNAL_API_KEY: ci-test-internal-api-key
       NOTIFICATION_PROVIDER_FAILURE_MODE: disabled
       NOTIFICATION_PROVIDER_RETRY_AFTER_MS: 10000
       NOTIFICATION_PROVIDER_FAILURE_CODE: SIMULATED_PROVIDER_FAILURE
@@ -66,6 +69,19 @@ jobs:
 
       # Install the exact dependency graph from the committed lockfile
       - run: pnpm install --frozen-lockfile
+
+      # Provide the runtime env file required by the API Nx serve target.
+      # This file exists only inside the ephemeral CI runner.
+      - name: Create API CI environment file
+        run: |
+          cat > apps/api/.env <<'EOF'
+          NODE_ENV=test
+          PORT=3000
+          DATABASE_URL=postgresql://postgres:postgres@localhost:5432/gurusthalam?schema=public
+          DATABASE_NAME=gurusthalam
+          REDIS_URL=redis://localhost:6379
+          INTERNAL_API_KEY=ci-test-internal-api-key
+          EOF
 
       # Apply the committed Prisma migrations to the ephemeral CI database
       - name: Apply database migrations

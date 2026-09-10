@@ -13,6 +13,40 @@ permissions:
 jobs:
   main:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gurusthalam
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d gurusthalam"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/gurusthalam?schema=public
+      REDIS_URL: redis://localhost:6379
+      NOTIFICATION_PROVIDER_FAILURE_MODE: disabled
+      NOTIFICATION_PROVIDER_RETRY_AFTER_MS: 10000
+      NOTIFICATION_PROVIDER_FAILURE_CODE: SIMULATED_PROVIDER_FAILURE
+
     steps:
       - uses: actions/checkout@v5
         with:
@@ -32,6 +66,10 @@ jobs:
 
       # Install the exact dependency graph from the committed lockfile
       - run: pnpm install --frozen-lockfile
+
+      # Apply the committed Prisma migrations to the ephemeral CI database
+      - name: Apply database migrations
+        run: pnpm --filter @org/api exec prisma migrate deploy --config prisma.config.ts
 
       # Validate formatting
       - run: pnpm exec nx format:check --base="remotes/origin/main"

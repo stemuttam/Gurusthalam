@@ -56,6 +56,22 @@ export {
 } from './domain/lifecycle/course-lifecycle.policy.js';
 
 /**
+ * Course lifecycle capabilities
+ *
+ * Provides an immutable read-side lifecycle capability contract built
+ * on top of the canonical Course lifecycle policy.
+ *
+ * This does not introduce a second lifecycle state machine.
+ */
+export {
+  getCourseLifecycleCapabilities,
+} from './domain/lifecycle/course-lifecycle.capabilities.js';
+
+export type {
+  CourseLifecycleCapabilities,
+} from './domain/lifecycle/course-lifecycle.capabilities.js';
+
+/**
  * Course type
  */
 export {

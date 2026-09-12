@@ -273,6 +273,21 @@ export type {
 } from './domain/versioning/course-version-rollback.js';
 
 /**
+ * Course version history
+ *
+ * Provides an immutable, deterministic read-side representation of the
+ * version history for a single Course.
+ */
+export {
+  CourseVersionHistory,
+} from './domain/versioning/course-version-history.js';
+
+export type {
+  CourseVersionHistoryEntry,
+  CourseVersionHistoryProps,
+} from './domain/versioning/course-version-history.js';
+
+/**
  * CourseVersion lifecycle status
  */
 export {

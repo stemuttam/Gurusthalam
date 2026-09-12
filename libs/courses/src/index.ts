@@ -278,14 +278,41 @@ export type {
  * Provides an immutable, deterministic read-side representation of the
  * version history for a single Course.
  */
-export {
-  CourseVersionHistory,
-} from './domain/versioning/course-version-history.js';
+export { CourseVersionHistory } from './domain/versioning/course-version-history.js';
 
 export type {
   CourseVersionHistoryEntry,
   CourseVersionHistoryProps,
 } from './domain/versioning/course-version-history.js';
+
+/**
+ * Course version audit
+ *
+ * Immutable audit facts for CourseVersion operations.
+ *
+ * Audit semantics remain separate from the canonical Course domain-event
+ * contracts: domain events describe transactional state changes, while
+ * audit entries provide durable historical context such as actor, reason,
+ * and operational metadata.
+ */
+export {
+  COURSE_VERSION_AUDIT_ACTOR_TYPE,
+  COURSE_VERSION_AUDIT_EVENT_TYPE,
+  CourseVersionAudit,
+  isCourseVersionAuditActorType,
+  isCourseVersionAuditEventType,
+  isValidCourseVersionAuditMetadataValue,
+} from './domain/versioning/course-version-audit.js';
+
+export type {
+  CourseVersionAuditActor,
+  CourseVersionAuditActorType,
+  CourseVersionAuditEventType,
+  CourseVersionAuditMetadata,
+  CourseVersionAuditMetadataValue,
+  CourseVersionAuditProps,
+  CreateCourseVersionAuditProps,
+} from './domain/versioning/course-version-audit.js';
 
 /**
  * CourseVersion lifecycle status

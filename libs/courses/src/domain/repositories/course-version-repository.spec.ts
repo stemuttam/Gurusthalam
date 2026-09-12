@@ -1,66 +1,34 @@
 import { describe, expect, it } from 'vitest';
 
-import type { CourseVersion } from '../entities/course-version.js';
-import { CourseId } from '../value-objects/course-id.js';
-import { CourseVersionId } from '../value-objects/course-version-id.js';
 import type { CourseVersionRepository } from './course-version-repository.js';
 
-describe('CourseVersionRepository contract', () => {
-  it('accepts a persistence implementation matching the contract', async () => {
+describe('CourseVersionRepository', () => {
+  it('defines the CourseVersion persistence boundary', () => {
     const repository: CourseVersionRepository = {
-      async findById(
-        id: CourseVersionId,
-      ): Promise<CourseVersion | null> {
-        expect(id).toBeInstanceOf(CourseVersionId);
-        return null;
-      },
+      findById: async () => null,
 
-      async findLatestByCourseId(
-        courseId: CourseId,
-      ): Promise<CourseVersion | null> {
-        expect(courseId).toBeInstanceOf(CourseId);
-        return null;
-      },
+      findAllByCourseId: async () => [],
 
-      async findPublishedByCourseId(
-        courseId: CourseId,
-      ): Promise<CourseVersion | null> {
-        expect(courseId).toBeInstanceOf(CourseId);
-        return null;
-      },
+      findLatestByCourseId: async () => null,
 
-      async existsByCourseIdAndVersion(
-        courseId: CourseId,
-        version: number,
-      ): Promise<boolean> {
-        expect(courseId).toBeInstanceOf(CourseId);
-        expect(version).toBeTypeOf('number');
-        return false;
-      },
+      findPublishedByCourseId: async () => null,
 
-      async save(
-        courseVersion: CourseVersion,
-      ): Promise<void> {
-        expect(courseVersion).toBeDefined();
-      },
+      existsByCourseIdAndVersion: async () => false,
+
+      save: async () => undefined,
     };
 
-    const courseId = CourseId.generate();
-    const courseVersionId = CourseVersionId.generate();
+    expect(repository).toBeDefined();
 
-    expect(await repository.findById(courseVersionId)).toBeNull();
+    expect(repository.findAllByCourseId).toBeTypeOf('function');
 
-    expect(
-      await repository.findLatestByCourseId(courseId),
-    ).toBeNull();
+    expect(repository.findById).toBeTypeOf('function');
 
-    expect(
-      await repository.findPublishedByCourseId(courseId),
-    ).toBeNull();
+    expect(repository.findLatestByCourseId).toBeTypeOf('function');
 
-    expect(
-      await repository.existsByCourseIdAndVersion(courseId, 1),
-    ).toBe(false);
+    expect(repository.findPublishedByCourseId).toBeTypeOf('function');
+
+    expect(repository.existsByCourseIdAndVersion).toBeTypeOf('function');
 
     expect(repository.save).toBeTypeOf('function');
   });

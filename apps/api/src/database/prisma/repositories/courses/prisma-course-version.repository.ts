@@ -5,17 +5,11 @@ import {
   type CourseVersionRepository,
 } from '@gurusthalam/courses';
 
-import {
-  type PrismaClient,
-} from '@gurusthalam/database';
+import { type PrismaClient } from '@gurusthalam/database';
 
-import {
-  CourseVersionPrismaMapper,
-} from '../../mappers/courses/index.js';
+import { CourseVersionPrismaMapper } from '../../mappers/courses/index.js';
 
-import {
-  withPrismaRepositoryErrorBoundary,
-} from '../prisma-repository-error.mapper.js';
+import { withPrismaRepositoryErrorBoundary } from '../prisma-repository-error.mapper.js';
 
 /**
  * Prisma-backed implementation of the domain
@@ -24,35 +18,54 @@ import {
  * The implementation deliberately keeps all Prisma-specific
  * concerns inside the infrastructure layer.
  */
-export class PrismaCourseVersionRepository
-  implements CourseVersionRepository
-{
-  constructor(
-    private readonly prisma: PrismaClient,
-  ) {}
+export class PrismaCourseVersionRepository implements CourseVersionRepository {
+  constructor(private readonly prisma: PrismaClient) {}
 
   /**
    * Finds a CourseVersion by its identifier.
    */
-  async findById(
-    id: CourseVersionId,
-  ): Promise<CourseVersion | null> {
+  async findById(id: CourseVersionId): Promise<CourseVersion | null> {
     return withPrismaRepositoryErrorBoundary(
       'CourseVersionRepository.findById',
       async () => {
-        const record =
-          await this.prisma.courseVersion.findUnique({
-            where: {
-              id: id.value,
-            },
-          });
+        const record = await this.prisma.courseVersion.findUnique({
+          where: {
+            id: id.value,
+          },
+        });
 
         if (record === null) {
           return null;
         }
 
-        return CourseVersionPrismaMapper.toDomain(
-          record,
+        return CourseVersionPrismaMapper.toDomain(record);
+      },
+    );
+  }
+
+  /**
+   * Finds all CourseVersions for a Course.
+   *
+   * Ordering is explicitly defined by the business version number so
+   * historical reconstruction remains deterministic.
+   */
+  async findAllByCourseId(
+    courseId: CourseId,
+  ): Promise<readonly CourseVersion[]> {
+    return withPrismaRepositoryErrorBoundary(
+      'CourseVersionRepository.findAllByCourseId',
+      async () => {
+        const records = await this.prisma.courseVersion.findMany({
+          where: {
+            courseId: courseId.value,
+          },
+          orderBy: {
+            version: 'asc',
+          },
+        });
+
+        return records.map((record) =>
+          CourseVersionPrismaMapper.toDomain(record),
         );
       },
     );
@@ -70,23 +83,20 @@ export class PrismaCourseVersionRepository
     return withPrismaRepositoryErrorBoundary(
       'CourseVersionRepository.findLatestByCourseId',
       async () => {
-        const record =
-          await this.prisma.courseVersion.findFirst({
-            where: {
-              courseId: courseId.value,
-            },
-            orderBy: {
-              version: 'desc',
-            },
-          });
+        const record = await this.prisma.courseVersion.findFirst({
+          where: {
+            courseId: courseId.value,
+          },
+          orderBy: {
+            version: 'desc',
+          },
+        });
 
         if (record === null) {
           return null;
         }
 
-        return CourseVersionPrismaMapper.toDomain(
-          record,
-        );
+        return CourseVersionPrismaMapper.toDomain(record);
       },
     );
   }
@@ -106,24 +116,21 @@ export class PrismaCourseVersionRepository
     return withPrismaRepositoryErrorBoundary(
       'CourseVersionRepository.findPublishedByCourseId',
       async () => {
-        const record =
-          await this.prisma.courseVersion.findFirst({
-            where: {
-              courseId: courseId.value,
-              status: 'PUBLISHED',
-            },
-            orderBy: {
-              version: 'desc',
-            },
-          });
+        const record = await this.prisma.courseVersion.findFirst({
+          where: {
+            courseId: courseId.value,
+            status: 'PUBLISHED',
+          },
+          orderBy: {
+            version: 'desc',
+          },
+        });
 
         if (record === null) {
           return null;
         }
 
-        return CourseVersionPrismaMapper.toDomain(
-          record,
-        );
+        return CourseVersionPrismaMapper.toDomain(record);
       },
     );
   }
@@ -142,19 +149,17 @@ export class PrismaCourseVersionRepository
     return withPrismaRepositoryErrorBoundary(
       'CourseVersionRepository.existsByCourseIdAndVersion',
       async () => {
-        const record =
-          await this.prisma.courseVersion.findUnique({
-            where: {
-              courseId_version: {
-                courseId:
-                  courseId.value,
-                version,
-              },
+        const record = await this.prisma.courseVersion.findUnique({
+          where: {
+            courseId_version: {
+              courseId: courseId.value,
+              version,
             },
-            select: {
-              id: true,
-            },
-          });
+          },
+          select: {
+            id: true,
+          },
+        });
 
         return record !== null;
       },
@@ -169,16 +174,12 @@ export class PrismaCourseVersionRepository
    * updates because the domain does not expose mutation operations
    * for those values.
    */
-  async save(
-    courseVersion: CourseVersion,
-  ): Promise<void> {
+  async save(courseVersion: CourseVersion): Promise<void> {
     await withPrismaRepositoryErrorBoundary(
       'CourseVersionRepository.save',
       async () => {
         const persistence =
-          CourseVersionPrismaMapper.toPersistence(
-            courseVersion,
-          );
+          CourseVersionPrismaMapper.toPersistence(courseVersion);
 
         await this.prisma.courseVersion.upsert({
           where: {
@@ -186,34 +187,21 @@ export class PrismaCourseVersionRepository
           },
           create: {
             id: persistence.id,
-            courseId:
-              persistence.courseId,
-            version:
-              persistence.version,
-            status:
-              persistence.status,
-            title:
-              persistence.title,
-            description:
-              persistence.description,
-            createdAt:
-              persistence.createdAt,
-            updatedAt:
-              persistence.updatedAt,
-            publishedAt:
-              persistence.publishedAt,
+            courseId: persistence.courseId,
+            version: persistence.version,
+            status: persistence.status,
+            title: persistence.title,
+            description: persistence.description,
+            createdAt: persistence.createdAt,
+            updatedAt: persistence.updatedAt,
+            publishedAt: persistence.publishedAt,
           },
           update: {
-            status:
-              persistence.status,
-            title:
-              persistence.title,
-            description:
-              persistence.description,
-            updatedAt:
-              persistence.updatedAt,
-            publishedAt:
-              persistence.publishedAt,
+            status: persistence.status,
+            title: persistence.title,
+            description: persistence.description,
+            updatedAt: persistence.updatedAt,
+            publishedAt: persistence.publishedAt,
           },
         });
       },

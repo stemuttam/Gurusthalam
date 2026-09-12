@@ -18,6 +18,21 @@ export interface CourseVersionRepository {
   findById(id: CourseVersionId): Promise<CourseVersion | null>;
 
   /**
+   * Finds all versions belonging to a Course.
+   *
+   * Results are ordered by business version number in ascending order.
+   *
+   * The ordering is deterministic and independent of:
+   * - insertion order
+   * - createdAt
+   * - updatedAt
+   * - database physical ordering
+   *
+   * Returns an empty array when the Course has no versions.
+   */
+  findAllByCourseId(courseId: CourseId): Promise<readonly CourseVersion[]>;
+
+  /**
    * Finds the latest version belonging to a Course.
    *
    * "Latest" is determined by the domain version number, not by database
@@ -32,9 +47,7 @@ export interface CourseVersionRepository {
    *
    * Returns null when the Course has no published version.
    */
-  findPublishedByCourseId(
-    courseId: CourseId,
-  ): Promise<CourseVersion | null>;
+  findPublishedByCourseId(courseId: CourseId): Promise<CourseVersion | null>;
 
   /**
    * Determines whether a specific version number already exists for a Course.

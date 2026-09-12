@@ -56,23 +56,25 @@ jobs:
           filter: tree:0
           fetch-depth: 0
 
-      # Setup pnpm used by this repository
+      # Setup pnpm used by this repository.
       - uses: pnpm/action-setup@v6
         with:
           version: 11.10.0
 
-      # Setup Node.js and cache the pnpm store
+      # Setup Node.js and cache the pnpm store.
       - uses: actions/setup-node@v5
         with:
           node-version: 24
-          cache: 'pnpm'
+          cache: pnpm
 
-      # Install the exact dependency graph from the committed lockfile
-      - run: pnpm install --frozen-lockfile
+      # Install the exact dependency graph from the committed lockfile.
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      # Provide the runtime env file required by the API Nx serve target.
+      # Provide the runtime environment required by the API serve target.
       # This file exists only inside the ephemeral CI runner.
       - name: Create API CI environment file
+        shell: bash
         run: |
           cat > apps/api/.env <<'EOF'
           NODE_ENV=test
@@ -83,12 +85,24 @@ jobs:
           INTERNAL_API_KEY=ci-test-internal-api-key
           EOF
 
-      # Apply the committed Prisma migrations to the ephemeral CI database
+      # Apply the committed Prisma migrations to the ephemeral CI database.
       - name: Apply database migrations
         run: pnpm --filter @org/api exec prisma migrate deploy --config prisma.config.ts
 
-      # Validate formatting
-      - run: pnpm exec nx format:check --base="remotes/origin/main"
+      # Validate formatting before executing the project graph.
+      - name: Check formatting
+        run: pnpm exec nx format:check --base="remotes/origin/main"
 
-      # Run the complete Nx CI validation suite
-      - run: pnpm exec nx run-many -t lint test build typecheck e2e
+      # Run all non-E2E validation first.
+      #
+      # E2E is deliberately excluded from this fan-out because the API E2E
+      # target starts a long-lived API server. Running it concurrently with
+      # build/typecheck targets creates an avoidable startup race.
+      - name: Run lint, test, build and typecheck
+        run: pnpm exec nx run-many -t lint test build typecheck
+
+      # Run the API E2E suite only after the complete build/typecheck graph
+      # has finished successfully. This gives the API serve target a fully
+      # materialized dependency graph before the test starts.
+      - name: Run API E2E
+        run: pnpm exec nx run @org/api-e2e:e2e

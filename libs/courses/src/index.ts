@@ -258,6 +258,21 @@ export type {
 } from './domain/versioning/course-version-lineage.js';
 
 /**
+ * Course version rollback
+ *
+ * Rollback is modeled as creation of a new forward CourseVersion
+ * derived from an immutable historical version.
+ *
+ * Historical versions are never mutated or reused.
+ */
+export { createCourseVersionRollback } from './domain/versioning/course-version-rollback.js';
+
+export type {
+  CreateCourseVersionRollbackProps,
+  CourseVersionRollbackResult,
+} from './domain/versioning/course-version-rollback.js';
+
+/**
  * CourseVersion lifecycle status
  */
 export {

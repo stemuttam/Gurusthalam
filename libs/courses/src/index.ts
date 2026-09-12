@@ -315,6 +315,28 @@ export type {
 } from './domain/versioning/course-version-audit.js';
 
 /**
+ * Course version schema migration
+ *
+ * Defines the compatibility boundary for persisted CourseVersionSnapshot
+ * representations.
+ *
+ * Historical snapshots are never silently interpreted as newer schemas.
+ * Future schema changes must be introduced through explicit migration
+ * adapters at this boundary.
+ */
+export {
+  CourseVersionSnapshotMigrationError,
+  isCompatibleCourseVersionSnapshot,
+  isSupportedCourseVersionSnapshotSchemaVersion,
+  migrateCourseVersionSnapshot,
+} from './domain/versioning/course-version-schema-migration.js';
+
+export type {
+  CourseVersionSnapshotMigrationResult,
+  SupportedCourseVersionSnapshotSchemaVersion,
+} from './domain/versioning/course-version-schema-migration.js';
+
+/**
  * CourseVersion lifecycle status
  */
 export {

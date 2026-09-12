@@ -241,6 +241,23 @@ export type {
 } from './domain/versioning/course-version-comparison.js';
 
 /**
+ * Course version lineage
+ *
+ * Immutable derivation relationships connect an earlier CourseVersion
+ * to a later CourseVersion while preserving historical identity.
+ */
+export {
+  COURSE_VERSION_LINEAGE_RELATION,
+  CourseVersionLineage,
+} from './domain/versioning/course-version-lineage.js';
+
+export type {
+  CourseVersionLineageProps,
+  CourseVersionLineageRelation,
+  CreateCourseVersionLineageProps,
+} from './domain/versioning/course-version-lineage.js';
+
+/**
  * CourseVersion lifecycle status
  */
 export {

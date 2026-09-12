@@ -15,9 +15,7 @@ export {
   isCourseLevel,
 } from './domain/enums/course-level.js';
 
-export type {
-  CourseLevel as CourseLevelValue,
-} from './domain/enums/course-level.js';
+export type { CourseLevel as CourseLevelValue } from './domain/enums/course-level.js';
 
 /**
  * Course status
@@ -28,9 +26,7 @@ export {
   isCourseStatus,
 } from './domain/enums/course-status.js';
 
-export type {
-  CourseStatus as CourseStatusValue,
-} from './domain/enums/course-status.js';
+export type { CourseStatus as CourseStatusValue } from './domain/enums/course-status.js';
 
 /**
  * Course lifecycle policy
@@ -63,13 +59,9 @@ export {
  *
  * This does not introduce a second lifecycle state machine.
  */
-export {
-  getCourseLifecycleCapabilities,
-} from './domain/lifecycle/course-lifecycle.capabilities.js';
+export { getCourseLifecycleCapabilities } from './domain/lifecycle/course-lifecycle.capabilities.js';
 
-export type {
-  CourseLifecycleCapabilities,
-} from './domain/lifecycle/course-lifecycle.capabilities.js';
+export type { CourseLifecycleCapabilities } from './domain/lifecycle/course-lifecycle.capabilities.js';
 
 /**
  * Course type
@@ -80,9 +72,7 @@ export {
   isCourseType,
 } from './domain/enums/course-type.js';
 
-export type {
-  CourseType as CourseTypeValue,
-} from './domain/enums/course-type.js';
+export type { CourseType as CourseTypeValue } from './domain/enums/course-type.js';
 
 /**
  * Course visibility
@@ -93,9 +83,7 @@ export {
   isCourseVisibility,
 } from './domain/enums/course-visibility.js';
 
-export type {
-  CourseVisibility as CourseVisibilityValue,
-} from './domain/enums/course-visibility.js';
+export type { CourseVisibility as CourseVisibilityValue } from './domain/enums/course-visibility.js';
 
 /**
  * Domain errors
@@ -114,9 +102,7 @@ export type {
 /**
  * Course value objects
  */
-export {
-  CourseId,
-} from './domain/value-objects/course-id.js';
+export { CourseId } from './domain/value-objects/course-id.js';
 
 /**
  * Course metadata domain contracts
@@ -219,18 +205,40 @@ export type {
 /**
  * Course version
  */
-export {
-  CourseVersion,
-} from './domain/entities/course-version.js';
+export { CourseVersion } from './domain/entities/course-version.js';
 
 export type {
   CourseVersionProps,
   CreateCourseVersionProps,
 } from './domain/entities/course-version.js';
 
+export { CourseVersionId } from './domain/value-objects/course-version-id.js';
+
+/**
+ * Course versioning
+ *
+ * Provides immutable, serializable snapshots and deterministic
+ * snapshot comparison without coupling versioning to persistence,
+ * HTTP, or infrastructure.
+ *
+ * Snapshot schema versioning is deliberately separate from the
+ * business CourseVersion number so representation migrations can
+ * evolve independently from educational content revisions.
+ */
 export {
-  CourseVersionId,
-} from './domain/value-objects/course-version-id.js';
+  COURSE_VERSION_SNAPSHOT_SCHEMA_VERSION,
+  createCourseVersionSnapshot,
+} from './domain/versioning/course-version-snapshot.js';
+
+export type { CourseVersionSnapshot } from './domain/versioning/course-version-snapshot.js';
+
+export { compareCourseVersionSnapshots } from './domain/versioning/course-version-comparison.js';
+
+export type {
+  CourseVersionComparison,
+  CourseVersionFieldChange,
+  CourseVersionSnapshotComparableField,
+} from './domain/versioning/course-version-comparison.js';
 
 /**
  * CourseVersion lifecycle status
@@ -241,20 +249,14 @@ export {
   isCourseVersionStatus,
 } from './domain/enums/course-version-status.js';
 
-export type {
-  CourseVersionStatus as CourseVersionStatusValue,
-} from './domain/enums/course-version-status.js';
+export type { CourseVersionStatus as CourseVersionStatusValue } from './domain/enums/course-version-status.js';
 
 /**
  * Course repositories
  */
-export type {
-  CourseRepository,
-} from './domain/repositories/course-repository.js';
+export type { CourseRepository } from './domain/repositories/course-repository.js';
 
-export type {
-  CourseVersionRepository,
-} from './domain/repositories/course-version-repository.js';
+export type { CourseVersionRepository } from './domain/repositories/course-version-repository.js';
 
 /**
  * Domain events
@@ -281,9 +283,7 @@ export type {
 /**
  * Application layer
  */
-export {
-  DefaultCourseApplicationService,
-} from './application/index.js';
+export { DefaultCourseApplicationService } from './application/index.js';
 
 export type {
   CourseApplicationService,

@@ -399,6 +399,7 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 export const ModelName = {
   Course: 'Course',
   CourseVersion: 'CourseVersion',
+  CourseVersionAudit: 'CourseVersionAudit',
   NotificationTemplate: 'NotificationTemplate',
   NotificationTemplateVersion: 'NotificationTemplateVersion',
   Notification: 'Notification',
@@ -421,7 +422,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "course" | "courseVersion" | "notificationTemplate" | "notificationTemplateVersion" | "notification" | "notificationDelivery" | "outboxEvent" | "notificationAggregation" | "notificationAggregationItem"
+    modelProps: "course" | "courseVersion" | "courseVersionAudit" | "notificationTemplate" | "notificationTemplateVersion" | "notification" | "notificationDelivery" | "outboxEvent" | "notificationAggregation" | "notificationAggregationItem"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -570,6 +571,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.CourseVersionCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.CourseVersionCountAggregateOutputType> | number
+        }
+      }
+    }
+    CourseVersionAudit: {
+      payload: Prisma.$CourseVersionAuditPayload<ExtArgs>
+      fields: Prisma.CourseVersionAuditFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CourseVersionAuditFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseVersionAuditPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CourseVersionAuditFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseVersionAuditPayload>
+        }
+        findFirst: {
+          args: Prisma.CourseVersionAuditFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseVersionAuditPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CourseVersionAuditFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseVersionAuditPayload>
+        }
+        findMany: {
+          args: Prisma.CourseVersionAuditFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseVersionAuditPayload>[]
+        }
+        create: {
+          args: Prisma.CourseVersionAuditCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseVersionAuditPayload>
+        }
+        createMany: {
+          args: Prisma.CourseVersionAuditCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.CourseVersionAuditCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseVersionAuditPayload>[]
+        }
+        delete: {
+          args: Prisma.CourseVersionAuditDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseVersionAuditPayload>
+        }
+        update: {
+          args: Prisma.CourseVersionAuditUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseVersionAuditPayload>
+        }
+        deleteMany: {
+          args: Prisma.CourseVersionAuditDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CourseVersionAuditUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.CourseVersionAuditUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseVersionAuditPayload>[]
+        }
+        upsert: {
+          args: Prisma.CourseVersionAuditUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseVersionAuditPayload>
+        }
+        aggregate: {
+          args: Prisma.CourseVersionAuditAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCourseVersionAudit>
+        }
+        groupBy: {
+          args: Prisma.CourseVersionAuditGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CourseVersionAuditGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CourseVersionAuditCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CourseVersionAuditCountAggregateOutputType> | number
         }
       }
     }
@@ -1161,6 +1236,22 @@ export const CourseVersionScalarFieldEnum = {
 export type CourseVersionScalarFieldEnum = (typeof CourseVersionScalarFieldEnum)[keyof typeof CourseVersionScalarFieldEnum]
 
 
+export const CourseVersionAuditScalarFieldEnum = {
+  id: 'id',
+  courseId: 'courseId',
+  courseVersionId: 'courseVersionId',
+  version: 'version',
+  eventType: 'eventType',
+  occurredAt: 'occurredAt',
+  actorType: 'actorType',
+  actorId: 'actorId',
+  reason: 'reason',
+  metadata: 'metadata'
+} as const
+
+export type CourseVersionAuditScalarFieldEnum = (typeof CourseVersionAuditScalarFieldEnum)[keyof typeof CourseVersionAuditScalarFieldEnum]
+
+
 export const NotificationTemplateScalarFieldEnum = {
   id: 'id',
   templateId: 'templateId',
@@ -1470,6 +1561,20 @@ export type ListEnumCourseVersionStatusFieldRefInput<$PrismaModel> = FieldRefInp
 
 
 /**
+ * Reference to a field of type 'Json'
+ */
+export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
+
+
+
+/**
+ * Reference to a field of type 'QueryMode'
+ */
+export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+
+
+
+/**
  * Reference to a field of type 'NotificationTemplateChannel'
  */
 export type EnumNotificationTemplateChannelFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'NotificationTemplateChannel'>
@@ -1508,20 +1613,6 @@ export type EnumNotificationTemplateStatusFieldRefInput<$PrismaModel> = FieldRef
  * Reference to a field of type 'NotificationTemplateStatus[]'
  */
 export type ListEnumNotificationTemplateStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'NotificationTemplateStatus[]'>
-
-
-
-/**
- * Reference to a field of type 'Json'
- */
-export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
-
-
-
-/**
- * Reference to a field of type 'QueryMode'
- */
-export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
 
 
 
@@ -1761,6 +1852,7 @@ export type PrismaClientOptions = PrismaClientOptionsWithAccelerateUrl | PrismaC
 export type GlobalOmitConfig = {
   course?: Prisma.CourseOmit
   courseVersion?: Prisma.CourseVersionOmit
+  courseVersionAudit?: Prisma.CourseVersionAuditOmit
   notificationTemplate?: Prisma.NotificationTemplateOmit
   notificationTemplateVersion?: Prisma.NotificationTemplateVersionOmit
   notification?: Prisma.NotificationOmit

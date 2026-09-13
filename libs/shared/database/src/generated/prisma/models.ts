@@ -10,6 +10,7 @@
  */
 export type * from './models/Course.js'
 export type * from './models/CourseVersion.js'
+export type * from './models/CourseVersionAudit.js'
 export type * from './models/NotificationTemplate.js'
 export type * from './models/NotificationTemplateVersion.js'
 export type * from './models/Notification.js'

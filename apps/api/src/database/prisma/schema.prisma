@@ -88,10 +88,38 @@ model CourseVersion {
 
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
+  auditEntries CourseVersionAudit[]
+
   @@unique([courseId, version])
   @@index([courseId, status])
   @@index([status, publishedAt])
   @@index([courseId, status, version])
+}
+
+model CourseVersionAudit {
+  id String @id @default(uuid())
+
+  courseId        String
+  courseVersionId String
+  version         Int
+
+  eventType String
+
+  occurredAt DateTime
+
+  actorType String
+  actorId   String
+
+  reason   String?
+  metadata Json
+
+  courseVersion CourseVersion @relation(fields: [courseVersionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([courseVersionId, occurredAt, id])
+  @@index([courseId, occurredAt, id])
+  @@index([courseId, version])
+  @@index([eventType, occurredAt])
+  @@index([actorType, actorId])
 }
 
 // =============================================================

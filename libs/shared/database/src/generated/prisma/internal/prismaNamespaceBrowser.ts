@@ -53,6 +53,7 @@ export const AnyNull = runtime.AnyNull
 export const ModelName = {
   Course: 'Course',
   CourseVersion: 'CourseVersion',
+  CourseVersionAudit: 'CourseVersionAudit',
   NotificationTemplate: 'NotificationTemplate',
   NotificationTemplateVersion: 'NotificationTemplateVersion',
   Notification: 'Notification',
@@ -107,6 +108,22 @@ export const CourseVersionScalarFieldEnum = {
 } as const
 
 export type CourseVersionScalarFieldEnum = (typeof CourseVersionScalarFieldEnum)[keyof typeof CourseVersionScalarFieldEnum]
+
+
+export const CourseVersionAuditScalarFieldEnum = {
+  id: 'id',
+  courseId: 'courseId',
+  courseVersionId: 'courseVersionId',
+  version: 'version',
+  eventType: 'eventType',
+  occurredAt: 'occurredAt',
+  actorType: 'actorType',
+  actorId: 'actorId',
+  reason: 'reason',
+  metadata: 'metadata'
+} as const
+
+export type CourseVersionAuditScalarFieldEnum = (typeof CourseVersionAuditScalarFieldEnum)[keyof typeof CourseVersionAuditScalarFieldEnum]
 
 
 export const NotificationTemplateScalarFieldEnum = {

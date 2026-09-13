@@ -15,11 +15,16 @@ import {
 } from './prisma-course.repository.js';
 
 import {
+  PrismaCourseVersionAuditRepository,
+} from './prisma-course-version-audit.repository.js';
+
+import {
   PrismaCourseVersionRepository,
 } from './prisma-course-version.repository.js';
 
 import {
   COURSE_REPOSITORY,
+  COURSE_VERSION_AUDIT_REPOSITORY,
   COURSE_VERSION_REPOSITORY,
 } from './courses-repository.tokens.js';
 
@@ -60,11 +65,28 @@ import {
           prisma,
         ),
     },
+
+    {
+      provide:
+        COURSE_VERSION_AUDIT_REPOSITORY,
+
+      inject: [
+        PrismaService,
+      ],
+
+      useFactory: (
+        prisma: PrismaService,
+      ): PrismaCourseVersionAuditRepository =>
+        new PrismaCourseVersionAuditRepository(
+          prisma,
+        ),
+    },
   ],
 
   exports: [
     COURSE_REPOSITORY,
     COURSE_VERSION_REPOSITORY,
+    COURSE_VERSION_AUDIT_REPOSITORY,
   ],
 })
 export class CoursesPersistenceModule {}

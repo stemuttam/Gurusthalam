@@ -52,6 +52,11 @@ export type Course = Prisma.CourseModel
  */
 export type CourseVersion = Prisma.CourseVersionModel
 /**
+ * Model CourseVersionAudit
+ *
+ */
+export type CourseVersionAudit = Prisma.CourseVersionAuditModel
+/**
  * Model NotificationTemplate
  *
  */

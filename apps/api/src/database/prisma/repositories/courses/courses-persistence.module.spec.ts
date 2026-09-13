@@ -10,6 +10,7 @@ import {
 
 import type {
   CourseRepository,
+  CourseVersionAuditRepository,
   CourseVersionRepository,
 } from '@gurusthalam/courses';
 
@@ -21,8 +22,10 @@ import {
   CoursesPersistenceModule,
   COURSE_REPOSITORY,
   COURSE_VERSION_REPOSITORY,
+  COURSE_VERSION_AUDIT_REPOSITORY,
   PrismaCourseRepository,
   PrismaCourseVersionRepository,
+  PrismaCourseVersionAuditRepository,
 } from './index.js';
 
 describe(
@@ -48,18 +51,20 @@ describe(
         const moduleRef =
           await createTestingModule();
 
-        const repository =
-          moduleRef.get<CourseRepository>(
-            COURSE_REPOSITORY,
+        try {
+          const repository =
+            moduleRef.get<CourseRepository>(
+              COURSE_REPOSITORY,
+            );
+
+          expect(
+            repository,
+          ).toBeInstanceOf(
+            PrismaCourseRepository,
           );
-
-        expect(
-          repository,
-        ).toBeInstanceOf(
-          PrismaCourseRepository,
-        );
-
-        await moduleRef.close();
+        } finally {
+          await moduleRef.close();
+        }
       },
     );
 
@@ -69,56 +74,106 @@ describe(
         const moduleRef =
           await createTestingModule();
 
-        const repository =
-          moduleRef.get<CourseVersionRepository>(
-            COURSE_VERSION_REPOSITORY,
+        try {
+          const repository =
+            moduleRef.get<CourseVersionRepository>(
+              COURSE_VERSION_REPOSITORY,
+            );
+
+          expect(
+            repository,
+          ).toBeInstanceOf(
+            PrismaCourseVersionRepository,
           );
-
-        expect(
-          repository,
-        ).toBeInstanceOf(
-          PrismaCourseVersionRepository,
-        );
-
-        await moduleRef.close();
+        } finally {
+          await moduleRef.close();
+        }
       },
     );
 
     it(
-      'resolves both repository providers independently',
+      'resolves the CourseVersionAuditRepository provider',
       async () => {
         const moduleRef =
           await createTestingModule();
 
-        const courseRepository =
-          moduleRef.get<CourseRepository>(
-            COURSE_REPOSITORY,
+        try {
+          const repository =
+            moduleRef.get<CourseVersionAuditRepository>(
+              COURSE_VERSION_AUDIT_REPOSITORY,
+            );
+
+          expect(
+            repository,
+          ).toBeInstanceOf(
+            PrismaCourseVersionAuditRepository,
+          );
+        } finally {
+          await moduleRef.close();
+        }
+      },
+    );
+
+    it(
+      'resolves all repository providers independently',
+      async () => {
+        const moduleRef =
+          await createTestingModule();
+
+        try {
+          const courseRepository =
+            moduleRef.get<CourseRepository>(
+              COURSE_REPOSITORY,
+            );
+
+          const versionRepository =
+            moduleRef.get<CourseVersionRepository>(
+              COURSE_VERSION_REPOSITORY,
+            );
+
+          const auditRepository =
+            moduleRef.get<CourseVersionAuditRepository>(
+              COURSE_VERSION_AUDIT_REPOSITORY,
+            );
+
+          expect(
+            courseRepository,
+          ).toBeInstanceOf(
+            PrismaCourseRepository,
           );
 
-        const versionRepository =
-          moduleRef.get<CourseVersionRepository>(
-            COURSE_VERSION_REPOSITORY,
+          expect(
+            versionRepository,
+          ).toBeInstanceOf(
+            PrismaCourseVersionRepository,
           );
 
-        expect(
-          courseRepository,
-        ).toBeInstanceOf(
-          PrismaCourseRepository,
-        );
+          expect(
+            auditRepository,
+          ).toBeInstanceOf(
+            PrismaCourseVersionAuditRepository,
+          );
 
-        expect(
-          versionRepository,
-        ).toBeInstanceOf(
-          PrismaCourseVersionRepository,
-        );
+          expect(
+            courseRepository,
+          ).not.toBe(
+            versionRepository,
+          );
 
-        expect(
-          courseRepository,
-        ).not.toBe(
-          versionRepository,
-        );
+          expect(
+            courseRepository,
+          ).not.toBe(
+            auditRepository,
+          );
 
-        await moduleRef.close();
+          expect(
+            versionRepository,
+          ).not.toBe(
+            auditRepository,
+          );
+        } finally {
+          await moduleRef.close();
+        }
       },
     );
   },

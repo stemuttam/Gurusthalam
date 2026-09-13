@@ -315,6 +315,15 @@ export type {
 } from './domain/versioning/course-version-audit.js';
 
 /**
+ * CourseVersion audit persistence boundary
+ *
+ * Append-only repository contract for immutable version audit facts.
+ */
+export type {
+  CourseVersionAuditRepository,
+} from './domain/repositories/course-version-audit-repository.js';
+
+/**
  * Course version schema migration
  *
  * Defines the compatibility boundary for persisted CourseVersionSnapshot

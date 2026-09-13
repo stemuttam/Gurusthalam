@@ -1,5 +1,6 @@
 export {
   PrismaClient,
+  Prisma,
 } from './generated/prisma/client.js';
 
 export type {
@@ -9,6 +10,10 @@ export type {
 export type {
   CourseVersionModel,
 } from './generated/prisma/models/CourseVersion.js';
+
+export type {
+  CourseVersionAuditModel,
+} from './generated/prisma/models/CourseVersionAudit.js';
 
 export type {
   CourseLevel,

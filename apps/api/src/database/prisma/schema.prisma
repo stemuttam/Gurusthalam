@@ -90,6 +90,9 @@ model CourseVersion {
 
   auditEntries CourseVersionAudit[]
 
+  lineageAsSource CourseVersionLineage[] @relation("CourseVersionLineageSource")
+  lineageAsTarget CourseVersionLineage[] @relation("CourseVersionLineageTarget")
+
   @@unique([courseId, version])
   @@index([courseId, status])
   @@index([status, publishedAt])
@@ -120,6 +123,33 @@ model CourseVersionAudit {
   @@index([courseId, version])
   @@index([eventType, occurredAt])
   @@index([actorType, actorId])
+}
+
+model CourseVersionLineage {
+  id String @id @default(uuid())
+
+  courseId String
+
+  sourceVersionId String
+  sourceVersion   Int
+
+  targetVersionId String
+  targetVersion   Int
+
+  relation String
+  reason   String
+
+  createdAt DateTime @default(now())
+
+  sourceVersionRecord CourseVersion @relation("CourseVersionLineageSource", fields: [sourceVersionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  targetVersionRecord CourseVersion @relation("CourseVersionLineageTarget", fields: [targetVersionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([sourceVersionId, targetVersionId, relation])
+  @@index([courseId, sourceVersion, targetVersion])
+  @@index([courseId, targetVersion])
+  @@index([sourceVersionId])
+  @@index([targetVersionId])
 }
 
 // =============================================================

@@ -11,6 +11,7 @@ import {
 import type {
   CourseRepository,
   CourseVersionAuditRepository,
+  CourseVersionLineageRepository,
   CourseVersionRepository,
 } from '@gurusthalam/courses';
 
@@ -21,11 +22,13 @@ import {
 import {
   CoursesPersistenceModule,
   COURSE_REPOSITORY,
-  COURSE_VERSION_REPOSITORY,
   COURSE_VERSION_AUDIT_REPOSITORY,
+  COURSE_VERSION_LINEAGE_REPOSITORY,
+  COURSE_VERSION_REPOSITORY,
   PrismaCourseRepository,
-  PrismaCourseVersionRepository,
   PrismaCourseVersionAuditRepository,
+  PrismaCourseVersionLineageRepository,
+  PrismaCourseVersionRepository,
 } from './index.js';
 
 describe(
@@ -115,6 +118,29 @@ describe(
     );
 
     it(
+      'resolves the CourseVersionLineageRepository provider',
+      async () => {
+        const moduleRef =
+          await createTestingModule();
+
+        try {
+          const repository =
+            moduleRef.get<CourseVersionLineageRepository>(
+              COURSE_VERSION_LINEAGE_REPOSITORY,
+            );
+
+          expect(
+            repository,
+          ).toBeInstanceOf(
+            PrismaCourseVersionLineageRepository,
+          );
+        } finally {
+          await moduleRef.close();
+        }
+      },
+    );
+
+    it(
       'resolves all repository providers independently',
       async () => {
         const moduleRef =
@@ -136,6 +162,11 @@ describe(
               COURSE_VERSION_AUDIT_REPOSITORY,
             );
 
+          const lineageRepository =
+            moduleRef.get<CourseVersionLineageRepository>(
+              COURSE_VERSION_LINEAGE_REPOSITORY,
+            );
+
           expect(
             courseRepository,
           ).toBeInstanceOf(
@@ -155,6 +186,12 @@ describe(
           );
 
           expect(
+            lineageRepository,
+          ).toBeInstanceOf(
+            PrismaCourseVersionLineageRepository,
+          );
+
+          expect(
             courseRepository,
           ).not.toBe(
             versionRepository,
@@ -167,9 +204,27 @@ describe(
           );
 
           expect(
+            courseRepository,
+          ).not.toBe(
+            lineageRepository,
+          );
+
+          expect(
             versionRepository,
           ).not.toBe(
             auditRepository,
+          );
+
+          expect(
+            versionRepository,
+          ).not.toBe(
+            lineageRepository,
+          );
+
+          expect(
+            auditRepository,
+          ).not.toBe(
+            lineageRepository,
           );
         } finally {
           await moduleRef.close();

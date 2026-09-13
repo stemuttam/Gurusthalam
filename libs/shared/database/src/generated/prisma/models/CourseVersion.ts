@@ -250,6 +250,8 @@ export type CourseVersionWhereInput = {
   publishedAt?: Prisma.DateTimeNullableFilter<"CourseVersion"> | Date | string | null
   course?: Prisma.XOR<Prisma.CourseScalarRelationFilter, Prisma.CourseWhereInput>
   auditEntries?: Prisma.CourseVersionAuditListRelationFilter
+  lineageAsSource?: Prisma.CourseVersionLineageListRelationFilter
+  lineageAsTarget?: Prisma.CourseVersionLineageListRelationFilter
 }
 
 export type CourseVersionOrderByWithRelationInput = {
@@ -264,6 +266,8 @@ export type CourseVersionOrderByWithRelationInput = {
   publishedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   course?: Prisma.CourseOrderByWithRelationInput
   auditEntries?: Prisma.CourseVersionAuditOrderByRelationAggregateInput
+  lineageAsSource?: Prisma.CourseVersionLineageOrderByRelationAggregateInput
+  lineageAsTarget?: Prisma.CourseVersionLineageOrderByRelationAggregateInput
 }
 
 export type CourseVersionWhereUniqueInput = Prisma.AtLeast<{
@@ -282,6 +286,8 @@ export type CourseVersionWhereUniqueInput = Prisma.AtLeast<{
   publishedAt?: Prisma.DateTimeNullableFilter<"CourseVersion"> | Date | string | null
   course?: Prisma.XOR<Prisma.CourseScalarRelationFilter, Prisma.CourseWhereInput>
   auditEntries?: Prisma.CourseVersionAuditListRelationFilter
+  lineageAsSource?: Prisma.CourseVersionLineageListRelationFilter
+  lineageAsTarget?: Prisma.CourseVersionLineageListRelationFilter
 }, "id" | "courseId_version">
 
 export type CourseVersionOrderByWithAggregationInput = {
@@ -327,6 +333,8 @@ export type CourseVersionCreateInput = {
   publishedAt?: Date | string | null
   course: Prisma.CourseCreateNestedOneWithoutVersionsInput
   auditEntries?: Prisma.CourseVersionAuditCreateNestedManyWithoutCourseVersionInput
+  lineageAsSource?: Prisma.CourseVersionLineageCreateNestedManyWithoutSourceVersionRecordInput
+  lineageAsTarget?: Prisma.CourseVersionLineageCreateNestedManyWithoutTargetVersionRecordInput
 }
 
 export type CourseVersionUncheckedCreateInput = {
@@ -340,6 +348,8 @@ export type CourseVersionUncheckedCreateInput = {
   updatedAt?: Date | string
   publishedAt?: Date | string | null
   auditEntries?: Prisma.CourseVersionAuditUncheckedCreateNestedManyWithoutCourseVersionInput
+  lineageAsSource?: Prisma.CourseVersionLineageUncheckedCreateNestedManyWithoutSourceVersionRecordInput
+  lineageAsTarget?: Prisma.CourseVersionLineageUncheckedCreateNestedManyWithoutTargetVersionRecordInput
 }
 
 export type CourseVersionUpdateInput = {
@@ -353,6 +363,8 @@ export type CourseVersionUpdateInput = {
   publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   course?: Prisma.CourseUpdateOneRequiredWithoutVersionsNestedInput
   auditEntries?: Prisma.CourseVersionAuditUpdateManyWithoutCourseVersionNestedInput
+  lineageAsSource?: Prisma.CourseVersionLineageUpdateManyWithoutSourceVersionRecordNestedInput
+  lineageAsTarget?: Prisma.CourseVersionLineageUpdateManyWithoutTargetVersionRecordNestedInput
 }
 
 export type CourseVersionUncheckedUpdateInput = {
@@ -366,6 +378,8 @@ export type CourseVersionUncheckedUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   auditEntries?: Prisma.CourseVersionAuditUncheckedUpdateManyWithoutCourseVersionNestedInput
+  lineageAsSource?: Prisma.CourseVersionLineageUncheckedUpdateManyWithoutSourceVersionRecordNestedInput
+  lineageAsTarget?: Prisma.CourseVersionLineageUncheckedUpdateManyWithoutTargetVersionRecordNestedInput
 }
 
 export type CourseVersionCreateManyInput = {
@@ -539,6 +553,34 @@ export type CourseVersionUpdateOneRequiredWithoutAuditEntriesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.CourseVersionUpdateToOneWithWhereWithoutAuditEntriesInput, Prisma.CourseVersionUpdateWithoutAuditEntriesInput>, Prisma.CourseVersionUncheckedUpdateWithoutAuditEntriesInput>
 }
 
+export type CourseVersionCreateNestedOneWithoutLineageAsSourceInput = {
+  create?: Prisma.XOR<Prisma.CourseVersionCreateWithoutLineageAsSourceInput, Prisma.CourseVersionUncheckedCreateWithoutLineageAsSourceInput>
+  connectOrCreate?: Prisma.CourseVersionCreateOrConnectWithoutLineageAsSourceInput
+  connect?: Prisma.CourseVersionWhereUniqueInput
+}
+
+export type CourseVersionCreateNestedOneWithoutLineageAsTargetInput = {
+  create?: Prisma.XOR<Prisma.CourseVersionCreateWithoutLineageAsTargetInput, Prisma.CourseVersionUncheckedCreateWithoutLineageAsTargetInput>
+  connectOrCreate?: Prisma.CourseVersionCreateOrConnectWithoutLineageAsTargetInput
+  connect?: Prisma.CourseVersionWhereUniqueInput
+}
+
+export type CourseVersionUpdateOneRequiredWithoutLineageAsSourceNestedInput = {
+  create?: Prisma.XOR<Prisma.CourseVersionCreateWithoutLineageAsSourceInput, Prisma.CourseVersionUncheckedCreateWithoutLineageAsSourceInput>
+  connectOrCreate?: Prisma.CourseVersionCreateOrConnectWithoutLineageAsSourceInput
+  upsert?: Prisma.CourseVersionUpsertWithoutLineageAsSourceInput
+  connect?: Prisma.CourseVersionWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CourseVersionUpdateToOneWithWhereWithoutLineageAsSourceInput, Prisma.CourseVersionUpdateWithoutLineageAsSourceInput>, Prisma.CourseVersionUncheckedUpdateWithoutLineageAsSourceInput>
+}
+
+export type CourseVersionUpdateOneRequiredWithoutLineageAsTargetNestedInput = {
+  create?: Prisma.XOR<Prisma.CourseVersionCreateWithoutLineageAsTargetInput, Prisma.CourseVersionUncheckedCreateWithoutLineageAsTargetInput>
+  connectOrCreate?: Prisma.CourseVersionCreateOrConnectWithoutLineageAsTargetInput
+  upsert?: Prisma.CourseVersionUpsertWithoutLineageAsTargetInput
+  connect?: Prisma.CourseVersionWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CourseVersionUpdateToOneWithWhereWithoutLineageAsTargetInput, Prisma.CourseVersionUpdateWithoutLineageAsTargetInput>, Prisma.CourseVersionUncheckedUpdateWithoutLineageAsTargetInput>
+}
+
 export type CourseVersionCreateWithoutCourseInput = {
   id?: string
   version: number
@@ -549,6 +591,8 @@ export type CourseVersionCreateWithoutCourseInput = {
   updatedAt?: Date | string
   publishedAt?: Date | string | null
   auditEntries?: Prisma.CourseVersionAuditCreateNestedManyWithoutCourseVersionInput
+  lineageAsSource?: Prisma.CourseVersionLineageCreateNestedManyWithoutSourceVersionRecordInput
+  lineageAsTarget?: Prisma.CourseVersionLineageCreateNestedManyWithoutTargetVersionRecordInput
 }
 
 export type CourseVersionUncheckedCreateWithoutCourseInput = {
@@ -561,6 +605,8 @@ export type CourseVersionUncheckedCreateWithoutCourseInput = {
   updatedAt?: Date | string
   publishedAt?: Date | string | null
   auditEntries?: Prisma.CourseVersionAuditUncheckedCreateNestedManyWithoutCourseVersionInput
+  lineageAsSource?: Prisma.CourseVersionLineageUncheckedCreateNestedManyWithoutSourceVersionRecordInput
+  lineageAsTarget?: Prisma.CourseVersionLineageUncheckedCreateNestedManyWithoutTargetVersionRecordInput
 }
 
 export type CourseVersionCreateOrConnectWithoutCourseInput = {
@@ -614,6 +660,8 @@ export type CourseVersionCreateWithoutAuditEntriesInput = {
   updatedAt?: Date | string
   publishedAt?: Date | string | null
   course: Prisma.CourseCreateNestedOneWithoutVersionsInput
+  lineageAsSource?: Prisma.CourseVersionLineageCreateNestedManyWithoutSourceVersionRecordInput
+  lineageAsTarget?: Prisma.CourseVersionLineageCreateNestedManyWithoutTargetVersionRecordInput
 }
 
 export type CourseVersionUncheckedCreateWithoutAuditEntriesInput = {
@@ -626,6 +674,8 @@ export type CourseVersionUncheckedCreateWithoutAuditEntriesInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   publishedAt?: Date | string | null
+  lineageAsSource?: Prisma.CourseVersionLineageUncheckedCreateNestedManyWithoutSourceVersionRecordInput
+  lineageAsTarget?: Prisma.CourseVersionLineageUncheckedCreateNestedManyWithoutTargetVersionRecordInput
 }
 
 export type CourseVersionCreateOrConnectWithoutAuditEntriesInput = {
@@ -654,6 +704,8 @@ export type CourseVersionUpdateWithoutAuditEntriesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   course?: Prisma.CourseUpdateOneRequiredWithoutVersionsNestedInput
+  lineageAsSource?: Prisma.CourseVersionLineageUpdateManyWithoutSourceVersionRecordNestedInput
+  lineageAsTarget?: Prisma.CourseVersionLineageUpdateManyWithoutTargetVersionRecordNestedInput
 }
 
 export type CourseVersionUncheckedUpdateWithoutAuditEntriesInput = {
@@ -666,6 +718,152 @@ export type CourseVersionUncheckedUpdateWithoutAuditEntriesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lineageAsSource?: Prisma.CourseVersionLineageUncheckedUpdateManyWithoutSourceVersionRecordNestedInput
+  lineageAsTarget?: Prisma.CourseVersionLineageUncheckedUpdateManyWithoutTargetVersionRecordNestedInput
+}
+
+export type CourseVersionCreateWithoutLineageAsSourceInput = {
+  id?: string
+  version: number
+  status?: $Enums.CourseVersionStatus
+  title: string
+  description?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  publishedAt?: Date | string | null
+  course: Prisma.CourseCreateNestedOneWithoutVersionsInput
+  auditEntries?: Prisma.CourseVersionAuditCreateNestedManyWithoutCourseVersionInput
+  lineageAsTarget?: Prisma.CourseVersionLineageCreateNestedManyWithoutTargetVersionRecordInput
+}
+
+export type CourseVersionUncheckedCreateWithoutLineageAsSourceInput = {
+  id?: string
+  courseId: string
+  version: number
+  status?: $Enums.CourseVersionStatus
+  title: string
+  description?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  publishedAt?: Date | string | null
+  auditEntries?: Prisma.CourseVersionAuditUncheckedCreateNestedManyWithoutCourseVersionInput
+  lineageAsTarget?: Prisma.CourseVersionLineageUncheckedCreateNestedManyWithoutTargetVersionRecordInput
+}
+
+export type CourseVersionCreateOrConnectWithoutLineageAsSourceInput = {
+  where: Prisma.CourseVersionWhereUniqueInput
+  create: Prisma.XOR<Prisma.CourseVersionCreateWithoutLineageAsSourceInput, Prisma.CourseVersionUncheckedCreateWithoutLineageAsSourceInput>
+}
+
+export type CourseVersionCreateWithoutLineageAsTargetInput = {
+  id?: string
+  version: number
+  status?: $Enums.CourseVersionStatus
+  title: string
+  description?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  publishedAt?: Date | string | null
+  course: Prisma.CourseCreateNestedOneWithoutVersionsInput
+  auditEntries?: Prisma.CourseVersionAuditCreateNestedManyWithoutCourseVersionInput
+  lineageAsSource?: Prisma.CourseVersionLineageCreateNestedManyWithoutSourceVersionRecordInput
+}
+
+export type CourseVersionUncheckedCreateWithoutLineageAsTargetInput = {
+  id?: string
+  courseId: string
+  version: number
+  status?: $Enums.CourseVersionStatus
+  title: string
+  description?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  publishedAt?: Date | string | null
+  auditEntries?: Prisma.CourseVersionAuditUncheckedCreateNestedManyWithoutCourseVersionInput
+  lineageAsSource?: Prisma.CourseVersionLineageUncheckedCreateNestedManyWithoutSourceVersionRecordInput
+}
+
+export type CourseVersionCreateOrConnectWithoutLineageAsTargetInput = {
+  where: Prisma.CourseVersionWhereUniqueInput
+  create: Prisma.XOR<Prisma.CourseVersionCreateWithoutLineageAsTargetInput, Prisma.CourseVersionUncheckedCreateWithoutLineageAsTargetInput>
+}
+
+export type CourseVersionUpsertWithoutLineageAsSourceInput = {
+  update: Prisma.XOR<Prisma.CourseVersionUpdateWithoutLineageAsSourceInput, Prisma.CourseVersionUncheckedUpdateWithoutLineageAsSourceInput>
+  create: Prisma.XOR<Prisma.CourseVersionCreateWithoutLineageAsSourceInput, Prisma.CourseVersionUncheckedCreateWithoutLineageAsSourceInput>
+  where?: Prisma.CourseVersionWhereInput
+}
+
+export type CourseVersionUpdateToOneWithWhereWithoutLineageAsSourceInput = {
+  where?: Prisma.CourseVersionWhereInput
+  data: Prisma.XOR<Prisma.CourseVersionUpdateWithoutLineageAsSourceInput, Prisma.CourseVersionUncheckedUpdateWithoutLineageAsSourceInput>
+}
+
+export type CourseVersionUpdateWithoutLineageAsSourceInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumCourseVersionStatusFieldUpdateOperationsInput | $Enums.CourseVersionStatus
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  course?: Prisma.CourseUpdateOneRequiredWithoutVersionsNestedInput
+  auditEntries?: Prisma.CourseVersionAuditUpdateManyWithoutCourseVersionNestedInput
+  lineageAsTarget?: Prisma.CourseVersionLineageUpdateManyWithoutTargetVersionRecordNestedInput
+}
+
+export type CourseVersionUncheckedUpdateWithoutLineageAsSourceInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  courseId?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumCourseVersionStatusFieldUpdateOperationsInput | $Enums.CourseVersionStatus
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  auditEntries?: Prisma.CourseVersionAuditUncheckedUpdateManyWithoutCourseVersionNestedInput
+  lineageAsTarget?: Prisma.CourseVersionLineageUncheckedUpdateManyWithoutTargetVersionRecordNestedInput
+}
+
+export type CourseVersionUpsertWithoutLineageAsTargetInput = {
+  update: Prisma.XOR<Prisma.CourseVersionUpdateWithoutLineageAsTargetInput, Prisma.CourseVersionUncheckedUpdateWithoutLineageAsTargetInput>
+  create: Prisma.XOR<Prisma.CourseVersionCreateWithoutLineageAsTargetInput, Prisma.CourseVersionUncheckedCreateWithoutLineageAsTargetInput>
+  where?: Prisma.CourseVersionWhereInput
+}
+
+export type CourseVersionUpdateToOneWithWhereWithoutLineageAsTargetInput = {
+  where?: Prisma.CourseVersionWhereInput
+  data: Prisma.XOR<Prisma.CourseVersionUpdateWithoutLineageAsTargetInput, Prisma.CourseVersionUncheckedUpdateWithoutLineageAsTargetInput>
+}
+
+export type CourseVersionUpdateWithoutLineageAsTargetInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumCourseVersionStatusFieldUpdateOperationsInput | $Enums.CourseVersionStatus
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  course?: Prisma.CourseUpdateOneRequiredWithoutVersionsNestedInput
+  auditEntries?: Prisma.CourseVersionAuditUpdateManyWithoutCourseVersionNestedInput
+  lineageAsSource?: Prisma.CourseVersionLineageUpdateManyWithoutSourceVersionRecordNestedInput
+}
+
+export type CourseVersionUncheckedUpdateWithoutLineageAsTargetInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  courseId?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumCourseVersionStatusFieldUpdateOperationsInput | $Enums.CourseVersionStatus
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  auditEntries?: Prisma.CourseVersionAuditUncheckedUpdateManyWithoutCourseVersionNestedInput
+  lineageAsSource?: Prisma.CourseVersionLineageUncheckedUpdateManyWithoutSourceVersionRecordNestedInput
 }
 
 export type CourseVersionCreateManyCourseInput = {
@@ -689,6 +887,8 @@ export type CourseVersionUpdateWithoutCourseInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   auditEntries?: Prisma.CourseVersionAuditUpdateManyWithoutCourseVersionNestedInput
+  lineageAsSource?: Prisma.CourseVersionLineageUpdateManyWithoutSourceVersionRecordNestedInput
+  lineageAsTarget?: Prisma.CourseVersionLineageUpdateManyWithoutTargetVersionRecordNestedInput
 }
 
 export type CourseVersionUncheckedUpdateWithoutCourseInput = {
@@ -701,6 +901,8 @@ export type CourseVersionUncheckedUpdateWithoutCourseInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   auditEntries?: Prisma.CourseVersionAuditUncheckedUpdateManyWithoutCourseVersionNestedInput
+  lineageAsSource?: Prisma.CourseVersionLineageUncheckedUpdateManyWithoutSourceVersionRecordNestedInput
+  lineageAsTarget?: Prisma.CourseVersionLineageUncheckedUpdateManyWithoutTargetVersionRecordNestedInput
 }
 
 export type CourseVersionUncheckedUpdateManyWithoutCourseInput = {
@@ -721,10 +923,14 @@ export type CourseVersionUncheckedUpdateManyWithoutCourseInput = {
 
 export type CourseVersionCountOutputType = {
   auditEntries: number
+  lineageAsSource: number
+  lineageAsTarget: number
 }
 
 export type CourseVersionCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   auditEntries?: boolean | CourseVersionCountOutputTypeCountAuditEntriesArgs
+  lineageAsSource?: boolean | CourseVersionCountOutputTypeCountLineageAsSourceArgs
+  lineageAsTarget?: boolean | CourseVersionCountOutputTypeCountLineageAsTargetArgs
 }
 
 /**
@@ -744,6 +950,20 @@ export type CourseVersionCountOutputTypeCountAuditEntriesArgs<ExtArgs extends ru
   where?: Prisma.CourseVersionAuditWhereInput
 }
 
+/**
+ * CourseVersionCountOutputType without action
+ */
+export type CourseVersionCountOutputTypeCountLineageAsSourceArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.CourseVersionLineageWhereInput
+}
+
+/**
+ * CourseVersionCountOutputType without action
+ */
+export type CourseVersionCountOutputTypeCountLineageAsTargetArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.CourseVersionLineageWhereInput
+}
+
 
 export type CourseVersionSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -757,6 +977,8 @@ export type CourseVersionSelect<ExtArgs extends runtime.Types.Extensions.Interna
   publishedAt?: boolean
   course?: boolean | Prisma.CourseDefaultArgs<ExtArgs>
   auditEntries?: boolean | Prisma.CourseVersion$auditEntriesArgs<ExtArgs>
+  lineageAsSource?: boolean | Prisma.CourseVersion$lineageAsSourceArgs<ExtArgs>
+  lineageAsTarget?: boolean | Prisma.CourseVersion$lineageAsTargetArgs<ExtArgs>
   _count?: boolean | Prisma.CourseVersionCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["courseVersion"]>
 
@@ -802,6 +1024,8 @@ export type CourseVersionOmit<ExtArgs extends runtime.Types.Extensions.InternalA
 export type CourseVersionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   course?: boolean | Prisma.CourseDefaultArgs<ExtArgs>
   auditEntries?: boolean | Prisma.CourseVersion$auditEntriesArgs<ExtArgs>
+  lineageAsSource?: boolean | Prisma.CourseVersion$lineageAsSourceArgs<ExtArgs>
+  lineageAsTarget?: boolean | Prisma.CourseVersion$lineageAsTargetArgs<ExtArgs>
   _count?: boolean | Prisma.CourseVersionCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type CourseVersionIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -816,6 +1040,8 @@ export type $CourseVersionPayload<ExtArgs extends runtime.Types.Extensions.Inter
   objects: {
     course: Prisma.$CoursePayload<ExtArgs>
     auditEntries: Prisma.$CourseVersionAuditPayload<ExtArgs>[]
+    lineageAsSource: Prisma.$CourseVersionLineagePayload<ExtArgs>[]
+    lineageAsTarget: Prisma.$CourseVersionLineagePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1223,6 +1449,8 @@ export interface Prisma__CourseVersionClient<T, Null = never, ExtArgs extends ru
   readonly [Symbol.toStringTag]: "PrismaPromise"
   course<T extends Prisma.CourseDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CourseDefaultArgs<ExtArgs>>): Prisma.Prisma__CourseClient<runtime.Types.Result.GetResult<Prisma.$CoursePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   auditEntries<T extends Prisma.CourseVersion$auditEntriesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CourseVersion$auditEntriesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CourseVersionAuditPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  lineageAsSource<T extends Prisma.CourseVersion$lineageAsSourceArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CourseVersion$lineageAsSourceArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CourseVersionLineagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  lineageAsTarget<T extends Prisma.CourseVersion$lineageAsTargetArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CourseVersion$lineageAsTargetArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CourseVersionLineagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1683,6 +1911,54 @@ export type CourseVersion$auditEntriesArgs<ExtArgs extends runtime.Types.Extensi
   take?: number
   skip?: number
   distinct?: Prisma.CourseVersionAuditScalarFieldEnum | Prisma.CourseVersionAuditScalarFieldEnum[]
+}
+
+/**
+ * CourseVersion.lineageAsSource
+ */
+export type CourseVersion$lineageAsSourceArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the CourseVersionLineage
+   */
+  select?: Prisma.CourseVersionLineageSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the CourseVersionLineage
+   */
+  omit?: Prisma.CourseVersionLineageOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CourseVersionLineageInclude<ExtArgs> | null
+  where?: Prisma.CourseVersionLineageWhereInput
+  orderBy?: Prisma.CourseVersionLineageOrderByWithRelationInput | Prisma.CourseVersionLineageOrderByWithRelationInput[]
+  cursor?: Prisma.CourseVersionLineageWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.CourseVersionLineageScalarFieldEnum | Prisma.CourseVersionLineageScalarFieldEnum[]
+}
+
+/**
+ * CourseVersion.lineageAsTarget
+ */
+export type CourseVersion$lineageAsTargetArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the CourseVersionLineage
+   */
+  select?: Prisma.CourseVersionLineageSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the CourseVersionLineage
+   */
+  omit?: Prisma.CourseVersionLineageOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CourseVersionLineageInclude<ExtArgs> | null
+  where?: Prisma.CourseVersionLineageWhereInput
+  orderBy?: Prisma.CourseVersionLineageOrderByWithRelationInput | Prisma.CourseVersionLineageOrderByWithRelationInput[]
+  cursor?: Prisma.CourseVersionLineageWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.CourseVersionLineageScalarFieldEnum | Prisma.CourseVersionLineageScalarFieldEnum[]
 }
 
 /**

@@ -400,6 +400,7 @@ export const ModelName = {
   Course: 'Course',
   CourseVersion: 'CourseVersion',
   CourseVersionAudit: 'CourseVersionAudit',
+  CourseVersionLineage: 'CourseVersionLineage',
   NotificationTemplate: 'NotificationTemplate',
   NotificationTemplateVersion: 'NotificationTemplateVersion',
   Notification: 'Notification',
@@ -422,7 +423,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "course" | "courseVersion" | "courseVersionAudit" | "notificationTemplate" | "notificationTemplateVersion" | "notification" | "notificationDelivery" | "outboxEvent" | "notificationAggregation" | "notificationAggregationItem"
+    modelProps: "course" | "courseVersion" | "courseVersionAudit" | "courseVersionLineage" | "notificationTemplate" | "notificationTemplateVersion" | "notification" | "notificationDelivery" | "outboxEvent" | "notificationAggregation" | "notificationAggregationItem"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -645,6 +646,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.CourseVersionAuditCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.CourseVersionAuditCountAggregateOutputType> | number
+        }
+      }
+    }
+    CourseVersionLineage: {
+      payload: Prisma.$CourseVersionLineagePayload<ExtArgs>
+      fields: Prisma.CourseVersionLineageFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CourseVersionLineageFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseVersionLineagePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CourseVersionLineageFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseVersionLineagePayload>
+        }
+        findFirst: {
+          args: Prisma.CourseVersionLineageFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseVersionLineagePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CourseVersionLineageFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseVersionLineagePayload>
+        }
+        findMany: {
+          args: Prisma.CourseVersionLineageFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseVersionLineagePayload>[]
+        }
+        create: {
+          args: Prisma.CourseVersionLineageCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseVersionLineagePayload>
+        }
+        createMany: {
+          args: Prisma.CourseVersionLineageCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.CourseVersionLineageCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseVersionLineagePayload>[]
+        }
+        delete: {
+          args: Prisma.CourseVersionLineageDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseVersionLineagePayload>
+        }
+        update: {
+          args: Prisma.CourseVersionLineageUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseVersionLineagePayload>
+        }
+        deleteMany: {
+          args: Prisma.CourseVersionLineageDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CourseVersionLineageUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.CourseVersionLineageUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseVersionLineagePayload>[]
+        }
+        upsert: {
+          args: Prisma.CourseVersionLineageUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseVersionLineagePayload>
+        }
+        aggregate: {
+          args: Prisma.CourseVersionLineageAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCourseVersionLineage>
+        }
+        groupBy: {
+          args: Prisma.CourseVersionLineageGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CourseVersionLineageGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CourseVersionLineageCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CourseVersionLineageCountAggregateOutputType> | number
         }
       }
     }
@@ -1252,6 +1327,21 @@ export const CourseVersionAuditScalarFieldEnum = {
 export type CourseVersionAuditScalarFieldEnum = (typeof CourseVersionAuditScalarFieldEnum)[keyof typeof CourseVersionAuditScalarFieldEnum]
 
 
+export const CourseVersionLineageScalarFieldEnum = {
+  id: 'id',
+  courseId: 'courseId',
+  sourceVersionId: 'sourceVersionId',
+  sourceVersion: 'sourceVersion',
+  targetVersionId: 'targetVersionId',
+  targetVersion: 'targetVersion',
+  relation: 'relation',
+  reason: 'reason',
+  createdAt: 'createdAt'
+} as const
+
+export type CourseVersionLineageScalarFieldEnum = (typeof CourseVersionLineageScalarFieldEnum)[keyof typeof CourseVersionLineageScalarFieldEnum]
+
+
 export const NotificationTemplateScalarFieldEnum = {
   id: 'id',
   templateId: 'templateId',
@@ -1853,6 +1943,7 @@ export type GlobalOmitConfig = {
   course?: Prisma.CourseOmit
   courseVersion?: Prisma.CourseVersionOmit
   courseVersionAudit?: Prisma.CourseVersionAuditOmit
+  courseVersionLineage?: Prisma.CourseVersionLineageOmit
   notificationTemplate?: Prisma.NotificationTemplateOmit
   notificationTemplateVersion?: Prisma.NotificationTemplateVersionOmit
   notification?: Prisma.NotificationOmit

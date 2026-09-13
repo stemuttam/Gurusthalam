@@ -54,6 +54,7 @@ export const ModelName = {
   Course: 'Course',
   CourseVersion: 'CourseVersion',
   CourseVersionAudit: 'CourseVersionAudit',
+  CourseVersionLineage: 'CourseVersionLineage',
   NotificationTemplate: 'NotificationTemplate',
   NotificationTemplateVersion: 'NotificationTemplateVersion',
   Notification: 'Notification',
@@ -124,6 +125,21 @@ export const CourseVersionAuditScalarFieldEnum = {
 } as const
 
 export type CourseVersionAuditScalarFieldEnum = (typeof CourseVersionAuditScalarFieldEnum)[keyof typeof CourseVersionAuditScalarFieldEnum]
+
+
+export const CourseVersionLineageScalarFieldEnum = {
+  id: 'id',
+  courseId: 'courseId',
+  sourceVersionId: 'sourceVersionId',
+  sourceVersion: 'sourceVersion',
+  targetVersionId: 'targetVersionId',
+  targetVersion: 'targetVersion',
+  relation: 'relation',
+  reason: 'reason',
+  createdAt: 'createdAt'
+} as const
+
+export type CourseVersionLineageScalarFieldEnum = (typeof CourseVersionLineageScalarFieldEnum)[keyof typeof CourseVersionLineageScalarFieldEnum]
 
 
 export const NotificationTemplateScalarFieldEnum = {

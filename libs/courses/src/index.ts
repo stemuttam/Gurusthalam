@@ -319,9 +319,15 @@ export type {
  *
  * Append-only repository contract for immutable version audit facts.
  */
-export type {
-  CourseVersionAuditRepository,
-} from './domain/repositories/course-version-audit-repository.js';
+export type { CourseVersionAuditRepository } from './domain/repositories/course-version-audit-repository.js';
+
+/**
+ * CourseVersion lineage persistence boundary
+ *
+ * Append-only repository contract for immutable version lineage
+ * relationships.
+ */
+export type { CourseVersionLineageRepository } from './domain/repositories/course-version-lineage-repository.js';
 
 /**
  * Course version schema migration

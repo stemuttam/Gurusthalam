@@ -16,6 +16,10 @@ export type {
 } from './generated/prisma/models/CourseVersionAudit.js';
 
 export type {
+  CourseVersionLineageModel,
+} from './generated/prisma/models/CourseVersionLineage.js';
+
+export type {
   CourseLevel,
   CourseType,
   CourseVisibility,

@@ -468,12 +468,14 @@ export type {
  * Generic Course content abstraction
  *
  * Content models identity, modality, version, source, metadata,
- * accessibility, and availability while remaining independent of media
- * providers, persistence, transport, processing pipelines, and AI artifacts.
+ * accessibility, availability, and immutable snapshots while remaining
+ * independent of media providers, persistence, transport, processing
+ * pipelines, and AI artifacts.
  */
 export {
   Content,
   CONTENT_TYPES,
+  CONTENT_SNAPSHOT_SCHEMA_VERSION,
   ContentAccessibility,
   ContentAvailability,
   ContentId,
@@ -481,6 +483,7 @@ export {
   ContentSource,
   ContentType,
   ContentVersion,
+  createContentSnapshot,
   isContentType,
 } from './domain/content/index.js';
 
@@ -492,6 +495,7 @@ export type {
   ContentMetadataValues,
   ContentPrimitives,
   ContentProps,
+  ContentSnapshot,
   ContentSourceProps,
   ContentType as ContentTypeValue,
   CreateContentProps,

@@ -363,6 +363,44 @@ export {
 export type { CourseVersionStatus as CourseVersionStatusValue } from './domain/enums/course-version-status.js';
 
 /**
+ * Course structure
+ *
+ * Defines the version-owned instructional hierarchy:
+ * CourseVersion → Section → LearningUnit → ContentItemReference /
+ * AssessmentReference.
+ *
+ * Content and assessment implementations remain outside this boundary
+ * until the later Content Abstraction roadmap layer.
+ */
+export {
+  AssessmentReferenceId,
+  ContentItemReferenceId,
+  CourseStructure,
+  LearningUnit,
+  LearningUnitId,
+  Section,
+  SectionId,
+  createAssessmentReference,
+  createContentItemReference,
+  rehydrateAssessmentReference,
+  rehydrateContentItemReference,
+} from './domain/structure/index.js';
+
+export type {
+  AssessmentReferenceProps,
+  ContentItemReferenceProps,
+  CreateAssessmentReferenceProps,
+  CreateContentItemReferenceProps,
+  CreateCourseStructureProps,
+  CreateLearningUnitProps,
+  CreateSectionProps,
+  CourseStructureProps,
+  LearningUnitProps,
+  RehydrateCourseStructureProps,
+  SectionProps,
+} from './domain/structure/index.js';
+
+/**
  * Course repositories
  */
 export type { CourseRepository } from './domain/repositories/course-repository.js';

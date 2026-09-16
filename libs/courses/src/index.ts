@@ -501,3 +501,24 @@ export type {
   CreateContentProps,
   RehydrateContentProps,
 } from './domain/content/index.js';
+
+/**
+ * Course author / instructor ownership vocabulary
+ *
+ * Ownership assignments describe Course-domain participation only.
+ * Identity resolution and authorization remain outside the Course domain.
+ */
+export {
+  COURSE_OWNERSHIP_ROLES,
+  CourseActorId,
+  CourseOwnership,
+  CourseOwnershipRole,
+  createCourseOwnershipAssignment,
+  isCourseOwnershipRole,
+  rehydrateCourseOwnershipAssignment,
+} from './domain/ownership/index.js';
+
+export type {
+  CourseOwnershipAssignmentProps,
+  CourseOwnershipRoleValue,
+} from './domain/ownership/index.js';

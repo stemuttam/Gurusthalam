@@ -463,3 +463,37 @@ export type {
   GetCourseInputSchema,
   CourseVersionRollbackInputSchema,
 } from './application/index.js';
+
+/**
+ * Generic Course content abstraction
+ *
+ * Content models identity, modality, version, source, metadata,
+ * accessibility, and availability while remaining independent of media
+ * providers, persistence, transport, processing pipelines, and AI artifacts.
+ */
+export {
+  Content,
+  CONTENT_TYPES,
+  ContentAccessibility,
+  ContentAvailability,
+  ContentId,
+  ContentMetadata,
+  ContentSource,
+  ContentType,
+  ContentVersion,
+  isContentType,
+} from './domain/content/index.js';
+
+export type {
+  ContentAccessibilityProps,
+  ContentAvailabilityProps,
+  ContentMetadataProps,
+  ContentMetadataValue,
+  ContentMetadataValues,
+  ContentPrimitives,
+  ContentProps,
+  ContentSourceProps,
+  ContentType as ContentTypeValue,
+  CreateContentProps,
+  RehydrateContentProps,
+} from './domain/content/index.js';

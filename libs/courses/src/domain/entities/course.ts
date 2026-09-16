@@ -21,6 +21,10 @@ import {
 } from '../events/index.js';
 import { createDomainEvent } from '../events/domain-event.js';
 import { canTransitionCourseLifecycle } from '../lifecycle/course-lifecycle.policy.js';
+import {
+  CourseOwnership,
+  type CourseOwnershipAssignmentProps,
+} from '../ownership/index.js';
 import { CourseId } from '../value-objects/course-id.js';
 
 export interface CourseProps {
@@ -43,6 +47,14 @@ export interface CreateCourseProps {
   readonly type: CourseTypeValue;
   readonly visibility?: CourseVisibilityValue;
   readonly instructorId: string;
+  /**
+   * Optional ownership state for aggregate creation.
+   *
+   * Ownership is intentionally separate from instructorId:
+   * an Instructor and a Course Author/Owner are not required to
+   * represent the same participant.
+   */
+  readonly ownership?: CourseOwnership;
 }
 
 export interface UpdateCourseMetadataProps {
@@ -76,25 +88,55 @@ type LifecycleTransitionOptions = {
 /**
  * Course aggregate root.
  *
- * The aggregate owns lifecycle, metadata invariants,
- * and pending domain events.
+ * The aggregate owns:
+ * - Course metadata and lifecycle state;
+ * - Course ownership state;
+ * - pending domain events.
  *
- * It deliberately has no dependency on Prisma, NestJS,
- * HTTP, queues, or other infrastructure concerns.
+ * Ownership is represented by the CourseOwnership value object so
+ * assignment invariants remain inside the Course domain.
+ *
+ * Authorization, authentication, identity resolution, Instructor Profile
+ * resolution, RBAC, ABAC, persistence, Prisma, NestJS, HTTP, queues,
+ * and external infrastructure remain outside the aggregate.
  */
 export class Course {
   private readonly props: MutableCourseProps;
 
+  /**
+   * Course ownership is an aggregate-owned immutable value object.
+   *
+   * Persistence integration is intentionally deferred to the ownership
+   * persistence checkpoint so this domain change does not silently change
+   * the existing Course Prisma contract.
+   */
+  private ownershipState: CourseOwnership;
+
   private readonly domainEvents: CourseDomainEvent[] = [];
 
-  private constructor(props: CourseProps) {
+  private constructor(
+    props: CourseProps,
+    ownership: CourseOwnership = CourseOwnership.create(),
+  ) {
     this.validateProps(props);
+
+    if (!(ownership instanceof CourseOwnership)) {
+      throw new CourseValidationError('Course ownership state is invalid.', [
+        {
+          field: 'ownership',
+          message:
+            'Course ownership must be a valid CourseOwnership value object.',
+        },
+      ]);
+    }
 
     this.props = {
       ...props,
       createdAt: new Date(props.createdAt),
       updatedAt: new Date(props.updatedAt),
     };
+
+    this.ownershipState = ownership;
   }
 
   /**
@@ -106,18 +148,21 @@ export class Course {
   static create(input: CreateCourseProps): Course {
     const now = new Date();
 
-    const course = new Course({
-      id: CourseId.generate(),
-      title: input.title,
-      description: input.description ?? null,
-      level: input.level,
-      type: input.type,
-      visibility: input.visibility ?? CourseVisibility.PRIVATE,
-      status: CourseStatus.DRAFT,
-      instructorId: input.instructorId,
-      createdAt: now,
-      updatedAt: now,
-    });
+    const course = new Course(
+      {
+        id: CourseId.generate(),
+        title: input.title,
+        description: input.description ?? null,
+        level: input.level,
+        type: input.type,
+        visibility: input.visibility ?? CourseVisibility.PRIVATE,
+        status: CourseStatus.DRAFT,
+        instructorId: input.instructorId,
+        createdAt: now,
+        updatedAt: now,
+      },
+      input.ownership ?? CourseOwnership.create(),
+    );
 
     course.recordCourseCreatedEvent();
 
@@ -127,11 +172,18 @@ export class Course {
   /**
    * Rehydrates an aggregate from persistence.
    *
+   * Ownership is accepted separately from the legacy Course persistence
+   * properties because the existing Prisma Course record does not yet
+   * contain ownership assignments.
+   *
    * Rehydration never creates domain events because no new
    * domain action has occurred.
    */
-  static rehydrate(props: CourseProps): Course {
-    return new Course(props);
+  static rehydrate(
+    props: CourseProps,
+    ownership: CourseOwnership = CourseOwnership.create(),
+  ): Course {
+    return new Course(props, ownership);
   }
 
   get id(): CourseId {
@@ -162,8 +214,23 @@ export class Course {
     return this.props.status;
   }
 
+  /**
+   * Legacy/compatibility instructor identity.
+   *
+   * This value deliberately remains separate from CourseOwnership.
+   */
   get instructorId(): string {
     return this.props.instructorId;
+  }
+
+  /**
+   * Returns the aggregate's immutable CourseOwnership value object.
+   *
+   * The returned value object exposes immutable operations and therefore
+   * cannot mutate the aggregate directly.
+   */
+  get ownership(): CourseOwnership {
+    return this.ownershipState;
   }
 
   get createdAt(): Date {
@@ -194,6 +261,66 @@ export class Course {
     this.domainEvents.length = 0;
 
     return events;
+  }
+
+  /**
+   * Adds a Course ownership assignment.
+   *
+   * CourseOwnership performs the assignment invariants:
+   * - valid principal;
+   * - valid role;
+   * - no duplicate principal/role pair;
+   * - at most one OWNER.
+   *
+   * Authorization is intentionally not performed here.
+   */
+  addOwnershipAssignment(assignment: CourseOwnershipAssignmentProps): void {
+    this.ownershipState = this.ownershipState.add(assignment);
+    this.touch();
+  }
+
+  /**
+   * Removes a Course ownership assignment.
+   *
+   * Removing an assignment that does not exist is defined by the
+   * CourseOwnership value object as an immutable no-op.
+   *
+   * Authorization is intentionally not performed here.
+   */
+  removeOwnershipAssignment(
+    principalId: CourseOwnershipAssignmentProps['principalId'],
+    role: CourseOwnershipAssignmentProps['role'],
+  ): void {
+    this.ownershipState = this.ownershipState.remove(principalId, role);
+    this.touch();
+  }
+
+  /**
+   * Replaces the complete Course ownership state.
+   *
+   * This method is intentionally aggregate-controlled so callers cannot
+   * swap the aggregate's ownership reference without passing through the
+   * CourseOwnership invariant boundary.
+   *
+   * Authorization is intentionally not performed here.
+   */
+  replaceOwnership(ownership: CourseOwnership): void {
+    if (!(ownership instanceof CourseOwnership)) {
+      throw new CourseValidationError('Course ownership state is invalid.', [
+        {
+          field: 'ownership',
+          message:
+            'Course ownership must be a valid CourseOwnership value object.',
+        },
+      ]);
+    }
+
+    if (this.ownershipState.equals(ownership)) {
+      return;
+    }
+
+    this.ownershipState = ownership;
+    this.touch();
   }
 
   /**
@@ -285,7 +412,11 @@ export class Course {
   }
 
   /**
-   * Returns a persistence-safe snapshot of the aggregate state.
+   * Returns a persistence-safe snapshot of the legacy Course state.
+   *
+   * Ownership is deliberately not flattened into this legacy persistence
+   * shape yet. The ownership persistence contract will be introduced in
+   * its own checkpoint.
    *
    * Date values are defensively copied so callers cannot mutate
    * the aggregate through returned Date references.
@@ -566,6 +697,17 @@ export class Course {
   ): void {
     Object.assign(this.props, changes);
 
+    this.props.updatedAt = new Date();
+  }
+
+  /**
+   * Advances updatedAt for aggregate mutations that are not yet associated
+   * with a dedicated domain event.
+   *
+   * Ownership events are intentionally deferred to the ownership event
+   * checkpoint rather than inventing a new event contract here.
+   */
+  private touch(): void {
     this.props.updatedAt = new Date();
   }
 

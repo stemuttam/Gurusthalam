@@ -394,16 +394,21 @@ export type {
 /**
  * Application layer
  */
-export { DefaultCourseApplicationService } from './application/index.js';
+export {
+  DefaultCourseApplicationService,
+  DefaultCourseVersionRollbackApplicationService,
+} from './application/index.js';
 
 export type {
   CourseApplicationService,
   CreateCourseInput,
   GetCourseInput,
   SaveCourseInput,
-  CourseExistsInputSchema,
-  CreateCourseInputSchema,
-  GetCourseInputSchema,
+  CourseVersionRollbackApplicationResult,
+  CourseVersionRollbackApplicationService,
+  CourseVersionRollbackInput,
+  CourseVersionRollbackPersistence,
+  CourseVersionRollbackTransactionContext,
 } from './application/index.js';
 
 export {
@@ -411,4 +416,12 @@ export {
   courseExistsInputSchema,
   createCourseInputSchema,
   getCourseInputSchema,
+  courseVersionRollbackInputSchema,
+} from './application/index.js';
+
+export type {
+  CourseExistsInputSchema,
+  CreateCourseInputSchema,
+  GetCourseInputSchema,
+  CourseVersionRollbackInputSchema,
 } from './application/index.js';

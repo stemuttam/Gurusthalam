@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { ContentId } from '../content/identifiers/content-id.js';
 import { CourseValidationError } from '../errors/index.js';
 import { CourseVersionId } from '../value-objects/course-version-id.js';
 import { CourseStructure } from './course-structure.js';
@@ -17,6 +18,10 @@ import {
 } from './references/index.js';
 
 const courseVersionId = CourseVersionId.from('course-version-001');
+
+const firstContentId = ContentId.from('content-001');
+
+const secondContentId = ContentId.from('content-002');
 
 const createSection = (title: string, position: number): Section =>
   Section.create({
@@ -128,12 +133,15 @@ describe('CourseStructure', () => {
       const thirdReturned = expectDefined(sections[2]);
 
       expect(firstReturned.id.equals(third.id)).toBe(true);
+
       expect(firstReturned.position).toBe(1);
 
       expect(secondReturned.id.equals(first.id)).toBe(true);
+
       expect(secondReturned.position).toBe(2);
 
       expect(thirdReturned.id.equals(second.id)).toBe(true);
+
       expect(thirdReturned.position).toBe(3);
     });
 
@@ -338,12 +346,15 @@ describe('CourseStructure', () => {
       const thirdReturned = expectDefined(units[2]);
 
       expect(firstReturned.id.equals(third.id)).toBe(true);
+
       expect(firstReturned.position).toBe(1);
 
       expect(secondReturned.id.equals(first.id)).toBe(true);
+
       expect(secondReturned.position).toBe(2);
 
       expect(thirdReturned.id.equals(second.id)).toBe(true);
+
       expect(thirdReturned.position).toBe(3);
     });
 
@@ -394,7 +405,7 @@ describe('CourseStructure', () => {
       structure.attachContentItemReference(
         createContentItemReference({
           learningUnitId: unit.id,
-          contentItemTargetId: 'content-001',
+          contentItemTargetId: firstContentId,
           position: 1,
         }),
       );
@@ -459,7 +470,7 @@ describe('CourseStructure', () => {
 
       const reference = createContentItemReference({
         learningUnitId: unit.id,
-        contentItemTargetId: 'content-001',
+        contentItemTargetId: firstContentId,
         position: 1,
       });
 
@@ -471,7 +482,9 @@ describe('CourseStructure', () => {
 
       expect(stored.learningUnitId.equals(unit.id)).toBe(true);
 
-      expect(stored.contentItemTargetId).toBe('content-001');
+      expect(stored.contentItemTargetId.equals(firstContentId)).toBe(true);
+
+      expect(stored.contentItemTargetId.toString()).toBe('content-001');
 
       expect(stored.position).toBe(1);
     });
@@ -483,7 +496,7 @@ describe('CourseStructure', () => {
 
       const reference = createContentItemReference({
         learningUnitId: LearningUnitId.from('unknown-learning-unit'),
-        contentItemTargetId: 'content-001',
+        contentItemTargetId: firstContentId,
         position: 1,
       });
 
@@ -507,7 +520,7 @@ describe('CourseStructure', () => {
 
       const original = createContentItemReference({
         learningUnitId: unit.id,
-        contentItemTargetId: 'content-001',
+        contentItemTargetId: firstContentId,
         position: 1,
       });
 
@@ -537,13 +550,13 @@ describe('CourseStructure', () => {
 
       const first = createContentItemReference({
         learningUnitId: unit.id,
-        contentItemTargetId: 'content-001',
+        contentItemTargetId: firstContentId,
         position: 1,
       });
 
       const second = createContentItemReference({
         learningUnitId: unit.id,
-        contentItemTargetId: 'content-002',
+        contentItemTargetId: secondContentId,
         position: 2,
       });
 
@@ -562,6 +575,14 @@ describe('CourseStructure', () => {
       expect(firstReturned.id.equals(second.id)).toBe(true);
 
       expect(secondReturned.id.equals(first.id)).toBe(true);
+
+      expect(firstReturned.contentItemTargetId.equals(secondContentId)).toBe(
+        true,
+      );
+
+      expect(secondReturned.contentItemTargetId.equals(firstContentId)).toBe(
+        true,
+      );
 
       expect(firstReturned.position).toBe(1);
       expect(secondReturned.position).toBe(2);
@@ -582,13 +603,13 @@ describe('CourseStructure', () => {
 
       const first = createContentItemReference({
         learningUnitId: unit.id,
-        contentItemTargetId: 'content-001',
+        contentItemTargetId: firstContentId,
         position: 1,
       });
 
       const second = createContentItemReference({
         learningUnitId: unit.id,
-        contentItemTargetId: 'content-002',
+        contentItemTargetId: secondContentId,
         position: 2,
       });
 
@@ -604,8 +625,44 @@ describe('CourseStructure', () => {
 
       expect(remaining.id.equals(second.id)).toBe(true);
 
+      expect(remaining.contentItemTargetId.equals(secondContentId)).toBe(true);
+
       expect(remaining.position).toBe(1);
       expect(references).toHaveLength(1);
+    });
+
+    it('preserves ContentId through structure rehydration', () => {
+      const structure = CourseStructure.create({
+        courseVersionId,
+      });
+
+      const section = createSection('Section', 1);
+
+      structure.addSection(section);
+
+      const unit = createLearningUnit(section.id, 'Unit', 1);
+
+      structure.addLearningUnit(unit);
+
+      const reference = createContentItemReference({
+        learningUnitId: unit.id,
+        contentItemTargetId: firstContentId,
+        position: 1,
+      });
+
+      structure.attachContentItemReference(reference);
+
+      const primitives = structure.toPrimitives();
+
+      const rehydrated = CourseStructure.rehydrate(primitives);
+
+      const restored = expectDefined(rehydrated.getContentItemReferences()[0]);
+
+      expect(restored.id.equals(reference.id)).toBe(true);
+
+      expect(restored.contentItemTargetId.equals(firstContentId)).toBe(true);
+
+      expect(restored.contentItemTargetId.toString()).toBe('content-001');
     });
   });
 
@@ -775,7 +832,7 @@ describe('CourseStructure', () => {
 
       const contentReference = createContentItemReference({
         learningUnitId: unit.id,
-        contentItemTargetId: 'content-001',
+        contentItemTargetId: firstContentId,
         position: 1,
       });
 
@@ -826,6 +883,10 @@ describe('CourseStructure', () => {
       );
 
       expect(
+        rehydratedContentReference.contentItemTargetId.equals(firstContentId),
+      ).toBe(true);
+
+      expect(
         rehydratedAssessmentReference.id.equals(assessmentReference.id),
       ).toBe(true);
     });
@@ -863,7 +924,7 @@ describe('CourseStructure', () => {
     it('rejects structure state containing a reference with an unknown parent Learning Unit', () => {
       const reference = createContentItemReference({
         learningUnitId: LearningUnitId.from('unknown-learning-unit'),
-        contentItemTargetId: 'content-001',
+        contentItemTargetId: firstContentId,
         position: 1,
       });
 
@@ -892,7 +953,7 @@ describe('CourseStructure', () => {
 
       const contentReference = createContentItemReference({
         learningUnitId: unit.id,
-        contentItemTargetId: 'content-001',
+        contentItemTargetId: firstContentId,
         position: 1,
       });
 
@@ -939,6 +1000,14 @@ describe('CourseStructure', () => {
           ContentItemReferenceId.from(contentReference.id.value),
         ),
       ).toBe(true);
+
+      expect(
+        serializedContentReference.contentItemTargetId.equals(firstContentId),
+      ).toBe(true);
+
+      expect(serializedContentReference.contentItemTargetId.toString()).toBe(
+        'content-001',
+      );
 
       expect(
         serializedAssessmentReference.id.equals(

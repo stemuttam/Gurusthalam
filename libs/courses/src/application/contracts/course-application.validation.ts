@@ -1,15 +1,16 @@
 import { z } from 'zod';
 
-import {
-  nonEmptyStringSchema,
-} from '@gurusthalam/validation';
+import { nonEmptyStringSchema } from '@gurusthalam/validation';
 
 import { CourseLevel } from '../../domain/enums/course-level.js';
 import { CourseType } from '../../domain/enums/course-type.js';
 import { CourseVisibility } from '../../domain/enums/course-visibility.js';
+import { CourseOwnershipRole } from '../../domain/ownership/index.js';
 
-const courseTitleSchema = nonEmptyStringSchema
-  .max(200, 'Course title must not exceed 200 characters.');
+const courseTitleSchema = nonEmptyStringSchema.max(
+  200,
+  'Course title must not exceed 200 characters.',
+);
 
 const courseDescriptionSchema = z
   .string()
@@ -21,29 +22,59 @@ const instructorIdSchema = nonEmptyStringSchema;
 
 const courseIdSchema = nonEmptyStringSchema;
 
+const principalIdSchema = nonEmptyStringSchema;
+
+/**
+ * Runtime validation contract for a single Course ownership assignment.
+ *
+ * This validates application-boundary primitives only.
+ * CourseActorId and CourseOwnership remain responsible for their
+ * own domain-level invariants after conversion.
+ */
+const courseOwnershipAssignmentInputSchema = z
+  .object({
+    principalId: principalIdSchema,
+
+    role: z.enum(CourseOwnershipRole),
+  })
+  .strict();
+
+/**
+ * Runtime validation contract for a collection of Course ownership
+ * assignments supplied through the application boundary.
+ *
+ * Collection-level invariants such as duplicate assignments and the
+ * single-OWNER rule remain enforced by the CourseOwnership domain object.
+ */
+const courseOwnershipAssignmentsInputSchema = z.array(
+  courseOwnershipAssignmentInputSchema,
+);
+
 /**
  * Runtime validation contract for creating a Course.
  *
- * This validates application-boundary concerns only.
- * Domain invariants remain enforced by the Course aggregate.
+ * Ownership is optional because Courses may initially be created
+ * without explicit ownership assignments. When supplied, ownership
+ * is converted into domain value objects before Course.create() is called.
+ *
+ * Domain invariants remain enforced by the Course aggregate and
+ * CourseOwnership value object.
  */
 export const createCourseInputSchema = z
   .object({
     title: courseTitleSchema,
 
-    description: courseDescriptionSchema
-      .nullable()
-      .optional(),
+    description: courseDescriptionSchema.nullable().optional(),
 
     level: z.enum(CourseLevel),
 
     type: z.enum(CourseType),
 
-    visibility: z
-      .enum(CourseVisibility)
-      .optional(),
+    visibility: z.enum(CourseVisibility).optional(),
 
     instructorId: instructorIdSchema,
+
+    ownership: courseOwnershipAssignmentsInputSchema.optional(),
   })
   .strict();
 
@@ -62,6 +93,48 @@ export const getCourseInputSchema = z
 export const courseExistsInputSchema = getCourseInputSchema;
 
 /**
+ * Runtime validation contract for assigning one ownership role
+ * to one Course participant.
+ */
+export const assignCourseOwnershipInputSchema = z
+  .object({
+    courseId: courseIdSchema,
+
+    principalId: principalIdSchema,
+
+    role: z.enum(CourseOwnershipRole),
+  })
+  .strict();
+
+/**
+ * Runtime validation contract for removing one ownership role
+ * from one Course participant.
+ */
+export const removeCourseOwnershipInputSchema = z
+  .object({
+    courseId: courseIdSchema,
+
+    principalId: principalIdSchema,
+
+    role: z.enum(CourseOwnershipRole),
+  })
+  .strict();
+
+/**
+ * Runtime validation contract for replacing the complete ownership
+ * collection of a Course.
+ *
+ * Collection-level invariants remain enforced by CourseOwnership.
+ */
+export const replaceCourseOwnershipInputSchema = z
+  .object({
+    courseId: courseIdSchema,
+
+    assignments: courseOwnershipAssignmentsInputSchema,
+  })
+  .strict();
+
+/**
  * Runtime validation contract for the course identifier itself.
  *
  * This intentionally follows the current CourseId contract:
@@ -69,14 +142,24 @@ export const courseExistsInputSchema = getCourseInputSchema;
  */
 export const courseIdInputSchema = courseIdSchema;
 
-export type CreateCourseInputSchema = z.infer<
-  typeof createCourseInputSchema
+export type CreateCourseInputSchema = z.infer<typeof createCourseInputSchema>;
+
+export type GetCourseInputSchema = z.infer<typeof getCourseInputSchema>;
+
+export type CourseExistsInputSchema = z.infer<typeof courseExistsInputSchema>;
+
+export type CourseOwnershipAssignmentInputSchema = z.infer<
+  typeof courseOwnershipAssignmentInputSchema
 >;
 
-export type GetCourseInputSchema = z.infer<
-  typeof getCourseInputSchema
+export type AssignCourseOwnershipInputSchema = z.infer<
+  typeof assignCourseOwnershipInputSchema
 >;
 
-export type CourseExistsInputSchema = z.infer<
-  typeof courseExistsInputSchema
+export type RemoveCourseOwnershipInputSchema = z.infer<
+  typeof removeCourseOwnershipInputSchema
+>;
+
+export type ReplaceCourseOwnershipInputSchema = z.infer<
+  typeof replaceCourseOwnershipInputSchema
 >;

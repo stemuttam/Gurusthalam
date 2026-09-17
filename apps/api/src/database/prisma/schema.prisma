@@ -45,6 +45,15 @@ enum CourseVersionStatus {
   ARCHIVED
 }
 
+enum CourseOwnershipRole {
+  OWNER
+  AUTHOR
+  CO_AUTHOR
+  EDITOR
+  REVIEWER
+  PUBLISHER
+}
+
 model Course {
   id String @id @default(uuid())
 
@@ -62,13 +71,28 @@ model Course {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  versions CourseVersion[]
+  versions             CourseVersion[]
+  ownershipAssignments CourseOwnershipAssignment[]
 
   @@index([instructorId])
   @@index([status])
   @@index([visibility])
   @@index([status, visibility])
   @@index([instructorId, status])
+}
+
+model CourseOwnershipAssignment {
+  courseId    String
+  principalId String
+  role        CourseOwnershipRole
+  position    Int
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([courseId, principalId, role])
+  @@unique([courseId, position])
+  @@index([courseId, role])
+  @@index([principalId, role, courseId])
 }
 
 model CourseVersion {
@@ -142,7 +166,6 @@ model CourseVersionLineage {
   createdAt DateTime @default(now())
 
   sourceVersionRecord CourseVersion @relation("CourseVersionLineageSource", fields: [sourceVersionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-
   targetVersionRecord CourseVersion @relation("CourseVersionLineageTarget", fields: [targetVersionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@unique([sourceVersionId, targetVersionId, relation])

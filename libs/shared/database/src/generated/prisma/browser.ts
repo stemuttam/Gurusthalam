@@ -23,6 +23,11 @@ export * from './enums.js';
  */
 export type Course = Prisma.CourseModel
 /**
+ * Model CourseOwnershipAssignment
+ *
+ */
+export type CourseOwnershipAssignment = Prisma.CourseOwnershipAssignmentModel
+/**
  * Model CourseVersion
  *
  */

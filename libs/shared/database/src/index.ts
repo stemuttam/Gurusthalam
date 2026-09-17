@@ -8,6 +8,10 @@ export type {
 } from './generated/prisma/models/Course.js';
 
 export type {
+  CourseOwnershipAssignmentModel,
+} from './generated/prisma/models/CourseOwnershipAssignment.js';
+
+export type {
   CourseVersionModel,
 } from './generated/prisma/models/CourseVersion.js';
 
@@ -21,6 +25,7 @@ export type {
 
 export type {
   CourseLevel,
+  CourseOwnershipRole,
   CourseType,
   CourseVisibility,
   CourseStatus,

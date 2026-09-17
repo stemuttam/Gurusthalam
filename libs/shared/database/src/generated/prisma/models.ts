@@ -9,6 +9,7 @@
  * 🟢 You can import this file directly.
  */
 export type * from './models/Course.js'
+export type * from './models/CourseOwnershipAssignment.js'
 export type * from './models/CourseVersion.js'
 export type * from './models/CourseVersionAudit.js'
 export type * from './models/CourseVersionLineage.js'

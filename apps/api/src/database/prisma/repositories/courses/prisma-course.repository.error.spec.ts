@@ -36,11 +36,53 @@ describe(
     const upsert =
       vi.fn();
 
+    const ownershipFindMany =
+      vi.fn();
+
+    const ownershipDeleteMany =
+      vi.fn();
+
+    const ownershipCreateMany =
+      vi.fn();
+
+    const transaction =
+      vi.fn();
+
+    const transactionClient = {
+      course: {
+        upsert,
+      },
+      courseOwnershipAssignment: {
+        findMany:
+          ownershipFindMany,
+        deleteMany:
+          ownershipDeleteMany,
+        createMany:
+          ownershipCreateMany,
+      },
+    };
+
+    const configureTransaction =
+      (): void => {
+        transaction.mockImplementation(
+          async (
+            callback: (
+              client: typeof transactionClient,
+            ) => Promise<void>,
+          ) =>
+            callback(
+              transactionClient,
+            ),
+        );
+      };
+
     const prisma = {
       course: {
         findUnique,
         upsert,
       },
+      $transaction:
+        transaction,
     } as unknown as PrismaClient;
 
     const repository =
@@ -95,6 +137,12 @@ describe(
       (): void => {
         findUnique.mockReset();
         upsert.mockReset();
+        ownershipFindMany.mockReset();
+        ownershipDeleteMany.mockReset();
+        ownershipCreateMany.mockReset();
+        transaction.mockReset();
+
+        configureTransaction();
       };
 
     it(
@@ -103,7 +151,8 @@ describe(
         resetMocks();
 
         const prismaError = {
-          code: 'P2002',
+          code:
+            'P2002',
           message:
             'Unique constraint failed',
         };
@@ -144,7 +193,8 @@ describe(
         resetMocks();
 
         const prismaError = {
-          code: 'P2003',
+          code:
+            'P2003',
           message:
             'Foreign key constraint failed',
         };
@@ -176,6 +226,10 @@ describe(
         ).toHaveBeenCalledTimes(
           1,
         );
+
+        expect(
+          ownershipFindMany,
+        ).not.toHaveBeenCalled();
       },
     );
 
@@ -185,7 +239,8 @@ describe(
         resetMocks();
 
         const prismaError = {
-          code: 'P2025',
+          code:
+            'P2025',
           message:
             'Record not found',
         };
@@ -220,7 +275,8 @@ describe(
         resetMocks();
 
         const prismaError = {
-          code: 'P2034',
+          code:
+            'P2034',
           message:
             'Transaction failed due to a write conflict',
         };
@@ -284,12 +340,56 @@ describe(
     );
 
     it(
-      'does not execute a second Prisma operation after a failure',
+      'translates ownership persistence failures from save',
+      async () => {
+        resetMocks();
+
+        ownershipFindMany.mockRejectedValue(
+          {
+            code:
+              'P2002',
+            message:
+              'Unique constraint failed',
+          },
+        );
+
+        await expect(
+          repository.save(
+            createCourse(),
+          ),
+        ).rejects.toMatchObject({
+          name:
+            'PrismaRepositoryError',
+
+          code:
+            PrismaRepositoryErrorCode.UNIQUE_CONSTRAINT,
+
+          prismaCode:
+            'P2002',
+        });
+
+        expect(
+          upsert,
+        ).toHaveBeenCalledTimes(
+          1,
+        );
+
+        expect(
+          ownershipFindMany,
+        ).toHaveBeenCalledTimes(
+          1,
+        );
+      },
+    );
+
+    it(
+      'does not execute ownership operations when Course upsert fails',
       async () => {
         resetMocks();
 
         const prismaError = {
-          code: 'P2002',
+          code:
+            'P2002',
           message:
             'Unique constraint failed',
         };
@@ -307,14 +407,16 @@ describe(
         );
 
         expect(
-          findUnique,
+          ownershipFindMany,
         ).not.toHaveBeenCalled();
 
         expect(
-          upsert,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
+          ownershipDeleteMany,
+        ).not.toHaveBeenCalled();
+
+        expect(
+          ownershipCreateMany,
+        ).not.toHaveBeenCalled();
       },
     );
   },

@@ -223,6 +223,7 @@ export type CourseWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Course"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Course"> | Date | string
   versions?: Prisma.CourseVersionListRelationFilter
+  ownershipAssignments?: Prisma.CourseOwnershipAssignmentListRelationFilter
 }
 
 export type CourseOrderByWithRelationInput = {
@@ -237,6 +238,7 @@ export type CourseOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   versions?: Prisma.CourseVersionOrderByRelationAggregateInput
+  ownershipAssignments?: Prisma.CourseOwnershipAssignmentOrderByRelationAggregateInput
 }
 
 export type CourseWhereUniqueInput = Prisma.AtLeast<{
@@ -254,6 +256,7 @@ export type CourseWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"Course"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Course"> | Date | string
   versions?: Prisma.CourseVersionListRelationFilter
+  ownershipAssignments?: Prisma.CourseOwnershipAssignmentListRelationFilter
 }, "id">
 
 export type CourseOrderByWithAggregationInput = {
@@ -300,6 +303,7 @@ export type CourseCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   versions?: Prisma.CourseVersionCreateNestedManyWithoutCourseInput
+  ownershipAssignments?: Prisma.CourseOwnershipAssignmentCreateNestedManyWithoutCourseInput
 }
 
 export type CourseUncheckedCreateInput = {
@@ -314,6 +318,7 @@ export type CourseUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   versions?: Prisma.CourseVersionUncheckedCreateNestedManyWithoutCourseInput
+  ownershipAssignments?: Prisma.CourseOwnershipAssignmentUncheckedCreateNestedManyWithoutCourseInput
 }
 
 export type CourseUpdateInput = {
@@ -328,6 +333,7 @@ export type CourseUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   versions?: Prisma.CourseVersionUpdateManyWithoutCourseNestedInput
+  ownershipAssignments?: Prisma.CourseOwnershipAssignmentUpdateManyWithoutCourseNestedInput
 }
 
 export type CourseUncheckedUpdateInput = {
@@ -342,6 +348,7 @@ export type CourseUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   versions?: Prisma.CourseVersionUncheckedUpdateManyWithoutCourseNestedInput
+  ownershipAssignments?: Prisma.CourseOwnershipAssignmentUncheckedUpdateManyWithoutCourseNestedInput
 }
 
 export type CourseCreateManyInput = {
@@ -455,6 +462,20 @@ export type DateTimeFieldUpdateOperationsInput = {
   set?: Date | string
 }
 
+export type CourseCreateNestedOneWithoutOwnershipAssignmentsInput = {
+  create?: Prisma.XOR<Prisma.CourseCreateWithoutOwnershipAssignmentsInput, Prisma.CourseUncheckedCreateWithoutOwnershipAssignmentsInput>
+  connectOrCreate?: Prisma.CourseCreateOrConnectWithoutOwnershipAssignmentsInput
+  connect?: Prisma.CourseWhereUniqueInput
+}
+
+export type CourseUpdateOneRequiredWithoutOwnershipAssignmentsNestedInput = {
+  create?: Prisma.XOR<Prisma.CourseCreateWithoutOwnershipAssignmentsInput, Prisma.CourseUncheckedCreateWithoutOwnershipAssignmentsInput>
+  connectOrCreate?: Prisma.CourseCreateOrConnectWithoutOwnershipAssignmentsInput
+  upsert?: Prisma.CourseUpsertWithoutOwnershipAssignmentsInput
+  connect?: Prisma.CourseWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CourseUpdateToOneWithWhereWithoutOwnershipAssignmentsInput, Prisma.CourseUpdateWithoutOwnershipAssignmentsInput>, Prisma.CourseUncheckedUpdateWithoutOwnershipAssignmentsInput>
+}
+
 export type CourseCreateNestedOneWithoutVersionsInput = {
   create?: Prisma.XOR<Prisma.CourseCreateWithoutVersionsInput, Prisma.CourseUncheckedCreateWithoutVersionsInput>
   connectOrCreate?: Prisma.CourseCreateOrConnectWithoutVersionsInput
@@ -469,6 +490,78 @@ export type CourseUpdateOneRequiredWithoutVersionsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.CourseUpdateToOneWithWhereWithoutVersionsInput, Prisma.CourseUpdateWithoutVersionsInput>, Prisma.CourseUncheckedUpdateWithoutVersionsInput>
 }
 
+export type CourseCreateWithoutOwnershipAssignmentsInput = {
+  id?: string
+  title: string
+  description?: string | null
+  level: $Enums.CourseLevel
+  type: $Enums.CourseType
+  visibility?: $Enums.CourseVisibility
+  status?: $Enums.CourseStatus
+  instructorId: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  versions?: Prisma.CourseVersionCreateNestedManyWithoutCourseInput
+}
+
+export type CourseUncheckedCreateWithoutOwnershipAssignmentsInput = {
+  id?: string
+  title: string
+  description?: string | null
+  level: $Enums.CourseLevel
+  type: $Enums.CourseType
+  visibility?: $Enums.CourseVisibility
+  status?: $Enums.CourseStatus
+  instructorId: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  versions?: Prisma.CourseVersionUncheckedCreateNestedManyWithoutCourseInput
+}
+
+export type CourseCreateOrConnectWithoutOwnershipAssignmentsInput = {
+  where: Prisma.CourseWhereUniqueInput
+  create: Prisma.XOR<Prisma.CourseCreateWithoutOwnershipAssignmentsInput, Prisma.CourseUncheckedCreateWithoutOwnershipAssignmentsInput>
+}
+
+export type CourseUpsertWithoutOwnershipAssignmentsInput = {
+  update: Prisma.XOR<Prisma.CourseUpdateWithoutOwnershipAssignmentsInput, Prisma.CourseUncheckedUpdateWithoutOwnershipAssignmentsInput>
+  create: Prisma.XOR<Prisma.CourseCreateWithoutOwnershipAssignmentsInput, Prisma.CourseUncheckedCreateWithoutOwnershipAssignmentsInput>
+  where?: Prisma.CourseWhereInput
+}
+
+export type CourseUpdateToOneWithWhereWithoutOwnershipAssignmentsInput = {
+  where?: Prisma.CourseWhereInput
+  data: Prisma.XOR<Prisma.CourseUpdateWithoutOwnershipAssignmentsInput, Prisma.CourseUncheckedUpdateWithoutOwnershipAssignmentsInput>
+}
+
+export type CourseUpdateWithoutOwnershipAssignmentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  level?: Prisma.EnumCourseLevelFieldUpdateOperationsInput | $Enums.CourseLevel
+  type?: Prisma.EnumCourseTypeFieldUpdateOperationsInput | $Enums.CourseType
+  visibility?: Prisma.EnumCourseVisibilityFieldUpdateOperationsInput | $Enums.CourseVisibility
+  status?: Prisma.EnumCourseStatusFieldUpdateOperationsInput | $Enums.CourseStatus
+  instructorId?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  versions?: Prisma.CourseVersionUpdateManyWithoutCourseNestedInput
+}
+
+export type CourseUncheckedUpdateWithoutOwnershipAssignmentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  level?: Prisma.EnumCourseLevelFieldUpdateOperationsInput | $Enums.CourseLevel
+  type?: Prisma.EnumCourseTypeFieldUpdateOperationsInput | $Enums.CourseType
+  visibility?: Prisma.EnumCourseVisibilityFieldUpdateOperationsInput | $Enums.CourseVisibility
+  status?: Prisma.EnumCourseStatusFieldUpdateOperationsInput | $Enums.CourseStatus
+  instructorId?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  versions?: Prisma.CourseVersionUncheckedUpdateManyWithoutCourseNestedInput
+}
+
 export type CourseCreateWithoutVersionsInput = {
   id?: string
   title: string
@@ -480,6 +573,7 @@ export type CourseCreateWithoutVersionsInput = {
   instructorId: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  ownershipAssignments?: Prisma.CourseOwnershipAssignmentCreateNestedManyWithoutCourseInput
 }
 
 export type CourseUncheckedCreateWithoutVersionsInput = {
@@ -493,6 +587,7 @@ export type CourseUncheckedCreateWithoutVersionsInput = {
   instructorId: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  ownershipAssignments?: Prisma.CourseOwnershipAssignmentUncheckedCreateNestedManyWithoutCourseInput
 }
 
 export type CourseCreateOrConnectWithoutVersionsInput = {
@@ -522,6 +617,7 @@ export type CourseUpdateWithoutVersionsInput = {
   instructorId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ownershipAssignments?: Prisma.CourseOwnershipAssignmentUpdateManyWithoutCourseNestedInput
 }
 
 export type CourseUncheckedUpdateWithoutVersionsInput = {
@@ -535,6 +631,7 @@ export type CourseUncheckedUpdateWithoutVersionsInput = {
   instructorId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ownershipAssignments?: Prisma.CourseOwnershipAssignmentUncheckedUpdateManyWithoutCourseNestedInput
 }
 
 
@@ -544,10 +641,12 @@ export type CourseUncheckedUpdateWithoutVersionsInput = {
 
 export type CourseCountOutputType = {
   versions: number
+  ownershipAssignments: number
 }
 
 export type CourseCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   versions?: boolean | CourseCountOutputTypeCountVersionsArgs
+  ownershipAssignments?: boolean | CourseCountOutputTypeCountOwnershipAssignmentsArgs
 }
 
 /**
@@ -567,6 +666,13 @@ export type CourseCountOutputTypeCountVersionsArgs<ExtArgs extends runtime.Types
   where?: Prisma.CourseVersionWhereInput
 }
 
+/**
+ * CourseCountOutputType without action
+ */
+export type CourseCountOutputTypeCountOwnershipAssignmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.CourseOwnershipAssignmentWhereInput
+}
+
 
 export type CourseSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -580,6 +686,7 @@ export type CourseSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   createdAt?: boolean
   updatedAt?: boolean
   versions?: boolean | Prisma.Course$versionsArgs<ExtArgs>
+  ownershipAssignments?: boolean | Prisma.Course$ownershipAssignmentsArgs<ExtArgs>
   _count?: boolean | Prisma.CourseCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["course"]>
 
@@ -625,6 +732,7 @@ export type CourseSelectScalar = {
 export type CourseOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "description" | "level" | "type" | "visibility" | "status" | "instructorId" | "createdAt" | "updatedAt", ExtArgs["result"]["course"]>
 export type CourseInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   versions?: boolean | Prisma.Course$versionsArgs<ExtArgs>
+  ownershipAssignments?: boolean | Prisma.Course$ownershipAssignmentsArgs<ExtArgs>
   _count?: boolean | Prisma.CourseCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type CourseIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -634,6 +742,7 @@ export type $CoursePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
   name: "Course"
   objects: {
     versions: Prisma.$CourseVersionPayload<ExtArgs>[]
+    ownershipAssignments: Prisma.$CourseOwnershipAssignmentPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1041,6 +1150,7 @@ readonly fields: CourseFieldRefs;
 export interface Prisma__CourseClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   versions<T extends Prisma.Course$versionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Course$versionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CourseVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  ownershipAssignments<T extends Prisma.Course$ownershipAssignmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Course$ownershipAssignmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CourseOwnershipAssignmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1494,6 +1604,30 @@ export type Course$versionsArgs<ExtArgs extends runtime.Types.Extensions.Interna
   take?: number
   skip?: number
   distinct?: Prisma.CourseVersionScalarFieldEnum | Prisma.CourseVersionScalarFieldEnum[]
+}
+
+/**
+ * Course.ownershipAssignments
+ */
+export type Course$ownershipAssignmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the CourseOwnershipAssignment
+   */
+  select?: Prisma.CourseOwnershipAssignmentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the CourseOwnershipAssignment
+   */
+  omit?: Prisma.CourseOwnershipAssignmentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CourseOwnershipAssignmentInclude<ExtArgs> | null
+  where?: Prisma.CourseOwnershipAssignmentWhereInput
+  orderBy?: Prisma.CourseOwnershipAssignmentOrderByWithRelationInput | Prisma.CourseOwnershipAssignmentOrderByWithRelationInput[]
+  cursor?: Prisma.CourseOwnershipAssignmentWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.CourseOwnershipAssignmentScalarFieldEnum | Prisma.CourseOwnershipAssignmentScalarFieldEnum[]
 }
 
 /**

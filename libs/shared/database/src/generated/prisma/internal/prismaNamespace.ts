@@ -398,6 +398,7 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 export const ModelName = {
   Course: 'Course',
+  CourseOwnershipAssignment: 'CourseOwnershipAssignment',
   CourseVersion: 'CourseVersion',
   CourseVersionAudit: 'CourseVersionAudit',
   CourseVersionLineage: 'CourseVersionLineage',
@@ -423,7 +424,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "course" | "courseVersion" | "courseVersionAudit" | "courseVersionLineage" | "notificationTemplate" | "notificationTemplateVersion" | "notification" | "notificationDelivery" | "outboxEvent" | "notificationAggregation" | "notificationAggregationItem"
+    modelProps: "course" | "courseOwnershipAssignment" | "courseVersion" | "courseVersionAudit" | "courseVersionLineage" | "notificationTemplate" | "notificationTemplateVersion" | "notification" | "notificationDelivery" | "outboxEvent" | "notificationAggregation" | "notificationAggregationItem"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -498,6 +499,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.CourseCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.CourseCountAggregateOutputType> | number
+        }
+      }
+    }
+    CourseOwnershipAssignment: {
+      payload: Prisma.$CourseOwnershipAssignmentPayload<ExtArgs>
+      fields: Prisma.CourseOwnershipAssignmentFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CourseOwnershipAssignmentFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseOwnershipAssignmentPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CourseOwnershipAssignmentFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseOwnershipAssignmentPayload>
+        }
+        findFirst: {
+          args: Prisma.CourseOwnershipAssignmentFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseOwnershipAssignmentPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CourseOwnershipAssignmentFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseOwnershipAssignmentPayload>
+        }
+        findMany: {
+          args: Prisma.CourseOwnershipAssignmentFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseOwnershipAssignmentPayload>[]
+        }
+        create: {
+          args: Prisma.CourseOwnershipAssignmentCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseOwnershipAssignmentPayload>
+        }
+        createMany: {
+          args: Prisma.CourseOwnershipAssignmentCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.CourseOwnershipAssignmentCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseOwnershipAssignmentPayload>[]
+        }
+        delete: {
+          args: Prisma.CourseOwnershipAssignmentDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseOwnershipAssignmentPayload>
+        }
+        update: {
+          args: Prisma.CourseOwnershipAssignmentUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseOwnershipAssignmentPayload>
+        }
+        deleteMany: {
+          args: Prisma.CourseOwnershipAssignmentDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CourseOwnershipAssignmentUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.CourseOwnershipAssignmentUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseOwnershipAssignmentPayload>[]
+        }
+        upsert: {
+          args: Prisma.CourseOwnershipAssignmentUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseOwnershipAssignmentPayload>
+        }
+        aggregate: {
+          args: Prisma.CourseOwnershipAssignmentAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCourseOwnershipAssignment>
+        }
+        groupBy: {
+          args: Prisma.CourseOwnershipAssignmentGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CourseOwnershipAssignmentGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CourseOwnershipAssignmentCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CourseOwnershipAssignmentCountAggregateOutputType> | number
         }
       }
     }
@@ -1296,6 +1371,16 @@ export const CourseScalarFieldEnum = {
 export type CourseScalarFieldEnum = (typeof CourseScalarFieldEnum)[keyof typeof CourseScalarFieldEnum]
 
 
+export const CourseOwnershipAssignmentScalarFieldEnum = {
+  courseId: 'courseId',
+  principalId: 'principalId',
+  role: 'role',
+  position: 'position'
+} as const
+
+export type CourseOwnershipAssignmentScalarFieldEnum = (typeof CourseOwnershipAssignmentScalarFieldEnum)[keyof typeof CourseOwnershipAssignmentScalarFieldEnum]
+
+
 export const CourseVersionScalarFieldEnum = {
   id: 'id',
   courseId: 'courseId',
@@ -1623,6 +1708,20 @@ export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaM
 
 
 /**
+ * Reference to a field of type 'CourseOwnershipRole'
+ */
+export type EnumCourseOwnershipRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'CourseOwnershipRole'>
+
+
+
+/**
+ * Reference to a field of type 'CourseOwnershipRole[]'
+ */
+export type ListEnumCourseOwnershipRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'CourseOwnershipRole[]'>
+
+
+
+/**
  * Reference to a field of type 'Int'
  */
 export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
@@ -1941,6 +2040,7 @@ export interface PrismaClientOptionsWithAdapter extends PrismaClientBaseOptions 
 export type PrismaClientOptions = PrismaClientOptionsWithAccelerateUrl | PrismaClientOptionsWithAdapter
 export type GlobalOmitConfig = {
   course?: Prisma.CourseOmit
+  courseOwnershipAssignment?: Prisma.CourseOwnershipAssignmentOmit
   courseVersion?: Prisma.CourseVersionOmit
   courseVersionAudit?: Prisma.CourseVersionAuditOmit
   courseVersionLineage?: Prisma.CourseVersionLineageOmit

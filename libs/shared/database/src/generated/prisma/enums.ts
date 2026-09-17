@@ -58,6 +58,18 @@ export const CourseVersionStatus = {
 export type CourseVersionStatus = (typeof CourseVersionStatus)[keyof typeof CourseVersionStatus]
 
 
+export const CourseOwnershipRole = {
+  OWNER: 'OWNER',
+  AUTHOR: 'AUTHOR',
+  CO_AUTHOR: 'CO_AUTHOR',
+  EDITOR: 'EDITOR',
+  REVIEWER: 'REVIEWER',
+  PUBLISHER: 'PUBLISHER'
+} as const
+
+export type CourseOwnershipRole = (typeof CourseOwnershipRole)[keyof typeof CourseOwnershipRole]
+
+
 export const NotificationChannel = {
   EMAIL: 'EMAIL',
   IN_APP: 'IN_APP',

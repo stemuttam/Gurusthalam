@@ -1,10 +1,20 @@
 export {
+  CourseOwnershipPrismaMapper,
+} from './course-ownership-prisma.mapper.js';
+
+export type {
+  PrismaCourseOwnershipAssignmentRecord,
+  PrismaCourseOwnershipPersistence,
+} from './course-ownership-prisma.mapper.js';
+
+export {
   CoursePrismaMapper,
 } from './course-prisma.mapper.js';
 
 export type {
   PrismaCoursePersistence,
   PrismaCourseRecord,
+  PrismaCourseRecordWithOwnership,
 } from './course-prisma.mapper.js';
 
 export {

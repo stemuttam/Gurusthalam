@@ -2,6 +2,7 @@ import {
   Course,
   CourseId,
   CourseLevel,
+  CourseOwnership,
   CourseStatus,
   CourseType,
   CourseVisibility,
@@ -10,13 +11,25 @@ import {
 
 import type {
   CourseModel,
+  CourseOwnershipAssignmentModel,
   CourseLevel as PrismaCourseLevel,
-  CourseStatus as PrismaCourseStatus,
+   CourseStatus as PrismaCourseStatus,
   CourseType as PrismaCourseType,
   CourseVisibility as PrismaCourseVisibility,
 } from '@gurusthalam/database';
 
-export type PrismaCourseRecord = CourseModel;
+import {
+  CourseOwnershipPrismaMapper,
+} from './course-ownership-prisma.mapper.js';
+
+export type PrismaCourseRecord =
+  CourseModel;
+
+export interface PrismaCourseRecordWithOwnership
+  extends PrismaCourseRecord {
+  readonly ownershipAssignments:
+    readonly CourseOwnershipAssignmentModel[];
+}
 
 export interface PrismaCoursePersistence {
   readonly id: string;
@@ -36,41 +49,79 @@ export class CoursePrismaMapper {
     // Static mapper; instantiation is intentionally disabled.
   }
 
-  static toDomain(record: PrismaCourseRecord): Course {
-    return Course.rehydrate({
-      id: CourseId.from(record.id),
-      title: record.title,
-      description: record.description,
-      level: CoursePrismaMapper.toDomainLevel(record.level),
-      type: CoursePrismaMapper.toDomainType(record.type),
-      visibility: CoursePrismaMapper.toDomainVisibility(
-        record.visibility,
+  static toDomain(
+    record: PrismaCourseRecord,
+    ownershipAssignments:
+      readonly CourseOwnershipAssignmentModel[] = [],
+  ): Course {
+    return Course.rehydrate(
+      {
+        id: CourseId.from(record.id),
+        title: record.title,
+        description: record.description,
+        level:
+          CoursePrismaMapper.toDomainLevel(
+            record.level,
+          ),
+        type:
+          CoursePrismaMapper.toDomainType(
+            record.type,
+          ),
+        visibility:
+          CoursePrismaMapper.toDomainVisibility(
+            record.visibility,
+          ),
+        status:
+          CoursePrismaMapper.toDomainStatus(
+            record.status,
+          ),
+        instructorId: record.instructorId,
+        createdAt:
+          new Date(record.createdAt),
+        updatedAt:
+          new Date(record.updatedAt),
+      },
+      CourseOwnership.rehydrate(
+        CourseOwnershipPrismaMapper.toDomainMany(
+          ownershipAssignments,
+        ),
       ),
-      status: CoursePrismaMapper.toDomainStatus(record.status),
-      instructorId: record.instructorId,
-      createdAt: new Date(record.createdAt),
-      updatedAt: new Date(record.updatedAt),
-    });
+    );
   }
 
   static toPersistence(
     course: Course,
   ): PrismaCoursePersistence {
-    const props = course.toPrimitives();
+    const props =
+      course.toPrimitives();
 
     return {
       id: props.id.value,
       title: props.title,
-      description: props.description,
-      level: CoursePrismaMapper.toPrismaLevel(props.level),
-      type: CoursePrismaMapper.toPrismaType(props.type),
-      visibility: CoursePrismaMapper.toPrismaVisibility(
-        props.visibility,
-      ),
-      status: CoursePrismaMapper.toPrismaStatus(props.status),
-      instructorId: props.instructorId,
-      createdAt: new Date(props.createdAt),
-      updatedAt: new Date(props.updatedAt),
+      description:
+        props.description,
+      level:
+        CoursePrismaMapper.toPrismaLevel(
+          props.level,
+        ),
+      type:
+        CoursePrismaMapper.toPrismaType(
+          props.type,
+        ),
+      visibility:
+        CoursePrismaMapper.toPrismaVisibility(
+          props.visibility,
+        ),
+      status:
+        CoursePrismaMapper.toPrismaStatus(
+          props.status,
+        ),
+      instructorId:
+        props.instructorId,
+      createdAt:
+        new Date(props.createdAt),
+      updatedAt:
+        new Date(props.updatedAt),
     };
   }
 
@@ -89,11 +140,12 @@ export class CoursePrismaMapper {
 
       case 'ALL_LEVELS':
         return CourseLevel.ALL_LEVELS;
-    }
 
-    throw new TypeError(
-      `Unsupported Prisma CourseLevel: ${String(value)}`,
-    );
+      default:
+        throw new TypeError(
+          `Unsupported Prisma CourseLevel: ${String(value)}`,
+        );
+    }
   }
 
   private static toPrismaLevel(
@@ -111,11 +163,12 @@ export class CoursePrismaMapper {
 
       case CourseLevel.ALL_LEVELS:
         return 'ALL_LEVELS';
-    }
 
-    throw new TypeError(
-      `Unsupported domain CourseLevel: ${String(value)}`,
-    );
+      default:
+        throw new TypeError(
+          `Unsupported domain CourseLevel: ${String(value)}`,
+        );
+    }
   }
 
   private static toDomainType(
@@ -130,11 +183,12 @@ export class CoursePrismaMapper {
 
       case 'BLENDED':
         return CourseType.BLENDED;
-    }
 
-    throw new TypeError(
-      `Unsupported Prisma CourseType: ${String(value)}`,
-    );
+      default:
+        throw new TypeError(
+          `Unsupported Prisma CourseType: ${String(value)}`,
+        );
+    }
   }
 
   private static toPrismaType(
@@ -149,11 +203,12 @@ export class CoursePrismaMapper {
 
       case CourseType.BLENDED:
         return 'BLENDED';
-    }
 
-    throw new TypeError(
-      `Unsupported domain CourseType: ${String(value)}`,
-    );
+      default:
+        throw new TypeError(
+          `Unsupported domain CourseType: ${String(value)}`,
+        );
+    }
   }
 
   private static toDomainVisibility(
@@ -168,11 +223,12 @@ export class CoursePrismaMapper {
 
       case 'PUBLIC':
         return CourseVisibility.PUBLIC;
-    }
 
-    throw new TypeError(
-      `Unsupported Prisma CourseVisibility: ${String(value)}`,
-    );
+      default:
+        throw new TypeError(
+          `Unsupported Prisma CourseVisibility: ${String(value)}`,
+        );
+    }
   }
 
   private static toPrismaVisibility(
@@ -187,11 +243,12 @@ export class CoursePrismaMapper {
 
       case CourseVisibility.PUBLIC:
         return 'PUBLIC';
-    }
 
-    throw new TypeError(
-      `Unsupported domain CourseVisibility: ${String(value)}`,
-    );
+      default:
+        throw new TypeError(
+          `Unsupported domain CourseVisibility: ${String(value)}`,
+        );
+    }
   }
 
   private static toDomainStatus(
@@ -212,11 +269,12 @@ export class CoursePrismaMapper {
 
       case 'ARCHIVED':
         return CourseStatus.ARCHIVED;
-    }
 
-    throw new TypeError(
-      `Unsupported Prisma CourseStatus: ${String(value)}`,
-    );
+      default:
+        throw new TypeError(
+          `Unsupported Prisma CourseStatus: ${String(value)}`,
+        );
+    }
   }
 
   private static toPrismaStatus(
@@ -237,10 +295,11 @@ export class CoursePrismaMapper {
 
       case CourseStatus.ARCHIVED:
         return 'ARCHIVED';
-    }
 
-    throw new TypeError(
-      `Unsupported domain CourseStatus: ${String(value)}`,
-    );
+      default:
+        throw new TypeError(
+          `Unsupported domain CourseStatus: ${String(value)}`,
+        );
+    }
   }
 }

@@ -14,6 +14,7 @@ export const CourseDomainEventName = {
   CREATED: 'courses.course.created',
   METADATA_UPDATED: 'courses.course.metadata_updated',
   SUBMITTED_FOR_REVIEW: 'courses.course.submitted_for_review',
+  CHANGES_REQUESTED: 'courses.course.changes_requested',
   PUBLISHED: 'courses.course.published',
   UNPUBLISHED: 'courses.course.unpublished',
   ARCHIVED: 'courses.course.archived',
@@ -54,7 +55,7 @@ export interface CourseMetadataUpdatedPayload {
 }
 
 /**
- * Payload emitted when the Course lifecycle status changes.
+ * Payload emitted when a Course lifecycle status changes.
  */
 export interface CourseStatusChangedPayload {
   readonly courseId: string;
@@ -102,6 +103,11 @@ export type CourseSubmittedForReviewEvent = DomainEvent<
   CourseStatusChangedPayload
 >;
 
+export type CourseChangesRequestedEvent = DomainEvent<
+  typeof CourseDomainEventName.CHANGES_REQUESTED,
+  CourseStatusChangedPayload
+>;
+
 export type CoursePublishedEvent = DomainEvent<
   typeof CourseDomainEventName.PUBLISHED,
   CourseStatusChangedPayload
@@ -124,6 +130,7 @@ export type CourseDomainEvent =
   | CourseCreatedEvent
   | CourseMetadataUpdatedEvent
   | CourseSubmittedForReviewEvent
+  | CourseChangesRequestedEvent
   | CoursePublishedEvent
   | CourseUnpublishedEvent
   | CourseArchivedEvent;

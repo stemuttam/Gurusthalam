@@ -1,20 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  getCourseLifecycleCapabilities,
-} from './course-lifecycle.capabilities.js';
-
-import {
   CourseStatus,
   type CourseStatus as CourseStatusValue,
 } from '../enums/course-status.js';
 
+import { getCourseLifecycleCapabilities } from './course-lifecycle.capabilities.js';
+
 describe('Course lifecycle capabilities', () => {
   describe('state projection', () => {
     it('describes the DRAFT lifecycle capabilities', () => {
-      const capabilities = getCourseLifecycleCapabilities(
-        CourseStatus.DRAFT,
-      );
+      const capabilities = getCourseLifecycleCapabilities(CourseStatus.DRAFT);
 
       expect(capabilities.currentStatus).toBe(CourseStatus.DRAFT);
       expect(capabilities.allowedNextStatuses).toEqual([
@@ -31,6 +27,7 @@ describe('Course lifecycle capabilities', () => {
       expect(capabilities.currentStatus).toBe(CourseStatus.IN_REVIEW);
       expect(capabilities.allowedNextStatuses).toEqual([
         CourseStatus.PUBLISHED,
+        CourseStatus.DRAFT,
       ]);
       expect(capabilities.isTerminal).toBe(false);
     });
@@ -54,9 +51,7 @@ describe('Course lifecycle capabilities', () => {
       );
 
       expect(capabilities.currentStatus).toBe(CourseStatus.UNPUBLISHED);
-      expect(capabilities.allowedNextStatuses).toEqual([
-        CourseStatus.ARCHIVED,
-      ]);
+      expect(capabilities.allowedNextStatuses).toEqual([CourseStatus.ARCHIVED]);
       expect(capabilities.isTerminal).toBe(false);
     });
 
@@ -73,30 +68,24 @@ describe('Course lifecycle capabilities', () => {
 
   describe('transition eligibility', () => {
     it('delegates valid transition decisions to the canonical policy', () => {
-      const draft = getCourseLifecycleCapabilities(
-        CourseStatus.DRAFT,
-      );
-      const review = getCourseLifecycleCapabilities(
-        CourseStatus.IN_REVIEW,
-      );
-      const published = getCourseLifecycleCapabilities(
-        CourseStatus.PUBLISHED,
-      );
+      const draft = getCourseLifecycleCapabilities(CourseStatus.DRAFT);
+      const review = getCourseLifecycleCapabilities(CourseStatus.IN_REVIEW);
+      const published = getCourseLifecycleCapabilities(CourseStatus.PUBLISHED);
       const unpublished = getCourseLifecycleCapabilities(
         CourseStatus.UNPUBLISHED,
       );
 
       expect(draft.canTransitionTo(CourseStatus.IN_REVIEW)).toBe(true);
+
       expect(review.canTransitionTo(CourseStatus.PUBLISHED)).toBe(true);
-      expect(
-        published.canTransitionTo(CourseStatus.UNPUBLISHED),
-      ).toBe(true);
-      expect(
-        published.canTransitionTo(CourseStatus.ARCHIVED),
-      ).toBe(true);
-      expect(
-        unpublished.canTransitionTo(CourseStatus.ARCHIVED),
-      ).toBe(true);
+
+      expect(review.canTransitionTo(CourseStatus.DRAFT)).toBe(true);
+
+      expect(published.canTransitionTo(CourseStatus.UNPUBLISHED)).toBe(true);
+
+      expect(published.canTransitionTo(CourseStatus.ARCHIVED)).toBe(true);
+
+      expect(unpublished.canTransitionTo(CourseStatus.ARCHIVED)).toBe(true);
     });
 
     it('rejects invalid transitions without changing the capability snapshot', () => {
@@ -104,17 +93,11 @@ describe('Course lifecycle capabilities', () => {
         CourseStatus.UNPUBLISHED,
       );
 
-      expect(
-        capabilities.canTransitionTo(CourseStatus.PUBLISHED),
-      ).toBe(false);
+      expect(capabilities.canTransitionTo(CourseStatus.PUBLISHED)).toBe(false);
 
-      expect(capabilities.currentStatus).toBe(
-        CourseStatus.UNPUBLISHED,
-      );
+      expect(capabilities.currentStatus).toBe(CourseStatus.UNPUBLISHED);
 
-      expect(capabilities.allowedNextStatuses).toEqual([
-        CourseStatus.ARCHIVED,
-      ]);
+      expect(capabilities.allowedNextStatuses).toEqual([CourseStatus.ARCHIVED]);
     });
 
     it('rejects every transition from ARCHIVED', () => {
@@ -135,41 +118,28 @@ describe('Course lifecycle capabilities', () => {
       );
 
       expect(Object.isFrozen(capabilities)).toBe(true);
-      expect(
-        Object.isFrozen(capabilities.allowedNextStatuses),
-      ).toBe(true);
+
+      expect(Object.isFrozen(capabilities.allowedNextStatuses)).toBe(true);
 
       expect(() => {
-        (
-          capabilities.allowedNextStatuses as CourseStatusValue[]
-        ).pop();
+        (capabilities.allowedNextStatuses as CourseStatusValue[]).pop();
       }).toThrow();
 
       expect(
-        getCourseLifecycleCapabilities(
-          CourseStatus.PUBLISHED,
-        ).allowedNextStatuses,
-      ).toEqual([
-        CourseStatus.UNPUBLISHED,
-        CourseStatus.ARCHIVED,
-      ]);
+        getCourseLifecycleCapabilities(CourseStatus.PUBLISHED)
+          .allowedNextStatuses,
+      ).toEqual([CourseStatus.UNPUBLISHED, CourseStatus.ARCHIVED]);
     });
 
     it('returns independent immutable snapshots', () => {
-      const first = getCourseLifecycleCapabilities(
-        CourseStatus.PUBLISHED,
-      );
-      const second = getCourseLifecycleCapabilities(
-        CourseStatus.PUBLISHED,
-      );
+      const first = getCourseLifecycleCapabilities(CourseStatus.PUBLISHED);
+      const second = getCourseLifecycleCapabilities(CourseStatus.PUBLISHED);
 
       expect(first).not.toBe(second);
-      expect(first.allowedNextStatuses).not.toBe(
-        second.allowedNextStatuses,
-      );
-      expect(first.allowedNextStatuses).toEqual(
-        second.allowedNextStatuses,
-      );
+
+      expect(first.allowedNextStatuses).not.toBe(second.allowedNextStatuses);
+
+      expect(first.allowedNextStatuses).toEqual(second.allowedNextStatuses);
     });
   });
 });

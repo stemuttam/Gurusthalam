@@ -8,6 +8,20 @@ import {
  *
  * This is the single source of truth for lifecycle eligibility.
  *
+ * The 4.8 review workflow supports:
+ *
+ * DRAFT
+ *   -> IN_REVIEW
+ *
+ * IN_REVIEW
+ *   -> PUBLISHED
+ *   -> DRAFT
+ *
+ * The IN_REVIEW -> DRAFT transition represents a review outcome of
+ * REQUEST_CHANGES. APPROVE remains an application/workflow decision
+ * that leads into the existing publish transition; it is not modeled
+ * as a separate persistent CourseStatus here.
+ *
  * Domain responsibilities intentionally limited to:
  * - lifecycle state transitions
  * - transition eligibility
@@ -28,7 +42,10 @@ const COURSE_LIFECYCLE_TRANSITIONS: Readonly<
 > = Object.freeze({
   [CourseStatus.DRAFT]: Object.freeze([CourseStatus.IN_REVIEW]),
 
-  [CourseStatus.IN_REVIEW]: Object.freeze([CourseStatus.PUBLISHED]),
+  [CourseStatus.IN_REVIEW]: Object.freeze([
+    CourseStatus.PUBLISHED,
+    CourseStatus.DRAFT,
+  ]),
 
   [CourseStatus.PUBLISHED]: Object.freeze([
     CourseStatus.UNPUBLISHED,

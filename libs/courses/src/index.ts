@@ -418,6 +418,7 @@ export {
 export type {
   DomainEvent,
   CourseArchivedEvent,
+  CourseChangesRequestedEvent,
   CourseCreatedEvent,
   CourseCreatedPayload,
   CourseDomainEvent,

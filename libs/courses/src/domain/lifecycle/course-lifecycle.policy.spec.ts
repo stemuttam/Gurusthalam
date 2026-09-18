@@ -1,18 +1,23 @@
 import { describe, expect, it } from 'vitest';
+
+import {
+  CourseStatus,
+  type CourseStatus as CourseStatusValue,
+} from '../enums/course-status.js';
+
 import {
   canTransitionCourseLifecycle,
   COURSE_LIFECYCLE_TRANSITIONS,
   getAllowedCourseLifecycleTransitions,
   isTerminalCourseLifecycleStatus,
 } from './course-lifecycle.policy.js';
-import { CourseStatus } from '../enums/course-status.js';
 
 describe('Course lifecycle policy', () => {
   describe('transition graph', () => {
     it('exposes the complete lifecycle transition graph', () => {
       expect(COURSE_LIFECYCLE_TRANSITIONS).toEqual({
         [CourseStatus.DRAFT]: [CourseStatus.IN_REVIEW],
-        [CourseStatus.IN_REVIEW]: [CourseStatus.PUBLISHED],
+        [CourseStatus.IN_REVIEW]: [CourseStatus.PUBLISHED, CourseStatus.DRAFT],
         [CourseStatus.PUBLISHED]: [
           CourseStatus.UNPUBLISHED,
           CourseStatus.ARCHIVED,
@@ -34,6 +39,13 @@ describe('Course lifecycle policy', () => {
         canTransitionCourseLifecycle(
           CourseStatus.IN_REVIEW,
           CourseStatus.PUBLISHED,
+        ),
+      ).toBe(true);
+
+      expect(
+        canTransitionCourseLifecycle(
+          CourseStatus.IN_REVIEW,
+          CourseStatus.DRAFT,
         ),
       ).toBe(true);
 
@@ -82,10 +94,10 @@ describe('Course lifecycle policy', () => {
       ]);
     });
 
-    it('returns the allowed next states for IN_REVIEW', () => {
+    it('returns PUBLISHED and DRAFT as the allowed next states for IN_REVIEW', () => {
       expect(
         getAllowedCourseLifecycleTransitions(CourseStatus.IN_REVIEW),
-      ).toEqual([CourseStatus.PUBLISHED]);
+      ).toEqual([CourseStatus.PUBLISHED, CourseStatus.DRAFT]);
     });
 
     it('returns both supported transitions from PUBLISHED', () => {
@@ -107,19 +119,16 @@ describe('Course lifecycle policy', () => {
     });
 
     it('returns a defensive copy that cannot mutate the policy', () => {
-  const first = getAllowedCourseLifecycleTransitions(
-    CourseStatus.PUBLISHED,
-  ) as CourseStatus[];
+      const first = getAllowedCourseLifecycleTransitions(
+        CourseStatus.PUBLISHED,
+      ) as CourseStatusValue[];
 
-  first.length = 0;
+      first.length = 0;
 
-  expect(
-    getAllowedCourseLifecycleTransitions(CourseStatus.PUBLISHED),
-  ).toEqual([
-    CourseStatus.UNPUBLISHED,
-    CourseStatus.ARCHIVED,
-  ]);
-});
+      expect(
+        getAllowedCourseLifecycleTransitions(CourseStatus.PUBLISHED),
+      ).toEqual([CourseStatus.UNPUBLISHED, CourseStatus.ARCHIVED]);
+    });
   });
 
   describe('terminal state', () => {

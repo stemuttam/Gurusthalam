@@ -32,6 +32,7 @@ describe('Course domain event contracts', () => {
       PUBLISHED: 'courses.course.published',
       UNPUBLISHED: 'courses.course.unpublished',
       ARCHIVED: 'courses.course.archived',
+      CHANGES_REQUESTED: 'courses.course.changes_requested',
     });
   });
 

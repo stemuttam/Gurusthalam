@@ -2,16 +2,21 @@ import {
   CourseStatus,
   type CourseStatus as CourseStatusValue,
 } from '../enums/course-status.js';
+
 import {
   CourseVisibility,
   type CourseVisibility as CourseVisibilityValue,
 } from '../enums/course-visibility.js';
+
 import type { CourseLevel as CourseLevelValue } from '../enums/course-level.js';
+
 import type { CourseType as CourseTypeValue } from '../enums/course-type.js';
+
 import {
   CourseValidationError,
   InvalidCourseStateTransitionError,
 } from '../errors/index.js';
+
 import {
   CourseDomainEventName,
   createCourseMetadataUpdatedEvent,
@@ -19,12 +24,16 @@ import {
   type CourseCreatedPayload,
   type CourseMetadataUpdatedPayload,
 } from '../events/index.js';
+
 import { createDomainEvent } from '../events/domain-event.js';
+
 import { canTransitionCourseLifecycle } from '../lifecycle/course-lifecycle.policy.js';
+
 import {
   CourseOwnership,
   type CourseOwnershipAssignmentProps,
 } from '../ownership/index.js';
+
 import { CourseId } from '../value-objects/course-id.js';
 
 export interface CourseProps {
@@ -47,6 +56,7 @@ export interface CreateCourseProps {
   readonly type: CourseTypeValue;
   readonly visibility?: CourseVisibilityValue;
   readonly instructorId: string;
+
   /**
    * Optional ownership state for aggregate creation.
    *
@@ -76,6 +86,7 @@ type CourseMetadataState = Pick<
 
 type CourseLifecycleEventName =
   | typeof CourseDomainEventName.SUBMITTED_FOR_REVIEW
+  | typeof CourseDomainEventName.CHANGES_REQUESTED
   | typeof CourseDomainEventName.PUBLISHED
   | typeof CourseDomainEventName.UNPUBLISHED
   | typeof CourseDomainEventName.ARCHIVED;
@@ -173,8 +184,8 @@ export class Course {
    * Rehydrates an aggregate from persistence.
    *
    * Ownership is accepted separately from the legacy Course persistence
-   * properties because the existing Prisma Course record does not yet
-   * contain ownership assignments.
+   * properties because ownership is represented by its own persistence
+   * boundary.
    *
    * Rehydration never creates domain events because no new
    * domain action has occurred.
@@ -342,14 +353,18 @@ export class Course {
 
     const nextMetadata: CourseMetadataState = {
       title: input.title === undefined ? this.props.title : input.title.trim(),
+
       description:
         input.description === undefined
           ? this.props.description
           : input.description === null
             ? null
             : input.description.trim(),
+
       level: input.level === undefined ? this.props.level : input.level,
+
       type: input.type === undefined ? this.props.type : input.type,
+
       visibility:
         input.visibility === undefined
           ? this.props.visibility
@@ -383,12 +398,29 @@ export class Course {
   }
 
   /**
+   * Returns a Course from IN_REVIEW to DRAFT when a reviewer
+   * requests changes.
+   *
+   * This is the domain representation of the workflow's
+   * REQUEST_CHANGES branch.
+   *
+   * The operation does not perform authorization. Review authorization
+   * remains outside the Course aggregate.
+   */
+  requestChanges(): void {
+    this.transitionStatus(CourseStatus.DRAFT, {
+      eventName: CourseDomainEventName.CHANGES_REQUESTED,
+    });
+  }
+
+  /**
    * Publishes the Course after validating both lifecycle eligibility
    * and publication readiness.
    */
   publish(): void {
     this.transitionStatus(CourseStatus.PUBLISHED, {
       eventName: CourseDomainEventName.PUBLISHED,
+
       beforeMutation: () => this.validatePublicationReadiness(),
     });
   }
@@ -415,8 +447,7 @@ export class Course {
    * Returns a persistence-safe snapshot of the legacy Course state.
    *
    * Ownership is deliberately not flattened into this legacy persistence
-   * shape yet. The ownership persistence contract will be introduced in
-   * its own checkpoint.
+   * shape because ownership has its own persistence boundary.
    *
    * Date values are defensively copied so callers cannot mutate
    * the aggregate through returned Date references.
@@ -543,6 +574,7 @@ export class Course {
     }
 
     const hasValidCreatedAt = this.isValidDate(props.createdAt);
+
     const hasValidUpdatedAt = this.isValidDate(props.updatedAt);
 
     if (!hasValidCreatedAt) {

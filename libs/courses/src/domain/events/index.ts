@@ -1,7 +1,4 @@
-export {
-  createDomainEvent,
-  type DomainEvent,
-} from './domain-event.js';
+export { createDomainEvent, type DomainEvent } from './domain-event.js';
 
 export {
   CourseDomainEventName,
@@ -10,6 +7,7 @@ export {
 
 export type {
   CourseArchivedEvent,
+  CourseChangesRequestedEvent,
   CourseCreatedEvent,
   CourseCreatedPayload,
   CourseDomainEvent,

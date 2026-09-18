@@ -7,6 +7,8 @@ import type {
   RemoveCourseOwnershipInputSchema,
   ReplaceCourseOwnershipInputSchema,
   CourseOwnershipAssignmentInputSchema,
+  SubmitCourseForReviewInputSchema,
+  PublishCourseInputSchema,
 } from './course-application.validation.js';
 
 export type CreateCourseInput = CreateCourseInputSchema;
@@ -21,6 +23,10 @@ export type AssignCourseOwnershipInput = AssignCourseOwnershipInputSchema;
 export type RemoveCourseOwnershipInput = RemoveCourseOwnershipInputSchema;
 
 export type ReplaceCourseOwnershipInput = ReplaceCourseOwnershipInputSchema;
+
+export type SubmitCourseForReviewInput = SubmitCourseForReviewInputSchema;
+
+export type PublishCourseInput = PublishCourseInputSchema;
 
 export interface SaveCourseInput {
   readonly course: Course;
@@ -61,4 +67,29 @@ export interface CourseApplicationService {
    * Authorization remains outside this application service.
    */
   replaceOwnership(input: ReplaceCourseOwnershipInput): Promise<Course>;
+
+  /**
+   * Submits a Course from DRAFT to IN_REVIEW.
+   *
+   * The Course aggregate remains the source of truth for lifecycle
+   * transition validity and domain-event creation.
+   *
+   * Authentication and authorization are intentionally outside this
+   * application service.
+   */
+  submitForReview(input: SubmitCourseForReviewInput): Promise<Course>;
+
+  /**
+   * Publishes a Course from IN_REVIEW to PUBLISHED.
+   *
+   * The Course aggregate remains responsible for:
+   * - lifecycle transition validity;
+   * - publication readiness;
+   * - timestamp mutation;
+   * - domain-event creation.
+   *
+   * Authentication and authorization are intentionally outside this
+   * application service.
+   */
+  publish(input: PublishCourseInput): Promise<Course>;
 }

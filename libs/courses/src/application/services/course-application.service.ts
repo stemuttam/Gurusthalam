@@ -20,6 +20,8 @@ import {
   assignCourseOwnershipInputSchema,
   removeCourseOwnershipInputSchema,
   replaceCourseOwnershipInputSchema,
+  submitCourseForReviewInputSchema,
+  publishCourseInputSchema,
 } from '../contracts/course-application.validation.js';
 
 import type {
@@ -30,6 +32,8 @@ import type {
   RemoveCourseOwnershipInput,
   ReplaceCourseOwnershipInput,
   SaveCourseInput,
+  SubmitCourseForReviewInput,
+  PublishCourseInput,
   CourseApplicationService,
 } from '../contracts/course-application.contracts.js';
 
@@ -177,6 +181,60 @@ export class DefaultCourseApplicationService implements CourseApplicationService
     }
 
     course.replaceOwnership(ownership);
+
+    await this.courseRepository.save(course);
+
+    return course;
+  }
+
+  /**
+   * Application boundary for the Draft → Review workflow command.
+   *
+   * The application service owns orchestration only:
+   * - validate the command;
+   * - load the aggregate;
+   * - invoke the aggregate lifecycle command;
+   * - persist the aggregate.
+   *
+   * Lifecycle eligibility, mutation, timestamp handling, and the
+   * CourseSubmittedForReview domain event remain inside Course.
+   *
+   * Authorization is deliberately outside this boundary.
+   */
+  async submitForReview(input: SubmitCourseForReviewInput): Promise<Course> {
+    const validatedInput = submitCourseForReviewInputSchema.parse(input);
+
+    const courseId = this.toCourseId(validatedInput.courseId);
+
+    const course = await this.requireCourse(courseId);
+
+    course.submitForReview();
+
+    await this.courseRepository.save(course);
+
+    return course;
+  }
+
+  /**
+   * Application boundary for the Review → Publish workflow command.
+   *
+   * The Course aggregate remains responsible for:
+   * - lifecycle eligibility;
+   * - publication readiness;
+   * - status mutation;
+   * - updatedAt mutation;
+   * - CoursePublished domain event creation.
+   *
+   * Authorization is deliberately outside this boundary.
+   */
+  async publish(input: PublishCourseInput): Promise<Course> {
+    const validatedInput = publishCourseInputSchema.parse(input);
+
+    const courseId = this.toCourseId(validatedInput.courseId);
+
+    const course = await this.requireCourse(courseId);
+
+    course.publish();
 
     await this.courseRepository.save(course);
 

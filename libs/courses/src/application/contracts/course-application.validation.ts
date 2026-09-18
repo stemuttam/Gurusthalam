@@ -135,6 +135,36 @@ export const replaceCourseOwnershipInputSchema = z
   .strict();
 
 /**
+ * Runtime validation contract for Course lifecycle commands.
+ *
+ * Lifecycle authorization is intentionally not represented here.
+ * This contract identifies the Course aggregate that the application
+ * command intends to mutate.
+ */
+export const courseLifecycleCommandInputSchema = z
+  .object({
+    courseId: courseIdSchema,
+  })
+  .strict();
+
+/**
+ * Application command contract for submitting a Course for review.
+ *
+ * Reviewer/author/publisher authorization is deliberately outside
+ * the Course application service.
+ */
+export const submitCourseForReviewInputSchema =
+  courseLifecycleCommandInputSchema;
+
+/**
+ * Application command contract for publishing a Course.
+ *
+ * Publication readiness remains the responsibility of the Course
+ * aggregate. Authorization remains outside this boundary.
+ */
+export const publishCourseInputSchema = courseLifecycleCommandInputSchema;
+
+/**
  * Runtime validation contract for the course identifier itself.
  *
  * This intentionally follows the current CourseId contract:
@@ -163,3 +193,13 @@ export type RemoveCourseOwnershipInputSchema = z.infer<
 export type ReplaceCourseOwnershipInputSchema = z.infer<
   typeof replaceCourseOwnershipInputSchema
 >;
+
+export type CourseLifecycleCommandInputSchema = z.infer<
+  typeof courseLifecycleCommandInputSchema
+>;
+
+export type SubmitCourseForReviewInputSchema = z.infer<
+  typeof submitCourseForReviewInputSchema
+>;
+
+export type PublishCourseInputSchema = z.infer<typeof publishCourseInputSchema>;

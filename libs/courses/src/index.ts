@@ -431,6 +431,12 @@ export type {
 
 /**
  * Application layer
+ *
+ * The public application boundary exposes orchestration contracts,
+ * runtime validation schemas, and application services.
+ *
+ * Authorization, authentication, identity resolution, RBAC, and ABAC
+ * remain outside these Course application contracts.
  */
 export {
   DefaultCourseApplicationService,
@@ -442,6 +448,12 @@ export type {
   CreateCourseInput,
   GetCourseInput,
   SaveCourseInput,
+  CourseOwnershipAssignmentInput,
+  AssignCourseOwnershipInput,
+  RemoveCourseOwnershipInput,
+  ReplaceCourseOwnershipInput,
+  SubmitCourseForReviewInput,
+  PublishCourseInput,
   CourseVersionRollbackApplicationResult,
   CourseVersionRollbackApplicationService,
   CourseVersionRollbackInput,
@@ -454,6 +466,12 @@ export {
   courseExistsInputSchema,
   createCourseInputSchema,
   getCourseInputSchema,
+  assignCourseOwnershipInputSchema,
+  removeCourseOwnershipInputSchema,
+  replaceCourseOwnershipInputSchema,
+  courseLifecycleCommandInputSchema,
+  submitCourseForReviewInputSchema,
+  publishCourseInputSchema,
   courseVersionRollbackInputSchema,
 } from './application/index.js';
 
@@ -461,6 +479,13 @@ export type {
   CourseExistsInputSchema,
   CreateCourseInputSchema,
   GetCourseInputSchema,
+  CourseOwnershipAssignmentInputSchema,
+  AssignCourseOwnershipInputSchema,
+  RemoveCourseOwnershipInputSchema,
+  ReplaceCourseOwnershipInputSchema,
+  CourseLifecycleCommandInputSchema,
+  SubmitCourseForReviewInputSchema,
+  PublishCourseInputSchema,
   CourseVersionRollbackInputSchema,
 } from './application/index.js';
 

@@ -2,13 +2,14 @@ import type { Course } from '../../domain/entities/course.js';
 
 import type {
   AssignCourseOwnershipInputSchema,
+  CourseOwnershipAssignmentInputSchema,
   CreateCourseInputSchema,
   GetCourseInputSchema,
+  PublishCourseInputSchema,
   RemoveCourseOwnershipInputSchema,
   ReplaceCourseOwnershipInputSchema,
-  CourseOwnershipAssignmentInputSchema,
+  RequestCourseChangesInputSchema,
   SubmitCourseForReviewInputSchema,
-  PublishCourseInputSchema,
 } from './course-application.validation.js';
 
 export type CreateCourseInput = CreateCourseInputSchema;
@@ -25,6 +26,8 @@ export type RemoveCourseOwnershipInput = RemoveCourseOwnershipInputSchema;
 export type ReplaceCourseOwnershipInput = ReplaceCourseOwnershipInputSchema;
 
 export type SubmitCourseForReviewInput = SubmitCourseForReviewInputSchema;
+
+export type RequestCourseChangesInput = RequestCourseChangesInputSchema;
 
 export type PublishCourseInput = PublishCourseInputSchema;
 
@@ -78,6 +81,17 @@ export interface CourseApplicationService {
    * application service.
    */
   submitForReview(input: SubmitCourseForReviewInput): Promise<Course>;
+
+  /**
+   * Requests changes on a Course from IN_REVIEW back to DRAFT.
+   *
+   * The Course aggregate remains the source of truth for lifecycle
+   * transition validity and domain-event creation.
+   *
+   * Authentication and authorization are intentionally outside this
+   * application service.
+   */
+  requestChanges(input: RequestCourseChangesInput): Promise<Course>;
 
   /**
    * Publishes a Course from IN_REVIEW to PUBLISHED.

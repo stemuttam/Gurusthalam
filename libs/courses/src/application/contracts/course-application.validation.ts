@@ -157,6 +157,16 @@ export const submitCourseForReviewInputSchema =
   courseLifecycleCommandInputSchema;
 
 /**
+ * Application command contract for requesting changes on a Course
+ * currently in review.
+ *
+ * Reviewer authorization is deliberately outside the Course
+ * application service.
+ */
+export const requestCourseChangesInputSchema =
+  courseLifecycleCommandInputSchema;
+
+/**
  * Application command contract for publishing a Course.
  *
  * Publication readiness remains the responsibility of the Course
@@ -200,6 +210,10 @@ export type CourseLifecycleCommandInputSchema = z.infer<
 
 export type SubmitCourseForReviewInputSchema = z.infer<
   typeof submitCourseForReviewInputSchema
+>;
+
+export type RequestCourseChangesInputSchema = z.infer<
+  typeof requestCourseChangesInputSchema
 >;
 
 export type PublishCourseInputSchema = z.infer<typeof publishCourseInputSchema>;

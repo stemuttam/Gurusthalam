@@ -8,6 +8,7 @@ export type {
   RemoveCourseOwnershipInput,
   ReplaceCourseOwnershipInput,
   SubmitCourseForReviewInput,
+  RequestCourseChangesInput,
   PublishCourseInput,
 } from './contracts/index.js';
 
@@ -29,6 +30,7 @@ export {
   replaceCourseOwnershipInputSchema,
   courseLifecycleCommandInputSchema,
   submitCourseForReviewInputSchema,
+  requestCourseChangesInputSchema,
   publishCourseInputSchema,
   courseVersionRollbackInputSchema,
 } from './contracts/index.js';
@@ -43,6 +45,7 @@ export type {
   ReplaceCourseOwnershipInputSchema,
   CourseLifecycleCommandInputSchema,
   SubmitCourseForReviewInputSchema,
+  RequestCourseChangesInputSchema,
   PublishCourseInputSchema,
   CourseVersionRollbackInputSchema,
 } from './contracts/index.js';

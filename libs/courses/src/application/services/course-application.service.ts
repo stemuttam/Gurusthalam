@@ -1,6 +1,6 @@
-import { CourseValidationError } from '../../domain/errors/index.js';
-
 import { Course } from '../../domain/entities/course.js';
+
+import { CourseValidationError } from '../../domain/errors/index.js';
 
 import {
   CourseActorId,
@@ -14,27 +14,29 @@ import type { CourseRepository } from '../../domain/repositories/course-reposito
 import { CourseId } from '../../domain/value-objects/course-id.js';
 
 import {
+  assignCourseOwnershipInputSchema,
   courseExistsInputSchema,
   createCourseInputSchema,
   getCourseInputSchema,
-  assignCourseOwnershipInputSchema,
+  publishCourseInputSchema,
   removeCourseOwnershipInputSchema,
   replaceCourseOwnershipInputSchema,
+  requestCourseChangesInputSchema,
   submitCourseForReviewInputSchema,
-  publishCourseInputSchema,
 } from '../contracts/course-application.validation.js';
 
 import type {
   AssignCourseOwnershipInput,
+  CourseApplicationService,
   CourseOwnershipAssignmentInput,
   CreateCourseInput,
   GetCourseInput,
+  PublishCourseInput,
   RemoveCourseOwnershipInput,
   ReplaceCourseOwnershipInput,
+  RequestCourseChangesInput,
   SaveCourseInput,
   SubmitCourseForReviewInput,
-  PublishCourseInput,
-  CourseApplicationService,
 } from '../contracts/course-application.contracts.js';
 
 export class DefaultCourseApplicationService implements CourseApplicationService {
@@ -209,6 +211,34 @@ export class DefaultCourseApplicationService implements CourseApplicationService
     const course = await this.requireCourse(courseId);
 
     course.submitForReview();
+
+    await this.courseRepository.save(course);
+
+    return course;
+  }
+
+  /**
+   * Application boundary for the Review → Draft request-changes command.
+   *
+   * The application service owns orchestration only:
+   * - validate the command;
+   * - load the aggregate;
+   * - invoke the aggregate lifecycle command;
+   * - persist the aggregate.
+   *
+   * Lifecycle eligibility, mutation, timestamp handling, and the
+   * CourseChangesRequested domain event remain inside Course.
+   *
+   * Authorization is deliberately outside this boundary.
+   */
+  async requestChanges(input: RequestCourseChangesInput): Promise<Course> {
+    const validatedInput = requestCourseChangesInputSchema.parse(input);
+
+    const courseId = this.toCourseId(validatedInput.courseId);
+
+    const course = await this.requireCourse(courseId);
+
+    course.requestChanges();
 
     await this.courseRepository.save(course);
 

@@ -8,6 +8,7 @@ export type {
   RemoveCourseOwnershipInput,
   ReplaceCourseOwnershipInput,
   SubmitCourseForReviewInput,
+  RequestCourseChangesInput,
   PublishCourseInput,
 } from './course-application.contracts.js';
 
@@ -29,6 +30,7 @@ export {
   replaceCourseOwnershipInputSchema,
   courseLifecycleCommandInputSchema,
   submitCourseForReviewInputSchema,
+  requestCourseChangesInputSchema,
   publishCourseInputSchema,
 } from './course-application.validation.js';
 
@@ -42,6 +44,7 @@ export type {
   ReplaceCourseOwnershipInputSchema,
   CourseLifecycleCommandInputSchema,
   SubmitCourseForReviewInputSchema,
+  RequestCourseChangesInputSchema,
   PublishCourseInputSchema,
 } from './course-application.validation.js';
 

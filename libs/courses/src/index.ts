@@ -454,6 +454,7 @@ export type {
   RemoveCourseOwnershipInput,
   ReplaceCourseOwnershipInput,
   SubmitCourseForReviewInput,
+  RequestCourseChangesInput,
   PublishCourseInput,
   CourseVersionRollbackApplicationResult,
   CourseVersionRollbackApplicationService,
@@ -472,6 +473,7 @@ export {
   replaceCourseOwnershipInputSchema,
   courseLifecycleCommandInputSchema,
   submitCourseForReviewInputSchema,
+  requestCourseChangesInputSchema,
   publishCourseInputSchema,
   courseVersionRollbackInputSchema,
 } from './application/index.js';
@@ -486,6 +488,7 @@ export type {
   ReplaceCourseOwnershipInputSchema,
   CourseLifecycleCommandInputSchema,
   SubmitCourseForReviewInputSchema,
+  RequestCourseChangesInputSchema,
   PublishCourseInputSchema,
   CourseVersionRollbackInputSchema,
 } from './application/index.js';

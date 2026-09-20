@@ -2,6 +2,7 @@ import type { Course } from '../../domain/entities/course.js';
 
 import type {
   AssignCourseOwnershipInputSchema,
+  CourseLifecycleCommandInputSchema,
   CourseOwnershipAssignmentInputSchema,
   CreateCourseInputSchema,
   GetCourseInputSchema,
@@ -106,4 +107,25 @@ export interface CourseApplicationService {
    * application service.
    */
   publish(input: PublishCourseInput): Promise<Course>;
+
+  /**
+   * Moves a Course from PUBLISHED to UNPUBLISHED.
+   *
+   * Lifecycle transition validity and domain-event creation remain
+   * inside the Course aggregate.
+   *
+   * Authentication and authorization remain outside this boundary.
+   */
+  unpublish(input: CourseLifecycleCommandInputSchema): Promise<Course>;
+
+  /**
+   * Archives a Course from a lifecycle state permitted by the
+   * canonical Course lifecycle policy.
+   *
+   * Lifecycle transition validity and domain-event creation remain
+   * inside the Course aggregate.
+   *
+   * Authentication and authorization remain outside this boundary.
+   */
+  archive(input: CourseLifecycleCommandInputSchema): Promise<Course>;
 }

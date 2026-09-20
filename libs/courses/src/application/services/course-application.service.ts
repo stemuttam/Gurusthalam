@@ -23,6 +23,8 @@ import {
   replaceCourseOwnershipInputSchema,
   requestCourseChangesInputSchema,
   submitCourseForReviewInputSchema,
+  courseLifecycleCommandInputSchema,
+  type CourseLifecycleCommandInputSchema,
 } from '../contracts/course-application.validation.js';
 
 import type {
@@ -265,6 +267,50 @@ export class DefaultCourseApplicationService implements CourseApplicationService
     const course = await this.requireCourse(courseId);
 
     course.publish();
+
+    await this.courseRepository.save(course);
+
+    return course;
+  }
+
+  /**
+   * Application boundary for the Published → Unpublished command.
+   *
+   * Lifecycle eligibility, state mutation, timestamp handling, and
+   * CourseUnpublished domain-event creation remain inside Course.
+   *
+   * Authorization is deliberately outside this boundary.
+   */
+  async unpublish(input: CourseLifecycleCommandInputSchema): Promise<Course> {
+    const validatedInput = courseLifecycleCommandInputSchema.parse(input);
+
+    const courseId = this.toCourseId(validatedInput.courseId);
+
+    const course = await this.requireCourse(courseId);
+
+    course.unpublish();
+
+    await this.courseRepository.save(course);
+
+    return course;
+  }
+
+  /**
+   * Application boundary for the archival lifecycle command.
+   *
+   * The canonical Course lifecycle policy remains the single source
+   * of truth for whether the current status may transition to ARCHIVED.
+   *
+   * Authorization is deliberately outside this boundary.
+   */
+  async archive(input: CourseLifecycleCommandInputSchema): Promise<Course> {
+    const validatedInput = courseLifecycleCommandInputSchema.parse(input);
+
+    const courseId = this.toCourseId(validatedInput.courseId);
+
+    const course = await this.requireCourse(courseId);
+
+    course.archive();
 
     await this.courseRepository.save(course);
 

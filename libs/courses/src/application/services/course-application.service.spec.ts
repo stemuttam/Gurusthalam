@@ -4,6 +4,8 @@ import { Course } from '../../domain/entities/course.js';
 
 import { CourseLevel } from '../../domain/enums/course-level.js';
 
+import { CourseStatus } from '../../domain/enums/course-status.js';
+
 import { CourseType } from '../../domain/enums/course-type.js';
 
 import { CourseVisibility } from '../../domain/enums/course-visibility.js';
@@ -38,7 +40,9 @@ describe('DefaultCourseApplicationService', () => {
       } as unknown as CourseRepository,
 
       findById,
+
       exists,
+
       save,
     };
   };
@@ -53,6 +57,18 @@ describe('DefaultCourseApplicationService', () => {
     type: CourseType.SELF_PACED,
 
     instructorId: 'instructor-123',
+  };
+
+  const moveToPublished = (course: Course): void => {
+    course.submitForReview();
+
+    course.publish();
+  };
+
+  const moveToUnpublished = (course: Course): void => {
+    moveToPublished(course);
+
+    course.unpublish();
   };
 
   describe('createCourse', () => {
@@ -676,6 +692,190 @@ describe('DefaultCourseApplicationService', () => {
       ).rejects.toThrow();
 
       expect(findById).not.toHaveBeenCalled();
+
+      expect(save).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('unpublish', () => {
+    it('moves a published Course to UNPUBLISHED and persists once', async () => {
+      const { repository, findById, save } = createRepositoryMock();
+
+      const course = Course.create(validCreateInput);
+
+      moveToPublished(course);
+
+      course.pullDomainEvents();
+
+      findById.mockResolvedValue(course);
+
+      const service = new DefaultCourseApplicationService(repository);
+
+      const result = await service.unpublish({
+        courseId: course.id.toString(),
+      });
+
+      expect(result).toBe(course);
+
+      expect(course.status).toBe(CourseStatus.UNPUBLISHED);
+
+      expect(findById).toHaveBeenCalledTimes(1);
+
+      expect(save).toHaveBeenCalledTimes(1);
+
+      expect(save).toHaveBeenCalledWith(course);
+    });
+
+    it('does not persist when unpublish is not lifecycle-eligible', async () => {
+      const { repository, findById, save } = createRepositoryMock();
+
+      const course = Course.create(validCreateInput);
+
+      findById.mockResolvedValue(course);
+
+      const service = new DefaultCourseApplicationService(repository);
+
+      await expect(
+        service.unpublish({
+          courseId: course.id.toString(),
+        }),
+      ).rejects.toThrow();
+
+      expect(save).not.toHaveBeenCalled();
+    });
+
+    it('does not access the repository for invalid input', async () => {
+      const { repository, findById, save } = createRepositoryMock();
+
+      const service = new DefaultCourseApplicationService(repository);
+
+      await expect(
+        service.unpublish({
+          courseId: '   ',
+        }),
+      ).rejects.toThrow();
+
+      expect(findById).not.toHaveBeenCalled();
+
+      expect(save).not.toHaveBeenCalled();
+    });
+
+    it('throws when the Course does not exist', async () => {
+      const { repository, findById, save } = createRepositoryMock();
+
+      findById.mockResolvedValue(null);
+
+      const service = new DefaultCourseApplicationService(repository);
+
+      await expect(
+        service.unpublish({
+          courseId: 'missing-course',
+        }),
+      ).rejects.toThrow('Course was not found.');
+
+      expect(save).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('archive', () => {
+    it('archives a published Course and persists once', async () => {
+      const { repository, findById, save } = createRepositoryMock();
+
+      const course = Course.create(validCreateInput);
+
+      moveToPublished(course);
+
+      course.pullDomainEvents();
+
+      findById.mockResolvedValue(course);
+
+      const service = new DefaultCourseApplicationService(repository);
+
+      const result = await service.archive({
+        courseId: course.id.toString(),
+      });
+
+      expect(result).toBe(course);
+
+      expect(course.status).toBe(CourseStatus.ARCHIVED);
+
+      expect(findById).toHaveBeenCalledTimes(1);
+
+      expect(save).toHaveBeenCalledTimes(1);
+
+      expect(save).toHaveBeenCalledWith(course);
+    });
+
+    it('archives an unpublished Course and persists once', async () => {
+      const { repository, findById, save } = createRepositoryMock();
+
+      const course = Course.create(validCreateInput);
+
+      moveToUnpublished(course);
+
+      course.pullDomainEvents();
+
+      findById.mockResolvedValue(course);
+
+      const service = new DefaultCourseApplicationService(repository);
+
+      await service.archive({
+        courseId: course.id.toString(),
+      });
+
+      expect(course.status).toBe(CourseStatus.ARCHIVED);
+
+      expect(save).toHaveBeenCalledTimes(1);
+
+      expect(save).toHaveBeenCalledWith(course);
+    });
+
+    it('does not persist when archive is not lifecycle-eligible', async () => {
+      const { repository, findById, save } = createRepositoryMock();
+
+      const course = Course.create(validCreateInput);
+
+      findById.mockResolvedValue(course);
+
+      const service = new DefaultCourseApplicationService(repository);
+
+      await expect(
+        service.archive({
+          courseId: course.id.toString(),
+        }),
+      ).rejects.toThrow();
+
+      expect(save).not.toHaveBeenCalled();
+    });
+
+    it('does not access the repository for invalid input', async () => {
+      const { repository, findById, save } = createRepositoryMock();
+
+      const service = new DefaultCourseApplicationService(repository);
+
+      await expect(
+        service.archive({
+          courseId: '   ',
+        }),
+      ).rejects.toThrow();
+
+      expect(findById).not.toHaveBeenCalled();
+
+      expect(save).not.toHaveBeenCalled();
+    });
+
+    it('throws when the Course does not exist', async () => {
+      const { repository, findById, save } = createRepositoryMock();
+
+      findById.mockResolvedValue(null);
+
+      const service = new DefaultCourseApplicationService(repository);
+
+      await expect(
+        service.archive({
+          courseId: 'missing-course',
+        }),
+      ).rejects.toThrow('Course was not found.');
 
       expect(save).not.toHaveBeenCalled();
     });

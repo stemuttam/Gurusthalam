@@ -22,6 +22,8 @@ describe('DefaultCourseVersionApplicationService', () => {
   const createRepositoryMocks = () => {
     const courseFindById = vi.fn<CourseRepository['findById']>();
 
+    const findById = vi.fn<CourseVersionRepository['findById']>();
+
     const findLatestByCourseId =
       vi.fn<CourseVersionRepository['findLatestByCourseId']>();
 
@@ -37,7 +39,7 @@ describe('DefaultCourseVersionApplicationService', () => {
     };
 
     const courseVersionRepository: CourseVersionRepository = {
-      findById: vi.fn<CourseVersionRepository['findById']>(),
+      findById,
       findAllByCourseId: vi.fn<CourseVersionRepository['findAllByCourseId']>(),
       findLatestByCourseId,
       findPublishedByCourseId:
@@ -50,6 +52,7 @@ describe('DefaultCourseVersionApplicationService', () => {
       courseRepository,
       courseFindById,
       courseVersionRepository,
+      findById,
       findLatestByCourseId,
       saveVersion,
       existsByCourseIdAndVersion,
@@ -196,7 +199,6 @@ describe('DefaultCourseVersionApplicationService', () => {
 
       const course = createCourse({
         title: 'Advanced TypeScript',
-
         description: 'A complete advanced TypeScript course.',
       });
 
@@ -337,9 +339,7 @@ describe('DefaultCourseVersionApplicationService', () => {
       await expect(
         service.createVersion({
           courseId: 'course-123',
-
           version: 3,
-
           status: 'PUBLISHED',
         } as never),
       ).rejects.toThrow();
@@ -523,6 +523,270 @@ describe('DefaultCourseVersionApplicationService', () => {
       });
 
       expect(existsByCourseIdAndVersion).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('publishVersion', () => {
+    it('loads the existing CourseVersion, delegates publication, saves it, and returns the same aggregate', async () => {
+      const {
+        courseRepository,
+        courseVersionRepository,
+        findById,
+        saveVersion,
+      } = createRepositoryMocks();
+
+      const courseVersion = createVersion('course-123', 3);
+
+      vi.spyOn(courseVersion, 'publish').mockImplementation(() => undefined);
+
+      findById.mockResolvedValue(courseVersion);
+
+      const service = new DefaultCourseVersionApplicationService(
+        courseRepository,
+        courseVersionRepository,
+      );
+
+      const result = await service.publishVersion({
+        courseVersionId: courseVersion.id.toString(),
+      });
+
+      expect(result).toBe(courseVersion);
+
+      expect(findById).toHaveBeenCalledTimes(1);
+
+      expect(saveVersion).toHaveBeenCalledTimes(1);
+
+      expect(saveVersion).toHaveBeenCalledWith(courseVersion);
+
+      expect(courseVersion.publish).toHaveBeenCalledTimes(1);
+    });
+
+    it('converts the string identifier to CourseVersionId', async () => {
+      const { courseRepository, courseVersionRepository, findById } =
+        createRepositoryMocks();
+
+      findById.mockResolvedValue(null);
+
+      const service = new DefaultCourseVersionApplicationService(
+        courseRepository,
+        courseVersionRepository,
+      );
+
+      await expect(
+        service.publishVersion({
+          courseVersionId: 'course-version-123',
+        }),
+      ).rejects.toThrow('CourseVersion was not found.');
+
+      expect(findById).toHaveBeenCalledTimes(1);
+
+      const [receivedCourseVersionId] = findById.mock.calls[0] as [
+        CourseVersionId,
+      ];
+
+      expect(receivedCourseVersionId).toBeInstanceOf(CourseVersionId);
+
+      expect(receivedCourseVersionId.toString()).toBe('course-version-123');
+    });
+
+    it('rejects invalid input before repository access', async () => {
+      const {
+        courseRepository,
+        courseVersionRepository,
+        findById,
+        saveVersion,
+      } = createRepositoryMocks();
+
+      const service = new DefaultCourseVersionApplicationService(
+        courseRepository,
+        courseVersionRepository,
+      );
+
+      await expect(
+        service.publishVersion({
+          courseVersionId: '   ',
+        }),
+      ).rejects.toThrow();
+
+      expect(findById).not.toHaveBeenCalled();
+
+      expect(saveVersion).not.toHaveBeenCalled();
+    });
+
+    it('rejects unexpected application fields before repository access', async () => {
+      const {
+        courseRepository,
+        courseVersionRepository,
+        findById,
+        saveVersion,
+      } = createRepositoryMocks();
+
+      const service = new DefaultCourseVersionApplicationService(
+        courseRepository,
+        courseVersionRepository,
+      );
+
+      await expect(
+        service.publishVersion({
+          courseVersionId: 'course-version-123',
+          status: 'PUBLISHED',
+          publishedAt: new Date(),
+        } as never),
+      ).rejects.toThrow();
+
+      expect(findById).not.toHaveBeenCalled();
+
+      expect(saveVersion).not.toHaveBeenCalled();
+    });
+
+    it('throws CourseValidationError when the CourseVersion does not exist', async () => {
+      const {
+        courseRepository,
+        courseVersionRepository,
+        findById,
+        saveVersion,
+      } = createRepositoryMocks();
+
+      findById.mockResolvedValue(null);
+
+      const service = new DefaultCourseVersionApplicationService(
+        courseRepository,
+        courseVersionRepository,
+      );
+
+      await expect(
+        service.publishVersion({
+          courseVersionId: 'missing-course-version',
+        }),
+      ).rejects.toThrow('CourseVersion was not found.');
+
+      expect(saveVersion).not.toHaveBeenCalled();
+    });
+
+    it('propagates CourseVersion repository lookup errors', async () => {
+      const {
+        courseRepository,
+        courseVersionRepository,
+        findById,
+        saveVersion,
+      } = createRepositoryMocks();
+
+      const error = new Error('CourseVersion lookup failure');
+
+      findById.mockRejectedValue(error);
+
+      const service = new DefaultCourseVersionApplicationService(
+        courseRepository,
+        courseVersionRepository,
+      );
+
+      await expect(
+        service.publishVersion({
+          courseVersionId: 'course-version-123',
+        }),
+      ).rejects.toBe(error);
+
+      expect(saveVersion).not.toHaveBeenCalled();
+    });
+
+    it('propagates CourseVersion save errors', async () => {
+      const {
+        courseRepository,
+        courseVersionRepository,
+        findById,
+        saveVersion,
+      } = createRepositoryMocks();
+
+      const courseVersion = createVersion('course-123', 3);
+
+      vi.spyOn(courseVersion, 'publish').mockImplementation(() => undefined);
+
+      const error = new Error('CourseVersion persistence failure');
+
+      findById.mockResolvedValue(courseVersion);
+
+      saveVersion.mockRejectedValue(error);
+
+      const service = new DefaultCourseVersionApplicationService(
+        courseRepository,
+        courseVersionRepository,
+      );
+
+      await expect(
+        service.publishVersion({
+          courseVersionId: courseVersion.id.toString(),
+        }),
+      ).rejects.toBe(error);
+
+      expect(courseVersion.publish).toHaveBeenCalledTimes(1);
+
+      expect(saveVersion).toHaveBeenCalledWith(courseVersion);
+    });
+
+    it('does not perform Course or latest-version preflight before publishing', async () => {
+      const {
+        courseRepository,
+        courseVersionRepository,
+        courseFindById,
+        findById,
+        findLatestByCourseId,
+        saveVersion,
+      } = createRepositoryMocks();
+
+      const courseVersion = createVersion('course-123', 3);
+
+      vi.spyOn(courseVersion, 'publish').mockImplementation(() => undefined);
+
+      findById.mockResolvedValue(courseVersion);
+
+      const service = new DefaultCourseVersionApplicationService(
+        courseRepository,
+        courseVersionRepository,
+      );
+
+      await service.publishVersion({
+        courseVersionId: courseVersion.id.toString(),
+      });
+
+      expect(courseFindById).not.toHaveBeenCalled();
+
+      expect(findLatestByCourseId).not.toHaveBeenCalled();
+
+      expect(findById).toHaveBeenCalledTimes(1);
+
+      expect(saveVersion).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not persist when CourseVersion.publish() rejects', async () => {
+      const {
+        courseRepository,
+        courseVersionRepository,
+        findById,
+        saveVersion,
+      } = createRepositoryMocks();
+
+      const courseVersion = createVersion('course-123', 3);
+
+      const error = new Error('Publication readiness failure');
+
+      vi.spyOn(courseVersion, 'publish').mockImplementation(() => {
+        throw error;
+      });
+
+      findById.mockResolvedValue(courseVersion);
+
+      const service = new DefaultCourseVersionApplicationService(
+        courseRepository,
+        courseVersionRepository,
+      );
+
+      await expect(
+        service.publishVersion({
+          courseVersionId: courseVersion.id.toString(),
+        }),
+      ).rejects.toBe(error);
+
+      expect(saveVersion).not.toHaveBeenCalled();
     });
   });
 });

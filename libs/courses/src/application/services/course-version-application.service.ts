@@ -8,15 +8,22 @@ import type { CourseVersionRepository } from '../../domain/repositories/course-v
 
 import { CourseId } from '../../domain/value-objects/course-id.js';
 
+import { CourseVersionId } from '../../domain/value-objects/course-version-id.js';
+
 import type {
   CourseVersionApplicationService,
   CreateCourseVersionInput,
+  PublishCourseVersionInput,
 } from '../contracts/course-version-application.contracts.js';
 
-import { createCourseVersionInputSchema } from '../contracts/course-version-application.validation.js';
+import {
+  createCourseVersionInputSchema,
+  publishCourseVersionInputSchema,
+} from '../contracts/course-version-application.validation.js';
 
 /**
- * Default application service for CourseVersion creation.
+ * Default application service for CourseVersion creation and lifecycle
+ * orchestration.
  *
  * This class deliberately depends only on domain-level repository
  * contracts and domain entities.
@@ -70,6 +77,58 @@ export class DefaultCourseVersionApplicationService implements CourseVersionAppl
       title: course.title,
       description: course.description,
     });
+
+    await this.courseVersionRepository.save(courseVersion);
+
+    return courseVersion;
+  }
+
+  /**
+   * Application boundary for publishing an existing CourseVersion.
+   *
+   * Responsibilities:
+   * - validate primitive application input;
+   * - convert the CourseVersion identifier into CourseVersionId;
+   * - load the CourseVersion aggregate;
+   * - delegate lifecycle rules and publication readiness to
+   *   CourseVersion.publish();
+   * - persist the resulting aggregate state;
+   * - return the same aggregate instance.
+   *
+   * The CourseVersion aggregate remains the source of truth for:
+   * - IN_REVIEW → PUBLISHED transition validity;
+   * - publication readiness;
+   * - publishedAt mutation;
+   * - updatedAt mutation;
+   * - post-publication immutability.
+   *
+   * Authentication and authorization remain outside this boundary.
+   *
+   * Audit persistence and domain-event/outbox integration are deliberately
+   * left to their dedicated later integration boundaries.
+   */
+  async publishVersion(
+    input: PublishCourseVersionInput,
+  ): Promise<CourseVersion> {
+    const validatedInput = publishCourseVersionInputSchema.parse(input);
+
+    const courseVersionId = CourseVersionId.from(
+      validatedInput.courseVersionId,
+    );
+
+    const courseVersion =
+      await this.courseVersionRepository.findById(courseVersionId);
+
+    if (courseVersion === null) {
+      throw new CourseValidationError('CourseVersion was not found.', [
+        {
+          field: 'courseVersionId',
+          message: 'The specified CourseVersion does not exist.',
+        },
+      ]);
+    }
+
+    courseVersion.publish();
 
     await this.courseVersionRepository.save(courseVersion);
 

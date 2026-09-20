@@ -16,6 +16,7 @@ export type {
 export type {
   CourseVersionApplicationService,
   CreateCourseVersionInput,
+  PublishCourseVersionInput,
 } from './course-version-application.contracts.js';
 
 export type {
@@ -56,9 +57,15 @@ export type {
   PublishCourseInputSchema,
 } from './course-application.validation.js';
 
-export { createCourseVersionInputSchema } from './course-version-application.validation.js';
+export {
+  createCourseVersionInputSchema,
+  publishCourseVersionInputSchema,
+} from './course-version-application.validation.js';
 
-export type { CreateCourseVersionInputSchema } from './course-version-application.validation.js';
+export type {
+  CreateCourseVersionInputSchema,
+  PublishCourseVersionInputSchema,
+} from './course-version-application.validation.js';
 
 export { courseVersionRollbackInputSchema } from './course-version-rollback.validation.js';
 

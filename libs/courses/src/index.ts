@@ -220,17 +220,28 @@ export { CourseVersionId } from './domain/value-objects/course-version-id.js';
  * Application orchestration remains separate from the CourseVersion
  * domain. These contracts intentionally do not expose persistence,
  * transport, authorization, or infrastructure types.
+ *
+ * CreateVersion and PublishVersion are both application-level
+ * orchestration commands over the same CourseVersion application
+ * service boundary.
  */
 export { DefaultCourseVersionApplicationService } from './application/index.js';
 
 export type {
   CourseVersionApplicationService,
   CreateCourseVersionInput,
+  PublishCourseVersionInput,
 } from './application/index.js';
 
-export { createCourseVersionInputSchema } from './application/index.js';
+export {
+  createCourseVersionInputSchema,
+  publishCourseVersionInputSchema,
+} from './application/index.js';
 
-export type { CreateCourseVersionInputSchema } from './application/index.js';
+export type {
+  CreateCourseVersionInputSchema,
+  PublishCourseVersionInputSchema,
+} from './application/index.js';
 
 /**
  * Course versioning

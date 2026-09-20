@@ -1,8 +1,13 @@
 import type { CourseVersion } from '../../domain/entities/course-version.js';
 
-import type { CreateCourseVersionInputSchema } from './course-version-application.validation.js';
+import type {
+  CreateCourseVersionInputSchema,
+  PublishCourseVersionInputSchema,
+} from './course-version-application.validation.js';
 
 export type CreateCourseVersionInput = CreateCourseVersionInputSchema;
+
+export type PublishCourseVersionInput = PublishCourseVersionInputSchema;
 
 /**
  * Application boundary for CourseVersion use cases.
@@ -12,6 +17,7 @@ export type CreateCourseVersionInput = CreateCourseVersionInputSchema;
  * - Course existence;
  * - version-number allocation;
  * - CourseVersion domain creation;
+ * - CourseVersion lifecycle commands;
  * - persistence.
  *
  * Domain invariants remain owned by CourseVersion.
@@ -28,4 +34,17 @@ export interface CourseVersionApplicationService {
    * - snapshots the current Course title and description.
    */
   createVersion(input: CreateCourseVersionInput): Promise<CourseVersion>;
+
+  /**
+   * Publishes an existing CourseVersion.
+   *
+   * The CourseVersion aggregate remains responsible for:
+   * - lifecycle eligibility;
+   * - publication readiness;
+   * - status mutation;
+   * - publication timestamp mutation.
+   *
+   * Authentication and authorization remain outside this boundary.
+   */
+  publishVersion(input: PublishCourseVersionInput): Promise<CourseVersion>;
 }

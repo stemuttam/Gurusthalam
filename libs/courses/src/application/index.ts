@@ -16,6 +16,7 @@ export type {
 export type {
   CourseVersionApplicationService,
   CreateCourseVersionInput,
+  PublishCourseVersionInput,
 } from './contracts/index.js';
 
 export type {
@@ -56,9 +57,15 @@ export type {
   PublishCourseInputSchema,
 } from './contracts/index.js';
 
-export { createCourseVersionInputSchema } from './contracts/index.js';
+export {
+  createCourseVersionInputSchema,
+  publishCourseVersionInputSchema,
+} from './contracts/index.js';
 
-export type { CreateCourseVersionInputSchema } from './contracts/index.js';
+export type {
+  CreateCourseVersionInputSchema,
+  PublishCourseVersionInputSchema,
+} from './contracts/index.js';
 
 export { courseVersionRollbackInputSchema } from './contracts/index.js';
 

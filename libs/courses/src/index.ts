@@ -215,6 +215,24 @@ export type {
 export { CourseVersionId } from './domain/value-objects/course-version-id.js';
 
 /**
+ * CourseVersion application services
+ *
+ * Application orchestration remains separate from the CourseVersion
+ * domain. These contracts intentionally do not expose persistence,
+ * transport, authorization, or infrastructure types.
+ */
+export { DefaultCourseVersionApplicationService } from './application/index.js';
+
+export type {
+  CourseVersionApplicationService,
+  CreateCourseVersionInput,
+} from './application/index.js';
+
+export { createCourseVersionInputSchema } from './application/index.js';
+
+export type { CreateCourseVersionInputSchema } from './application/index.js';
+
+/**
  * Course versioning
  *
  * Provides immutable, serializable snapshots and deterministic

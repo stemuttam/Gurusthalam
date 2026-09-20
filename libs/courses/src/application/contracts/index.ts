@@ -14,6 +14,11 @@ export type {
 } from './course-application.contracts.js';
 
 export type {
+  CourseVersionApplicationService,
+  CreateCourseVersionInput,
+} from './course-version-application.contracts.js';
+
+export type {
   CourseVersionRollbackApplicationResult,
   CourseVersionRollbackApplicationService,
   CourseVersionRollbackInput,
@@ -50,6 +55,10 @@ export type {
   RequestCourseChangesInputSchema,
   PublishCourseInputSchema,
 } from './course-application.validation.js';
+
+export { createCourseVersionInputSchema } from './course-version-application.validation.js';
+
+export type { CreateCourseVersionInputSchema } from './course-version-application.validation.js';
 
 export { courseVersionRollbackInputSchema } from './course-version-rollback.validation.js';
 

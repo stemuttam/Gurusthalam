@@ -93,6 +93,43 @@ export const getCourseInputSchema = z
 export const courseExistsInputSchema = getCourseInputSchema;
 
 /**
+ * Runtime validation contract for updating mutable transactional
+ * Course metadata.
+ *
+ * The Course identifier is required. At least one mutable metadata
+ * property must also be supplied.
+ *
+ * Semantic mutation rules, lifecycle eligibility, timestamp handling,
+ * and domain-event creation remain inside the Course aggregate.
+ */
+export const updateCourseInputSchema = z
+  .object({
+    courseId: courseIdSchema,
+
+    title: courseTitleSchema.optional(),
+
+    description: courseDescriptionSchema.nullable().optional(),
+
+    level: z.enum(CourseLevel).optional(),
+
+    type: z.enum(CourseType).optional(),
+
+    visibility: z.enum(CourseVisibility).optional(),
+  })
+  .strict()
+  .refine(
+    (input) =>
+      input.title !== undefined ||
+      input.description !== undefined ||
+      input.level !== undefined ||
+      input.type !== undefined ||
+      input.visibility !== undefined,
+    {
+      message: 'At least one Course metadata field must be provided.',
+    },
+  );
+
+/**
  * Runtime validation contract for assigning one ownership role
  * to one Course participant.
  */
@@ -187,6 +224,8 @@ export type CreateCourseInputSchema = z.infer<typeof createCourseInputSchema>;
 export type GetCourseInputSchema = z.infer<typeof getCourseInputSchema>;
 
 export type CourseExistsInputSchema = z.infer<typeof courseExistsInputSchema>;
+
+export type UpdateCourseInputSchema = z.infer<typeof updateCourseInputSchema>;
 
 export type CourseOwnershipAssignmentInputSchema = z.infer<
   typeof courseOwnershipAssignmentInputSchema

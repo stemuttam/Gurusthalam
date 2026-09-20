@@ -11,11 +11,14 @@ import type {
   ReplaceCourseOwnershipInputSchema,
   RequestCourseChangesInputSchema,
   SubmitCourseForReviewInputSchema,
+  UpdateCourseInputSchema,
 } from './course-application.validation.js';
 
 export type CreateCourseInput = CreateCourseInputSchema;
 
 export type GetCourseInput = GetCourseInputSchema;
+
+export type UpdateCourseInput = UpdateCourseInputSchema;
 
 export type CourseOwnershipAssignmentInput =
   CourseOwnershipAssignmentInputSchema;
@@ -44,6 +47,20 @@ export interface CourseApplicationService {
   courseExists(input: GetCourseInput): Promise<boolean>;
 
   saveCourse(input: SaveCourseInput): Promise<void>;
+
+  /**
+   * Updates mutable transactional Course metadata.
+   *
+   * The Course aggregate remains the source of truth for:
+   * - lifecycle eligibility;
+   * - metadata invariants;
+   * - timestamp mutation;
+   * - domain-event creation.
+   *
+   * Authentication and authorization are intentionally outside this
+   * application service.
+   */
+  updateCourse(input: UpdateCourseInput): Promise<Course>;
 
   /**
    * Assigns one ownership role to a Course participant.

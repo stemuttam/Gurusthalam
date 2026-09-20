@@ -1,5 +1,7 @@
 import { Course } from '../../domain/entities/course.js';
 
+import type { UpdateCourseMetadataProps } from '../../domain/entities/course.js';
+
 import { CourseValidationError } from '../../domain/errors/index.js';
 
 import {
@@ -16,6 +18,7 @@ import { CourseId } from '../../domain/value-objects/course-id.js';
 import {
   assignCourseOwnershipInputSchema,
   courseExistsInputSchema,
+  courseLifecycleCommandInputSchema,
   createCourseInputSchema,
   getCourseInputSchema,
   publishCourseInputSchema,
@@ -23,7 +26,7 @@ import {
   replaceCourseOwnershipInputSchema,
   requestCourseChangesInputSchema,
   submitCourseForReviewInputSchema,
-  courseLifecycleCommandInputSchema,
+  updateCourseInputSchema,
   type CourseLifecycleCommandInputSchema,
 } from '../contracts/course-application.validation.js';
 
@@ -39,7 +42,16 @@ import type {
   RequestCourseChangesInput,
   SaveCourseInput,
   SubmitCourseForReviewInput,
+  UpdateCourseInput,
 } from '../contracts/course-application.contracts.js';
+
+type CourseMetadataSnapshot = Readonly<{
+  title: Course['title'];
+  description: Course['description'];
+  level: Course['level'];
+  type: Course['type'];
+  visibility: Course['visibility'];
+}>;
 
 export class DefaultCourseApplicationService implements CourseApplicationService {
   constructor(private readonly courseRepository: CourseRepository) {}
@@ -99,6 +111,46 @@ export class DefaultCourseApplicationService implements CourseApplicationService
 
   async saveCourse(input: SaveCourseInput): Promise<void> {
     await this.courseRepository.save(input.course);
+  }
+
+  /**
+   * Application boundary for updating mutable transactional
+   * Course metadata.
+   *
+   * Responsibilities:
+   * - validate primitive application input;
+   * - convert the Course identifier to CourseId;
+   * - load the Course aggregate;
+   * - delegate metadata rules to Course.updateMetadata();
+   * - avoid persistence for a semantic no-op;
+   * - persist a real metadata transition exactly once.
+   *
+   * The Course aggregate remains responsible for:
+   * - lifecycle eligibility;
+   * - metadata invariants;
+   * - timestamp mutation;
+   * - CourseMetadataUpdated domain-event creation.
+   *
+   * Authorization is deliberately outside this boundary.
+   */
+  async updateCourse(input: UpdateCourseInput): Promise<Course> {
+    const validatedInput = updateCourseInputSchema.parse(input);
+
+    const courseId = this.toCourseId(validatedInput.courseId);
+
+    const course = await this.requireCourse(courseId);
+
+    const previousMetadata = this.captureCourseMetadata(course);
+
+    course.updateMetadata(this.toCourseMetadataUpdateInput(validatedInput));
+
+    if (!this.hasCourseMetadataChanged(course, previousMetadata)) {
+      return course;
+    }
+
+    await this.courseRepository.save(course);
+
+    return course;
   }
 
   /**
@@ -315,6 +367,69 @@ export class DefaultCourseApplicationService implements CourseApplicationService
     await this.courseRepository.save(course);
 
     return course;
+  }
+
+  private captureCourseMetadata(course: Course): CourseMetadataSnapshot {
+    return {
+      title: course.title,
+
+      description: course.description,
+
+      level: course.level,
+
+      type: course.type,
+
+      visibility: course.visibility,
+    };
+  }
+
+  private hasCourseMetadataChanged(
+    course: Course,
+    previousMetadata: CourseMetadataSnapshot,
+  ): boolean {
+    return (
+      course.title !== previousMetadata.title ||
+      course.description !== previousMetadata.description ||
+      course.level !== previousMetadata.level ||
+      course.type !== previousMetadata.type ||
+      course.visibility !== previousMetadata.visibility
+    );
+  }
+
+  private toCourseMetadataUpdateInput(
+    input: UpdateCourseInput,
+  ): UpdateCourseMetadataProps {
+    return {
+      ...(input.title !== undefined
+        ? {
+            title: input.title,
+          }
+        : {}),
+
+      ...(input.description !== undefined
+        ? {
+            description: input.description,
+          }
+        : {}),
+
+      ...(input.level !== undefined
+        ? {
+            level: input.level,
+          }
+        : {}),
+
+      ...(input.type !== undefined
+        ? {
+            type: input.type,
+          }
+        : {}),
+
+      ...(input.visibility !== undefined
+        ? {
+            visibility: input.visibility,
+          }
+        : {}),
+    };
   }
 
   private toCourseId(value: string): CourseId {

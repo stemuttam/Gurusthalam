@@ -10,6 +10,8 @@ import { CourseType } from '../../domain/enums/course-type.js';
 
 import { CourseVisibility } from '../../domain/enums/course-visibility.js';
 
+import { CourseDomainEventName } from '../../domain/events/index.js';
+
 import {
   CourseActorId,
   CourseOwnershipRole,
@@ -382,6 +384,296 @@ describe('DefaultCourseApplicationService', () => {
           course,
         }),
       ).rejects.toBe(error);
+    });
+  });
+
+  describe('updateCourse', () => {
+    it('updates Course metadata through the aggregate and persists once', async () => {
+      const { repository, findById, save } = createRepositoryMock();
+
+      const course = Course.create(validCreateInput);
+
+      course.pullDomainEvents();
+
+      findById.mockResolvedValue(course);
+
+      const service = new DefaultCourseApplicationService(repository);
+
+      const result = await service.updateCourse({
+        courseId: course.id.toString(),
+
+        title: 'Advanced Physics',
+
+        description: 'Learn advanced physics concepts.',
+
+        level: CourseLevel.ADVANCED,
+
+        type: CourseType.BLENDED,
+
+        visibility: CourseVisibility.PUBLIC,
+      });
+
+      expect(result).toBe(course);
+
+      expect(course.title).toBe('Advanced Physics');
+
+      expect(course.description).toBe('Learn advanced physics concepts.');
+
+      expect(course.level).toBe(CourseLevel.ADVANCED);
+
+      expect(course.type).toBe(CourseType.BLENDED);
+
+      expect(course.visibility).toBe(CourseVisibility.PUBLIC);
+
+      expect(course.status).toBe(CourseStatus.DRAFT);
+
+      expect(findById).toHaveBeenCalledTimes(1);
+
+      expect(save).toHaveBeenCalledTimes(1);
+
+      expect(save).toHaveBeenCalledWith(course);
+
+      const events = course.getDomainEvents();
+
+      expect(events).toHaveLength(1);
+
+      expect(events[0]?.eventName).toBe(CourseDomainEventName.METADATA_UPDATED);
+    });
+
+    it('supports partial metadata updates and preserves omitted fields', async () => {
+      const { repository, findById, save } = createRepositoryMock();
+
+      const course = Course.create({
+        ...validCreateInput,
+
+        description: 'Original description.',
+
+        level: CourseLevel.INTERMEDIATE,
+
+        type: CourseType.LIVE,
+
+        visibility: CourseVisibility.PUBLIC,
+      });
+
+      course.pullDomainEvents();
+
+      findById.mockResolvedValue(course);
+
+      const service = new DefaultCourseApplicationService(repository);
+
+      await service.updateCourse({
+        courseId: course.id.toString(),
+
+        title: 'Updated Course Title',
+      });
+
+      expect(course.title).toBe('Updated Course Title');
+
+      expect(course.description).toBe('Original description.');
+
+      expect(course.level).toBe(CourseLevel.INTERMEDIATE);
+
+      expect(course.type).toBe(CourseType.LIVE);
+
+      expect(course.visibility).toBe(CourseVisibility.PUBLIC);
+
+      expect(save).toHaveBeenCalledTimes(1);
+
+      expect(save).toHaveBeenCalledWith(course);
+    });
+
+    it('treats a semantically identical update as a true no-op', async () => {
+      const { repository, findById, save } = createRepositoryMock();
+
+      const course = Course.create({
+        ...validCreateInput,
+
+        visibility: CourseVisibility.PUBLIC,
+      });
+
+      course.pullDomainEvents();
+
+      findById.mockResolvedValue(course);
+
+      const service = new DefaultCourseApplicationService(repository);
+
+      const previousUpdatedAt = course.updatedAt.getTime();
+
+      const result = await service.updateCourse({
+        courseId: course.id.toString(),
+
+        title: ` ${course.title} `,
+
+        description: ` ${course.description} `,
+
+        level: course.level,
+
+        type: course.type,
+
+        visibility: course.visibility,
+      });
+
+      expect(result).toBe(course);
+
+      expect(course.title).toBe('Introduction to Physics');
+
+      expect(course.description).toBe('Learn the fundamentals of physics.');
+
+      expect(course.updatedAt.getTime()).toBe(previousUpdatedAt);
+
+      expect(course.getDomainEvents()).toHaveLength(0);
+
+      expect(save).not.toHaveBeenCalled();
+    });
+
+    it('rejects an update command with no mutable metadata fields', async () => {
+      const { repository, findById, save } = createRepositoryMock();
+
+      const service = new DefaultCourseApplicationService(repository);
+
+      await expect(
+        service.updateCourse({
+          courseId: 'course-123',
+        }),
+      ).rejects.toThrow('At least one Course metadata field must be provided.');
+
+      expect(findById).not.toHaveBeenCalled();
+
+      expect(save).not.toHaveBeenCalled();
+    });
+
+    it('converts the string identifier to CourseId', async () => {
+      const { repository, findById, save } = createRepositoryMock();
+
+      findById.mockResolvedValue(null);
+
+      const service = new DefaultCourseApplicationService(repository);
+
+      await expect(
+        service.updateCourse({
+          courseId: 'course-123',
+
+          title: 'Updated Course',
+        }),
+      ).rejects.toThrow('Course was not found.');
+
+      expect(findById).toHaveBeenCalledTimes(1);
+
+      const [courseId] = findById.mock.calls[0] as [CourseId];
+
+      expect(courseId).toBeInstanceOf(CourseId);
+
+      expect(courseId.toString()).toBe('course-123');
+
+      expect(save).not.toHaveBeenCalled();
+    });
+
+    it('rejects invalid input before repository access', async () => {
+      const { repository, findById, save } = createRepositoryMock();
+
+      const service = new DefaultCourseApplicationService(repository);
+
+      await expect(
+        service.updateCourse({
+          courseId: '   ',
+
+          title: 'Updated Course',
+        }),
+      ).rejects.toThrow();
+
+      expect(findById).not.toHaveBeenCalled();
+
+      expect(save).not.toHaveBeenCalled();
+    });
+
+    it('rejects unexpected application fields before repository access', async () => {
+      const { repository, findById, save } = createRepositoryMock();
+
+      const service = new DefaultCourseApplicationService(repository);
+
+      await expect(
+        service.updateCourse({
+          courseId: 'course-123',
+
+          title: 'Updated Course',
+
+          status: 'PUBLISHED',
+        } as never),
+      ).rejects.toThrow();
+
+      expect(findById).not.toHaveBeenCalled();
+
+      expect(save).not.toHaveBeenCalled();
+    });
+
+    it('throws when the Course does not exist', async () => {
+      const { repository, findById, save } = createRepositoryMock();
+
+      findById.mockResolvedValue(null);
+
+      const service = new DefaultCourseApplicationService(repository);
+
+      await expect(
+        service.updateCourse({
+          courseId: 'missing-course',
+
+          title: 'Updated Course',
+        }),
+      ).rejects.toThrow('Course was not found.');
+
+      expect(save).not.toHaveBeenCalled();
+    });
+
+    it('does not persist when the Course aggregate rejects the update', async () => {
+      const { repository, findById, save } = createRepositoryMock();
+
+      const course = Course.create(validCreateInput);
+
+      moveToPublished(course);
+
+      course.pullDomainEvents();
+
+      findById.mockResolvedValue(course);
+
+      const service = new DefaultCourseApplicationService(repository);
+
+      await expect(
+        service.updateCourse({
+          courseId: course.id.toString(),
+
+          title: 'Updated Course',
+        }),
+      ).rejects.toThrow();
+
+      expect(course.status).toBe(CourseStatus.PUBLISHED);
+
+      expect(save).not.toHaveBeenCalled();
+    });
+
+    it('propagates repository save errors after a successful update', async () => {
+      const { repository, findById, save } = createRepositoryMock();
+
+      const error = new Error('Persistence failure');
+
+      save.mockRejectedValue(error);
+
+      const course = Course.create(validCreateInput);
+
+      course.pullDomainEvents();
+
+      findById.mockResolvedValue(course);
+
+      const service = new DefaultCourseApplicationService(repository);
+
+      await expect(
+        service.updateCourse({
+          courseId: course.id.toString(),
+
+          title: 'Updated Course',
+        }),
+      ).rejects.toBe(error);
+
+      expect(course.title).toBe('Updated Course');
     });
   });
 

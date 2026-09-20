@@ -7,6 +7,7 @@ import {
   removeCourseOwnershipInputSchema,
   replaceCourseOwnershipInputSchema,
   submitCourseForReviewInputSchema,
+  updateCourseInputSchema,
 } from '../../index.js';
 
 import type {
@@ -17,10 +18,11 @@ import type {
   RemoveCourseOwnershipInput,
   ReplaceCourseOwnershipInput,
   SubmitCourseForReviewInput,
+  UpdateCourseInput,
 } from '../../index.js';
 
-describe('Course application public contract — 4.8-E', () => {
-  it('exports workflow and ownership runtime schemas from the public Course barrel', () => {
+describe('Course application public contract — 4.10-B', () => {
+  it('exports workflow, ownership, and update runtime schemas from the public Course barrel', () => {
     expect(
       courseLifecycleCommandInputSchema.parse({ courseId: 'course-001' }),
     ).toEqual({
@@ -41,6 +43,16 @@ describe('Course application public contract — 4.8-E', () => {
       }),
     ).toEqual({
       courseId: 'course-001',
+    });
+
+    expect(
+      updateCourseInputSchema.parse({
+        courseId: 'course-001',
+        title: 'Updated Course',
+      }),
+    ).toEqual({
+      courseId: 'course-001',
+      title: 'Updated Course',
     });
 
     expect(
@@ -96,7 +108,7 @@ describe('Course application public contract — 4.8-E', () => {
     });
   });
 
-  it('keeps lifecycle application schemas authorization-independent at the public boundary', () => {
+  it('keeps lifecycle and update application schemas authorization-independent at the public boundary', () => {
     expect(() =>
       submitCourseForReviewInputSchema.parse({
         courseId: 'course-001',
@@ -117,9 +129,23 @@ describe('Course application public contract — 4.8-E', () => {
         role: 'PUBLISHER',
       }),
     ).toThrow();
+
+    expect(() =>
+      updateCourseInputSchema.parse({
+        courseId: 'course-001',
+        title: 'Updated Course',
+        actorId: 'actor-001',
+      }),
+    ).toThrow();
+
+    expect(() =>
+      updateCourseInputSchema.parse({
+        courseId: 'course-001',
+      }),
+    ).toThrow('At least one Course metadata field must be provided.');
   });
 
-  it('exposes the new ownership and workflow input types through the public Course barrel', () => {
+  it('exposes ownership, workflow, and update input types through the public Course barrel', () => {
     const assignment: CourseOwnershipAssignmentInput = {
       principalId: 'actor-001',
       role: 'AUTHOR',
@@ -154,6 +180,11 @@ describe('Course application public contract — 4.8-E', () => {
       courseId: 'course-001',
     };
 
+    const updateInput: UpdateCourseInput = {
+      courseId: 'course-001',
+      title: 'Updated Course',
+    };
+
     expect(assignment).toEqual({
       principalId: 'actor-001',
       role: 'AUTHOR',
@@ -165,5 +196,7 @@ describe('Course application public contract — 4.8-E', () => {
     expect(submitInput.courseId).toBe('course-001');
     expect(publishInput.courseId).toBe('course-001');
     expect(lifecycleInput.courseId).toBe('course-001');
+    expect(updateInput.courseId).toBe('course-001');
+    expect(updateInput.title).toBe('Updated Course');
   });
 });

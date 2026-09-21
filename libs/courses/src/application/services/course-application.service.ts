@@ -26,7 +26,7 @@ import {
   replaceCourseOwnershipInputSchema,
   requestCourseChangesInputSchema,
   submitCourseForReviewInputSchema,
-  updateCourseInputSchema,
+  updateMetadataInputSchema,
   type CourseLifecycleCommandInputSchema,
 } from '../contracts/course-application.validation.js';
 
@@ -115,24 +115,12 @@ export class DefaultCourseApplicationService implements CourseApplicationService
   }
 
   /**
-   * Application boundary for updating mutable transactional
-   * Course metadata.
+   * Backward-compatible application boundary for updating mutable
+   * transactional Course metadata.
    *
-   * Responsibilities:
-   * - validate primitive application input;
-   * - convert the Course identifier to CourseId;
-   * - load the Course aggregate;
-   * - delegate metadata rules to Course.updateMetadata();
-   * - avoid persistence for a semantic no-op;
-   * - persist a real metadata transition exactly once.
-   *
-   * The Course aggregate remains responsible for:
-   * - lifecycle eligibility;
-   * - metadata invariants;
-   * - timestamp mutation;
-   * - CourseMetadataUpdated domain-event creation.
-   *
-   * Authorization is deliberately outside this boundary.
+   * The canonical command name is updateMetadata(). This method remains
+   * available for the 4.10-B contract and delegates without introducing
+   * a second implementation path.
    */
   async updateCourse(input: UpdateCourseInput): Promise<Course> {
     return this.updateMetadata(input);
@@ -142,17 +130,14 @@ export class DefaultCourseApplicationService implements CourseApplicationService
    * Canonical application boundary for updating mutable transactional
    * Course metadata.
    *
-   * The 4.10-B updateCourse() contract remains as a compatibility alias,
-   * while 4.10-E establishes updateMetadata() as the semantically precise
-   * command name for this boundary.
-   *
-   * Responsibilities:
+   * Application orchestration responsibilities:
    * - validate primitive application input;
    * - convert the Course identifier to CourseId;
    * - load the Course aggregate;
    * - delegate metadata rules to Course.updateMetadata();
    * - avoid persistence for a semantic no-op;
-   * - persist a real metadata transition exactly once.
+   * - persist a real metadata transition exactly once;
+   * - return the mutated aggregate.
    *
    * The Course aggregate remains responsible for:
    * - lifecycle eligibility;
@@ -160,10 +145,10 @@ export class DefaultCourseApplicationService implements CourseApplicationService
    * - timestamp mutation;
    * - CourseMetadataUpdated domain-event creation.
    *
-   * Authorization is deliberately outside this boundary.
+   * Authentication and authorization remain outside this boundary.
    */
   async updateMetadata(input: UpdateMetadataInput): Promise<Course> {
-    const validatedInput = updateCourseInputSchema.parse(input);
+    const validatedInput = updateMetadataInputSchema.parse(input);
 
     const courseId = this.toCourseId(validatedInput.courseId);
 
@@ -426,7 +411,7 @@ export class DefaultCourseApplicationService implements CourseApplicationService
   }
 
   private toCourseMetadataUpdateInput(
-    input: UpdateCourseInput,
+    input: UpdateMetadataInput,
   ): UpdateCourseMetadataProps {
     return {
       ...(input.title !== undefined

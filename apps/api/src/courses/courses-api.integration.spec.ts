@@ -1,157 +1,73 @@
-import {
-  describe,
-  expect,
-  it,
-} from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import {
-  DefaultCourseApplicationService,
-} from '@gurusthalam/courses';
+import { DefaultCourseApplicationService } from '@gurusthalam/courses';
 
-import {
-  AppModule,
-} from '../app/app.module.js';
+import { AppModule } from '../app/app.module.js';
 
-import {
-  CoursesApplicationModule,
-} from './courses-application.module.js';
+import { CoursesApplicationModule } from './courses-application.module.js';
 
+const IMPORTS_METADATA_KEY = 'imports';
 
-const IMPORTS_METADATA_KEY =
-  'imports';
+const EXPORTS_METADATA_KEY = 'exports';
 
-const EXPORTS_METADATA_KEY =
-  'exports';
+const getModuleMetadata = (
+  moduleClass: new (...args: never[]) => unknown,
+  metadataKey: string,
+): unknown[] => {
+  const metadata = Reflect.getMetadata(metadataKey, moduleClass) as
+    unknown[] | undefined;
 
+  if (metadata === undefined) {
+    throw new Error(
+      `Expected ${metadataKey} metadata to be defined for ${moduleClass.name}.`,
+    );
+  }
 
-const getModuleMetadata =
-  (
-    moduleClass:
-      new (...args: never[]) => unknown,
-    metadataKey: string,
-  ): unknown[] => {
-    const metadata =
-      Reflect.getMetadata(
-        metadataKey,
-        moduleClass,
-      ) as unknown[] | undefined;
+  return metadata;
+};
 
-    if (metadata === undefined) {
-      throw new Error(
-        `Expected ${metadataKey} metadata to be defined for ${moduleClass.name}.`,
-      );
-    }
+describe('Course API module composition', () => {
+  it('registers CoursesApplicationModule in AppModule imports', () => {
+    const imports = getModuleMetadata(AppModule, IMPORTS_METADATA_KEY);
 
-    return metadata;
-  };
+    expect(imports).toContain(CoursesApplicationModule);
+  });
 
+  it('does not register CoursesPersistenceModule directly in AppModule', () => {
+    const imports = getModuleMetadata(AppModule, IMPORTS_METADATA_KEY);
 
-describe(
-  'Course API module composition',
-  () => {
-    it(
-      'registers CoursesApplicationModule in AppModule imports',
-      () => {
-        const imports =
-          getModuleMetadata(
-            AppModule,
-            IMPORTS_METADATA_KEY,
-          );
+    const importedModuleNames = imports
+      .filter(
+        (importedModule): importedModule is new (...args: never[]) => unknown =>
+          typeof importedModule === 'function',
+      )
+      .map((importedModule) => importedModule.name);
 
-        expect(
-          imports,
-        ).toContain(
-          CoursesApplicationModule,
-        );
-      },
+    expect(importedModuleNames).not.toContain('CoursesPersistenceModule');
+  });
+
+  it('keeps CoursesPersistenceModule behind CoursesApplicationModule', () => {
+    const imports = getModuleMetadata(
+      CoursesApplicationModule,
+      IMPORTS_METADATA_KEY,
     );
 
+    const importedModuleNames = imports
+      .filter(
+        (importedModule): importedModule is new (...args: never[]) => unknown =>
+          typeof importedModule === 'function',
+      )
+      .map((importedModule) => importedModule.name);
 
-    it(
-      'does not register CoursesPersistenceModule directly in AppModule',
-      () => {
-        const imports =
-          getModuleMetadata(
-            AppModule,
-            IMPORTS_METADATA_KEY,
-          );
+    expect(importedModuleNames).toContain('CoursesPersistenceModule');
+  });
 
-        const importedModuleNames =
-          imports
-            .filter(
-              (
-                importedModule,
-              ): importedModule is
-                new (...args: never[]) => unknown =>
-                typeof importedModule ===
-                'function',
-            )
-            .map(
-              (
-                importedModule,
-              ) =>
-                importedModule.name,
-            );
-
-        expect(
-          importedModuleNames,
-        ).not.toContain(
-          'CoursesPersistenceModule',
-        );
-      },
+  it('exports DefaultCourseApplicationService from CoursesApplicationModule', () => {
+    const exportsMetadata = getModuleMetadata(
+      CoursesApplicationModule,
+      EXPORTS_METADATA_KEY,
     );
 
-
-    it(
-      'keeps CoursesPersistenceModule behind CoursesApplicationModule',
-      () => {
-        const imports =
-          getModuleMetadata(
-            CoursesApplicationModule,
-            IMPORTS_METADATA_KEY,
-          );
-
-        const importedModuleNames =
-          imports
-            .filter(
-              (
-                importedModule,
-              ): importedModule is
-                new (...args: never[]) => unknown =>
-                typeof importedModule ===
-                'function',
-            )
-            .map(
-              (
-                importedModule,
-              ) =>
-                importedModule.name,
-            );
-
-        expect(
-          importedModuleNames,
-        ).toContain(
-          'CoursesPersistenceModule',
-        );
-      },
-    );
-
-
-    it(
-      'exports DefaultCourseApplicationService from CoursesApplicationModule',
-      () => {
-        const exportsMetadata =
-          getModuleMetadata(
-            CoursesApplicationModule,
-            EXPORTS_METADATA_KEY,
-          );
-
-        expect(
-          exportsMetadata,
-        ).toContain(
-          DefaultCourseApplicationService,
-        );
-      },
-    );
-  },
-);
+    expect(exportsMetadata).toContain(DefaultCourseApplicationService);
+  });
+});

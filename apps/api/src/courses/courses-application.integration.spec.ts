@@ -1,12 +1,6 @@
-import {
-  describe,
-  expect,
-  it,
-} from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import {
-  Test,
-} from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 
 import {
   Course,
@@ -17,278 +11,151 @@ import {
   type CourseRepository,
 } from '@gurusthalam/courses';
 
-import {
-  COURSE_REPOSITORY,
-} from '../database/prisma/repositories/courses/courses-repository.tokens.js';
+import { COURSE_REPOSITORY } from '../database/prisma/repositories/courses/courses-repository.tokens.js';
 
+class InMemoryCourseRepository implements CourseRepository {
+  private readonly courses = new Map<string, Course>();
 
-class InMemoryCourseRepository
-  implements CourseRepository {
-  private readonly courses =
-    new Map<string, Course>();
-
-  async findById(
-    id: Course['id'],
-  ): Promise<Course | null> {
-    return (
-      this.courses.get(
-        id.toString(),
-      ) ?? null
-    );
+  async findById(id: Course['id']): Promise<Course | null> {
+    return this.courses.get(id.toString()) ?? null;
   }
 
-  async exists(
-    id: Course['id'],
-  ): Promise<boolean> {
-    return this.courses.has(
-      id.toString(),
-    );
+  async exists(id: Course['id']): Promise<boolean> {
+    return this.courses.has(id.toString());
   }
 
-  async save(
-    course: Course,
-  ): Promise<void> {
-    this.courses.set(
-      course.id.toString(),
-      course,
-    );
+  async save(course: Course): Promise<void> {
+    this.courses.set(course.id.toString(), course);
   }
 }
 
+describe('Course application integration', () => {
+  const createTestingModule = async () => {
+    const repository = new InMemoryCourseRepository();
 
-describe(
-  'Course application integration',
-  () => {
-    const createTestingModule =
-      async () => {
-        const repository =
-          new InMemoryCourseRepository();
+    const moduleRef = await Test.createTestingModule({
+      imports: [],
+      providers: [
+        {
+          provide: DefaultCourseApplicationService,
 
-        const moduleRef =
-          await Test
-            .createTestingModule({
-              imports: [],
-              providers: [
-                {
-                  provide:
-                    DefaultCourseApplicationService,
+          inject: [COURSE_REPOSITORY],
 
-                  inject: [
-                    COURSE_REPOSITORY,
-                  ],
+          useFactory: (courseRepository: CourseRepository) =>
+            new DefaultCourseApplicationService(courseRepository),
+        },
+        {
+          provide: COURSE_REPOSITORY,
 
-                  useFactory: (
-                    courseRepository:
-                      CourseRepository,
-                  ) =>
-                    new DefaultCourseApplicationService(
-                      courseRepository,
-                    ),
-                },
-                {
-                  provide:
-                    COURSE_REPOSITORY,
+          useValue: repository,
+        },
+      ],
+    }).compile();
 
-                  useValue:
-                    repository,
-                },
-              ],
-            })
-            .compile();
+    return moduleRef;
+  };
 
-        return moduleRef;
-      };
+  it('resolves the application service through Nest DI', async () => {
+    const moduleRef = await createTestingModule();
 
+    const service = moduleRef.get(DefaultCourseApplicationService);
 
-    it(
-      'resolves the application service through Nest DI',
-      async () => {
-        const moduleRef =
-          await createTestingModule();
+    expect(service).toBeInstanceOf(DefaultCourseApplicationService);
 
-        const service =
-          moduleRef.get(
-            DefaultCourseApplicationService,
-          );
+    await moduleRef.close();
+  });
 
-        expect(
-          service,
-        ).toBeInstanceOf(
-          DefaultCourseApplicationService,
-        );
+  it('creates and persists a Course through the application boundary', async () => {
+    const moduleRef = await createTestingModule();
 
-        await moduleRef.close();
-      },
-    );
+    const service = moduleRef.get(DefaultCourseApplicationService);
 
+    const course = await service.createCourse({
+      title: 'Introduction to Physics',
 
-    it(
-      'creates and persists a Course through the application boundary',
-      async () => {
-        const moduleRef =
-          await createTestingModule();
+      description: 'Learn the fundamentals of physics.',
 
-        const service =
-          moduleRef.get(
-            DefaultCourseApplicationService,
-          );
+      level: CourseLevel.BEGINNER,
 
-        const course =
-          await service.createCourse({
-            title:
-              'Introduction to Physics',
+      type: CourseType.SELF_PACED,
 
-            description:
-              'Learn the fundamentals of physics.',
+      visibility: CourseVisibility.PRIVATE,
 
-            level:
-              CourseLevel.BEGINNER,
+      instructorId: 'instructor-123',
+    });
 
-            type:
-              CourseType.SELF_PACED,
+    const stored = await service.getCourse({
+      courseId: course.id.toString(),
+    });
 
-            visibility:
-              CourseVisibility.PRIVATE,
+    expect(stored).toBe(course);
 
-            instructorId:
-              'instructor-123',
-          });
+    expect(stored?.title).toBe('Introduction to Physics');
 
-        const stored =
-          await service.getCourse({
-            courseId:
-              course.id.toString(),
-          });
+    await moduleRef.close();
+  });
 
-        expect(
-          stored,
-        ).toBe(course);
+  it('makes a newly created Course observable through the repository boundary', async () => {
+    const moduleRef = await createTestingModule();
 
-        expect(
-          stored?.title,
-        ).toBe(
-          'Introduction to Physics',
-        );
+    const service = moduleRef.get(DefaultCourseApplicationService);
 
-        await moduleRef.close();
-      },
-    );
+    const course = await service.createCourse({
+      title: 'Advanced Mathematics',
 
+      level: CourseLevel.ADVANCED,
 
-    it(
-      'makes a newly created Course observable through the repository boundary',
-      async () => {
-        const moduleRef =
-          await createTestingModule();
+      type: CourseType.SELF_PACED,
 
-        const service =
-          moduleRef.get(
-            DefaultCourseApplicationService,
-          );
+      instructorId: 'instructor-456',
+    });
 
-        const course =
-          await service.createCourse({
-            title:
-              'Advanced Mathematics',
+    const exists = await service.courseExists({
+      courseId: course.id.toString(),
+    });
 
-            level:
-              CourseLevel.ADVANCED,
+    expect(exists).toBe(true);
 
-            type:
-              CourseType.SELF_PACED,
+    await moduleRef.close();
+  });
 
-            instructorId:
-              'instructor-456',
-          });
+  it('preserves the Course domain event across the application boundary', async () => {
+    const moduleRef = await createTestingModule();
 
-        const exists =
-          await service.courseExists({
-            courseId:
-              course.id.toString(),
-          });
+    const service = moduleRef.get(DefaultCourseApplicationService);
 
-        expect(
-          exists,
-        ).toBe(true);
+    const course = await service.createCourse({
+      title: 'Physics Fundamentals',
 
-        await moduleRef.close();
-      },
-    );
+      level: CourseLevel.BEGINNER,
 
+      type: CourseType.SELF_PACED,
 
-    it(
-      'preserves the Course domain event across the application boundary',
-      async () => {
-        const moduleRef =
-          await createTestingModule();
+      instructorId: 'instructor-789',
+    });
 
-        const service =
-          moduleRef.get(
-            DefaultCourseApplicationService,
-          );
+    const events = course.getDomainEvents();
 
-        const course =
-          await service.createCourse({
-            title:
-              'Physics Fundamentals',
+    expect(events).toHaveLength(1);
 
-            level:
-              CourseLevel.BEGINNER,
+    expect(events[0]?.eventName).toBe('courses.course.created');
 
-            type:
-              CourseType.SELF_PACED,
+    expect(events[0]?.aggregateId).toBe(course.id.toString());
 
-            instructorId:
-              'instructor-789',
-          });
+    await moduleRef.close();
+  });
 
-        const events =
-          course.getDomainEvents();
+  it('returns false for a Course that does not exist', async () => {
+    const moduleRef = await createTestingModule();
 
-        expect(
-          events,
-        ).toHaveLength(1);
+    const service = moduleRef.get(DefaultCourseApplicationService);
 
-        expect(
-          events[0]?.eventName,
-        ).toBe(
-          'courses.course.created',
-        );
+    const exists = await service.courseExists({
+      courseId: '00000000-0000-4000-8000-000000000000',
+    });
 
-        expect(
-          events[0]?.aggregateId,
-        ).toBe(
-          course.id.toString(),
-        );
+    expect(exists).toBe(false);
 
-        await moduleRef.close();
-      },
-    );
-
-
-    it(
-      'returns false for a Course that does not exist',
-      async () => {
-        const moduleRef =
-          await createTestingModule();
-
-        const service =
-          moduleRef.get(
-            DefaultCourseApplicationService,
-          );
-
-        const exists =
-          await service.courseExists({
-            courseId:
-              '00000000-0000-4000-8000-000000000000',
-          });
-
-        expect(
-          exists,
-        ).toBe(false);
-
-        await moduleRef.close();
-      },
-    );
-  },
-);
+    await moduleRef.close();
+  });
+});

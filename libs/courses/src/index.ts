@@ -583,3 +583,27 @@ export type {
   CourseOwnershipAssignmentProps,
   CourseOwnershipRoleValue,
 } from './domain/ownership/index.js';
+
+/**
+ * Course search contract
+ *
+ * Defines validated, infrastructure-agnostic search vocabulary for
+ * Course queries.
+ *
+ * This does not define a persistence implementation or decide whether
+ * search returns hydrated aggregates or read-model projections.
+ * That architectural boundary is handled by the later query/read-model
+ * roadmap checkpoints.
+ */
+export {
+  COURSE_SEARCH_SORT_FIELDS,
+  courseSearchInputSchema,
+} from './application/index.js';
+
+export type {
+  CourseSearchCriteria,
+  CourseSearchInput,
+  CourseSearchInputSchema,
+  CourseSearchRequest,
+  CourseSearchSortField,
+} from './application/index.js';

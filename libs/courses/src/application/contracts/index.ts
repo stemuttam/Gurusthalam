@@ -27,6 +27,15 @@ export type {
   CourseVersionRollbackTransactionContext,
 } from './course-version-rollback.contracts.js';
 
+export type {
+  CourseSearchCriteria,
+  CourseSearchInput,
+  CourseSearchRequest,
+  CourseSearchSortField,
+} from './course-search.contracts.js';
+
+export { COURSE_SEARCH_SORT_FIELDS } from './course-search.contracts.js';
+
 export {
   courseIdInputSchema,
   courseExistsInputSchema,
@@ -56,6 +65,14 @@ export type {
   RequestCourseChangesInputSchema,
   PublishCourseInputSchema,
 } from './course-application.validation.js';
+
+export {
+  courseSearchInputSchema,
+} from './course-search.validation.js';
+
+export type {
+  CourseSearchInputSchema,
+} from './course-search.validation.js';
 
 export {
   createCourseVersionInputSchema,

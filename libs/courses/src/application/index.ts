@@ -76,3 +76,20 @@ export {
   DefaultCourseVersionApplicationService,
   DefaultCourseVersionRollbackApplicationService,
 } from './services/index.js';
+
+export type {
+  CourseSearchCriteria,
+  CourseSearchInput,
+  CourseSearchRequest,
+  CourseSearchSortField,
+} from './contracts/index.js';
+
+export { COURSE_SEARCH_SORT_FIELDS } from './contracts/index.js';
+
+export {
+  courseSearchInputSchema,
+} from './contracts/index.js';
+
+export type {
+  CourseSearchInputSchema,
+} from './contracts/index.js';

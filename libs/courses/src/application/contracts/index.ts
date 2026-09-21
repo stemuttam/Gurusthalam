@@ -66,13 +66,9 @@ export type {
   PublishCourseInputSchema,
 } from './course-application.validation.js';
 
-export {
-  courseSearchInputSchema,
-} from './course-search.validation.js';
+export { courseSearchInputSchema } from './course-search.validation.js';
 
-export type {
-  CourseSearchInputSchema,
-} from './course-search.validation.js';
+export type { CourseSearchInputSchema } from './course-search.validation.js';
 
 export {
   createCourseVersionInputSchema,
@@ -87,3 +83,15 @@ export type {
 export { courseVersionRollbackInputSchema } from './course-version-rollback.validation.js';
 
 export type { CourseVersionRollbackInputSchema } from './course-version-rollback.validation.js';
+
+export type {
+  CourseQuery,
+  CourseQueryCriteria,
+  CourseQueryRequest,
+  CourseQueryResult,
+  CourseQueryResultPage,
+} from './course-query.contracts.js';
+
+export { courseQueryInputSchema } from './course-query.validation.js';
+
+export type { CourseQueryInputSchema } from './course-query.validation.js';

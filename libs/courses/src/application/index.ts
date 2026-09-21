@@ -86,10 +86,18 @@ export type {
 
 export { COURSE_SEARCH_SORT_FIELDS } from './contracts/index.js';
 
-export {
-  courseSearchInputSchema,
-} from './contracts/index.js';
+export { courseSearchInputSchema } from './contracts/index.js';
+
+export type { CourseSearchInputSchema } from './contracts/index.js';
 
 export type {
-  CourseSearchInputSchema,
+  CourseQuery,
+  CourseQueryCriteria,
+  CourseQueryRequest,
+  CourseQueryResult,
+  CourseQueryResultPage,
 } from './contracts/index.js';
+
+export { courseQueryInputSchema } from './contracts/index.js';
+
+export type { CourseQueryInputSchema } from './contracts/index.js';

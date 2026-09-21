@@ -607,3 +607,24 @@ export type {
   CourseSearchRequest,
   CourseSearchSortField,
 } from './application/index.js';
+
+/**
+ * Course query contract
+ *
+ * Defines the infrastructure-agnostic read/query boundary for Course
+ * discovery and listing scenarios.
+ *
+ * Query results are projections rather than hydrated Course aggregates.
+ * Persistence strategy and read-model architecture remain outside this
+ * contract.
+ */
+export type {
+  CourseQuery,
+  CourseQueryCriteria,
+  CourseQueryRequest,
+  CourseQueryResult,
+  CourseQueryResultPage,
+  CourseQueryInputSchema,
+} from './application/index.js';
+
+export { courseQueryInputSchema } from './application/index.js';

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { Course } from '../entities/course.js';
+import type { CourseProps } from '../entities/course.js';
 import { CourseDomainEventName } from '../events/course.events.js';
 import { CourseLevel } from '../enums/course-level.js';
 import { CourseStatus } from '../enums/course-status.js';
@@ -12,7 +13,6 @@ import {
   CourseOwnershipRole,
   createCourseOwnershipAssignment,
 } from '../ownership/index.js';
-import type { CourseProps } from '../entities/course.js';
 import { CourseId } from '../value-objects/course-id.js';
 import type { CourseRepository } from './course-repository.js';
 
@@ -205,7 +205,7 @@ describe('CourseRepository contract', () => {
   });
 
   describe('exists', () => {
-    it('uses CourseId as the identifier for exists', async () => {
+    it('uses CourseId as the identifier', async () => {
       const repository = createRepository();
       const course = createCourse();
 
@@ -221,6 +221,15 @@ describe('CourseRepository contract', () => {
       const courseId = CourseId.generate();
 
       expect(await repository.exists(courseId)).toBe(false);
+    });
+
+    it('determines existence independently of aggregate hydration', async () => {
+      const repository = createRepository();
+      const course = createCourse();
+
+      await repository.save(course);
+
+      expect(await repository.exists(course.id)).toBe(true);
     });
   });
 

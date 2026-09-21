@@ -27,6 +27,10 @@ export interface CourseRepository {
 
   /**
    * Determines whether a Course exists.
+   *
+   * This is a lightweight existence check. Implementations must not
+   * require rehydrating the Course aggregate or loading related
+   * aggregate state merely to determine whether the Course exists.
    */
   exists(id: CourseId): Promise<boolean>;
 

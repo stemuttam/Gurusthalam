@@ -37,8 +37,14 @@ export interface CourseRepository {
   /**
    * Persists the current state of a Course aggregate.
    *
-   * The implementation is responsible for deciding whether this represents
-   * an insert or update based on its persistence strategy.
+   * The CourseId is the aggregate identity and therefore determines
+   * which persisted Course state is created or updated.
+   *
+   * Repeated saves of the same aggregate identity must persist the
+   * latest aggregate state, including its ownership state.
+   *
+   * The implementation is responsible for deciding whether this
+   * represents an insert or update based on its persistence strategy.
    */
   save(course: Course): Promise<void>;
 }

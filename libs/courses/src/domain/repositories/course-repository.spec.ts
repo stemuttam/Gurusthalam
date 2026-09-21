@@ -258,6 +258,85 @@ describe('CourseRepository contract', () => {
       expect(result?.description).toBe(course.description);
       expect(result?.instructorId).toBe(course.instructorId);
     });
+
+    it('persists the latest state when the same Course identity is saved again', async () => {
+      const repository = createRepository();
+      const initialCourse = createOwnedCourse();
+
+      await repository.save(initialCourse);
+
+      const updatedCourse = Course.rehydrate(
+        {
+          id: initialCourse.id,
+          title: 'Advanced TypeScript',
+          description: 'Build production-grade TypeScript applications.',
+          level: CourseLevel.ADVANCED,
+          type: CourseType.LIVE,
+          visibility: CourseVisibility.UNLISTED,
+          status: CourseStatus.PUBLISHED,
+          instructorId: 'instructor-002',
+          createdAt: initialCourse.createdAt,
+          updatedAt: new Date('2026-01-03T12:00:00.000Z'),
+        },
+        CourseOwnership.create([
+          createCourseOwnershipAssignment({
+            principalId: CourseActorId.from('author-002'),
+            role: CourseOwnershipRole.AUTHOR,
+          }),
+        ]),
+      );
+
+      await repository.save(updatedCourse);
+
+      const result = await repository.findById(initialCourse.id);
+
+      expect(result).toBeInstanceOf(Course);
+      expect(result?.id.equals(initialCourse.id)).toBe(true);
+      expect(result?.title).toBe('Advanced TypeScript');
+      expect(result?.description).toBe(
+        'Build production-grade TypeScript applications.',
+      );
+      expect(result?.level).toBe(CourseLevel.ADVANCED);
+      expect(result?.type).toBe(CourseType.LIVE);
+      expect(result?.visibility).toBe(CourseVisibility.UNLISTED);
+      expect(result?.status).toBe(CourseStatus.PUBLISHED);
+      expect(result?.instructorId).toBe('instructor-002');
+      expect(result?.createdAt.toISOString()).toBe('2026-01-01T10:00:00.000Z');
+      expect(result?.updatedAt.toISOString()).toBe('2026-01-03T12:00:00.000Z');
+    });
+
+    it('persists the latest ownership state when the same Course identity is saved again', async () => {
+      const repository = createRepository();
+      const initialCourse = createOwnedCourse();
+
+      await repository.save(initialCourse);
+
+      const updatedCourse = Course.rehydrate(
+        {
+          ...initialCourse.toPrimitives(),
+          title: 'Ownership Updated Course',
+          updatedAt: new Date('2026-01-03T12:00:00.000Z'),
+        },
+        CourseOwnership.create([
+          createCourseOwnershipAssignment({
+            principalId: CourseActorId.from('author-002'),
+            role: CourseOwnershipRole.AUTHOR,
+          }),
+        ]),
+      );
+
+      await repository.save(updatedCourse);
+
+      const result = await repository.findById(initialCourse.id);
+
+      expect(result?.ownership.size).toBe(1);
+      expect(result?.ownership.hasOwner()).toBe(false);
+      expect(
+        result?.ownership
+          .getForRole(CourseOwnershipRole.AUTHOR)[0]
+          ?.principalId.toString(),
+      ).toBe('author-002');
+    });
   });
 
   it('does not require persistence-specific dependencies', () => {

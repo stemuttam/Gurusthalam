@@ -43,6 +43,7 @@ import type {
   SaveCourseInput,
   SubmitCourseForReviewInput,
   UpdateCourseInput,
+  UpdateMetadataInput,
 } from '../contracts/course-application.contracts.js';
 
 type CourseMetadataSnapshot = Readonly<{
@@ -134,6 +135,34 @@ export class DefaultCourseApplicationService implements CourseApplicationService
    * Authorization is deliberately outside this boundary.
    */
   async updateCourse(input: UpdateCourseInput): Promise<Course> {
+    return this.updateMetadata(input);
+  }
+
+  /**
+   * Canonical application boundary for updating mutable transactional
+   * Course metadata.
+   *
+   * The 4.10-B updateCourse() contract remains as a compatibility alias,
+   * while 4.10-E establishes updateMetadata() as the semantically precise
+   * command name for this boundary.
+   *
+   * Responsibilities:
+   * - validate primitive application input;
+   * - convert the Course identifier to CourseId;
+   * - load the Course aggregate;
+   * - delegate metadata rules to Course.updateMetadata();
+   * - avoid persistence for a semantic no-op;
+   * - persist a real metadata transition exactly once.
+   *
+   * The Course aggregate remains responsible for:
+   * - lifecycle eligibility;
+   * - metadata invariants;
+   * - timestamp mutation;
+   * - CourseMetadataUpdated domain-event creation.
+   *
+   * Authorization is deliberately outside this boundary.
+   */
+  async updateMetadata(input: UpdateMetadataInput): Promise<Course> {
     const validatedInput = updateCourseInputSchema.parse(input);
 
     const courseId = this.toCourseId(validatedInput.courseId);

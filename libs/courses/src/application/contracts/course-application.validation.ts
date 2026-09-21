@@ -130,6 +130,15 @@ export const updateCourseInputSchema = z
   );
 
 /**
+ * Canonical runtime validation contract for the Course metadata command.
+ *
+ * This is an intentional semantic alias of updateCourseInputSchema rather
+ * than a second schema, keeping the 4.10-B compatibility contract and the
+ * 4.10-E command contract structurally identical and behaviorally consistent.
+ */
+export const updateMetadataInputSchema = updateCourseInputSchema;
+
+/**
  * Runtime validation contract for assigning one ownership role
  * to one Course participant.
  */
@@ -226,6 +235,10 @@ export type GetCourseInputSchema = z.infer<typeof getCourseInputSchema>;
 export type CourseExistsInputSchema = z.infer<typeof courseExistsInputSchema>;
 
 export type UpdateCourseInputSchema = z.infer<typeof updateCourseInputSchema>;
+
+export type UpdateMetadataInputSchema = z.infer<
+  typeof updateMetadataInputSchema
+>;
 
 export type CourseOwnershipAssignmentInputSchema = z.infer<
   typeof courseOwnershipAssignmentInputSchema

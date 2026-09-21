@@ -20,6 +20,16 @@ export type GetCourseInput = GetCourseInputSchema;
 
 export type UpdateCourseInput = UpdateCourseInputSchema;
 
+/**
+ * Canonical application command for mutating Course metadata.
+ *
+ * UpdateCourse remains available as the backward-compatible application
+ * contract established in 4.10-B. Both commands intentionally share the
+ * same validated input shape because metadata is the only mutable Course
+ * state currently exposed by that boundary.
+ */
+export type UpdateMetadataInput = UpdateCourseInputSchema;
+
 export type CourseOwnershipAssignmentInput =
   CourseOwnershipAssignmentInputSchema;
 
@@ -61,6 +71,15 @@ export interface CourseApplicationService {
    * application service.
    */
   updateCourse(input: UpdateCourseInput): Promise<Course>;
+
+  /**
+   * Canonical application command for updating mutable Course metadata.
+   *
+   * The Course aggregate remains the source of truth for lifecycle
+   * eligibility, metadata invariants, timestamps, and domain events.
+   * Authentication and authorization remain outside this boundary.
+   */
+  updateMetadata(input: UpdateMetadataInput): Promise<Course>;
 
   /**
    * Assigns one ownership role to a Course participant.

@@ -14,6 +14,14 @@ export interface CourseRepository {
    * Finds a Course by its domain identifier.
    *
    * Returns null when the Course does not exist.
+   *
+   * When a Course exists, the implementation must return a rehydrated
+   * Course aggregate representing the persisted state.
+   *
+   * Rehydration must preserve the aggregate identity and persisted
+   * state without treating persistence loading as a new domain action.
+   * Therefore, rehydration must not generate creation or other
+   * lifecycle/domain events merely because the aggregate was loaded.
    */
   findById(id: CourseId): Promise<Course | null>;
 

@@ -1,9 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
 import { Course } from '../entities/course.js';
+import { CourseDomainEventName } from '../events/course.events.js';
 import { CourseLevel } from '../enums/course-level.js';
+import { CourseStatus } from '../enums/course-status.js';
 import { CourseType } from '../enums/course-type.js';
 import { CourseVisibility } from '../enums/course-visibility.js';
+import {
+  CourseActorId,
+  CourseOwnership,
+  CourseOwnershipRole,
+  createCourseOwnershipAssignment,
+} from '../ownership/index.js';
+import type { CourseProps } from '../entities/course.js';
 import { CourseId } from '../value-objects/course-id.js';
 import type { CourseRepository } from './course-repository.js';
 
@@ -18,14 +27,59 @@ describe('CourseRepository contract', () => {
       instructorId: 'instructor-001',
     });
 
+  const createOwnedCourse = (): Course =>
+    Course.rehydrate(
+      {
+        id: CourseId.from('course-001'),
+        title: 'TypeScript Fundamentals',
+        description: 'Learn TypeScript from the ground up.',
+        level: CourseLevel.INTERMEDIATE,
+        type: CourseType.BLENDED,
+        visibility: CourseVisibility.PUBLIC,
+        status: CourseStatus.PUBLISHED,
+        instructorId: 'instructor-001',
+        createdAt: new Date('2026-01-01T10:00:00.000Z'),
+        updatedAt: new Date('2026-01-02T12:00:00.000Z'),
+      },
+      CourseOwnership.create([
+        createCourseOwnershipAssignment({
+          principalId: CourseActorId.from('owner-001'),
+          role: CourseOwnershipRole.OWNER,
+        }),
+        createCourseOwnershipAssignment({
+          principalId: CourseActorId.from('author-001'),
+          role: CourseOwnershipRole.AUTHOR,
+        }),
+      ]),
+    );
+
   const createRepository = (): CourseRepository => {
-    const courses = new Map<string, Course>();
+    const courses = new Map<
+      string,
+      {
+        readonly props: CourseProps;
+        readonly ownership: CourseOwnership;
+      }
+    >();
 
     return {
       async findById(id: CourseId): Promise<Course | null> {
         expect(id).toBeInstanceOf(CourseId);
 
-        return courses.get(id.toString()) ?? null;
+        const persisted = courses.get(id.toString());
+
+        if (persisted === undefined) {
+          return null;
+        }
+
+        return Course.rehydrate(
+          {
+            ...persisted.props,
+            createdAt: new Date(persisted.props.createdAt),
+            updatedAt: new Date(persisted.props.updatedAt),
+          },
+          persisted.ownership,
+        );
       },
 
       async exists(id: CourseId): Promise<boolean> {
@@ -37,7 +91,10 @@ describe('CourseRepository contract', () => {
       async save(course: Course): Promise<void> {
         expect(course).toBeInstanceOf(Course);
 
-        courses.set(course.id.toString(), course);
+        courses.set(course.id.toString(), {
+          props: course.toPrimitives(),
+          ownership: course.ownership,
+        });
       },
     };
   };
@@ -50,66 +107,148 @@ describe('CourseRepository contract', () => {
     expect(repository.save).toBeTypeOf('function');
   });
 
-  it('uses CourseId as the identifier for findById and returns null when missing', async () => {
-    const repository = createRepository();
-    const courseId = CourseId.generate();
+  describe('findById', () => {
+    it('uses CourseId as the identifier', async () => {
+      const repository = createRepository();
+      const courseId = CourseId.generate();
 
-    const result = await repository.findById(courseId);
+      const result = await repository.findById(courseId);
 
-    expect(result).toBeNull();
+      expect(result).toBeNull();
+    });
+
+    it('returns null when the Course does not exist', async () => {
+      const repository = createRepository();
+      const courseId = CourseId.generate();
+
+      await expect(repository.findById(courseId)).resolves.toBeNull();
+    });
+
+    it('returns a rehydrated Course aggregate for an existing Course', async () => {
+      const repository = createRepository();
+      const course = createOwnedCourse();
+
+      await repository.save(course);
+
+      const result = await repository.findById(course.id);
+
+      expect(result).toBeInstanceOf(Course);
+      expect(result).not.toBe(course);
+      expect(result?.id.equals(course.id)).toBe(true);
+    });
+
+    it('preserves the persisted Course state during rehydration', async () => {
+      const repository = createRepository();
+      const course = createOwnedCourse();
+
+      await repository.save(course);
+
+      const result = await repository.findById(course.id);
+
+      expect(result?.id.equals(course.id)).toBe(true);
+      expect(result?.title).toBe('TypeScript Fundamentals');
+      expect(result?.description).toBe('Learn TypeScript from the ground up.');
+      expect(result?.level).toBe(CourseLevel.INTERMEDIATE);
+      expect(result?.type).toBe(CourseType.BLENDED);
+      expect(result?.visibility).toBe(CourseVisibility.PUBLIC);
+      expect(result?.status).toBe(CourseStatus.PUBLISHED);
+      expect(result?.instructorId).toBe('instructor-001');
+      expect(result?.createdAt.toISOString()).toBe('2026-01-01T10:00:00.000Z');
+      expect(result?.updatedAt.toISOString()).toBe('2026-01-02T12:00:00.000Z');
+    });
+
+    it('preserves ownership during Course rehydration', async () => {
+      const repository = createRepository();
+      const course = createOwnedCourse();
+
+      await repository.save(course);
+
+      const result = await repository.findById(course.id);
+
+      expect(result?.ownership.size).toBe(2);
+      expect(result?.ownership.hasOwner()).toBe(true);
+      expect(result?.ownership.getOwner()?.principalId.toString()).toBe(
+        'owner-001',
+      );
+      expect(
+        result?.ownership
+          .getForRole(CourseOwnershipRole.AUTHOR)[0]
+          ?.principalId.toString(),
+      ).toBe('author-001');
+    });
+
+    it('does not generate domain events while rehydrating a Course', async () => {
+      const repository = createRepository();
+      const course = createOwnedCourse();
+
+      await repository.save(course);
+
+      const result = await repository.findById(course.id);
+
+      expect(result?.getDomainEvents()).toHaveLength(0);
+    });
+
+    it('does not treat persistence loading as Course creation', async () => {
+      const repository = createRepository();
+      const course = createOwnedCourse();
+
+      await repository.save(course);
+
+      const result = await repository.findById(course.id);
+
+      expect(
+        result
+          ?.getDomainEvents()
+          .some((event) => event.eventName === CourseDomainEventName.CREATED),
+      ).toBe(false);
+    });
   });
 
-  it('returns a persisted Course from findById', async () => {
-    const repository = createRepository();
-    const course = createCourse();
+  describe('exists', () => {
+    it('uses CourseId as the identifier for exists', async () => {
+      const repository = createRepository();
+      const course = createCourse();
 
-    await repository.save(course);
+      expect(await repository.exists(course.id)).toBe(false);
 
-    const result = await repository.findById(course.id);
+      await repository.save(course);
 
-    expect(result).toBe(course);
-    expect(result?.id).toBe(course.id);
+      expect(await repository.exists(course.id)).toBe(true);
+    });
+
+    it('returns false when the Course does not exist', async () => {
+      const repository = createRepository();
+      const courseId = CourseId.generate();
+
+      expect(await repository.exists(courseId)).toBe(false);
+    });
   });
 
-  it('uses CourseId as the identifier for exists', async () => {
-    const repository = createRepository();
-    const course = createCourse();
+  describe('save', () => {
+    it('accepts a Course aggregate and returns void', async () => {
+      const repository = createRepository();
+      const course = createCourse();
 
-    expect(await repository.exists(course.id)).toBe(false);
+      const result = await repository.save(course);
 
-    await repository.save(course);
+      expect(result).toBeUndefined();
+    });
 
-    expect(await repository.exists(course.id)).toBe(true);
-  });
+    it('persists the Course so that findById can rehydrate it', async () => {
+      const repository = createRepository();
+      const course = createCourse();
 
-  it('returns false from exists when the Course does not exist', async () => {
-    const repository = createRepository();
-    const courseId = CourseId.generate();
+      await repository.save(course);
 
-    expect(await repository.exists(courseId)).toBe(false);
-  });
+      const result = await repository.findById(course.id);
 
-  it('accepts a Course aggregate and returns void from save', async () => {
-    const repository = createRepository();
-    const course = createCourse();
-
-    const result = await repository.save(course);
-
-    expect(result).toBeUndefined();
-  });
-
-  it('preserves the same Course aggregate through save and findById', async () => {
-    const repository = createRepository();
-    const course = createCourse();
-
-    await repository.save(course);
-
-    const result = await repository.findById(course.id);
-
-    expect(result).toBe(course);
-    expect(result?.title).toBe('TypeScript Fundamentals');
-    expect(result?.description).toBe('Learn TypeScript from the ground up.');
-    expect(result?.instructorId).toBe('instructor-001');
+      expect(result).toBeInstanceOf(Course);
+      expect(result).not.toBe(course);
+      expect(result?.id.equals(course.id)).toBe(true);
+      expect(result?.title).toBe(course.title);
+      expect(result?.description).toBe(course.description);
+      expect(result?.instructorId).toBe(course.instructorId);
+    });
   });
 
   it('does not require persistence-specific dependencies', () => {

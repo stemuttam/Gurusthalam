@@ -14,8 +14,18 @@ import {
   COURSE_VERSION_REPOSITORY,
 } from '../database/prisma/repositories/courses/courses-repository.tokens.js';
 
+import {
+  CourseController,
+  CourseVersionController,
+} from './course.controller.js';
+
 @Module({
   imports: [CoursesPersistenceModule],
+
+  controllers: [
+    CourseController,
+    CourseVersionController,
+  ],
 
   providers: [
     {
@@ -32,7 +42,10 @@ import {
     {
       provide: DefaultCourseVersionApplicationService,
 
-      inject: [COURSE_REPOSITORY, COURSE_VERSION_REPOSITORY],
+      inject: [
+        COURSE_REPOSITORY,
+        COURSE_VERSION_REPOSITORY,
+      ],
 
       useFactory: (
         courseRepository: CourseRepository,

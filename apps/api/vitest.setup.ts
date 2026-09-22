@@ -1,10 +1,10 @@
-import {
-  config,
-} from 'dotenv';
+import { fileURLToPath } from 'node:url';
+
+import { config } from 'dotenv';
+
+const apiRoot = fileURLToPath(new URL('.', import.meta.url));
 
 config({
-  path:
-    'apps/api/.env',
-  override:
-    false,
+  path: `${apiRoot}.env`,
+  override: false,
 });

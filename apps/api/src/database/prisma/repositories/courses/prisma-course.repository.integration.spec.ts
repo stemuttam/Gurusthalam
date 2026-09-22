@@ -32,6 +32,13 @@ describe('PrismaCourseRepository - PostgreSQL integration', () => {
 
   afterEach(async () => {
     for (const courseId of createdCourseIds) {
+      await prisma.outboxEvent.deleteMany({
+        where: {
+          aggregateType: 'Course',
+          aggregateId: courseId,
+        },
+      });
+
       await prisma.courseOwnershipAssignment.deleteMany({
         where: {
           courseId,
@@ -92,10 +99,12 @@ describe('PrismaCourseRepository - PostgreSQL integration', () => {
 
     await repository.save(course);
 
-    /*
-     * Repository persistence must not consume aggregate domain events.
+    /**
+     * A successful repository save persists the pending domain events
+     * into the transactional Outbox and drains them only after the
+     * transaction commits successfully.
      */
-    expect(course.getDomainEvents()).toHaveLength(1);
+    expect(course.getDomainEvents()).toHaveLength(0);
 
     const stored = await repository.findById(course.id);
 

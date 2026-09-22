@@ -1,154 +1,80 @@
-import {
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import {
-  CourseVersion,
-} from '../../domain/entities/course-version.js';
+import { CourseVersion } from '../../domain/entities/course-version.js';
 
-import {
-  CourseVersionId,
-} from '../../domain/value-objects/course-version-id.js';
+import { CourseVersionId } from '../../domain/value-objects/course-version-id.js';
 
 import {
   COURSE_VERSION_AUDIT_ACTOR_TYPE,
   COURSE_VERSION_AUDIT_EVENT_TYPE,
 } from '../../domain/versioning/course-version-audit.js';
 
-import {
-  COURSE_VERSION_LINEAGE_RELATION,
-} from '../../domain/versioning/course-version-lineage.js';
+import { COURSE_VERSION_LINEAGE_RELATION } from '../../domain/versioning/course-version-lineage.js';
 
 import type {
   CourseVersionRollbackPersistence,
   CourseVersionRollbackTransactionContext,
 } from '../contracts/course-version-rollback.contracts.js';
 
-import {
-  DefaultCourseVersionRollbackApplicationService,
-} from './course-version-rollback.application.service.js';
+import { DefaultCourseVersionRollbackApplicationService } from './course-version-rollback.application.service.js';
 
-const source =
-  CourseVersion.rehydrate({
-    id:
-      CourseVersionId.from(
-        'course-version-source',
-      ),
+const source = CourseVersion.rehydrate({
+  id: CourseVersionId.from('course-version-source'),
 
-    courseId:
-      'course-001',
+  courseId: 'course-001',
 
-    version:
-      3,
+  version: 3,
 
-    status:
-      'PUBLISHED',
+  status: 'PUBLISHED',
 
-    title:
-      'Stable Course',
+  title: 'Stable Course',
 
-    description:
-      'Stable historical version.',
+  description: 'Stable historical version.',
 
-    createdAt:
-      new Date(
-        '2026-01-01T00:00:00.000Z',
-      ),
+  createdAt: new Date('2026-01-01T00:00:00.000Z'),
 
-    updatedAt:
-      new Date(
-        '2026-01-01T01:00:00.000Z',
-      ),
+  updatedAt: new Date('2026-01-01T01:00:00.000Z'),
 
-    publishedAt:
-      new Date(
-        '2026-01-01T02:00:00.000Z',
-      ),
-  });
+  publishedAt: new Date('2026-01-01T02:00:00.000Z'),
+});
 
-const latest =
-  CourseVersion.rehydrate({
-    id:
-      CourseVersionId.from(
-        'course-version-latest',
-      ),
+const latest = CourseVersion.rehydrate({
+  id: CourseVersionId.from('course-version-latest'),
 
-    courseId:
-      'course-001',
+  courseId: 'course-001',
 
-    version:
-      5,
+  version: 5,
 
-    status:
-      'DRAFT',
+  status: 'DRAFT',
 
-    title:
-      'Latest Draft',
+  title: 'Latest Draft',
 
-    description:
-      'Latest version.',
+  description: 'Latest version.',
 
-    createdAt:
-      new Date(
-        '2026-01-05T00:00:00.000Z',
-      ),
+  createdAt: new Date('2026-01-05T00:00:00.000Z'),
 
-    updatedAt:
-      new Date(
-        '2026-01-05T01:00:00.000Z',
-      ),
+  updatedAt: new Date('2026-01-05T01:00:00.000Z'),
 
-    publishedAt:
-      null,
-  });
+  publishedAt: null,
+});
 
 function createContext(): {
   context: CourseVersionRollbackTransactionContext;
-  findVersionById: ReturnType<
-    typeof vi.fn
-  >;
-  findLatestVersionByCourseId: ReturnType<
-    typeof vi.fn
-  >;
-  saveVersion: ReturnType<
-    typeof vi.fn
-  >;
-  appendLineage: ReturnType<
-    typeof vi.fn
-  >;
-  appendAudit: ReturnType<
-    typeof vi.fn
-  >;
+  findVersionById: ReturnType<typeof vi.fn>;
+  findLatestVersionByCourseId: ReturnType<typeof vi.fn>;
+  saveVersion: ReturnType<typeof vi.fn>;
+  appendLineage: ReturnType<typeof vi.fn>;
+  appendAudit: ReturnType<typeof vi.fn>;
 } {
-  const findVersionById =
-    vi.fn();
+  const findVersionById = vi.fn();
 
-  const findLatestVersionByCourseId =
-    vi.fn();
+  const findLatestVersionByCourseId = vi.fn();
 
-  const saveVersion =
-    vi
-      .fn()
-      .mockResolvedValue(
-        undefined,
-      );
+  const saveVersion = vi.fn().mockResolvedValue(undefined);
 
-  const appendLineage =
-    vi
-      .fn()
-      .mockResolvedValue(
-        undefined,
-      );
+  const appendLineage = vi.fn().mockResolvedValue(undefined);
 
-  const appendAudit =
-    vi
-      .fn()
-      .mockResolvedValue(
-        undefined,
-      );
+  const appendAudit = vi.fn().mockResolvedValue(undefined);
 
   return {
     context: {
@@ -178,437 +104,231 @@ function createPersistence(
   const execute =
     executeSpy ??
     (async <T>(
-      work: (
-        context: CourseVersionRollbackTransactionContext,
-      ) => Promise<T>,
-    ): Promise<T> =>
-      work(
-        context,
-      ));
+      work: (context: CourseVersionRollbackTransactionContext) => Promise<T>,
+    ): Promise<T> => work(context));
 
   return {
     execute,
   };
 }
 
-describe(
-  'DefaultCourseVersionRollbackApplicationService',
-  () => {
-    it(
-      'creates a transactionally coordinated rollback result',
-      async () => {
-        const {
-          context,
-          findVersionById,
-          findLatestVersionByCourseId,
-          saveVersion,
-          appendLineage,
-          appendAudit,
-        } = createContext();
+describe('DefaultCourseVersionRollbackApplicationService', () => {
+  it('creates a transactionally coordinated rollback result', async () => {
+    const {
+      context,
+      findVersionById,
+      findLatestVersionByCourseId,
+      saveVersion,
+      appendLineage,
+      appendAudit,
+    } = createContext();
 
-        findVersionById.mockResolvedValue(
-          source,
-        );
+    findVersionById.mockResolvedValue(source);
 
-        findLatestVersionByCourseId.mockResolvedValue(
-          latest,
-        );
+    findLatestVersionByCourseId.mockResolvedValue(latest);
 
-        let executeCalls =
-          0;
+    let executeCalls = 0;
 
-        const execute: CourseVersionRollbackPersistence['execute'] =
-          async <T>(
-            work: (
-              context: CourseVersionRollbackTransactionContext,
-            ) => Promise<T>,
-          ): Promise<T> => {
-            executeCalls += 1;
+    const execute: CourseVersionRollbackPersistence['execute'] = async <T>(
+      work: (context: CourseVersionRollbackTransactionContext) => Promise<T>,
+    ): Promise<T> => {
+      executeCalls += 1;
 
-            return work(
-              context,
-            );
-          };
+      return work(context);
+    };
 
-        const persistence =
-          createPersistence(
-            context,
-            execute,
-          );
+    const persistence = createPersistence(context, execute);
 
-        const service =
-          new DefaultCourseVersionRollbackApplicationService(
-            persistence,
-          );
-
-        const result =
-          await service.rollback({
-            courseId:
-              'course-001',
-
-            sourceVersionId:
-              'course-version-source',
-
-            reason:
-              'Restore stable published content.',
-
-            actor: {
-              type:
-                COURSE_VERSION_AUDIT_ACTOR_TYPE.USER,
-
-              id:
-                'user-001',
-            },
-          });
-
-        expect(
-          executeCalls,
-        ).toBe(
-          1,
-        );
-
-        expect(
-          result.version.version,
-        ).toBe(
-          6,
-        );
-
-        expect(
-          result.version.status,
-        ).toBe(
-          'DRAFT',
-        );
-
-        expect(
-          result.version.courseId,
-        ).toBe(
-          'course-001',
-        );
-
-        expect(
-          result.version.title,
-        ).toBe(
-          'Stable Course',
-        );
-
-        expect(
-          result.version.description,
-        ).toBe(
-          'Stable historical version.',
-        );
-
-        expect(
-          result.lineage.relation,
-        ).toBe(
-          COURSE_VERSION_LINEAGE_RELATION,
-        );
-
-        expect(
-          result.lineage.sourceVersion,
-        ).toBe(
-          3,
-        );
-
-        expect(
-          result.lineage.targetVersion,
-        ).toBe(
-          6,
-        );
-
-        expect(
-          result.audit.eventType,
-        ).toBe(
-          COURSE_VERSION_AUDIT_EVENT_TYPE.VERSION_ROLLBACK_CREATED,
-        );
-
-        expect(
-          result.audit.actor.type,
-        ).toBe(
-          COURSE_VERSION_AUDIT_ACTOR_TYPE.USER,
-        );
-
-        expect(
-          result.audit.actor.id,
-        ).toBe(
-          'user-001',
-        );
-
-        expect(
-          result.audit.reason,
-        ).toBe(
-          'Restore stable published content.',
-        );
-
-        expect(
-          result.audit.metadata.sourceVersion,
-        ).toBe(
-          3,
-        );
-
-        expect(
-          result.audit.metadata.targetVersion,
-        ).toBe(
-          6,
-        );
-
-        expect(
-          result.audit.metadata.sourceVersionId,
-        ).toBe(
-          'course-version-source',
-        );
-
-        expect(
-          result.audit.metadata.targetVersionId,
-        ).toBe(
-          result.version.id.value,
-        );
-
-        expect(
-          saveVersion,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-
-        expect(
-          appendLineage,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-
-        expect(
-          appendAudit,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-      },
+    const service = new DefaultCourseVersionRollbackApplicationService(
+      persistence,
     );
 
-    it(
-      'chooses a version above the source when the historical source is newer than the current latest',
-      async () => {
-        const {
-          context,
-          findVersionById,
-          findLatestVersionByCourseId,
-        } = createContext();
+    const result = await service.rollback({
+      courseId: 'course-001',
 
-        const historicalSource =
-          CourseVersion.rehydrate({
-            id:
-              CourseVersionId.from(
-                'course-version-historical',
-              ),
+      sourceVersionId: 'course-version-source',
 
-            courseId:
-              'course-001',
+      reason: 'Restore stable published content.',
 
-            version:
-              10,
+      actor: {
+        type: COURSE_VERSION_AUDIT_ACTOR_TYPE.USER,
 
-            status:
-              'ARCHIVED',
-
-            title:
-              'Historical Course',
-
-            description:
-              null,
-
-            createdAt:
-              new Date(
-                '2026-01-01T00:00:00.000Z',
-              ),
-
-            updatedAt:
-              new Date(
-                '2026-01-01T01:00:00.000Z',
-              ),
-
-            publishedAt:
-              null,
-          });
-
-        findVersionById.mockResolvedValue(
-          historicalSource,
-        );
-
-        findLatestVersionByCourseId.mockResolvedValue(
-          latest,
-        );
-
-        const service =
-          new DefaultCourseVersionRollbackApplicationService(
-            createPersistence(
-              context,
-            ),
-          );
-
-        const result =
-          await service.rollback({
-            courseId:
-              'course-001',
-
-            sourceVersionId:
-              'course-version-historical',
-
-            reason:
-              'Restore historical content.',
-
-            actor: {
-              type:
-                COURSE_VERSION_AUDIT_ACTOR_TYPE.SYSTEM,
-
-              id:
-                'system',
-            },
-          });
-
-        expect(
-          result.version.version,
-        ).toBe(
-          11,
-        );
+        id: 'user-001',
       },
+    });
+
+    expect(executeCalls).toBe(1);
+
+    expect(result.version.version).toBe(6);
+
+    expect(result.version.status).toBe('DRAFT');
+
+    expect(result.version.courseId).toBe('course-001');
+
+    expect(result.version.title).toBe('Stable Course');
+
+    expect(result.version.description).toBe('Stable historical version.');
+
+    expect(result.lineage.relation).toBe(COURSE_VERSION_LINEAGE_RELATION);
+
+    expect(result.lineage.sourceVersion).toBe(3);
+
+    expect(result.lineage.targetVersion).toBe(6);
+
+    expect(result.audit.eventType).toBe(
+      COURSE_VERSION_AUDIT_EVENT_TYPE.VERSION_ROLLBACK_CREATED,
     );
 
-    it(
-      'uses the source version plus one when there is no later version',
-      async () => {
-        const {
-          context,
-          findVersionById,
-          findLatestVersionByCourseId,
-        } = createContext();
+    expect(result.audit.actor.type).toBe(COURSE_VERSION_AUDIT_ACTOR_TYPE.USER);
 
-        findVersionById.mockResolvedValue(
-          source,
-        );
+    expect(result.audit.actor.id).toBe('user-001');
 
-        findLatestVersionByCourseId.mockResolvedValue(
-          null,
-        );
+    expect(result.audit.reason).toBe('Restore stable published content.');
 
-        const service =
-          new DefaultCourseVersionRollbackApplicationService(
-            createPersistence(
-              context,
-            ),
-          );
+    expect(result.audit.metadata.sourceVersion).toBe(3);
 
-        const result =
-          await service.rollback({
-            courseId:
-              'course-001',
+    expect(result.audit.metadata.targetVersion).toBe(6);
 
-            sourceVersionId:
-              'course-version-source',
+    expect(result.audit.metadata.sourceVersionId).toBe('course-version-source');
 
-            reason:
-              'Restore historical content.',
+    expect(result.audit.metadata.targetVersionId).toBe(result.version.id.value);
 
-            actor: {
-              type:
-                COURSE_VERSION_AUDIT_ACTOR_TYPE.SERVICE,
+    expect(saveVersion).toHaveBeenCalledTimes(1);
 
-              id:
-                'rollback-service',
-            },
-          });
+    expect(appendLineage).toHaveBeenCalledTimes(1);
 
-        expect(
-          result.version.version,
-        ).toBe(
-          4,
-        );
-      },
+    expect(appendAudit).toHaveBeenCalledTimes(1);
+  });
+
+  it('chooses a version above the source when the historical source is newer than the current latest', async () => {
+    const { context, findVersionById, findLatestVersionByCourseId } =
+      createContext();
+
+    const historicalSource = CourseVersion.rehydrate({
+      id: CourseVersionId.from('course-version-historical'),
+
+      courseId: 'course-001',
+
+      version: 10,
+
+      status: 'ARCHIVED',
+
+      title: 'Historical Course',
+
+      description: null,
+
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+
+      updatedAt: new Date('2026-01-01T01:00:00.000Z'),
+
+      publishedAt: null,
+    });
+
+    findVersionById.mockResolvedValue(historicalSource);
+
+    findLatestVersionByCourseId.mockResolvedValue(latest);
+
+    const service = new DefaultCourseVersionRollbackApplicationService(
+      createPersistence(context),
     );
 
-    it(
-      'rejects a missing rollback source',
-      async () => {
-        const {
-          context,
-          findVersionById,
-        } = createContext();
+    const result = await service.rollback({
+      courseId: 'course-001',
 
-        findVersionById.mockResolvedValue(
-          null,
-        );
+      sourceVersionId: 'course-version-historical',
 
-        const service =
-          new DefaultCourseVersionRollbackApplicationService(
-            createPersistence(
-              context,
-            ),
-          );
+      reason: 'Restore historical content.',
 
-        await expect(
-          service.rollback({
-            courseId:
-              'course-002',
+      actor: {
+        type: COURSE_VERSION_AUDIT_ACTOR_TYPE.SYSTEM,
 
-            sourceVersionId:
-              'missing-version',
-
-            reason:
-              'Source does not exist.',
-
-            actor: {
-              type:
-                COURSE_VERSION_AUDIT_ACTOR_TYPE.SYSTEM,
-
-              id:
-                'system',
-            },
-          }),
-        ).rejects.toThrow(
-          'CourseVersion rollback source was not found.',
-        );
+        id: 'system',
       },
+    });
+
+    expect(result.version.version).toBe(11);
+  });
+
+  it('uses the source version plus one when there is no later version', async () => {
+    const { context, findVersionById, findLatestVersionByCourseId } =
+      createContext();
+
+    findVersionById.mockResolvedValue(source);
+
+    findLatestVersionByCourseId.mockResolvedValue(null);
+
+    const service = new DefaultCourseVersionRollbackApplicationService(
+      createPersistence(context),
     );
 
-    it(
-      'rejects a source belonging to another Course',
-      async () => {
-        const {
-          context,
-          findVersionById,
-        } = createContext();
+    const result = await service.rollback({
+      courseId: 'course-001',
 
-        findVersionById.mockResolvedValue(
-          source,
-        );
+      sourceVersionId: 'course-version-source',
 
-        const service =
-          new DefaultCourseVersionRollbackApplicationService(
-            createPersistence(
-              context,
-            ),
-          );
+      reason: 'Restore historical content.',
 
-        await expect(
-          service.rollback({
-            courseId:
-              'course-other',
+      actor: {
+        type: COURSE_VERSION_AUDIT_ACTOR_TYPE.SERVICE,
 
-            sourceVersionId:
-              'course-version-source',
-
-            reason:
-              'Invalid Course scope.',
-
-            actor: {
-              type:
-                COURSE_VERSION_AUDIT_ACTOR_TYPE.USER,
-
-              id:
-                'user-001',
-            },
-          }),
-        ).rejects.toThrow(
-          'CourseVersion rollback source does not belong to the specified Course.',
-        );
+        id: 'rollback-service',
       },
+    });
+
+    expect(result.version.version).toBe(4);
+  });
+
+  it('rejects a missing rollback source', async () => {
+    const { context, findVersionById } = createContext();
+
+    findVersionById.mockResolvedValue(null);
+
+    const service = new DefaultCourseVersionRollbackApplicationService(
+      createPersistence(context),
     );
-  },
-);
+
+    await expect(
+      service.rollback({
+        courseId: 'course-002',
+
+        sourceVersionId: 'missing-version',
+
+        reason: 'Source does not exist.',
+
+        actor: {
+          type: COURSE_VERSION_AUDIT_ACTOR_TYPE.SYSTEM,
+
+          id: 'system',
+        },
+      }),
+    ).rejects.toThrow('CourseVersion rollback source was not found.');
+  });
+
+  it('rejects a source belonging to another Course', async () => {
+    const { context, findVersionById } = createContext();
+
+    findVersionById.mockResolvedValue(source);
+
+    const service = new DefaultCourseVersionRollbackApplicationService(
+      createPersistence(context),
+    );
+
+    await expect(
+      service.rollback({
+        courseId: 'course-other',
+
+        sourceVersionId: 'course-version-source',
+
+        reason: 'Invalid Course scope.',
+
+        actor: {
+          type: COURSE_VERSION_AUDIT_ACTOR_TYPE.USER,
+
+          id: 'user-001',
+        },
+      }),
+    ).rejects.toThrow(
+      'CourseVersion rollback source does not belong to the specified Course.',
+    );
+  });
+});

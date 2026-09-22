@@ -50,9 +50,7 @@ describe('Course application validation contracts', () => {
         instructorId: 'instructor-123',
       });
 
-      expect(result.description).toBe(
-        'Learn the fundamentals of physics.',
-      );
+      expect(result.description).toBe('Learn the fundamentals of physics.');
     });
 
     it('accepts an explicitly supplied visibility', () => {
@@ -350,15 +348,11 @@ describe('Course application validation contracts', () => {
 
   describe('courseIdInputSchema', () => {
     it('accepts a valid course id', () => {
-      expect(courseIdInputSchema.parse('course-123')).toBe(
-        'course-123',
-      );
+      expect(courseIdInputSchema.parse('course-123')).toBe('course-123');
     });
 
     it('trims a valid course id', () => {
-      expect(courseIdInputSchema.parse('  course-123  ')).toBe(
-        'course-123',
-      );
+      expect(courseIdInputSchema.parse('  course-123  ')).toBe('course-123');
     });
 
     it('rejects an empty course id', () => {

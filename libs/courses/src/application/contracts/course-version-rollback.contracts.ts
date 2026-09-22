@@ -3,21 +3,13 @@ import type {
   CourseVersionAuditActor,
 } from '../../domain/versioning/course-version-audit.js';
 
-import type {
-  CourseVersionLineage,
-} from '../../domain/versioning/course-version-lineage.js';
+import type { CourseVersionLineage } from '../../domain/versioning/course-version-lineage.js';
 
-import type {
-  CourseVersion,
-} from '../../domain/entities/course-version.js';
+import type { CourseVersion } from '../../domain/entities/course-version.js';
 
-import type {
-  CourseId,
-} from '../../domain/value-objects/course-id.js';
+import type { CourseId } from '../../domain/value-objects/course-id.js';
 
-import type {
-  CourseVersionId,
-} from '../../domain/value-objects/course-version-id.js';
+import type { CourseVersionId } from '../../domain/value-objects/course-version-id.js';
 
 export interface CourseVersionRollbackInput {
   readonly courseId: string;
@@ -40,25 +32,17 @@ export interface CourseVersionRollbackApplicationResult {
  * Prisma-specific persistence types.
  */
 export interface CourseVersionRollbackTransactionContext {
-  findVersionById(
-    id: CourseVersionId,
-  ): Promise<CourseVersion | null>;
+  findVersionById(id: CourseVersionId): Promise<CourseVersion | null>;
 
   findLatestVersionByCourseId(
     courseId: CourseId,
   ): Promise<CourseVersion | null>;
 
-  saveVersion(
-    version: CourseVersion,
-  ): Promise<void>;
+  saveVersion(version: CourseVersion): Promise<void>;
 
-  appendLineage(
-    lineage: CourseVersionLineage,
-  ): Promise<void>;
+  appendLineage(lineage: CourseVersionLineage): Promise<void>;
 
-  appendAudit(
-    audit: CourseVersionAudit,
-  ): Promise<void>;
+  appendAudit(audit: CourseVersionAudit): Promise<void>;
 }
 
 /**
@@ -69,9 +53,7 @@ export interface CourseVersionRollbackTransactionContext {
  */
 export interface CourseVersionRollbackPersistence {
   execute<T>(
-    work: (
-      context: CourseVersionRollbackTransactionContext,
-    ) => Promise<T>,
+    work: (context: CourseVersionRollbackTransactionContext) => Promise<T>,
   ): Promise<T>;
 }
 

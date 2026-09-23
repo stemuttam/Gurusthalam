@@ -1,84 +1,69 @@
-import {
-  randomUUID,
-} from 'node:crypto';
+import { randomUUID } from 'node:crypto';
+
+import { PrismaClient } from '@gurusthalam/database';
+
+import { GurusthalamLogger } from '@gurusthalam/logger';
+
+import { BullMqCourseOutboxDispatchHandler } from './course-outbox-dispatch.handler.js';
 
 import {
-  Queue,
-} from 'bullmq';
+  isCourseOutboxDispatchEvent,
+  type CourseOutboxDispatchEvent,
+} from './course-outbox-dispatch.contracts.js';
+
+import { NotificationOutboxDispatchHandler } from './notification-outbox-dispatch.handler.js';
 
 import {
-  PrismaClient,
-} from '@gurusthalam/database';
-
-import {
-  getRedisConfig,
-} from '@gurusthalam/config';
-
-import {
-  GurusthalamLogger,
-} from '@gurusthalam/logger';
-
-import type {
-  NotificationJobData,
-  NotificationJsonValue,
-} from '../processors/notification.processor.js';
-
-import {
-  getNotificationRetryPolicy,
-  NOTIFICATION_RETRY_BACKOFF_TYPE,
-} from '../notifications/notification-retry.policy.js';
+  OUTBOX_DISPATCH_ROUTES,
+  resolveOutboxDispatchRoute,
+} from './outbox-event.router.js';
 
 import {
   OUTBOX_BATCH_SIZE,
   OUTBOX_LOCK_TIMEOUT_MS,
   OUTBOX_MAX_ATTEMPTS,
   OUTBOX_POLL_INTERVAL_MS,
-  OUTBOX_QUEUE_NAME,
-  OUTBOX_QUEUE_PREFIX,
 } from './outbox.constants.js';
 
 interface OutboxRow {
   readonly id: string;
+
+  readonly eventType: string;
+
+  readonly aggregateType: string;
+
+  readonly aggregateId: string;
+
+  readonly dedupeKey: string;
+
   readonly payload: unknown;
+
   readonly attempts: number;
 }
 
 export class OutboxDispatcher {
-  private readonly instanceId =
-    `outbox-${randomUUID()}`;
+  private readonly instanceId = `outbox-${randomUUID()}`;
 
-  private readonly queue: Queue;
+  private readonly notificationDispatchHandler: NotificationOutboxDispatchHandler;
 
-  private timer:
-    NodeJS.Timeout | undefined;
+  private readonly courseDispatchHandler: BullMqCourseOutboxDispatchHandler;
+
+  private timer: NodeJS.Timeout | undefined;
 
   private running = false;
 
   private polling = false;
 
   constructor(
-    private readonly prisma:
-      PrismaClient,
+    private readonly prisma: PrismaClient,
 
-    private readonly logger:
-      GurusthalamLogger,
+    private readonly logger: GurusthalamLogger,
   ) {
-    const redis =
-      getRedisConfig();
+    this.notificationDispatchHandler =
+      NotificationOutboxDispatchHandler.fromRedisConfig();
 
-    this.queue =
-      new Queue(
-        OUTBOX_QUEUE_NAME,
-        {
-          connection: {
-            url:
-              redis.url,
-          },
-
-          prefix:
-            OUTBOX_QUEUE_PREFIX,
-        },
-      );
+    this.courseDispatchHandler =
+      BullMqCourseOutboxDispatchHandler.fromRedisConfig();
   }
 
   start(): void {
@@ -90,24 +75,15 @@ export class OutboxDispatcher {
 
     void this.poll();
 
-    this.timer =
-      setInterval(
-        () => {
-          void this.poll();
-        },
-        OUTBOX_POLL_INTERVAL_MS,
-      );
+    this.timer = setInterval(() => {
+      void this.poll();
+    }, OUTBOX_POLL_INTERVAL_MS);
 
-    this.logger.info(
-      'Outbox dispatcher started',
-      {
-        operation:
-          'outbox.start',
+    this.logger.info('Outbox dispatcher started', {
+      operation: 'outbox.start',
 
-        service:
-          'outbox',
-      },
-    );
+      service: 'outbox',
+    });
   }
 
   async stop(): Promise<void> {
@@ -118,52 +94,35 @@ export class OutboxDispatcher {
     this.running = false;
 
     if (this.timer) {
-      clearInterval(
-        this.timer,
-      );
+      clearInterval(this.timer);
 
-      this.timer =
-        undefined;
+      this.timer = undefined;
     }
 
     /*
-     * Wait for the current polling cycle to finish
-     * before closing the BullMQ queue.
+     * Do not close either BullMQ queue while a dispatch cycle is
+     * still executing.
      */
     while (this.polling) {
-      await new Promise<void>(
-        (resolve) => {
-          setTimeout(
-            resolve,
-            50,
-          );
-        },
-      );
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, 50);
+      });
     }
 
-    await this.queue.close();
+    await Promise.all([
+      this.notificationDispatchHandler.close(),
+      this.courseDispatchHandler.close(),
+    ]);
 
-    this.logger.info(
-      'Outbox dispatcher stopped',
-      {
-        operation:
-          'outbox.stop',
+    this.logger.info('Outbox dispatcher stopped', {
+      operation: 'outbox.stop',
 
-        service:
-          'outbox',
-      },
-    );
+      service: 'outbox',
+    });
   }
 
   private async poll(): Promise<void> {
-    /*
-     * Prevent overlapping polling cycles inside this
-     * dispatcher instance.
-     */
-    if (
-      !this.running ||
-      this.polling
-    ) {
+    if (!this.running || this.polling) {
       return;
     }
 
@@ -172,57 +131,42 @@ export class OutboxDispatcher {
     try {
       await this.releaseExpiredLocks();
 
-      const events =
-        await this.claimPendingEvents();
+      const events = await this.claimPendingEvents();
 
-      for (
-        const event of events
-      ) {
+      for (const event of events) {
         if (!this.running) {
           break;
         }
 
-        await this.publish(
-          event,
-        );
+        await this.publish(event);
       }
     } catch (error: unknown) {
-      this.logger.error(
-        'Outbox dispatcher poll failed',
-        error,
-        {
-          operation:
-            'outbox.poll.error',
+      this.logger.error('Outbox dispatcher poll failed', error, {
+        operation: 'outbox.poll.error',
 
-          service:
-            'outbox',
-        },
-      );
+        service: 'outbox',
+      });
     } finally {
       this.polling = false;
     }
   }
 
-  private async claimPendingEvents(): Promise<
-    OutboxRow[]
-  > {
-    const lockDate =
-      new Date();
+  private async claimPendingEvents(): Promise<OutboxRow[]> {
+    const lockDate = new Date();
 
     /*
-     * Atomically claim available events.
+     * Claim PENDING events and recover expired PROCESSING events
+     * atomically.
      *
-     * FOR UPDATE SKIP LOCKED prevents concurrent dispatcher
-     * instances from selecting the same currently-claimable
-     * database row.
+     * FOR UPDATE SKIP LOCKED allows multiple dispatcher instances
+     * to operate concurrently without claiming the same row.
      */
-    return this.prisma.$queryRaw<
-      OutboxRow[]
-    >`
+    return this.prisma.$queryRaw<OutboxRow[]>`
       WITH candidates AS (
-        SELECT id
-        FROM "OutboxEvent"
-
+        SELECT
+          id
+        FROM
+          "OutboxEvent"
         WHERE
           (
             status =
@@ -252,7 +196,8 @@ export class OutboxDispatcher {
           ${OUTBOX_BATCH_SIZE}
       )
 
-      UPDATE "OutboxEvent" AS outbox
+      UPDATE
+        "OutboxEvent" AS outbox
 
       SET
         status =
@@ -273,7 +218,8 @@ export class OutboxDispatcher {
         "updatedAt" =
           NOW()
 
-      FROM candidates
+      FROM
+        candidates
 
       WHERE
         outbox.id =
@@ -281,374 +227,296 @@ export class OutboxDispatcher {
 
       RETURNING
         outbox.id,
+        outbox."eventType" AS "eventType",
+        outbox."aggregateType" AS "aggregateType",
+        outbox."aggregateId" AS "aggregateId",
+        outbox."dedupeKey" AS "dedupeKey",
         outbox.payload,
         outbox.attempts
     `;
   }
 
-  private async publish(
-    event: OutboxRow,
-  ): Promise<void> {
+  private async publish(event: OutboxRow): Promise<void> {
     /*
-     * Re-check ownership before publishing.
+     * Re-check the current database ownership before dispatching.
      */
-    const current =
-      await this.prisma.outboxEvent.findUnique({
-        where: {
-          id:
-            event.id,
-        },
+    const current = await this.prisma.outboxEvent.findUnique({
+      where: {
+        id: event.id,
+      },
 
-        select: {
-          status: true,
-          lockedBy: true,
-          attempts: true,
-        },
-      });
+      select: {
+        status: true,
+
+        lockedBy: true,
+
+        attempts: true,
+      },
+    });
 
     if (!current) {
       return;
     }
 
-    if (
-      current.status ===
-      'PUBLISHED'
-    ) {
-      this.logger.info(
-        `Outbox event already published: ${event.id}`,
-        {
-          operation:
-            'outbox.ownership.skip',
+    if (current.status === 'PUBLISHED') {
+      this.logger.info(`Outbox event already published: ${event.id}`, {
+        operation: 'outbox.ownership.skip',
 
-          service:
-            'outbox',
-        },
-      );
+        service: 'outbox',
+      });
 
       return;
     }
 
-    if (
-      current.status ===
-      'DEAD_LETTER'
-    ) {
-      this.logger.info(
-        `Outbox event is dead-lettered: ${event.id}`,
-        {
-          operation:
-            'outbox.ownership.skip',
+    if (current.status === 'DEAD_LETTER') {
+      this.logger.info(`Outbox event is dead-lettered: ${event.id}`, {
+        operation: 'outbox.ownership.skip',
 
-          service:
-            'outbox',
-        },
-      );
+        service: 'outbox',
+      });
 
       return;
     }
 
-    if (
-      current.lockedBy !==
-      this.instanceId
-    ) {
-      this.logger.info(
-        `Outbox event ownership changed: ${event.id}`,
-        {
-          operation:
-            'outbox.ownership.skip',
+    if (current.lockedBy !== this.instanceId) {
+      this.logger.info(`Outbox event ownership changed: ${event.id}`, {
+        operation: 'outbox.ownership.skip',
 
-          service:
-            'outbox',
-        },
-      );
+        service: 'outbox',
+      });
 
       return;
     }
 
     try {
-      const data =
-        this.parseNotificationData(
-          event.payload,
-        );
+      const route = resolveOutboxDispatchRoute({
+        aggregateType: event.aggregateType,
+
+        eventType: event.eventType,
+      });
+
+      switch (route) {
+        case OUTBOX_DISPATCH_ROUTES.NOTIFICATION:
+          await this.notificationDispatchHandler.dispatch(event.payload);
+          break;
+
+        case OUTBOX_DISPATCH_ROUTES.COURSE: {
+          const courseEvent = this.toCourseDispatchEvent(event);
+
+          await this.courseDispatchHandler.dispatch(courseEvent);
+
+          break;
+        }
+
+        default:
+          throw new Error(
+            `Unsupported Outbox dispatch route for event "${event.id}".`,
+          );
+      }
 
       /*
-       * Centralized notification retry policy.
-       *
-       * Outbox attempts are still controlled independently by
-       * OUTBOX_MAX_ATTEMPTS. This policy controls the BullMQ
-       * execution retry configuration for the notification job.
+       * Only the dispatcher that still owns the PROCESSING row may
+       * transition it to PUBLISHED.
        */
-      const retryPolicy =
-       getNotificationRetryPolicy();
+      const updated = await this.prisma.outboxEvent.updateMany({
+        where: {
+          id: event.id,
 
-      await this.queue.add(
-        `notification:${data.channel}`,
-        data,
-        {
-          /*
-           * Deterministic notification identity.
-           */
-          jobId:
-            data.idempotencyKey,
+          status: 'PROCESSING',
 
-          /*
-           * Centralized notification retry policy.
-           */
-          attempts:
-            retryPolicy.maxAttempts,
-
-          backoff: {
-  type:
-    NOTIFICATION_RETRY_BACKOFF_TYPE,
-},
-
-          removeOnComplete:
-            100,
-
-          removeOnFail:
-            1000,
+          lockedBy: this.instanceId,
         },
-      );
 
-      /*
-       * Only the dispatcher that currently owns the event
-       * may transition PROCESSING -> PUBLISHED.
-       */
-      const updated =
-        await this.prisma.outboxEvent.updateMany({
-          where: {
-            id:
-              event.id,
+        data: {
+          status: 'PUBLISHED',
 
-            status:
-              'PROCESSING',
+          publishedAt: new Date(),
 
-            lockedBy:
-              this.instanceId,
-          },
+          lockedAt: null,
 
-          data: {
-            status:
-              'PUBLISHED',
+          lockedBy: null,
 
-            publishedAt:
-              new Date(),
+          lastError: null,
+        },
+      });
 
-            lockedAt:
-              null,
-
-            lockedBy:
-              null,
-
-            lastError:
-              null,
-          },
-        });
-
-      if (
-        updated.count ===
-        0
-      ) {
+      if (updated.count === 0) {
         /*
-         * BullMQ publication succeeded, but this dispatcher
-         * no longer owned the database event.
+         * Transport publication succeeded but database ownership was
+         * lost before PROCESSING -> PUBLISHED.
          *
-         * The deterministic jobId prevents a second logical
-         * notification job from being created if the event
-         * is subsequently recovered.
+         * The route-specific transport handlers use deterministic
+         * identities so recovery cannot intentionally manufacture a
+         * second logical event.
          */
-        this.logger.info(
-          `Outbox event publication race: ${event.id}`,
-          {
-            operation:
-              'outbox.publish.race',
+        this.logger.info(`Outbox event publication race: ${event.id}`, {
+          operation: 'outbox.publish.race',
 
-            service:
-              'outbox',
-          },
-        );
+          service: 'outbox',
+        });
 
         return;
       }
 
-      this.logger.info(
-        `Outbox event published: ${event.id}`,
-        {
-          operation:
-            'outbox.published',
+      this.logger.info(`Outbox event published: ${event.id}`, {
+        operation: 'outbox.published',
 
-          service:
-            'outbox',
+        service: 'outbox',
+      });
+    } catch (error: unknown) {
+      await this.handlePublishFailure(event, error);
+    }
+  }
+
+  private async handlePublishFailure(
+    event: OutboxRow,
+
+    error: unknown,
+  ): Promise<void> {
+    const message = error instanceof Error ? error.message : String(error);
+
+    /*
+     * Re-check ownership before modifying retry state.
+     */
+    const ownership = await this.prisma.outboxEvent.findUnique({
+      where: {
+        id: event.id,
+      },
+
+      select: {
+        status: true,
+
+        lockedBy: true,
+      },
+    });
+
+    if (!ownership) {
+      return;
+    }
+
+    if (ownership.status !== 'PROCESSING') {
+      this.logger.info(
+        `Outbox event state changed during failure handling: ${event.id}`,
+        {
+          operation: 'outbox.ownership.skip',
+
+          service: 'outbox',
         },
       );
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : String(error);
 
-      /*
-       * Check ownership before changing failure state.
-       */
-      const ownership =
-        await this.prisma.outboxEvent.findUnique({
-          where: {
-            id:
-              event.id,
-          },
-
-          select: {
-            status: true,
-            lockedBy: true,
-          },
-        });
-
-      if (!ownership) {
-        return;
-      }
-
-      if (
-        ownership.status !==
-        'PROCESSING'
-      ) {
-        this.logger.info(
-          `Outbox event state changed during failure handling: ${event.id}`,
-          {
-            operation:
-              'outbox.ownership.skip',
-
-            service:
-              'outbox',
-          },
-        );
-
-        return;
-      }
-
-      if (
-        ownership.lockedBy !==
-        this.instanceId
-      ) {
-        this.logger.info(
-          `Outbox event ownership changed during failure handling: ${event.id}`,
-          {
-            operation:
-              'outbox.ownership.skip',
-
-            service:
-              'outbox',
-          },
-        );
-
-        return;
-      }
-
-      const deadLetter =
-        event.attempts >=
-        OUTBOX_MAX_ATTEMPTS;
-
-      const updated =
-        await this.prisma.outboxEvent.updateMany({
-          where: {
-            id:
-              event.id,
-
-            status:
-              'PROCESSING',
-
-            lockedBy:
-              this.instanceId,
-          },
-
-          data: {
-            status:
-              deadLetter
-                ? 'DEAD_LETTER'
-                : 'PENDING',
-
-            availableAt:
-              deadLetter
-                ? new Date()
-                : new Date(
-                    Date.now() +
-                      this.getBackoffMs(
-                        event.attempts,
-                      ),
-                  ),
-
-            lockedAt:
-              null,
-
-            lockedBy:
-              null,
-
-            deadLetteredAt:
-              deadLetter
-                ? new Date()
-                : null,
-
-            lastAttemptAt:
-              new Date(),
-
-            lastError:
-              message,
-          },
-        });
-
-      if (
-        updated.count ===
-        0
-      ) {
-        this.logger.info(
-          `Outbox event failure update lost ownership: ${event.id}`,
-          {
-            operation:
-              'outbox.ownership.skip',
-
-            service:
-              'outbox',
-          },
-        );
-
-        return;
-      }
-
-      if (deadLetter) {
-        this.logger.error(
-          `Outbox event dead-lettered: ${event.id}`,
-          error,
-          {
-            operation:
-              'outbox.dead_lettered',
-
-            service:
-              'outbox',
-          },
-        );
-      } else {
-        this.logger.error(
-          `Outbox event retrying: ${event.id}`,
-          error,
-          {
-            operation:
-              'outbox.retrying',
-
-            service:
-              'outbox',
-          },
-        );
-      }
+      return;
     }
+
+    if (ownership.lockedBy !== this.instanceId) {
+      this.logger.info(
+        `Outbox event ownership changed during failure handling: ${event.id}`,
+        {
+          operation: 'outbox.ownership.skip',
+
+          service: 'outbox',
+        },
+      );
+
+      return;
+    }
+
+    const deadLetter = event.attempts >= OUTBOX_MAX_ATTEMPTS;
+
+    const now = new Date();
+
+    const updated = await this.prisma.outboxEvent.updateMany({
+      where: {
+        id: event.id,
+
+        status: 'PROCESSING',
+
+        lockedBy: this.instanceId,
+      },
+
+      data: {
+        status: deadLetter ? 'DEAD_LETTER' : 'PENDING',
+
+        availableAt: deadLetter
+          ? now
+          : new Date(now.getTime() + this.getBackoffMs(event.attempts)),
+
+        lockedAt: null,
+
+        lockedBy: null,
+
+        deadLetteredAt: deadLetter ? now : null,
+
+        lastAttemptAt: now,
+
+        lastError: message,
+      },
+    });
+
+    if (updated.count === 0) {
+      this.logger.info(
+        `Outbox event failure update lost ownership: ${event.id}`,
+        {
+          operation: 'outbox.ownership.skip',
+
+          service: 'outbox',
+        },
+      );
+
+      return;
+    }
+
+    if (deadLetter) {
+      this.logger.error(`Outbox event dead-lettered: ${event.id}`, error, {
+        operation: 'outbox.dead_lettered',
+
+        service: 'outbox',
+      });
+
+      return;
+    }
+
+    this.logger.error(`Outbox event retrying: ${event.id}`, error, {
+      operation: 'outbox.retrying',
+
+      service: 'outbox',
+    });
+  }
+
+  private toCourseDispatchEvent(event: OutboxRow): CourseOutboxDispatchEvent {
+    const candidate: unknown = {
+      id: event.id,
+
+      eventType: event.eventType,
+
+      aggregateType: event.aggregateType,
+
+      aggregateId: event.aggregateId,
+
+      dedupeKey: event.dedupeKey,
+
+      payload: event.payload,
+
+      attempts: event.attempts,
+    };
+
+    if (!isCourseOutboxDispatchEvent(candidate)) {
+      throw new Error(
+        `Invalid Course Outbox dispatch envelope for Outbox event "${event.id}".`,
+      );
+    }
+
+    return candidate;
   }
 
   private async releaseExpiredLocks(): Promise<void> {
     /*
-     * Return stale PROCESSING rows to PENDING.
+     * Recover stale PROCESSING records.
      *
-     * PUBLISHED and DEAD_LETTER rows are intentionally
-     * excluded from recovery.
+     * PUBLISHED and DEAD_LETTER rows are intentionally untouched.
      */
     await this.prisma.$executeRaw`
-      UPDATE "OutboxEvent"
+      UPDATE
+        "OutboxEvent"
 
       SET
         status =
@@ -682,393 +550,11 @@ export class OutboxDispatcher {
     `;
   }
 
-  private parseNotificationData(
-  payload: unknown,
-): NotificationJobData {
-  if (
-    !this.isRecord(
-      payload,
-    )
-  ) {
-    throw new Error(
-      'Invalid notification outbox payload.',
-    );
-  }
-
-  const notificationId =
-    this.requireString(
-      payload,
-      'notificationId',
-    );
-
-  const channel =
-    this.parseChannel(
-      payload.channel,
-    );
-
-  const idempotencyKey =
-    this.requireString(
-      payload,
-      'idempotencyKey',
-    );
-
-  const body =
-    this.requireString(
-      payload,
-      'body',
-    );
-
-  const recipient =
-    this.parseRecipient(
-      payload.recipient,
-    );
-
-  const deliveryKey =
-    payload.deliveryKey !==
-    undefined
-      ? this.requireStringValue(
-          payload.deliveryKey,
-          'deliveryKey',
-        )
-      : undefined;
-
-  const subject =
-    payload.subject !==
-    undefined
-      ? this.requireStringValue(
-          payload.subject,
-          'subject',
-        )
-      : undefined;
-
-  const title =
-    payload.title !==
-    undefined
-      ? this.requireStringValue(
-          payload.title,
-          'title',
-        )
-      : undefined;
-
-  const template =
-    payload.template !==
-    undefined
-      ? this.requireStringValue(
-          payload.template,
-          'template',
-        )
-      : undefined;
-
-  const templateData =
-    payload.templateData !==
-    undefined
-      ? this.parseTemplateData(
-          payload.templateData,
-        )
-      : undefined;
-
-  return {
-    notificationId,
-
-    channel,
-
-    recipient,
-
-    body,
-
-    idempotencyKey,
-
-    ...(deliveryKey !==
-    undefined
-      ? {
-          deliveryKey,
-        }
-      : {}),
-
-    ...(subject !==
-    undefined
-      ? {
-          subject,
-        }
-      : {}),
-
-    ...(title !==
-    undefined
-      ? {
-          title,
-        }
-      : {}),
-
-    ...(template !==
-    undefined
-      ? {
-          template,
-        }
-      : {}),
-
-    ...(templateData !==
-    undefined
-      ? {
-          templateData,
-        }
-      : {}),
-  };
-}
-  private parseChannel(
-    value: unknown,
-  ): NotificationJobData['channel'] {
-    if (
-      value ===
-        'email' ||
-      value ===
-        'in-app' ||
-      value ===
-        'push'
-    ) {
-      return value;
-    }
-
-    throw new Error(
-      'Outbox payload channel is invalid.',
-    );
-  }
-
-  private parseRecipient(
-    value: unknown,
-  ): NotificationJobData['recipient'] {
-    if (
-      !this.isRecord(
-        value,
-      )
-    ) {
-      throw new Error(
-        'Outbox payload recipient is invalid.',
-      );
-    }
-
-    const userId =
-      this.requireString(
-        value,
-        'userId',
-      );
-
-    const email =
-      value.email !==
-      undefined
-        ? this.requireStringValue(
-            value.email,
-            'recipient.email',
-          )
-        : undefined;
-
-    const deviceTokens =
-      value.deviceTokens !==
-      undefined
-        ? this.parseDeviceTokens(
-            value.deviceTokens,
-          )
-        : undefined;
-
-    return {
-      userId,
-
-      ...(email !==
-      undefined
-        ? {
-            email,
-          }
-        : {}),
-
-      ...(deviceTokens !==
-      undefined
-        ? {
-            deviceTokens,
-          }
-        : {}),
-    };
-  }
-
-  private parseDeviceTokens(
-    value: unknown,
-  ): string[] {
-    if (
-      !Array.isArray(
-        value,
-      )
-    ) {
-      throw new Error(
-        'Outbox payload recipient.deviceTokens is invalid.',
-      );
-    }
-
-    return value.map(
-      (token) =>
-        this.requireStringValue(
-          token,
-          'recipient.deviceTokens',
-        ),
-    );
-  }
-
-  private parseTemplateData(
-    value: unknown,
-  ): {
-    [key: string]: NotificationJsonValue;
-  } {
-    if (
-      !this.isJsonObject(
-        value,
-      )
-    ) {
-      throw new Error(
-        'Outbox payload templateData is invalid.',
-      );
-    }
-
-    return value;
-  }
-
-  private requireString(
-    value: Record<
-      string,
-      unknown
-    >,
-    key: string,
-  ): string {
-    return this.requireStringValue(
-      value[key],
-      key,
-    );
-  }
-
-  private requireStringValue(
-    value: unknown,
-    field: string,
-  ): string {
-    if (
-      typeof value !==
-        'string' ||
-      value.trim().length ===
-        0
-    ) {
-      throw new Error(
-        `Outbox payload ${field} is invalid.`,
-      );
-    }
-
-    return value;
-  }
-
-  private isRecord(
-    value: unknown,
-  ): value is Record<
-    string,
-    unknown
-  > {
-    return (
-      typeof value ===
-        'object' &&
-      value !== null &&
-      !Array.isArray(
-        value,
-      )
-    );
-  }
-
-  private isJsonPrimitive(
-    value: unknown,
-  ): value is
-    | string
-    | number
-    | boolean
-    | null {
-    return (
-      value === null ||
-      typeof value ===
-        'string' ||
-      typeof value ===
-        'number' ||
-      typeof value ===
-        'boolean'
-    );
-  }
-
-  private isJsonValue(
-    value: unknown,
-  ): value is NotificationJsonValue {
-    if (
-      this.isJsonPrimitive(
-        value,
-      )
-    ) {
-      return true;
-    }
-
-    if (
-      Array.isArray(
-        value,
-      )
-    ) {
-      return value.every(
-        (item) =>
-          this.isJsonValue(
-            item,
-          ),
-      );
-    }
-
-    if (
-      this.isRecord(
-        value,
-      )
-    ) {
-      return Object.values(
-        value,
-      ).every(
-        (item) =>
-          this.isJsonValue(
-            item,
-          ),
-      );
-    }
-
-    return false;
-  }
-
-  private isJsonObject(
-    value: unknown,
-  ): value is {
-    [key: string]: NotificationJsonValue;
-  } {
-    return (
-      this.isRecord(
-        value,
-      ) &&
-      Object.values(
-        value,
-      ).every(
-        (item) =>
-          this.isJsonValue(
-            item,
-          ),
-      )
-    );
-  }
-
-  private getBackoffMs(
-    attempts: number,
-  ): number {
+  private getBackoffMs(attempts: number): number {
     return Math.min(
       60_000,
 
-      1000 *
-        Math.pow(
-          2,
-          Math.max(
-            0,
-            attempts - 1,
-          ),
-        ),
+      1000 * Math.pow(2, Math.max(0, attempts - 1)),
     );
   }
 }

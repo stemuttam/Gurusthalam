@@ -10,6 +10,8 @@ import {
   type CourseOutboxDispatchEvent,
 } from './course-outbox-dispatch.contracts.js';
 
+import { getCourseOutboxRetryPolicy } from './course-outbox-retry.policy.js';
+
 function createQueueMock() {
   return {
     add: vi.fn().mockResolvedValue({}),
@@ -83,13 +85,14 @@ describe('BullMqCourseOutboxDispatchHandler', () => {
     expect(result).toEqual({
       dispatched: true,
 
-      idempotent: false,
+      idempotent: true,
     });
 
     expect(queue.add).toHaveBeenCalledTimes(1);
 
     expect(queue.add).toHaveBeenCalledWith(
       COURSE_OUTBOX_EVENT_TYPES.CREATED,
+
       expect.objectContaining({
         outboxEventId: 'outbox-course-001',
 
@@ -117,6 +120,14 @@ describe('BullMqCourseOutboxDispatchHandler', () => {
       expect.objectContaining({
         jobId: 'course-event-event-001',
 
+        attempts: getCourseOutboxRetryPolicy().maxAttempts,
+
+        backoff: expect.objectContaining({
+          type: getCourseOutboxRetryPolicy().backoffType,
+
+          delay: getCourseOutboxRetryPolicy().initialDelayMs,
+        }),
+
         removeOnComplete: 100,
 
         removeOnFail: 1000,
@@ -143,11 +154,83 @@ describe('BullMqCourseOutboxDispatchHandler', () => {
 
     expect(queue.add).toHaveBeenCalledWith(
       COURSE_OUTBOX_EVENT_TYPES.CREATED,
+
       expect.anything(),
+
       expect.objectContaining({
         jobId: 'course-event-event-xyz',
       }),
     );
+  });
+
+  it('reports transport-level idempotency for repeated dispatch of the same event identity', async () => {
+    const queue = createQueueMock();
+
+    const handler = new BullMqCourseOutboxDispatchHandler(
+      queue as unknown as Queue,
+    );
+
+    const event = createCourseEvent();
+
+    const first = await handler.dispatch(event);
+
+    const second = await handler.dispatch(event);
+
+    expect(first).toEqual({
+      dispatched: true,
+
+      idempotent: true,
+    });
+
+    expect(second).toEqual({
+      dispatched: true,
+
+      idempotent: true,
+    });
+
+    expect(queue.add).toHaveBeenCalledTimes(2);
+
+    const firstOptions = queue.add.mock.calls[0]?.[2];
+
+    const secondOptions = queue.add.mock.calls[1]?.[2];
+
+    expect(firstOptions).toMatchObject({
+      jobId: 'course-event-event-001',
+    });
+
+    expect(secondOptions).toMatchObject({
+      jobId: 'course-event-event-001',
+    });
+  });
+
+  it('applies the independent Course BullMQ retry policy', async () => {
+    const queue = createQueueMock();
+
+    const handler = new BullMqCourseOutboxDispatchHandler(
+      queue as unknown as Queue,
+    );
+
+    await handler.dispatch(createCourseEvent());
+
+    const options = queue.add.mock.calls[0]?.[2] as {
+      attempts: number;
+
+      backoff: {
+        type: string;
+
+        delay: number;
+      };
+    };
+
+    const policy = getCourseOutboxRetryPolicy();
+
+    expect(options.attempts).toBe(policy.maxAttempts);
+
+    expect(options.backoff).toEqual({
+      type: policy.backoffType,
+
+      delay: policy.initialDelayMs,
+    });
   });
 
   it('normalizes a Date timestamp to an ISO string', async () => {
@@ -169,11 +252,13 @@ describe('BullMqCourseOutboxDispatchHandler', () => {
 
     expect(queue.add).toHaveBeenCalledWith(
       COURSE_OUTBOX_EVENT_TYPES.CREATED,
+
       expect.objectContaining({
         event: expect.objectContaining({
           occurredAt: '2026-09-23T11:30:00.000Z',
         }),
       }),
+
       expect.anything(),
     );
   });
@@ -205,11 +290,13 @@ describe('BullMqCourseOutboxDispatchHandler', () => {
 
     const [, data] = queue.add.mock.calls[0] as [
       unknown,
+
       {
         event: {
           payload: unknown;
         };
       },
+
       unknown,
     ];
 
@@ -234,6 +321,44 @@ describe('BullMqCourseOutboxDispatchHandler', () => {
     await expect(handler.dispatch(invalidEvent as never)).rejects.toThrow(
       'Invalid Course Outbox dispatch event.',
     );
+
+    expect(queue.add).not.toHaveBeenCalled();
+  });
+
+  it('propagates BullMQ publication failures to the Outbox dispatcher', async () => {
+    const queue = createQueueMock();
+
+    const failure = new Error('Course queue unavailable.');
+
+    queue.add.mockRejectedValue(failure);
+
+    const handler = new BullMqCourseOutboxDispatchHandler(
+      queue as unknown as Queue,
+    );
+
+    await expect(handler.dispatch(createCourseEvent())).rejects.toThrow(
+      'Course queue unavailable.',
+    );
+  });
+
+  it('rejects an invalid occurredAt value before queue publication', async () => {
+    const queue = createQueueMock();
+
+    const handler = new BullMqCourseOutboxDispatchHandler(
+      queue as unknown as Queue,
+    );
+
+    await expect(
+      handler.dispatch(
+        createCourseEvent({
+          payload: {
+            ...createCourseEvent().payload,
+
+            occurredAt: 'not-a-valid-date',
+          },
+        }),
+      ),
+    ).rejects.toThrow('Course Outbox event occurredAt is invalid.');
 
     expect(queue.add).not.toHaveBeenCalled();
   });

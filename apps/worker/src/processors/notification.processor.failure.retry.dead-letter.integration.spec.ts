@@ -150,6 +150,7 @@ describe('NotificationProcessor - failure/retry/dead-letter PostgreSQL integrati
     suffix: string,
 
     status: 'QUEUED' | 'RETRYING',
+
     attempts: number,
   ) {
     const notificationId = `${prefix}-${suffix}`;
@@ -284,7 +285,7 @@ describe('NotificationProcessor - failure/retry/dead-letter PostgreSQL integrati
     );
   });
 
-  it('persists terminal FAILED state when the retryable failure reaches the maximum attempts', async () => {
+  it('persists terminal FAILED state on exactly the configured final attempt', async () => {
     const fixture = await createNotification('retry-exhausted', 'RETRYING', 2);
 
     const job = createJob(
@@ -342,66 +343,70 @@ describe('NotificationProcessor - failure/retry/dead-letter PostgreSQL integrati
     expect(delivery?.failedAt).not.toBeNull();
   });
 
-  it('keeps terminal failures from being retried again', async () => {
-    const fixture = await createNotification('terminal-replay', 'RETRYING', 2);
-
-    const firstResult = await processor.process(
-      createJob(
-        fixture.notificationId,
-
-        fixture.idempotencyKey,
-
-        2,
-      ),
+  it('does not invoke the processor again after the terminal FAILED boundary', async () => {
+    const fixture = await createNotification(
+      'terminal-boundary',
+      'RETRYING',
+      2,
     );
 
-    expect(firstResult.messageId).toBe(`failed-${fixture.notificationId}`);
+    const finalAttemptJob = createJob(
+      fixture.notificationId,
 
-    const beforeReplay = await prisma.notification.findUnique({
-      where: {
-        notificationId: fixture.notificationId,
-      },
-    });
+      fixture.idempotencyKey,
 
-    expect(beforeReplay?.status).toBe('FAILED');
-
-    expect(beforeReplay?.attempts).toBe(3);
-
-    const deliveryCountBeforeReplay = await prisma.notificationDelivery.count({
-      where: {
-        notificationId: fixture.notificationId,
-      },
-    });
-
-    const replayResult = await processor.process(
-      createJob(
-        fixture.notificationId,
-
-        fixture.idempotencyKey,
-
-        3,
-      ),
+      2,
     );
 
-    expect(replayResult.messageId).toBe(`failed-${fixture.notificationId}`);
+    const result = await processor.process(finalAttemptJob);
 
-    const afterReplay = await prisma.notification.findUnique({
+    expect(result).toEqual({
+      processed: true,
+
+      notificationId: fixture.notificationId,
+
+      channel: 'email',
+
+      provider: 'development-email',
+
+      messageId: `failed-${fixture.notificationId}`,
+    });
+
+    const terminalState = await prisma.notification.findUnique({
       where: {
         notificationId: fixture.notificationId,
       },
     });
 
-    expect(afterReplay?.status).toBe('FAILED');
+    expect(terminalState).not.toBeNull();
 
-    expect(afterReplay?.attempts).toBe(4);
+    expect(terminalState?.status).toBe('FAILED');
 
-    const deliveryCountAfterReplay = await prisma.notificationDelivery.count({
+    expect(terminalState?.attempts).toBe(3);
+
+    expect(terminalState?.failedAt).not.toBeNull();
+
+    const deliveryCount = await prisma.notificationDelivery.count({
       where: {
         notificationId: fixture.notificationId,
       },
     });
 
-    expect(deliveryCountAfterReplay).toBe(deliveryCountBeforeReplay);
+    expect(deliveryCount).toBe(1);
+
+    const delivery = await prisma.notificationDelivery.findFirst({
+      where: {
+        notificationId: fixture.notificationId,
+      },
+    });
+
+    expect(delivery).not.toBeNull();
+
+    expect(delivery?.status).toBe('FAILED');
+
+    expect(delivery?.attempts).toBe(3);
+
+    expect(delivery?.failedAt).not.toBeNull();
   });
 
   it('uses the provider failure classification at the production provider boundary', async () => {

@@ -1,12 +1,8 @@
-import {
-  defineConfig,
-} from 'vitest/config';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    include: [
-      'apps/worker/src/**/*.{test,spec}.ts',
-    ],
+    include: ['apps/worker/src/**/*.{test,spec}.ts'],
 
     exclude: [
       'apps/worker/dist/**',
@@ -16,8 +12,8 @@ export default defineConfig({
       '.nx/**',
     ],
 
-    setupFiles: [
-      'apps/worker/vitest.setup.ts',
-    ],
+    setupFiles: ['apps/worker/vitest.setup.ts'],
+
+    fileParallelism: false,
   },
 });

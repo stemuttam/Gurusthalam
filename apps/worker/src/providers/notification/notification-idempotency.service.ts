@@ -1,56 +1,30 @@
-import {
-  Injectable,
-} from '@nestjs/common';
+import { Redis } from 'ioredis';
 
-import {
-  Redis,
-} from 'ioredis';
+import { getRedisConfig } from '@gurusthalam/config';
 
-import {
-  getRedisConfig,
-} from '@gurusthalam/config';
-
-@Injectable()
 export class NotificationIdempotencyService {
   private readonly redis: Redis;
 
-  private readonly prefix =
-    'gurusthalam:notification:idempotency';
+  private readonly prefix = 'gurusthalam:notification:idempotency';
 
-  private readonly ttlSeconds =
-    60 * 60 * 24;
+  private readonly ttlSeconds = 60 * 60 * 24;
 
   constructor() {
-    const config =
-      getRedisConfig();
+    const config = getRedisConfig();
 
-    this.redis =
-      new Redis(config.url);
+    this.redis = new Redis(config.url);
   }
 
-  async isAccepted(
-    deliveryKey: string,
-  ): Promise<boolean> {
-    const key =
-      this.getKey(
-        deliveryKey,
-      );
+  async isAccepted(deliveryKey: string): Promise<boolean> {
+    const key = this.getKey(deliveryKey);
 
-    const exists =
-      await this.redis.exists(
-        key,
-      );
+    const exists = await this.redis.exists(key);
 
     return exists === 1;
   }
 
-  async markAccepted(
-    deliveryKey: string,
-  ): Promise<boolean> {
-    const key =
-      this.getKey(
-        deliveryKey,
-      );
+  async markAccepted(deliveryKey: string): Promise<boolean> {
+    const key = this.getKey(deliveryKey);
 
     /*
      * SET NX means:
@@ -58,14 +32,13 @@ export class NotificationIdempotencyService {
      *
      * This is the important cross-process idempotency primitive.
      */
-    const result =
-      await this.redis.set(
-        key,
-        'accepted',
-        'EX',
-        this.ttlSeconds,
-        'NX',
-      );
+    const result = await this.redis.set(
+      key,
+      'accepted',
+      'EX',
+      this.ttlSeconds,
+      'NX',
+    );
 
     return result === 'OK';
   }
@@ -74,9 +47,7 @@ export class NotificationIdempotencyService {
     await this.redis.quit();
   }
 
-  private getKey(
-    deliveryKey: string,
-  ): string {
+  private getKey(deliveryKey: string): string {
     return `${this.prefix}:${deliveryKey}`;
   }
 }

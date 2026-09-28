@@ -402,6 +402,8 @@ export const ModelName = {
   CourseVersion: 'CourseVersion',
   CourseVersionAudit: 'CourseVersionAudit',
   CourseVersionLineage: 'CourseVersionLineage',
+  CourseCatalogProjection: 'CourseCatalogProjection',
+  CourseSearchProjection: 'CourseSearchProjection',
   NotificationTemplate: 'NotificationTemplate',
   NotificationTemplateVersion: 'NotificationTemplateVersion',
   Notification: 'Notification',
@@ -424,7 +426,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "course" | "courseOwnershipAssignment" | "courseVersion" | "courseVersionAudit" | "courseVersionLineage" | "notificationTemplate" | "notificationTemplateVersion" | "notification" | "notificationDelivery" | "outboxEvent" | "notificationAggregation" | "notificationAggregationItem"
+    modelProps: "course" | "courseOwnershipAssignment" | "courseVersion" | "courseVersionAudit" | "courseVersionLineage" | "courseCatalogProjection" | "courseSearchProjection" | "notificationTemplate" | "notificationTemplateVersion" | "notification" | "notificationDelivery" | "outboxEvent" | "notificationAggregation" | "notificationAggregationItem"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -795,6 +797,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.CourseVersionLineageCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.CourseVersionLineageCountAggregateOutputType> | number
+        }
+      }
+    }
+    CourseCatalogProjection: {
+      payload: Prisma.$CourseCatalogProjectionPayload<ExtArgs>
+      fields: Prisma.CourseCatalogProjectionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CourseCatalogProjectionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseCatalogProjectionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CourseCatalogProjectionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseCatalogProjectionPayload>
+        }
+        findFirst: {
+          args: Prisma.CourseCatalogProjectionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseCatalogProjectionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CourseCatalogProjectionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseCatalogProjectionPayload>
+        }
+        findMany: {
+          args: Prisma.CourseCatalogProjectionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseCatalogProjectionPayload>[]
+        }
+        create: {
+          args: Prisma.CourseCatalogProjectionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseCatalogProjectionPayload>
+        }
+        createMany: {
+          args: Prisma.CourseCatalogProjectionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.CourseCatalogProjectionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseCatalogProjectionPayload>[]
+        }
+        delete: {
+          args: Prisma.CourseCatalogProjectionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseCatalogProjectionPayload>
+        }
+        update: {
+          args: Prisma.CourseCatalogProjectionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseCatalogProjectionPayload>
+        }
+        deleteMany: {
+          args: Prisma.CourseCatalogProjectionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CourseCatalogProjectionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.CourseCatalogProjectionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseCatalogProjectionPayload>[]
+        }
+        upsert: {
+          args: Prisma.CourseCatalogProjectionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseCatalogProjectionPayload>
+        }
+        aggregate: {
+          args: Prisma.CourseCatalogProjectionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCourseCatalogProjection>
+        }
+        groupBy: {
+          args: Prisma.CourseCatalogProjectionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CourseCatalogProjectionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CourseCatalogProjectionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CourseCatalogProjectionCountAggregateOutputType> | number
+        }
+      }
+    }
+    CourseSearchProjection: {
+      payload: Prisma.$CourseSearchProjectionPayload<ExtArgs>
+      fields: Prisma.CourseSearchProjectionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CourseSearchProjectionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseSearchProjectionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CourseSearchProjectionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseSearchProjectionPayload>
+        }
+        findFirst: {
+          args: Prisma.CourseSearchProjectionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseSearchProjectionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CourseSearchProjectionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseSearchProjectionPayload>
+        }
+        findMany: {
+          args: Prisma.CourseSearchProjectionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseSearchProjectionPayload>[]
+        }
+        create: {
+          args: Prisma.CourseSearchProjectionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseSearchProjectionPayload>
+        }
+        createMany: {
+          args: Prisma.CourseSearchProjectionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.CourseSearchProjectionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseSearchProjectionPayload>[]
+        }
+        delete: {
+          args: Prisma.CourseSearchProjectionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseSearchProjectionPayload>
+        }
+        update: {
+          args: Prisma.CourseSearchProjectionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseSearchProjectionPayload>
+        }
+        deleteMany: {
+          args: Prisma.CourseSearchProjectionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CourseSearchProjectionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.CourseSearchProjectionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseSearchProjectionPayload>[]
+        }
+        upsert: {
+          args: Prisma.CourseSearchProjectionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CourseSearchProjectionPayload>
+        }
+        aggregate: {
+          args: Prisma.CourseSearchProjectionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCourseSearchProjection>
+        }
+        groupBy: {
+          args: Prisma.CourseSearchProjectionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CourseSearchProjectionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CourseSearchProjectionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CourseSearchProjectionCountAggregateOutputType> | number
         }
       }
     }
@@ -1427,6 +1577,42 @@ export const CourseVersionLineageScalarFieldEnum = {
 export type CourseVersionLineageScalarFieldEnum = (typeof CourseVersionLineageScalarFieldEnum)[keyof typeof CourseVersionLineageScalarFieldEnum]
 
 
+export const CourseCatalogProjectionScalarFieldEnum = {
+  courseId: 'courseId',
+  title: 'title',
+  description: 'description',
+  level: 'level',
+  type: 'type',
+  visibility: 'visibility',
+  status: 'status',
+  instructorId: 'instructorId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  projectionSchemaVersion: 'projectionSchemaVersion'
+} as const
+
+export type CourseCatalogProjectionScalarFieldEnum = (typeof CourseCatalogProjectionScalarFieldEnum)[keyof typeof CourseCatalogProjectionScalarFieldEnum]
+
+
+export const CourseSearchProjectionScalarFieldEnum = {
+  courseId: 'courseId',
+  title: 'title',
+  description: 'description',
+  level: 'level',
+  type: 'type',
+  visibility: 'visibility',
+  status: 'status',
+  instructorId: 'instructorId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  projectionSchemaVersion: 'projectionSchemaVersion',
+  searchText: 'searchText',
+  searchProjectionSchemaVersion: 'searchProjectionSchemaVersion'
+} as const
+
+export type CourseSearchProjectionScalarFieldEnum = (typeof CourseSearchProjectionScalarFieldEnum)[keyof typeof CourseSearchProjectionScalarFieldEnum]
+
+
 export const NotificationTemplateScalarFieldEnum = {
   id: 'id',
   templateId: 'templateId',
@@ -2044,6 +2230,8 @@ export type GlobalOmitConfig = {
   courseVersion?: Prisma.CourseVersionOmit
   courseVersionAudit?: Prisma.CourseVersionAuditOmit
   courseVersionLineage?: Prisma.CourseVersionLineageOmit
+  courseCatalogProjection?: Prisma.CourseCatalogProjectionOmit
+  courseSearchProjection?: Prisma.CourseSearchProjectionOmit
   notificationTemplate?: Prisma.NotificationTemplateOmit
   notificationTemplateVersion?: Prisma.NotificationTemplateVersionOmit
   notification?: Prisma.NotificationOmit

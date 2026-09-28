@@ -470,6 +470,7 @@ export type {
  */
 export {
   DefaultCourseApplicationService,
+  DefaultCourseQueryApplicationService,
   DefaultCourseVersionRollbackApplicationService,
 } from './application/index.js';
 
@@ -631,3 +632,38 @@ export type {
 } from './application/index.js';
 
 export { courseQueryInputSchema } from './application/index.js';
+
+/**
+ * Course read-model projections
+ *
+ * These contracts represent derived Course read representations.
+ *
+ * They deliberately remain independent from:
+ * - Prisma/PostgreSQL;
+ * - NestJS;
+ * - HTTP;
+ * - search vendors;
+ * - vector databases;
+ * - AI providers.
+ *
+ * Later 4.14 persistence and projection-processing phases consume
+ * these contracts without changing the transactional Course model.
+ */
+export {
+  COURSE_CATALOG_PROJECTION_SCHEMA_VERSION,
+  createCourseCatalogProjection,
+  COURSE_SEARCH_PROJECTION_SCHEMA_VERSION,
+  COURSE_SEARCH_SOURCE_CATALOG_SCHEMA_VERSION,
+  createCourseSearchProjection,
+  createCourseSearchText,
+} from './application/read-models/index.js';
+
+export type {
+  CourseCatalogProjection,
+  CourseCatalogProjectionSchemaVersion,
+  CourseSearchProjection,
+  CourseSearchProjectionSchemaVersion,
+  CourseCatalogProjectionPersistence,
+  CourseSearchProjectionPersistence,
+  CourseProjectionPersistence,
+} from './application/read-models/index.js';

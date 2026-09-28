@@ -56,6 +56,8 @@ export const ModelName = {
   CourseVersion: 'CourseVersion',
   CourseVersionAudit: 'CourseVersionAudit',
   CourseVersionLineage: 'CourseVersionLineage',
+  CourseCatalogProjection: 'CourseCatalogProjection',
+  CourseSearchProjection: 'CourseSearchProjection',
   NotificationTemplate: 'NotificationTemplate',
   NotificationTemplateVersion: 'NotificationTemplateVersion',
   Notification: 'Notification',
@@ -151,6 +153,42 @@ export const CourseVersionLineageScalarFieldEnum = {
 } as const
 
 export type CourseVersionLineageScalarFieldEnum = (typeof CourseVersionLineageScalarFieldEnum)[keyof typeof CourseVersionLineageScalarFieldEnum]
+
+
+export const CourseCatalogProjectionScalarFieldEnum = {
+  courseId: 'courseId',
+  title: 'title',
+  description: 'description',
+  level: 'level',
+  type: 'type',
+  visibility: 'visibility',
+  status: 'status',
+  instructorId: 'instructorId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  projectionSchemaVersion: 'projectionSchemaVersion'
+} as const
+
+export type CourseCatalogProjectionScalarFieldEnum = (typeof CourseCatalogProjectionScalarFieldEnum)[keyof typeof CourseCatalogProjectionScalarFieldEnum]
+
+
+export const CourseSearchProjectionScalarFieldEnum = {
+  courseId: 'courseId',
+  title: 'title',
+  description: 'description',
+  level: 'level',
+  type: 'type',
+  visibility: 'visibility',
+  status: 'status',
+  instructorId: 'instructorId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  projectionSchemaVersion: 'projectionSchemaVersion',
+  searchText: 'searchText',
+  searchProjectionSchemaVersion: 'searchProjectionSchemaVersion'
+} as const
+
+export type CourseSearchProjectionScalarFieldEnum = (typeof CourseSearchProjectionScalarFieldEnum)[keyof typeof CourseSearchProjectionScalarFieldEnum]
 
 
 export const NotificationTemplateScalarFieldEnum = {

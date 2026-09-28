@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Delete,
   Get,
@@ -6,12 +7,14 @@ import {
   Patch,
   Post,
   Put,
-  Body,
+  Query,
 } from '@nestjs/common';
 
 import {
   DefaultCourseApplicationService,
+  DefaultCourseQueryApplicationService,
   DefaultCourseVersionApplicationService,
+  type CourseQueryRequest,
 } from '@gurusthalam/courses';
 
 import type {
@@ -24,12 +27,14 @@ import type {
 } from './dto/index.js';
 
 /**
- * HTTP adapter for transactional Course commands and retrieval.
+ * HTTP adapter for transactional Course commands and Course read/query
+ * scenarios.
  *
  * This controller deliberately contains no Course business rules.
  *
  * Responsibilities:
  * - map HTTP route parameters and request bodies into application inputs;
+ * - map Course query parameters into the read application boundary;
  * - delegate to the Course application services;
  * - return application-service results.
  *
@@ -41,17 +46,33 @@ import type {
  * - persistence;
  * - domain-event publication;
  * - outbox processing;
- * - read-model/search concerns.
+ * - query execution details;
+ * - read-model persistence implementation.
  *
- * Authentication and authorization are introduced at the dedicated
- * API security boundary during 4.11-F.
+ * Authentication and authorization remain owned by the dedicated
+ * API security boundary.
  */
 @Controller('courses')
 export class CourseController {
   constructor(
     private readonly courseApplication: DefaultCourseApplicationService,
     private readonly courseVersionApplication: DefaultCourseVersionApplicationService,
+    private readonly courseQueryApplication: DefaultCourseQueryApplicationService,
   ) {}
+
+  /**
+   * Lists/discovers Courses through the dedicated read/query boundary.
+   *
+   * Query execution deliberately does not use CourseApplicationService
+   * because discovery/listing is a read-side concern and must return
+   * projections rather than hydrated Course aggregates.
+   *
+   * Runtime validation is performed by DefaultCourseQueryApplicationService.
+   */
+  @Get()
+  async query(@Query() request: CourseQueryRequest) {
+    return this.courseQueryApplication.search(request);
+  }
 
   /**
    * Creates a new Course.
@@ -78,6 +99,10 @@ export class CourseController {
 
   /**
    * Retrieves one Course aggregate by identifier.
+   *
+   * This is intentionally separate from the collection query above:
+   * GET /courses       -> read/query projection
+   * GET /courses/:id   -> aggregate retrieval
    */
   @Get(':courseId')
   async get(@Param() params: GetCourseDto) {

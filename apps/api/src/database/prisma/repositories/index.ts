@@ -11,3 +11,4 @@ export {
   PrismaCourseVersionAuditRepository,
   PrismaCourseVersionLineageRepository,
 } from './courses/index.js';
+export {} from '../read-models/index.js';

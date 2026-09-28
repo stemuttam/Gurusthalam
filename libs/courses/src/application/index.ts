@@ -74,8 +74,16 @@ export { courseVersionRollbackInputSchema } from './contracts/index.js';
 
 export type { CourseVersionRollbackInputSchema } from './contracts/index.js';
 
+/**
+ * Application services.
+ *
+ * Query orchestration is deliberately exported separately from the
+ * mutation application service so consumers cannot accidentally use
+ * aggregate mutation services for read scenarios.
+ */
 export {
   DefaultCourseApplicationService,
+  DefaultCourseQueryApplicationService,
   DefaultCourseVersionApplicationService,
   DefaultCourseVersionRollbackApplicationService,
 } from './services/index.js';
@@ -104,3 +112,41 @@ export type {
 export { courseQueryInputSchema } from './contracts/index.js';
 
 export type { CourseQueryInputSchema } from './contracts/index.js';
+
+/**
+ * Course read-model projections
+ *
+ * These are derived read-side representations.
+ *
+ * They remain independent from:
+ * - Prisma;
+ * - PostgreSQL;
+ * - HTTP/NestJS;
+ * - domain-event transport;
+ * - search-engine vendors;
+ * - vector databases;
+ * - AI providers.
+ *
+ * Persistence and projection processing are introduced by later
+ * 4.14 sub-phases.
+ */
+export {
+  COURSE_CATALOG_PROJECTION_SCHEMA_VERSION,
+  createCourseCatalogProjection,
+  COURSE_SEARCH_PROJECTION_SCHEMA_VERSION,
+  COURSE_SEARCH_SOURCE_CATALOG_SCHEMA_VERSION,
+  createCourseSearchProjection,
+  createCourseSearchText,
+} from './read-models/index.js';
+
+export type {
+  CourseCatalogProjection,
+  CourseCatalogProjectionSchemaVersion,
+  CourseSearchProjection,
+  CourseSearchProjectionSchemaVersion,
+  CourseCatalogProjectionPersistence,
+  CourseSearchProjectionPersistence,
+  CourseProjectionPersistence,
+} from './read-models/index.js';
+
+export type { CourseCatalogProjectionQuery } from './read-models/index.js';

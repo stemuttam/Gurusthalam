@@ -2,6 +2,34 @@ import type { CourseCatalogProjection } from './course-catalog.projection.js';
 import type { CourseSearchProjection } from './course-search.projection.js';
 
 /**
+ * Result of attempting to apply a projection update.
+ *
+ * `true`
+ *   The supplied projection became the persisted canonical state.
+ *
+ * `false`
+ *   The supplied projection was stale and the persisted state was left
+ *   unchanged.
+ *
+ * The distinction is important for projection ordering:
+ *
+ *   newer event
+ *        ↓
+ *   catalog accepted
+ *        ↓
+ *   search may be updated
+ *
+ * while:
+ *
+ *   older event
+ *        ↓
+ *   catalog rejected
+ *        ↓
+ *   search must NOT be overwritten
+ */
+export type CourseProjectionWriteResult = boolean;
+
+/**
  * Infrastructure-neutral persistence contract for the CourseCatalog
  * read model.
  *
@@ -20,35 +48,42 @@ import type { CourseSearchProjection } from './course-search.projection.js';
  * - vector storage;
  * - AI metadata.
  *
- * Those concerns belong to later architectural boundaries.
+ * Those concerns belong to infrastructure/application boundaries.
  *
  * The transactional Course remains the authoritative source of truth.
- * CourseCatalogProjection is only a derived read representation.
  */
 export interface CourseCatalogProjectionPersistence {
   /**
-   * Creates or replaces the persisted CourseCatalog projection for a
-   * Course.
+   * Creates or updates the persisted CourseCatalog projection.
    *
-   * Implementations must treat courseId as the stable projection identity.
+   * Implementations MUST enforce the ordering boundary atomically with the
+   * persistence operation.
    *
-   * The operation is intentionally expressed as an upsert-style semantic
-   * rather than separate create/update methods because projection workers
-   * must be able to safely rebuild a projection from authoritative
-   * Course state.
+   * The projection identity is courseId.
+   *
+   * Ordering is defined by updatedAt:
+   *
+   * - equal timestamp: accepted;
+   * - newer timestamp: accepted;
+   * - older timestamp: rejected.
+   *
+   * The comparison and write must form one concurrency-safe persistence
+   * boundary. An implementation must not rely on:
+   *
+   *   read → compare → write
+   *
+   * as separate database operations.
+   *
+   * This requirement makes replay and concurrent out-of-order delivery safe.
    */
-  upsert(projection: CourseCatalogProjection): Promise<void>;
+  upsert(
+    projection: CourseCatalogProjection,
+  ): Promise<CourseProjectionWriteResult>;
 
   /**
    * Finds a persisted CourseCatalog projection by its stable Course ID.
    *
    * A missing projection is represented by null rather than an exception.
-   *
-   * This supports:
-   * - projection verification;
-   * - rebuild workflows;
-   * - reconciliation;
-   * - future read-side diagnostics.
    */
   findByCourseId(courseId: string): Promise<CourseCatalogProjection | null>;
 
@@ -57,9 +92,6 @@ export interface CourseCatalogProjectionPersistence {
    *
    * This operation belongs to the projection lifecycle and does not imply
    * deletion of the transactional Course aggregate.
-   *
-   * It can be used by future projection rebuild/reconciliation workflows
-   * when a projection must be explicitly removed.
    */
   removeByCourseId(courseId: string): Promise<void>;
 }
@@ -71,6 +103,7 @@ export interface CourseCatalogProjectionPersistence {
  * CourseSearchProjection is derived from CourseCatalogProjection.
  *
  * The search persistence boundary intentionally does not expose:
+ *
  * - search-engine-specific APIs;
  * - ranking;
  * - embeddings;
@@ -78,25 +111,23 @@ export interface CourseCatalogProjectionPersistence {
  * - AI model IDs;
  * - recommendation scores;
  * - agent state.
- *
- * Those concerns remain outside the Course domain read-model contract.
  */
 export interface CourseSearchProjectionPersistence {
   /**
-   * Creates or replaces the persisted CourseSearch projection.
+   * Creates or updates the persisted CourseSearch projection.
    *
-   * Implementations must use courseId as the stable projection identity.
+   * Implementations MUST enforce the same atomic updatedAt ordering
+   * boundary as the catalog persistence implementation.
    *
-   * The operation is intentionally idempotent at the contract level:
-   * replaying the same projection must not require callers to distinguish
-   * between an initial insert and a subsequent update.
+   * Equal/newer projections may be applied.
+   * Older projections must be rejected without changing persisted state.
    */
-  upsert(projection: CourseSearchProjection): Promise<void>;
+  upsert(
+    projection: CourseSearchProjection,
+  ): Promise<CourseProjectionWriteResult>;
 
   /**
    * Finds a persisted CourseSearch projection by Course ID.
-   *
-   * A missing projection is represented by null.
    */
   findByCourseId(courseId: string): Promise<CourseSearchProjection | null>;
 
@@ -113,24 +144,6 @@ export interface CourseSearchProjectionPersistence {
  * This interface is intentionally a composition of the two independently
  * evolving projection stores rather than a single generic "Course read
  * repository".
- *
- * Keeping the boundaries explicit allows the platform to evolve:
- *
- * Course
- *   ↓
- * CourseCatalogProjection
- *   ↓
- * CourseCatalogPersistence
- *
- * and independently:
- *
- * CourseCatalogProjection
- *   ↓
- * CourseSearchProjection
- *   ↓
- * CourseSearchPersistence
- *
- * without coupling catalog persistence to a particular search technology.
  */
 export interface CourseProjectionPersistence {
   readonly catalog: CourseCatalogProjectionPersistence;

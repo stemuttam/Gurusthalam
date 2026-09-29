@@ -38,9 +38,8 @@ import {
  *   currentStatus
  * }
  *
- * Keeping the event-name union explicit prevents accidental widening to
- * arbitrary strings and keeps the event integration test aligned with the
- * Course domain-event contract.
+ * Keeping this union explicit prevents accidental widening of lifecycle
+ * event names and keeps the test aligned with the domain-event boundary.
  */
 type CourseLifecycleEventName =
   | typeof CourseDomainEventName.SUBMITTED_FOR_REVIEW
@@ -50,24 +49,13 @@ type CourseLifecycleEventName =
   | typeof CourseDomainEventName.ARCHIVED;
 
 /**
- * Strongly typed Vitest mock functions retained separately from the
- * infrastructure-neutral persistence interfaces.
+ * Strongly typed test context.
  *
- * This distinction is important:
+ * The production handler receives only the infrastructure-neutral
+ * CourseProjectionPersistence contract.
  *
- * Production boundary:
- *
- * CourseProjectionPersistence
- *
- * Test boundary:
- *
- * CourseProjectionPersistence
- *        +
- * Vitest mock references
- *
- * The production handler receives only CourseProjectionPersistence.
- * Tests retain the concrete mock references so that assertions can use
- * Vitest's mock metadata without unsafe casts.
+ * The test additionally retains the concrete Vitest mocks so assertions can
+ * inspect calls without weakening the production boundary.
  */
 interface CourseProjectionPersistenceTestContext {
   readonly persistence: CourseProjectionPersistence;
@@ -104,35 +92,36 @@ interface CourseProjectionPersistenceTestContext {
  * Creates strongly typed persistence mocks for the complete Course
  * projection persistence boundary.
  *
- * The mocks intentionally implement the infrastructure-neutral persistence
- * contracts rather than mocking:
+ * IMPORTANT:
  *
- * - Prisma;
- * - SQL;
- * - Redis;
- * - Elasticsearch;
- * - OpenSearch;
- * - vector databases;
- * - embeddings;
- * - AI infrastructure;
- * - agent infrastructure.
+ * CourseProjectionWriteResult is boolean.
  *
- * This keeps 4.14-D focused on:
+ * Therefore:
  *
- * Course Domain Event
- *        ↓
- * CourseProjectionEventHandler
- *        ↓
- * CourseCatalogProjection
- *        ↓
- * CourseSearchProjection
- *        ↓
- * Persistence Contract
+ *   true  = projection accepted/persisted
+ *   false = projection rejected as stale
  *
- * Persistence implementations themselves remain outside this test.
+ * The default successful path MUST resolve to true.
+ *
+ * Returning undefined here is incorrect and causes:
+ *
+ *   Argument of type 'undefined' is not assignable to parameter
+ *   of type 'boolean'
+ *
+ * Individual tests can override the result with:
+ *
+ *   catalogUpsert.mockResolvedValue(false)
+ *
+ * or:
+ *
+ *   catalogUpsert.mockRejectedValue(...)
+ *
+ * when testing stale-write rejection or persistence failures.
  */
 function createPersistence(): CourseProjectionPersistenceTestContext {
-  const catalogUpsert = vi.fn<CourseCatalogProjectionPersistence['upsert']>();
+  const catalogUpsert = vi
+    .fn<CourseCatalogProjectionPersistence['upsert']>()
+    .mockResolvedValue(true);
 
   const catalogFindByCourseId =
     vi.fn<CourseCatalogProjectionPersistence['findByCourseId']>();
@@ -146,7 +135,9 @@ function createPersistence(): CourseProjectionPersistenceTestContext {
     removeByCourseId: catalogRemoveByCourseId,
   };
 
-  const searchUpsert = vi.fn<CourseSearchProjectionPersistence['upsert']>();
+  const searchUpsert = vi
+    .fn<CourseSearchProjectionPersistence['upsert']>()
+    .mockResolvedValue(true);
 
   const searchFindByCourseId =
     vi.fn<CourseSearchProjectionPersistence['findByCourseId']>();
@@ -179,19 +170,17 @@ function createPersistence(): CourseProjectionPersistenceTestContext {
 }
 
 /**
- * Safely retrieves the first argument from a typed Vitest mock.
+ * Safely retrieves the first argument from a strongly typed Vitest mock.
  *
- * The helper receives the actual mock function rather than the production
- * persistence interface method. This preserves Vitest's mock metadata and
- * avoids the previous:
- *
- * "Argument of type '(projection...) => Promise<void>' is not assignable..."
- *
- * error caused by passing a contract method that no longer exposed its
- * mock metadata.
+ * This helper deliberately receives the actual mock function rather than
+ * a production interface method so Vitest mock metadata remains available.
  */
-function getFirstMockArgument<T>(calls: readonly [T, ...unknown[]][]): T {
-  const firstCall = calls[0];
+function getFirstMockArgument<TArgs extends readonly unknown[]>(mock: {
+  readonly mock: {
+    readonly calls: readonly TArgs[];
+  };
+}): TArgs[0] {
+  const firstCall = mock.mock.calls[0];
 
   if (firstCall === undefined) {
     throw new Error(
@@ -203,11 +192,11 @@ function getFirstMockArgument<T>(calls: readonly [T, ...unknown[]][]): T {
 }
 
 /**
- * Creates the canonical CourseCreated domain event used by the
- * projection integration tests.
+ * Creates the canonical CourseCreated domain event used by the projection
+ * integration tests.
  *
- * The event is intentionally created through the existing domain-event
- * factory so this suite exercises the real Course domain-event envelope.
+ * The event is created through the real domain-event factory so the test
+ * exercises the actual Course domain-event envelope.
  */
 function createCreatedEvent(): Extract<
   CourseDomainEvent,
@@ -233,11 +222,8 @@ function createCreatedEvent(): Extract<
 }
 
 /**
- * Creates an existing canonical CourseCatalog projection for incremental
+ * Creates the canonical existing catalog projection used by incremental
  * metadata and lifecycle event tests.
- *
- * The projection is intentionally created through the canonical projection
- * factory rather than manually constructing a persistence-shaped object.
  */
 function createExistingCatalog(): CourseCatalogProjection {
   return createCourseCatalogProjection({
@@ -258,17 +244,15 @@ function createExistingCatalog(): CourseCatalogProjection {
  * Creates a strongly typed Course lifecycle domain event.
  *
  * The generic createDomainEvent factory cannot preserve the correlation
- * between a union of event-name literals and the CourseDomainEvent
- * discriminated union by itself.
+ * between a union of lifecycle event names and the corresponding
+ * CourseDomainEvent discriminated union.
  *
- * Therefore the type assertion is deliberately localized to this helper.
+ * The assertion is therefore intentionally localized to this helper.
  *
- * The inputs themselves remain strongly typed using:
+ * The input parameters remain strongly typed through:
  *
- * - CourseLifecycleEventName;
- * - CourseStatus.
- *
- * No broad `any` or string-based weakening is introduced.
+ * - CourseLifecycleEventName
+ * - CourseStatus
  */
 function createLifecycleEvent(
   eventName: CourseLifecycleEventName,
@@ -301,9 +285,8 @@ describe('CourseProjectionEventHandler', () => {
     expect(catalogUpsert).toHaveBeenCalledTimes(1);
     expect(searchUpsert).toHaveBeenCalledTimes(1);
 
-    const catalogProjection = getFirstMockArgument(catalogUpsert.mock.calls);
-
-    const searchProjection = getFirstMockArgument(searchUpsert.mock.calls);
+    const catalogProjection = getFirstMockArgument(catalogUpsert);
+    const searchProjection = getFirstMockArgument(searchUpsert);
 
     expect(catalogProjection).toEqual({
       courseId: 'course-001',
@@ -324,8 +307,8 @@ describe('CourseProjectionEventHandler', () => {
     );
 
     expect(searchProjection.courseId).toBe(catalogProjection.courseId);
-
     expect(searchProjection.status).toBe(catalogProjection.status);
+    expect(searchProjection.updatedAt).toEqual(catalogProjection.updatedAt);
   });
 
   it('applies CourseMetadataUpdated to the existing canonical projection', async () => {
@@ -358,7 +341,7 @@ describe('CourseProjectionEventHandler', () => {
     expect(catalogUpsert).toHaveBeenCalledTimes(1);
     expect(searchUpsert).toHaveBeenCalledTimes(1);
 
-    const projection = getFirstMockArgument(catalogUpsert.mock.calls);
+    const projection = getFirstMockArgument(catalogUpsert);
 
     expect(projection.courseId).toBe('course-001');
     expect(projection.title).toBe('Advanced Physics');
@@ -368,10 +351,8 @@ describe('CourseProjectionEventHandler', () => {
     expect(projection.visibility).toBe('PUBLIC');
 
     /*
-     * CourseMetadataUpdated changes transactional metadata only.
-     *
-     * Lifecycle status and original creation time must remain sourced
-     * from the existing canonical CourseCatalog projection.
+     * Metadata updates must preserve lifecycle state and the original
+     * creation timestamp from the canonical catalog projection.
      */
     expect(projection.status).toBe('DRAFT');
 
@@ -379,11 +360,16 @@ describe('CourseProjectionEventHandler', () => {
 
     expect(projection.updatedAt).toEqual(new Date('2026-01-02T00:00:00.000Z'));
 
-    const searchProjection = getFirstMockArgument(searchUpsert.mock.calls);
+    expect(projection.projectionSchemaVersion).toBe(1);
+
+    const searchProjection = getFirstMockArgument(searchUpsert);
 
     expect(searchProjection.searchText).toBe(
       'Advanced Physics Advanced mechanics and motion.',
     );
+
+    expect(searchProjection.courseId).toBe(projection.courseId);
+    expect(searchProjection.status).toBe(projection.status);
   });
 
   it('applies lifecycle events without rebuilding unrelated Course fields', async () => {
@@ -405,14 +391,15 @@ describe('CourseProjectionEventHandler', () => {
 
     await handler.handle(event);
 
+    expect(catalogFindByCourseId).toHaveBeenCalledWith('course-001');
+
     expect(catalogUpsert).toHaveBeenCalledTimes(1);
     expect(searchUpsert).toHaveBeenCalledTimes(1);
 
-    const projection = getFirstMockArgument(catalogUpsert.mock.calls);
+    const projection = getFirstMockArgument(catalogUpsert);
 
     /*
-     * Lifecycle events must mutate only the lifecycle portion of the
-     * canonical projection.
+     * Lifecycle events must mutate only lifecycle state.
      */
     expect(projection.courseId).toBe(existing.courseId);
     expect(projection.title).toBe(existing.title);
@@ -428,9 +415,15 @@ describe('CourseProjectionEventHandler', () => {
 
     expect(projection.updatedAt).toEqual(new Date('2026-01-03T00:00:00.000Z'));
 
-    const searchProjection = getFirstMockArgument(searchUpsert.mock.calls);
+    expect(projection.projectionSchemaVersion).toBe(
+      existing.projectionSchemaVersion,
+    );
+
+    const searchProjection = getFirstMockArgument(searchUpsert);
 
     expect(searchProjection.status).toBe('PUBLISHED');
+    expect(searchProjection.courseId).toBe(projection.courseId);
+    expect(searchProjection.updatedAt).toEqual(projection.updatedAt);
   });
 
   it('supports every Course lifecycle event through the common status boundary', async () => {
@@ -489,16 +482,25 @@ describe('CourseProjectionEventHandler', () => {
 
       await handler.handle(event);
 
+      expect(catalogFindByCourseId).toHaveBeenCalledWith('course-001');
+
       expect(catalogUpsert).toHaveBeenCalledTimes(1);
       expect(searchUpsert).toHaveBeenCalledTimes(1);
 
-      const catalogProjection = getFirstMockArgument(catalogUpsert.mock.calls);
-
-      const searchProjection = getFirstMockArgument(searchUpsert.mock.calls);
+      const catalogProjection = getFirstMockArgument(catalogUpsert);
+      const searchProjection = getFirstMockArgument(searchUpsert);
 
       expect(catalogProjection.status).toBe(lifecycleEvent.currentStatus);
 
       expect(searchProjection.status).toBe(lifecycleEvent.currentStatus);
+
+      expect(catalogProjection.updatedAt).toEqual(
+        new Date('2026-01-04T00:00:00.000Z'),
+      );
+
+      expect(searchProjection.updatedAt).toEqual(
+        new Date('2026-01-04T00:00:00.000Z'),
+      );
     }
   });
 
@@ -538,9 +540,7 @@ describe('CourseProjectionEventHandler', () => {
 
     const handler = new CourseProjectionEventHandler(persistence);
 
-    const event = createCreatedEvent();
-
-    await expect(handler.handle(event)).rejects.toThrow(
+    await expect(handler.handle(createCreatedEvent())).rejects.toThrow(
       'catalog persistence failed',
     );
 
@@ -553,14 +553,15 @@ describe('CourseProjectionEventHandler', () => {
 
     const handler = new CourseProjectionEventHandler(persistence);
 
-    const event = createCreatedEvent();
+    await handler.handle(createCreatedEvent());
 
-    await handler.handle(event);
+    const catalogProjection = getFirstMockArgument(catalogUpsert);
+    const searchProjection = getFirstMockArgument(searchUpsert);
 
-    const catalogProjection = getFirstMockArgument(catalogUpsert.mock.calls);
-
-    const searchProjection = getFirstMockArgument(searchUpsert.mock.calls);
-
+    /*
+     * The handler must pass domain/application projections to persistence,
+     * never infrastructure-specific objects.
+     */
     expect(catalogProjection).not.toHaveProperty('prisma');
     expect(searchProjection).not.toHaveProperty('prisma');
 
@@ -572,5 +573,8 @@ describe('CourseProjectionEventHandler', () => {
 
     expect(catalogProjection).not.toHaveProperty('agentState');
     expect(searchProjection).not.toHaveProperty('agentState');
+
+    expect(catalogProjection).not.toHaveProperty('database');
+    expect(searchProjection).not.toHaveProperty('database');
   });
 });

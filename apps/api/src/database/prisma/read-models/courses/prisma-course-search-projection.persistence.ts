@@ -1,9 +1,8 @@
-import type {
-  CourseSearchProjection,
-  CourseSearchProjectionPersistence,
+import {
+  COURSE_SEARCH_PROJECTION_SCHEMA_VERSION,
+  type CourseSearchProjection,
+  type CourseSearchProjectionPersistence,
 } from '@gurusthalam/courses';
-
-import { COURSE_SEARCH_PROJECTION_SCHEMA_VERSION } from '@gurusthalam/courses';
 
 import type { PrismaClient } from '@gurusthalam/database';
 
@@ -13,97 +12,85 @@ import { withPrismaRepositoryErrorBoundary } from '../../repositories/prisma-rep
  * PostgreSQL/Prisma implementation of the infrastructure-neutral
  * CourseSearchProjectionPersistence contract.
  *
- * Architectural boundary:
+ * The search projection follows the same database-level ordering boundary
+ * as CourseCatalogProjectionPersistence.
  *
- * CourseSearchProjectionPersistence
- *              ↓
- * PrismaCourseSearchProjectionPersistence
- *              ↓
- * Prisma
- *              ↓
- * PostgreSQL
+ * PostgreSQL is the concurrency authority:
  *
- * The adapter persists an already-derived CourseSearchProjection.
+ *   INSERT ... ON CONFLICT ... DO UPDATE ... WHERE
  *
- * Search infrastructure remains replaceable because the application
- * boundary depends only on CourseSearchProjectionPersistence.
- *
- * This adapter deliberately does not:
- * - hydrate Course aggregates;
- * - process domain events;
- * - implement lifecycle rules;
- * - implement authorization;
- * - implement query semantics;
- * - create embeddings;
- * - access vector storage;
- * - access AI models;
- * - perform ranking;
- * - manage agent state.
+ * The timestamp comparison therefore cannot be bypassed by a concurrent
+ * application-level read/write race.
  */
 export class PrismaCourseSearchProjectionPersistence implements CourseSearchProjectionPersistence {
   constructor(private readonly prisma: PrismaClient) {}
 
   /**
-   * Creates or replaces the persisted CourseSearch projection.
+   * Atomically applies the projection when its timestamp is equal to or
+   * newer than the persisted projection.
    *
-   * courseId is the stable projection identity.
-   *
-   * Replaying the same projection therefore remains safe.
+   * Returns false only when an existing persisted projection has a strictly
+   * newer updatedAt.
    */
-  async upsert(projection: CourseSearchProjection): Promise<void> {
-    await withPrismaRepositoryErrorBoundary(
+  async upsert(projection: CourseSearchProjection): Promise<boolean> {
+    return withPrismaRepositoryErrorBoundary(
       'CourseSearchProjectionPersistence.upsert',
       async () => {
-        await this.prisma.courseSearchProjection.upsert({
-          where: {
-            courseId: projection.courseId,
-          },
-          create: {
-            courseId: projection.courseId,
-            title: projection.title,
-            description: projection.description,
-            level: projection.level,
-            type: projection.type,
-            visibility: projection.visibility,
-            status: projection.status,
-            instructorId: projection.instructorId,
-            createdAt: new Date(projection.createdAt),
-            updatedAt: new Date(projection.updatedAt),
-            projectionSchemaVersion: projection.projectionSchemaVersion,
-            searchText: projection.searchText,
-            searchProjectionSchemaVersion:
-              projection.searchProjectionSchemaVersion,
-          },
-          update: {
-            title: projection.title,
-            description: projection.description,
-            level: projection.level,
-            type: projection.type,
-            visibility: projection.visibility,
-            status: projection.status,
-            instructorId: projection.instructorId,
-            createdAt: new Date(projection.createdAt),
-            updatedAt: new Date(projection.updatedAt),
-            projectionSchemaVersion: projection.projectionSchemaVersion,
-            searchText: projection.searchText,
-            searchProjectionSchemaVersion:
-              projection.searchProjectionSchemaVersion,
-          },
-        });
+        const result = await this.prisma.$executeRaw`
+          INSERT INTO "CourseSearchProjection" (
+            "courseId",
+            "title",
+            "description",
+            "level",
+            "type",
+            "visibility",
+            "status",
+            "instructorId",
+            "createdAt",
+            "updatedAt",
+            "projectionSchemaVersion",
+            "searchText",
+            "searchProjectionSchemaVersion"
+          )
+          VALUES (
+            ${projection.courseId},
+            ${projection.title},
+            ${projection.description},
+            ${projection.level}::"CourseLevel",
+            ${projection.type}::"CourseType",
+            ${projection.visibility}::"CourseVisibility",
+            ${projection.status}::"CourseStatus",
+            ${projection.instructorId},
+            ${new Date(projection.createdAt)},
+            ${new Date(projection.updatedAt)},
+            ${projection.projectionSchemaVersion},
+            ${projection.searchText},
+            ${projection.searchProjectionSchemaVersion}
+          )
+          ON CONFLICT ("courseId")
+          DO UPDATE
+          SET
+            "title" = EXCLUDED."title",
+            "description" = EXCLUDED."description",
+            "level" = EXCLUDED."level",
+            "type" = EXCLUDED."type",
+            "visibility" = EXCLUDED."visibility",
+            "status" = EXCLUDED."status",
+            "instructorId" = EXCLUDED."instructorId",
+            "createdAt" = EXCLUDED."createdAt",
+            "updatedAt" = EXCLUDED."updatedAt",
+            "projectionSchemaVersion" = EXCLUDED."projectionSchemaVersion",
+            "searchText" = EXCLUDED."searchText",
+            "searchProjectionSchemaVersion" =
+              EXCLUDED."searchProjectionSchemaVersion"
+          WHERE "CourseSearchProjection"."updatedAt" <= EXCLUDED."updatedAt"
+        `;
+
+        return result === 1;
       },
     );
   }
 
-  /**
-   * Finds a persisted CourseSearch projection.
-   *
-   * Missing projections are represented by null.
-   *
-   * Prisma represents schema-version columns as number, while the
-   * application projection contract intentionally uses a literal schema
-   * version. The adapter therefore validates and narrows the persisted
-   * value back to the canonical application representation.
-   */
   async findByCourseId(
     courseId: string,
   ): Promise<CourseSearchProjection | null> {
@@ -158,12 +145,6 @@ export class PrismaCourseSearchProjectionPersistence implements CourseSearchProj
     );
   }
 
-  /**
-   * Removes only the CourseSearch read projection.
-   *
-   * This never deletes the transactional Course aggregate or the
-   * CourseCatalog projection.
-   */
   async removeByCourseId(courseId: string): Promise<void> {
     await withPrismaRepositoryErrorBoundary(
       'CourseSearchProjectionPersistence.removeByCourseId',

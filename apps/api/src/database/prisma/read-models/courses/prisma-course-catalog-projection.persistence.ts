@@ -12,90 +12,116 @@ import { withPrismaRepositoryErrorBoundary } from '../../repositories/prisma-rep
  * PostgreSQL/Prisma implementation of the infrastructure-neutral
  * CourseCatalogProjectionPersistence contract.
  *
- * Architectural boundary:
+ * 4.14-G concurrency boundary
+ * ----------------------------
  *
- * CourseCatalogProjectionPersistence
- *              ↓
- * PrismaCourseCatalogProjectionPersistence
- *              ↓
- * Prisma
- *              ↓
- * PostgreSQL
+ * The timestamp ordering rule is enforced by PostgreSQL itself.
  *
- * This adapter deliberately does not:
- * - hydrate Course aggregates;
- * - process domain events;
- * - implement lifecycle rules;
- * - implement authorization;
- * - implement query semantics;
- * - create embeddings;
- * - access vector storage;
- * - access AI models;
- * - perform ranking;
- * - manage agent state.
+ * We deliberately do NOT implement:
  *
- * The adapter persists only the already-derived CourseCatalogProjection.
+ *   SELECT existing.updatedAt
+ *   -> compare in TypeScript
+ *   -> Prisma upsert
+ *
+ * because those are separate database operations and are therefore
+ * vulnerable to a concurrent writer racing between the read and write.
+ *
+ * Instead, upsert() uses PostgreSQL's atomic:
+ *
+ *   INSERT ... ON CONFLICT (...) DO UPDATE ... WHERE
+ *
+ * The WHERE predicate compares the persisted row with EXCLUDED.updatedAt
+ * inside the same database statement.
+ *
+ * Therefore:
+ *
+ * - first writer creates the row;
+ * - newer projection replaces older state;
+ * - equal-timestamp replay is accepted;
+ * - older concurrent projection is rejected;
+ * - duplicate replay remains idempotent;
+ * - concurrent writers converge on the newest timestamp;
+ * - no application-level read/write race can bypass the ordering rule.
  */
 export class PrismaCourseCatalogProjectionPersistence implements CourseCatalogProjectionPersistence {
   constructor(private readonly prisma: PrismaClient) {}
 
   /**
-   * Creates or replaces the canonical CourseCatalog projection.
+   * Atomically applies the projection when its timestamp is equal to or
+   * newer than the persisted projection.
    *
-   * courseId is the stable projection identity.
+   * Returns:
    *
-   * Replaying the same projection therefore remains safe and idempotent.
+   * true
+   *   The incoming projection was inserted or became the persisted state.
+   *
+   * false
+   *   PostgreSQL rejected the incoming projection because an existing
+   *   projection has a strictly newer updatedAt.
+   *
+   * The ordering decision is made inside PostgreSQL, not in application
+   * memory.
    */
-  async upsert(projection: CourseCatalogProjection): Promise<void> {
-    await withPrismaRepositoryErrorBoundary(
+  async upsert(projection: CourseCatalogProjection): Promise<boolean> {
+    return withPrismaRepositoryErrorBoundary(
       'CourseCatalogProjectionPersistence.upsert',
       async () => {
-        await this.prisma.courseCatalogProjection.upsert({
-          where: {
-            courseId: projection.courseId,
-          },
-          create: {
-            courseId: projection.courseId,
-            title: projection.title,
-            description: projection.description,
-            level: projection.level,
-            type: projection.type,
-            visibility: projection.visibility,
-            status: projection.status,
-            instructorId: projection.instructorId,
-            createdAt: new Date(projection.createdAt),
-            updatedAt: new Date(projection.updatedAt),
-            projectionSchemaVersion: projection.projectionSchemaVersion,
-          },
-          update: {
-            title: projection.title,
-            description: projection.description,
-            level: projection.level,
-            type: projection.type,
-            visibility: projection.visibility,
-            status: projection.status,
-            instructorId: projection.instructorId,
-            createdAt: new Date(projection.createdAt),
-            updatedAt: new Date(projection.updatedAt),
-            projectionSchemaVersion: projection.projectionSchemaVersion,
-          },
-        });
+        const result = await this.prisma.$executeRaw`
+          INSERT INTO "CourseCatalogProjection" (
+            "courseId",
+            "title",
+            "description",
+            "level",
+            "type",
+            "visibility",
+            "status",
+            "instructorId",
+            "createdAt",
+            "updatedAt",
+            "projectionSchemaVersion"
+          )
+          VALUES (
+            ${projection.courseId},
+            ${projection.title},
+            ${projection.description},
+            ${projection.level}::"CourseLevel",
+            ${projection.type}::"CourseType",
+            ${projection.visibility}::"CourseVisibility",
+            ${projection.status}::"CourseStatus",
+            ${projection.instructorId},
+            ${new Date(projection.createdAt)},
+            ${new Date(projection.updatedAt)},
+            ${projection.projectionSchemaVersion}
+          )
+          ON CONFLICT ("courseId")
+          DO UPDATE
+          SET
+            "title" = EXCLUDED."title",
+            "description" = EXCLUDED."description",
+            "level" = EXCLUDED."level",
+            "type" = EXCLUDED."type",
+            "visibility" = EXCLUDED."visibility",
+            "status" = EXCLUDED."status",
+            "instructorId" = EXCLUDED."instructorId",
+            "createdAt" = EXCLUDED."createdAt",
+            "updatedAt" = EXCLUDED."updatedAt",
+            "projectionSchemaVersion" = EXCLUDED."projectionSchemaVersion"
+          WHERE "CourseCatalogProjection"."updatedAt" <= EXCLUDED."updatedAt"
+        `;
+
+        /*
+         * PostgreSQL reports:
+         *
+         * 1 -> INSERT or UPDATE actually occurred.
+         * 0 -> ON CONFLICT matched an existing row, but the ordering
+         *      predicate rejected the update because the persisted
+         *      timestamp was newer.
+         */
+        return result === 1;
       },
     );
   }
 
-  /**
-   * Returns the canonical persisted CourseCatalog projection.
-   *
-   * Missing projections are represented by null.
-   *
-   * Prisma represents the schema-version column as number, whereas the
-   * application contract intentionally uses a literal schema version.
-   *
-   * The adapter therefore validates the persisted version and returns the
-   * canonical version constant rather than leaking the wider Prisma number
-   * type into the application layer.
-   */
   async findByCourseId(
     courseId: string,
   ): Promise<CourseCatalogProjection | null> {
@@ -138,11 +164,6 @@ export class PrismaCourseCatalogProjectionPersistence implements CourseCatalogPr
     );
   }
 
-  /**
-   * Removes only the CourseCatalog read projection.
-   *
-   * This never deletes the transactional Course aggregate.
-   */
   async removeByCourseId(courseId: string): Promise<void> {
     await withPrismaRepositoryErrorBoundary(
       'CourseCatalogProjectionPersistence.removeByCourseId',

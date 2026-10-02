@@ -12,6 +12,7 @@ describe('PrismaCourseQuery — PostgreSQL integration — 4.14-H', () => {
   const query = new PrismaCourseQuery(prisma);
 
   const courseIdPrefix = 'course-query-4-14-h-';
+  const testInstructorId = 'course-query-4-14-h-test-instructor';
 
   function courseId(suffix: string): string {
     return `${courseIdPrefix}${suffix}`;
@@ -25,12 +26,7 @@ describe('PrismaCourseQuery — PostgreSQL integration — 4.14-H', () => {
       level?: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'ALL_LEVELS';
       type?: 'SELF_PACED' | 'LIVE' | 'BLENDED';
       visibility?: 'PRIVATE' | 'UNLISTED' | 'PUBLIC';
-      status?:
-        | 'DRAFT'
-        | 'IN_REVIEW'
-        | 'PUBLISHED'
-        | 'UNPUBLISHED'
-        | 'ARCHIVED';
+      status?: 'DRAFT' | 'IN_REVIEW' | 'PUBLISHED' | 'UNPUBLISHED' | 'ARCHIVED';
       instructorId?: string;
       createdAt?: Date;
       updatedAt?: Date;
@@ -47,11 +43,9 @@ describe('PrismaCourseQuery — PostgreSQL integration — 4.14-H', () => {
       type: overrides.type ?? 'SELF_PACED',
       visibility: overrides.visibility ?? 'PUBLIC',
       status: overrides.status ?? 'PUBLISHED',
-      instructorId: overrides.instructorId ?? 'instructor-default',
-      createdAt:
-        overrides.createdAt ?? new Date('2026-01-01T00:00:00.000Z'),
-      updatedAt:
-        overrides.updatedAt ?? new Date('2026-01-02T00:00:00.000Z'),
+      instructorId: overrides.instructorId ?? testInstructorId,
+      createdAt: overrides.createdAt ?? new Date('2026-01-01T00:00:00.000Z'),
+      updatedAt: overrides.updatedAt ?? new Date('2026-01-02T00:00:00.000Z'),
       projectionSchemaVersion: 1,
     };
   }
@@ -74,12 +68,11 @@ describe('PrismaCourseQuery — PostgreSQL integration — 4.14-H', () => {
     });
   }
 
-  async function search(
-    overrides: Partial<CourseQueryRequest> = {},
-  ) {
+  async function search(overrides: Partial<CourseQueryRequest> = {}) {
     const request: CourseQueryRequest = {
       page: 1,
       limit: 20,
+      instructorId: testInstructorId,
       ...overrides,
     };
 
@@ -172,10 +165,10 @@ describe('PrismaCourseQuery — PostgreSQL integration — 4.14-H', () => {
     ]);
 
     expect(
-  firstPage.items.some((item) =>
-    secondPage.items.some((secondItem) => secondItem.id === item.id),
-  ),
-).toBe(false);
+      firstPage.items.some((item) =>
+        secondPage.items.some((secondItem) => secondItem.id === item.id),
+      ),
+    ).toBe(false);
   });
 
   it('H3 — returns the final partial page with correct metadata', async () => {
@@ -205,11 +198,7 @@ describe('PrismaCourseQuery — PostgreSQL integration — 4.14-H', () => {
   });
 
   it('H4 — returns an empty page when the requested page is beyond the dataset', async () => {
-    await seed([
-      projection('001'),
-      projection('002'),
-      projection('003'),
-    ]);
+    await seed([projection('001'), projection('002'), projection('003')]);
 
     const result = await search({
       page: 4,
@@ -807,7 +796,6 @@ describe('PrismaCourseQuery — PostgreSQL integration — 4.14-H', () => {
         type: 'BLENDED',
         visibility: 'PUBLIC',
         status: 'PUBLISHED',
-        instructorId: 'instructor-001',
       }),
     ]);
 
@@ -822,7 +810,7 @@ describe('PrismaCourseQuery — PostgreSQL integration — 4.14-H', () => {
         type: 'BLENDED',
         visibility: 'PUBLIC',
         status: 'PUBLISHED',
-        instructorId: 'instructor-001',
+        instructorId: testInstructorId,
         createdAt: new Date('2026-01-01T00:00:00.000Z'),
         updatedAt: new Date('2026-01-02T00:00:00.000Z'),
       },

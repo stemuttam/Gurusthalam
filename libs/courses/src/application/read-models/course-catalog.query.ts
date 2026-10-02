@@ -9,21 +9,21 @@ import type {
  *
  * This is an additive specialization of the existing CourseQuery contract.
  *
- * Architectural intent:
+ * Architectural flow:
  *
- * Transactional Course
- *        ↓
- * Course Domain Events
- *        ↓
- * CourseProjectionEventHandler
- *        ↓
- * CourseCatalogProjection
- *        ↓
- * CourseCatalogProjectionQuery
- *        ↓
- * CourseQuery
- *        ↓
- * DefaultCourseQueryApplicationService
+ *   Transactional Course
+ *          ↓
+ *   Course Domain Events
+ *          ↓
+ *   CourseProjectionEventHandler
+ *          ↓
+ *   CourseCatalogProjection
+ *          ↓
+ *   CourseCatalogProjectionQuery
+ *          ↓
+ *   CourseQuery
+ *          ↓
+ *   DefaultCourseQueryApplicationService
  *
  * The existing CourseQuery contract remains the public application
  * read/query boundary. This interface identifies implementations that
@@ -47,20 +47,23 @@ import type {
  * - LLM state;
  * - agent state.
  *
- * Concrete persistence/query implementations are intentionally deferred
- * to the PostgreSQL/read-model infrastructure boundary in 4.14-F.
+ * Pagination, filtering, and sorting remain expressed through the
+ * infrastructure-neutral CourseQueryRequest contract.
+ *
+ * Concrete execution belongs to the infrastructure boundary.
  */
 export interface CourseCatalogProjectionQuery extends CourseQuery {
   /**
    * Executes a read-only query against the CourseCatalog projection.
    *
-   * The request vocabulary remains the existing CourseQuery contract.
-   *
    * Implementations must:
+   *
    * - return read-side projections;
    * - never hydrate Course aggregates;
    * - never mutate transactional Course state;
    * - preserve deterministic pagination metadata;
+   * - preserve the established Course search/filter vocabulary;
+   * - preserve the established Course sort vocabulary;
    * - keep CourseCatalogProjection as the canonical catalog source;
    * - remain replaceable by future PostgreSQL/search infrastructure.
    */

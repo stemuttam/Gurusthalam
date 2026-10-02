@@ -666,4 +666,5 @@ export type {
   CourseCatalogProjectionPersistence,
   CourseSearchProjectionPersistence,
   CourseProjectionPersistence,
+  CourseCatalogProjectionQuery
 } from './application/read-models/index.js';

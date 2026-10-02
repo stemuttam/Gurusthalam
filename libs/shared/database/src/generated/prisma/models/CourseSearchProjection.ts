@@ -16,13 +16,10 @@ import type * as Prisma from "../internal/prismaNamespace.js"
  * Model CourseSearchProjection
  * *
  *  * CourseSearchProjection
- *  *
  *  * PostgreSQL persistence for the CourseSearch read representation.
- *  *
  *  * It intentionally duplicates the canonical catalog fields required by
  *  * search-oriented consumers so search reads do not need to hydrate the
  *  * Course aggregate or depend on the transactional repository.
- *  *
  *  * Search-engine-specific concepts remain outside this persistence model.
  */
 export type CourseSearchProjectionModel = runtime.Types.Result.DefaultSelection<Prisma.$CourseSearchProjectionPayload>
@@ -634,7 +631,6 @@ export type $CourseSearchProjectionPayload<ExtArgs extends runtime.Types.Extensi
     /**
      * *
      *    * Deterministic lexical/search representation.
-     *    *
      *    * This does not imply a particular search engine or AI system.
      */
     searchText: string

@@ -46,9 +46,7 @@ export type CourseVersionLineage = Prisma.CourseVersionLineageModel
  * Model CourseCatalogProjection
  * *
  *  * CourseCatalogProjection
- *  *
  *  * PostgreSQL persistence for the canonical CourseCatalog read model.
- *  *
  *  * This is deliberately independent from the transactional Course table.
  *  * The projection is derived state and may be rebuilt from authoritative
  *  * Course/domain-event state.
@@ -58,13 +56,10 @@ export type CourseCatalogProjection = Prisma.CourseCatalogProjectionModel
  * Model CourseSearchProjection
  * *
  *  * CourseSearchProjection
- *  *
  *  * PostgreSQL persistence for the CourseSearch read representation.
- *  *
  *  * It intentionally duplicates the canonical catalog fields required by
  *  * search-oriented consumers so search reads do not need to hydrate the
  *  * Course aggregate or depend on the transactional repository.
- *  *
  *  * Search-engine-specific concepts remain outside this persistence model.
  */
 export type CourseSearchProjection = Prisma.CourseSearchProjectionModel

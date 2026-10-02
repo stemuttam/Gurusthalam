@@ -4,13 +4,13 @@ import type { PrismaClient } from '@gurusthalam/database';
 
 import { PrismaCourseQuery } from './prisma-course.query.js';
 
-describe('PrismaCourseQuery', () => {
+describe('PrismaCourseQuery — 4.14-H', () => {
   const findMany = vi.fn();
 
   const count = vi.fn();
 
   const prisma = {
-    course: {
+    courseCatalogProjection: {
       findMany,
       count,
     },
@@ -23,12 +23,12 @@ describe('PrismaCourseQuery', () => {
     count.mockReset();
   };
 
-  it('returns paginated Course projections', async () => {
+  it('returns paginated CourseCatalog read-model projections', async () => {
     resetMocks();
 
     findMany.mockResolvedValue([
       {
-        id: 'course-001',
+        courseId: 'course-001',
         title: 'TypeScript Fundamentals',
         description: 'Learn TypeScript.',
         level: 'BEGINNER',
@@ -51,7 +51,6 @@ describe('PrismaCourseQuery', () => {
     });
 
     expect(findMany).toHaveBeenCalledTimes(1);
-
     expect(count).toHaveBeenCalledTimes(1);
 
     expect(result.items).toEqual([
@@ -79,6 +78,22 @@ describe('PrismaCourseQuery', () => {
     });
   });
 
+  it('queries the CourseCatalog projection instead of the transactional Course table', async () => {
+    resetMocks();
+
+    findMany.mockResolvedValue([]);
+    count.mockResolvedValue(0);
+
+    await query.search({
+      page: 1,
+      limit: 20,
+      sortOrder: 'desc',
+    });
+
+    expect(findMany).toHaveBeenCalledTimes(1);
+    expect(count).toHaveBeenCalledTimes(1);
+  });
+
   it('applies free-text search across title and description', async () => {
     resetMocks();
 
@@ -92,30 +107,32 @@ describe('PrismaCourseQuery', () => {
       sortOrder: 'desc',
     });
 
+    const expectedWhere = {
+      OR: [
+        {
+          title: {
+            contains: 'physics',
+            mode: 'insensitive',
+          },
+        },
+        {
+          description: {
+            contains: 'physics',
+            mode: 'insensitive',
+          },
+        },
+      ],
+    };
+
     expect(findMany).toHaveBeenCalledWith({
-      where: {
-        OR: [
-          {
-            title: {
-              contains: 'physics',
-              mode: 'insensitive',
-            },
-          },
-          {
-            description: {
-              contains: 'physics',
-              mode: 'insensitive',
-            },
-          },
-        ],
-      },
+      where: expectedWhere,
 
       orderBy: [
         {
           createdAt: 'desc',
         },
         {
-          id: 'desc',
+          courseId: 'desc',
         },
       ],
 
@@ -123,7 +140,7 @@ describe('PrismaCourseQuery', () => {
       take: 20,
 
       select: {
-        id: true,
+        courseId: true,
         title: true,
         description: true,
         level: true,
@@ -137,26 +154,11 @@ describe('PrismaCourseQuery', () => {
     });
 
     expect(count).toHaveBeenCalledWith({
-      where: {
-        OR: [
-          {
-            title: {
-              contains: 'physics',
-              mode: 'insensitive',
-            },
-          },
-          {
-            description: {
-              contains: 'physics',
-              mode: 'insensitive',
-            },
-          },
-        ],
-      },
+      where: expectedWhere,
     });
   });
 
-  it('applies all supported structured filters', async () => {
+  it('applies every supported structured filter', async () => {
     resetMocks();
 
     findMany.mockResolvedValue([]);
@@ -190,7 +192,7 @@ describe('PrismaCourseQuery', () => {
           title: 'asc',
         },
         {
-          id: 'asc',
+          courseId: 'asc',
         },
       ],
 
@@ -198,7 +200,7 @@ describe('PrismaCourseQuery', () => {
       take: 25,
 
       select: {
-        id: true,
+        courseId: true,
         title: true,
         description: true,
         level: true,
@@ -235,7 +237,7 @@ describe('PrismaCourseQuery', () => {
             createdAt: 'desc',
           },
           {
-            id: 'desc',
+            courseId: 'desc',
           },
         ],
       }),
@@ -262,11 +264,54 @@ describe('PrismaCourseQuery', () => {
             title: 'asc',
           },
           {
-            id: 'asc',
+            courseId: 'asc',
           },
         ],
       }),
     );
+  });
+
+  it('supports every declared sort field', async () => {
+    resetMocks();
+
+    findMany.mockResolvedValue([]);
+    count.mockResolvedValue(0);
+
+    const sortFields = [
+      'title',
+      'status',
+      'level',
+      'type',
+      'visibility',
+      'createdAt',
+      'updatedAt',
+    ] as const;
+
+    for (const sortBy of sortFields) {
+      await query.search({
+        page: 1,
+        limit: 20,
+        sortBy,
+        sortOrder: 'asc',
+      });
+    }
+
+    expect(findMany).toHaveBeenCalledTimes(sortFields.length);
+
+    for (const [index, sortBy] of sortFields.entries()) {
+      expect(findMany.mock.calls[index]?.[0]).toEqual(
+        expect.objectContaining({
+          orderBy: [
+            {
+              [sortBy]: 'asc',
+            },
+            {
+              courseId: 'asc',
+            },
+          ],
+        }),
+      );
+    }
   });
 
   it('calculates pagination offsets correctly', async () => {
@@ -322,28 +367,7 @@ describe('PrismaCourseQuery', () => {
     });
   });
 
-  it('does not load ownership assignments or related aggregate state', async () => {
-    resetMocks();
-
-    findMany.mockResolvedValue([]);
-    count.mockResolvedValue(0);
-
-    await query.search({
-      page: 1,
-      limit: 20,
-      sortOrder: 'desc',
-    });
-
-    const args = findMany.mock.calls[0]?.[0];
-
-    expect(args).not.toHaveProperty('include');
-
-    expect(args?.select).not.toHaveProperty('ownershipAssignments');
-
-    expect(args?.select).not.toHaveProperty('versions');
-  });
-
-  it('uses the same filter for the page query and total count', async () => {
+  it('uses the same filters for page retrieval and total count', async () => {
     resetMocks();
 
     findMany.mockResolvedValue([]);
@@ -367,6 +391,70 @@ describe('PrismaCourseQuery', () => {
     });
 
     expect(countWhere).toEqual(findManyWhere);
+  });
+
+  it('does not hydrate ownership, versions, or transactional aggregate state', async () => {
+    resetMocks();
+
+    findMany.mockResolvedValue([]);
+    count.mockResolvedValue(0);
+
+    await query.search({
+      page: 1,
+      limit: 20,
+      sortOrder: 'desc',
+    });
+
+    const args = findMany.mock.calls[0]?.[0];
+
+    expect(args).not.toHaveProperty('include');
+
+    expect(args?.select).not.toHaveProperty('ownershipAssignments');
+    expect(args?.select).not.toHaveProperty('versions');
+    expect(args?.select).not.toHaveProperty('course');
+  });
+
+  it('does not expose read-model infrastructure through the result', async () => {
+    resetMocks();
+
+    findMany.mockResolvedValue([
+      {
+        courseId: 'course-001',
+        title: 'Physics',
+        description: 'Physics course',
+        level: 'BEGINNER',
+        type: 'SELF_PACED',
+        visibility: 'PUBLIC',
+        status: 'PUBLISHED',
+        instructorId: 'instructor-001',
+        createdAt: new Date('2026-01-01T00:00:00.000Z'),
+        updatedAt: new Date('2026-01-02T00:00:00.000Z'),
+      },
+    ]);
+
+    count.mockResolvedValue(1);
+
+    const result = await query.search({
+      page: 1,
+      limit: 20,
+      sortOrder: 'desc',
+    });
+
+    expect(result.items[0]).toEqual({
+      id: 'course-001',
+      title: 'Physics',
+      description: 'Physics course',
+      level: 'BEGINNER',
+      type: 'SELF_PACED',
+      visibility: 'PUBLIC',
+      status: 'PUBLISHED',
+      instructorId: 'instructor-001',
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-01-02T00:00:00.000Z'),
+    });
+
+    expect(result.items[0]).not.toHaveProperty('courseId');
+    expect(result.items[0]).not.toHaveProperty('projectionSchemaVersion');
   });
 
   it('translates Prisma failures through the repository error boundary', async () => {

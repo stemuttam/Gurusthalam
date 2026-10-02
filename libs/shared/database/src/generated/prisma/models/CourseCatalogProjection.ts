@@ -16,9 +16,7 @@ import type * as Prisma from "../internal/prismaNamespace.js"
  * Model CourseCatalogProjection
  * *
  *  * CourseCatalogProjection
- *  *
  *  * PostgreSQL persistence for the canonical CourseCatalog read model.
- *  *
  *  * This is deliberately independent from the transactional Course table.
  *  * The projection is derived state and may be rebuilt from authoritative
  *  * Course/domain-event state.
@@ -555,9 +553,7 @@ export type $CourseCatalogProjectionPayload<ExtArgs extends runtime.Types.Extens
     /**
      * *
      *    * Stable identity of the Course projection.
-     *    *
      *    * Deliberately not a foreign key to Course.
-     *    *
      *    * Projection persistence must remain independently rebuildable and
      *    * must not require the transactional Course row to exist.
      */
@@ -574,7 +570,6 @@ export type $CourseCatalogProjectionPayload<ExtArgs extends runtime.Types.Extens
     /**
      * *
      *    * Independent read-model contract version.
-     *    *
      *    * This is intentionally independent from:
      *    * - Prisma schema versions;
      *    * - migration versions;

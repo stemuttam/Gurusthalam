@@ -21,7 +21,29 @@ describe('Course read-model PostgreSQL persistence — 4.14-G', () => {
 
   const searchPersistence = new PrismaCourseSearchProjectionPersistence(prisma);
 
-  const courseId = 'course-read-model-g-regression-001';
+  /**
+   * PostgreSQL integration tests may execute concurrently with other
+   * integration suites in the same Vitest worker/process.
+   *
+   * Therefore this suite must never use a globally fixed Course identity.
+   *
+   * The process id creates a process-scoped identity while keeping the
+   * identity deterministic for the lifetime of this test suite.
+   */
+  const isolationPrefix = `course-read-model-g-regression-${process.pid}`;
+
+  const courseId = `${isolationPrefix}-001`;
+
+  /**
+   * This is the identity used by the original 4.14-G test suite before
+   * process-scoped isolation was introduced.
+   *
+   * It is retained only for deterministic cleanup of a possible stale row
+   * left behind by an earlier local test run.
+   *
+   * It is NOT used by any new test data.
+   */
+  const legacyCourseId = 'course-read-model-g-regression-001';
 
   const baseCatalogProjection: CourseCatalogProjection = {
     courseId,
@@ -113,16 +135,32 @@ describe('Course read-model PostgreSQL persistence — 4.14-G', () => {
     return latest;
   }
 
+  /**
+   * Removes only rows owned by this test suite.
+   *
+   * The current process-scoped identity is always removed.
+   *
+   * The legacy fixed identity is also removed to clean up stale data
+   * created by older versions of this integration test.
+   *
+   * No global truncation or unrestricted delete is performed.
+   */
   async function clearProjectionRows(): Promise<void> {
+    const courseIds = [courseId, legacyCourseId];
+
     await prisma.courseSearchProjection.deleteMany({
       where: {
-        courseId,
+        courseId: {
+          in: courseIds,
+        },
       },
     });
 
     await prisma.courseCatalogProjection.deleteMany({
       where: {
-        courseId,
+        courseId: {
+          in: courseIds,
+        },
       },
     });
   }
@@ -385,14 +423,6 @@ describe('Course read-model PostgreSQL persistence — 4.14-G', () => {
       title: 'Old Physics',
     });
 
-    /*
-     * Establish the authoritative newer state before introducing
-     * concurrent stale replays.
-     *
-     * This is critical for determinism. The test must not depend on
-     * Promise.all() scheduling to determine which projection is inserted
-     * first.
-     */
     await expect(catalogPersistence.upsert(newer)).resolves.toBe(true);
 
     const results = await Promise.all([
@@ -402,16 +432,9 @@ describe('Course read-model PostgreSQL persistence — 4.14-G', () => {
       catalogPersistence.upsert(newer),
     ]);
 
-    /*
-     * The older projections are unconditionally stale because the newer
-     * projection already exists before the concurrent operations begin.
-     */
     expect(results[0]).toBe(false);
     expect(results[2]).toBe(false);
 
-    /*
-     * Equal/newer deterministic replays remain accepted.
-     */
     expect(results[1]).toBe(true);
     expect(results[3]).toBe(true);
 
@@ -431,28 +454,6 @@ describe('Course read-model PostgreSQL persistence — 4.14-G', () => {
       searchText: 'Old Physics',
     });
 
-    /*
-     * IMPORTANT:
-     *
-     * G14 must establish the newer state BEFORE starting Promise.all().
-     *
-     * Without this setup, the older projection may legitimately win the
-     * initial INSERT race. In that case:
-     *
-     *   older -> INSERT -> true
-     *   newer -> UPDATE -> true
-     *
-     * and the result becomes:
-     *
-     *   [true, true, true, true]
-     *
-     * That does not demonstrate a broken production implementation; it
-     * demonstrates that the test itself allowed an older projection to be
-     * the first writer.
-     *
-     * Once newer is persisted first, every older concurrent write is
-     * unconditionally stale and PostgreSQL must reject it.
-     */
     await expect(searchPersistence.upsert(newer)).resolves.toBe(true);
 
     const results = await Promise.all([
@@ -462,22 +463,12 @@ describe('Course read-model PostgreSQL persistence — 4.14-G', () => {
       searchPersistence.upsert(newer),
     ]);
 
-    /*
-     * Both stale writes must be rejected.
-     */
     expect(results[0]).toBe(false);
     expect(results[2]).toBe(false);
 
-    /*
-     * Both equal/newer deterministic replays must be accepted.
-     */
     expect(results[1]).toBe(true);
     expect(results[3]).toBe(true);
 
-    /*
-     * Most importantly, stale concurrent writers must never regress
-     * the persisted search read model.
-     */
     await expect(searchPersistence.findByCourseId(courseId)).resolves.toEqual(
       newer,
     );

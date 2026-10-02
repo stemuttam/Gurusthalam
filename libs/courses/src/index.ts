@@ -656,6 +656,8 @@ export {
   COURSE_SEARCH_SOURCE_CATALOG_SCHEMA_VERSION,
   createCourseSearchProjection,
   createCourseSearchText,
+  CourseProjectionEventHandler,
+  CourseProjectionSourceMissingError,
 } from './application/read-models/index.js';
 
 export type {

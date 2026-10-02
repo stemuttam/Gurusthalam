@@ -27,3 +27,8 @@ export type {
 } from './course-projection.persistence.js';
 
 export type { CourseCatalogProjectionQuery } from './course-catalog.query.js';
+
+export {
+  CourseProjectionEventHandler,
+  CourseProjectionSourceMissingError,
+} from './course-projection.event-handler.js';

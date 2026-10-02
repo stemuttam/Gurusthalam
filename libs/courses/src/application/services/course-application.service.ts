@@ -1,5 +1,4 @@
 import { Course } from '../../domain/entities/course.js';
-
 import type { UpdateCourseMetadataProps } from '../../domain/entities/course.js';
 
 import { CourseValidationError } from '../../domain/errors/index.js';
@@ -46,6 +45,8 @@ import type {
   UpdateMetadataInput,
 } from '../contracts/course-application.contracts.js';
 
+import { parseCourseApplicationInput } from '../validation/course-validation.js';
+
 type CourseMetadataSnapshot = Readonly<{
   title: Course['title'];
   description: Course['description'];
@@ -58,7 +59,13 @@ export class DefaultCourseApplicationService implements CourseApplicationService
   constructor(private readonly courseRepository: CourseRepository) {}
 
   async createCourse(input: CreateCourseInput): Promise<Course> {
-    const validatedInput = createCourseInputSchema.parse(input);
+    const validatedInput = parseCourseApplicationInput(
+      createCourseInputSchema,
+      input,
+      {
+        message: 'Invalid Course application input.',
+      },
+    );
 
     const ownership =
       validatedInput.ownership === undefined
@@ -67,21 +74,15 @@ export class DefaultCourseApplicationService implements CourseApplicationService
 
     const course = Course.create({
       title: validatedInput.title,
-
       description: validatedInput.description ?? null,
-
       level: validatedInput.level,
-
       type: validatedInput.type,
-
       instructorId: validatedInput.instructorId,
-
       ...(validatedInput.visibility !== undefined
         ? {
             visibility: validatedInput.visibility,
           }
         : {}),
-
       ...(ownership !== undefined
         ? {
             ownership,
@@ -95,7 +96,13 @@ export class DefaultCourseApplicationService implements CourseApplicationService
   }
 
   async getCourse(input: GetCourseInput): Promise<Course | null> {
-    const validatedInput = getCourseInputSchema.parse(input);
+    const validatedInput = parseCourseApplicationInput(
+      getCourseInputSchema,
+      input,
+      {
+        message: 'Invalid Course application input.',
+      },
+    );
 
     const courseId = this.toCourseId(validatedInput.courseId);
 
@@ -103,7 +110,13 @@ export class DefaultCourseApplicationService implements CourseApplicationService
   }
 
   async courseExists(input: GetCourseInput): Promise<boolean> {
-    const validatedInput = courseExistsInputSchema.parse(input);
+    const validatedInput = parseCourseApplicationInput(
+      courseExistsInputSchema,
+      input,
+      {
+        message: 'Invalid Course application input.',
+      },
+    );
 
     const courseId = this.toCourseId(validatedInput.courseId);
 
@@ -148,7 +161,22 @@ export class DefaultCourseApplicationService implements CourseApplicationService
    * Authentication and authorization remain outside this boundary.
    */
   async updateMetadata(input: UpdateMetadataInput): Promise<Course> {
-    const validatedInput = updateMetadataInputSchema.parse(input);
+    const validatedInput = parseCourseApplicationInput(
+      updateMetadataInputSchema,
+      input,
+      {
+        message: 'Invalid Course application input.',
+        messageResolver: (issues) => {
+          const metadataIssue = issues.find(
+            (issue) =>
+              issue.message ===
+              'At least one Course metadata field must be provided.',
+          );
+
+          return metadataIssue?.message ?? 'Invalid Course application input.';
+        },
+      },
+    );
 
     const courseId = this.toCourseId(validatedInput.courseId);
 
@@ -186,7 +214,13 @@ export class DefaultCourseApplicationService implements CourseApplicationService
    * - authorization decisions.
    */
   async assignOwnership(input: AssignCourseOwnershipInput): Promise<Course> {
-    const validatedInput = assignCourseOwnershipInputSchema.parse(input);
+    const validatedInput = parseCourseApplicationInput(
+      assignCourseOwnershipInputSchema,
+      input,
+      {
+        message: 'Invalid Course application input.',
+      },
+    );
 
     const courseId = this.toCourseId(validatedInput.courseId);
 
@@ -204,12 +238,19 @@ export class DefaultCourseApplicationService implements CourseApplicationService
   /**
    * Application boundary for removing one Course ownership assignment.
    *
-   * The application service performs a read-before-write check so
-   * removing an already absent assignment remains a true no-op:
-   * no aggregate timestamp mutation and no repository write.
+   * The application service performs a read-before-write check so removing
+   * an already absent assignment remains a true no-op:
+   * - no aggregate timestamp mutation;
+   * - no repository write.
    */
   async removeOwnership(input: RemoveCourseOwnershipInput): Promise<Course> {
-    const validatedInput = removeCourseOwnershipInputSchema.parse(input);
+    const validatedInput = parseCourseApplicationInput(
+      removeCourseOwnershipInputSchema,
+      input,
+      {
+        message: 'Invalid Course application input.',
+      },
+    );
 
     const courseId = this.toCourseId(validatedInput.courseId);
 
@@ -238,7 +279,13 @@ export class DefaultCourseApplicationService implements CourseApplicationService
    * duplicated in application logic.
    */
   async replaceOwnership(input: ReplaceCourseOwnershipInput): Promise<Course> {
-    const validatedInput = replaceCourseOwnershipInputSchema.parse(input);
+    const validatedInput = parseCourseApplicationInput(
+      replaceCourseOwnershipInputSchema,
+      input,
+      {
+        message: 'Invalid Course application input.',
+      },
+    );
 
     const courseId = this.toCourseId(validatedInput.courseId);
 
@@ -272,7 +319,13 @@ export class DefaultCourseApplicationService implements CourseApplicationService
    * Authorization is deliberately outside this boundary.
    */
   async submitForReview(input: SubmitCourseForReviewInput): Promise<Course> {
-    const validatedInput = submitCourseForReviewInputSchema.parse(input);
+    const validatedInput = parseCourseApplicationInput(
+      submitCourseForReviewInputSchema,
+      input,
+      {
+        message: 'Invalid Course application input.',
+      },
+    );
 
     const courseId = this.toCourseId(validatedInput.courseId);
 
@@ -300,7 +353,13 @@ export class DefaultCourseApplicationService implements CourseApplicationService
    * Authorization is deliberately outside this boundary.
    */
   async requestChanges(input: RequestCourseChangesInput): Promise<Course> {
-    const validatedInput = requestCourseChangesInputSchema.parse(input);
+    const validatedInput = parseCourseApplicationInput(
+      requestCourseChangesInputSchema,
+      input,
+      {
+        message: 'Invalid Course application input.',
+      },
+    );
 
     const courseId = this.toCourseId(validatedInput.courseId);
 
@@ -326,7 +385,13 @@ export class DefaultCourseApplicationService implements CourseApplicationService
    * Authorization is deliberately outside this boundary.
    */
   async publish(input: PublishCourseInput): Promise<Course> {
-    const validatedInput = publishCourseInputSchema.parse(input);
+    const validatedInput = parseCourseApplicationInput(
+      publishCourseInputSchema,
+      input,
+      {
+        message: 'Invalid Course application input.',
+      },
+    );
 
     const courseId = this.toCourseId(validatedInput.courseId);
 
@@ -348,7 +413,13 @@ export class DefaultCourseApplicationService implements CourseApplicationService
    * Authorization is deliberately outside this boundary.
    */
   async unpublish(input: CourseLifecycleCommandInputSchema): Promise<Course> {
-    const validatedInput = courseLifecycleCommandInputSchema.parse(input);
+    const validatedInput = parseCourseApplicationInput(
+      courseLifecycleCommandInputSchema,
+      input,
+      {
+        message: 'Invalid Course application input.',
+      },
+    );
 
     const courseId = this.toCourseId(validatedInput.courseId);
 
@@ -370,7 +441,13 @@ export class DefaultCourseApplicationService implements CourseApplicationService
    * Authorization is deliberately outside this boundary.
    */
   async archive(input: CourseLifecycleCommandInputSchema): Promise<Course> {
-    const validatedInput = courseLifecycleCommandInputSchema.parse(input);
+    const validatedInput = parseCourseApplicationInput(
+      courseLifecycleCommandInputSchema,
+      input,
+      {
+        message: 'Invalid Course application input.',
+      },
+    );
 
     const courseId = this.toCourseId(validatedInput.courseId);
 
@@ -386,13 +463,9 @@ export class DefaultCourseApplicationService implements CourseApplicationService
   private captureCourseMetadata(course: Course): CourseMetadataSnapshot {
     return {
       title: course.title,
-
       description: course.description,
-
       level: course.level,
-
       type: course.type,
-
       visibility: course.visibility,
     };
   }
@@ -459,7 +532,6 @@ export class DefaultCourseApplicationService implements CourseApplicationService
   ): CourseOwnershipAssignmentProps {
     return createCourseOwnershipAssignment({
       principalId: this.toCourseActorId(input.principalId),
-
       role: input.role,
     });
   }
@@ -479,7 +551,6 @@ export class DefaultCourseApplicationService implements CourseApplicationService
       throw new CourseValidationError('Course was not found.', [
         {
           field: 'courseId',
-
           message: 'The specified Course does not exist.',
         },
       ]);

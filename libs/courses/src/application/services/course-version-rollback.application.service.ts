@@ -22,13 +22,21 @@ import type {
 
 import { courseVersionRollbackInputSchema } from '../contracts/course-version-rollback.validation.js';
 
+import { parseCourseApplicationInput } from '../validation/course-validation.js';
+
 export class DefaultCourseVersionRollbackApplicationService implements CourseVersionRollbackApplicationService {
   constructor(private readonly persistence: CourseVersionRollbackPersistence) {}
 
   async rollback(
     input: CourseVersionRollbackInput,
   ): Promise<CourseVersionRollbackApplicationResult> {
-    const validatedInput = courseVersionRollbackInputSchema.parse(input);
+    const validatedInput = parseCourseApplicationInput(
+      courseVersionRollbackInputSchema,
+      input,
+      {
+        message: 'Invalid CourseVersion rollback application input.',
+      },
+    );
 
     const courseId = CourseId.from(validatedInput.courseId);
 

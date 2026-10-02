@@ -21,6 +21,8 @@ import {
   publishCourseVersionInputSchema,
 } from '../contracts/course-version-application.validation.js';
 
+import { parseCourseApplicationInput } from '../validation/course-validation.js';
+
 /**
  * Default application service for CourseVersion creation and lifecycle
  * orchestration.
@@ -43,7 +45,13 @@ export class DefaultCourseVersionApplicationService implements CourseVersionAppl
   ) {}
 
   async createVersion(input: CreateCourseVersionInput): Promise<CourseVersion> {
-    const validatedInput = createCourseVersionInputSchema.parse(input);
+    const validatedInput = parseCourseApplicationInput(
+      createCourseVersionInputSchema,
+      input,
+      {
+        message: 'Invalid CourseVersion application input.',
+      },
+    );
 
     const courseId = CourseId.from(validatedInput.courseId);
 
@@ -110,7 +118,13 @@ export class DefaultCourseVersionApplicationService implements CourseVersionAppl
   async publishVersion(
     input: PublishCourseVersionInput,
   ): Promise<CourseVersion> {
-    const validatedInput = publishCourseVersionInputSchema.parse(input);
+    const validatedInput = parseCourseApplicationInput(
+      publishCourseVersionInputSchema,
+      input,
+      {
+        message: 'Invalid CourseVersion application input.',
+      },
+    );
 
     const courseVersionId = CourseVersionId.from(
       validatedInput.courseVersionId,

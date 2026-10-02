@@ -1,5 +1,3 @@
-import { ZodError } from 'zod';
-
 import {
   courseQueryInputSchema,
   type CourseQuery,
@@ -9,7 +7,7 @@ import {
   type CourseQueryValidatedSchema,
 } from '../contracts/index.js';
 
-import { CourseValidationError } from '../../domain/errors/course-validation.error.js';
+import { parseCourseApplicationInput } from '../validation/course-validation.js';
 
 /**
  * Application service for Course read/query scenarios.
@@ -35,15 +33,13 @@ import { CourseValidationError } from '../../domain/errors/course-validation.err
  * - read-model persistence implementation.
  */
 export class DefaultCourseQueryApplicationService {
-  constructor(
-    private readonly courseQuery: CourseQuery,
-  ) {}
+  constructor(private readonly courseQuery: CourseQuery) {}
 
   /**
    * Executes a Course discovery/read query.
    *
-   * Raw values are deliberately accepted here because this is the
-   * application validation boundary.
+   * Raw HTTP-compatible values are deliberately accepted here because
+   * this is the application validation boundary.
    *
    * Example:
    *
@@ -54,36 +50,23 @@ export class DefaultCourseQueryApplicationService {
    *   page = 2
    *
    * after Zod parsing.
+   *
+   * Invalid Zod input is translated into the canonical
+   * CourseValidationError contract before the query boundary is reached.
    */
   async search(
     request: CourseQueryInputSchema,
   ): Promise<CourseQueryResultPage> {
-    let validatedRequest: CourseQueryValidatedSchema;
+    const validatedRequest = parseCourseApplicationInput(
+      courseQueryInputSchema,
+      request,
+      {
+        message: 'Invalid Course query parameters.',
+        rootField: 'query',
+      },
+    );
 
-    try {
-      validatedRequest = courseQueryInputSchema.parse(request);
-    } catch (error) {
-      if (error instanceof ZodError) {
-        throw new CourseValidationError(
-          'Invalid Course query parameters.',
-          error.issues.map((issue) => ({
-            field:
-              issue.path.length > 0
-                ? issue.path.join('.')
-                : 'query',
-            message: issue.message,
-          })),
-          {
-            cause: error,
-          },
-        );
-      }
-
-      throw error;
-    }
-
-    const normalizedRequest =
-      this.toCourseQueryRequest(validatedRequest);
+    const normalizedRequest = this.toCourseQueryRequest(validatedRequest);
 
     return this.courseQuery.search(normalizedRequest);
   }

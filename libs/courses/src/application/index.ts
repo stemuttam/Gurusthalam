@@ -72,7 +72,9 @@ export type {
 
 export { courseVersionRollbackInputSchema } from './contracts/index.js';
 
-export type { CourseVersionRollbackInputSchema } from './contracts/index.js';
+export type {
+  CourseVersionRollbackInputSchema,
+} from './contracts/index.js';
 
 /**
  * Application services.
@@ -99,7 +101,9 @@ export { COURSE_SEARCH_SORT_FIELDS } from './contracts/index.js';
 
 export { courseSearchInputSchema } from './contracts/index.js';
 
-export type { CourseSearchInputSchema } from './contracts/index.js';
+export type {
+  CourseSearchInputSchema,
+} from './contracts/index.js';
 
 export type {
   CourseQuery,
@@ -107,11 +111,11 @@ export type {
   CourseQueryRequest,
   CourseQueryResult,
   CourseQueryResultPage,
+  CourseQueryInputSchema,
+  CourseQueryValidatedSchema,
 } from './contracts/index.js';
 
 export { courseQueryInputSchema } from './contracts/index.js';
-
-export type { CourseQueryInputSchema } from './contracts/index.js';
 
 /**
  * Course read-model projections
@@ -125,10 +129,7 @@ export type { CourseQueryInputSchema } from './contracts/index.js';
  * - domain-event transport;
  * - search-engine vendors;
  * - vector databases;
- * - AI providers.
- *
- * Persistence and projection processing are introduced by later
- * 4.14 sub-phases.
+ * - AI/ML infrastructure.
  */
 export {
   COURSE_CATALOG_PROJECTION_SCHEMA_VERSION,
@@ -149,4 +150,6 @@ export type {
   CourseProjectionPersistence,
 } from './read-models/index.js';
 
-export type { CourseCatalogProjectionQuery } from './read-models/index.js';
+export type {
+  CourseCatalogProjectionQuery,
+} from './read-models/index.js';

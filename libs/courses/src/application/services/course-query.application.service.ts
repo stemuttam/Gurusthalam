@@ -1,19 +1,28 @@
+import { ZodError } from 'zod';
+
 import {
   courseQueryInputSchema,
   type CourseQuery,
+  type CourseQueryInputSchema,
   type CourseQueryRequest,
   type CourseQueryResultPage,
+  type CourseQueryValidatedSchema,
 } from '../contracts/index.js';
+
+import { CourseValidationError } from '../../domain/errors/course-validation.error.js';
 
 /**
  * Application service for Course read/query scenarios.
  *
  * Responsibilities:
- * - validate the application query contract;
- * - normalize optional query properties at the application boundary;
+ * - accept raw application-bound query input;
+ * - validate the query contract;
+ * - coerce HTTP-compatible pagination values;
+ * - apply pagination defaults;
+ * - validate enum/filter/sort values;
+ * - normalize optional properties;
  * - delegate read execution to CourseQuery;
- * - keep query orchestration independent from persistence;
- * - return read-side projections rather than Course aggregates.
+ * - return read-side projections.
  *
  * Deliberately excluded:
  * - Prisma;
@@ -31,68 +40,114 @@ export class DefaultCourseQueryApplicationService {
   ) {}
 
   /**
-   * Executes a validated Course discovery/read query.
+   * Executes a Course discovery/read query.
    *
-   * The validation schema is intentionally shared with Course search.
+   * Raw values are deliberately accepted here because this is the
+   * application validation boundary.
    *
-   * The normalized object is constructed explicitly instead of forwarding
-   * the schema output directly. This is required because the repository
-   * uses exactOptionalPropertyTypes: optional properties must be omitted
-   * rather than explicitly supplied as `undefined`.
+   * Example:
+   *
+   *   page = "2"
+   *
+   * becomes:
+   *
+   *   page = 2
+   *
+   * after Zod parsing.
    */
   async search(
-    request: CourseQueryRequest,
+    request: CourseQueryInputSchema,
   ): Promise<CourseQueryResultPage> {
-    const validatedRequest = courseQueryInputSchema.parse(request);
+    let validatedRequest: CourseQueryValidatedSchema;
 
-    const normalizedRequest: CourseQueryRequest = {
+    try {
+      validatedRequest = courseQueryInputSchema.parse(request);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        throw new CourseValidationError(
+          'Invalid Course query parameters.',
+          error.issues.map((issue) => ({
+            field:
+              issue.path.length > 0
+                ? issue.path.join('.')
+                : 'query',
+            message: issue.message,
+          })),
+          {
+            cause: error,
+          },
+        );
+      }
+
+      throw error;
+    }
+
+    const normalizedRequest =
+      this.toCourseQueryRequest(validatedRequest);
+
+    return this.courseQuery.search(normalizedRequest);
+  }
+
+  /**
+   * Converts the validated Zod output into the strict application
+   * CourseQueryRequest contract.
+   *
+   * This method deliberately omits optional properties when they are
+   * absent instead of assigning `undefined`.
+   *
+   * That is required by exactOptionalPropertyTypes.
+   */
+  private toCourseQueryRequest(
+    validatedRequest: CourseQueryValidatedSchema,
+  ): CourseQueryRequest {
+    const normalizedRequest = {
       page: validatedRequest.page,
       limit: validatedRequest.limit,
       sortOrder: validatedRequest.sortOrder,
+    } as CourseQueryRequest;
 
-      ...(validatedRequest.sortBy !== undefined
-        ? {
-            sortBy: validatedRequest.sortBy,
-          }
-        : {}),
+    if (validatedRequest.sortBy !== undefined) {
+      Object.assign(normalizedRequest, {
+        sortBy: validatedRequest.sortBy,
+      });
+    }
 
-      ...(validatedRequest.query !== undefined
-        ? {
-            query: validatedRequest.query,
-          }
-        : {}),
+    if (validatedRequest.query !== undefined) {
+      Object.assign(normalizedRequest, {
+        query: validatedRequest.query,
+      });
+    }
 
-      ...(validatedRequest.status !== undefined
-        ? {
-            status: validatedRequest.status,
-          }
-        : {}),
+    if (validatedRequest.status !== undefined) {
+      Object.assign(normalizedRequest, {
+        status: validatedRequest.status,
+      });
+    }
 
-      ...(validatedRequest.visibility !== undefined
-        ? {
-            visibility: validatedRequest.visibility,
-          }
-        : {}),
+    if (validatedRequest.visibility !== undefined) {
+      Object.assign(normalizedRequest, {
+        visibility: validatedRequest.visibility,
+      });
+    }
 
-      ...(validatedRequest.level !== undefined
-        ? {
-            level: validatedRequest.level,
-          }
-        : {}),
+    if (validatedRequest.level !== undefined) {
+      Object.assign(normalizedRequest, {
+        level: validatedRequest.level,
+      });
+    }
 
-      ...(validatedRequest.type !== undefined
-        ? {
-            type: validatedRequest.type,
-          }
-        : {}),
+    if (validatedRequest.type !== undefined) {
+      Object.assign(normalizedRequest, {
+        type: validatedRequest.type,
+      });
+    }
 
-      ...(validatedRequest.instructorId !== undefined
-        ? {
-            instructorId: validatedRequest.instructorId,
-          }
-        : {}),
-    };
+    if (validatedRequest.instructorId !== undefined) {
+      Object.assign(normalizedRequest, {
+        instructorId: validatedRequest.instructorId,
+      });
+    }
 
-    return this.courseQuery.search(normalizedRequest);
+    return normalizedRequest;
   }
 }

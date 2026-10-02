@@ -14,17 +14,22 @@ import {
   DefaultCourseApplicationService,
   DefaultCourseQueryApplicationService,
   DefaultCourseVersionApplicationService,
-  type CourseQueryRequest,
 } from '@gurusthalam/courses';
 
 import type {
   AssignCourseOwnershipDto,
   CreateCourseDto,
+  CourseQueryDto,
   GetCourseDto,
   RemoveCourseOwnershipDto,
   ReplaceCourseOwnershipDto,
   UpdateCourseMetadataDto,
 } from './dto/index.js';
+
+import {
+  mapCourseQueryDtoToApplicationRequest,
+  mapCourseQueryResultPageToResponseDto,
+} from './dto/course-query.dto.js';
 
 /**
  * HTTP adapter for transactional Course commands and Course read/query
@@ -34,8 +39,9 @@ import type {
  *
  * Responsibilities:
  * - map HTTP route parameters and request bodies into application inputs;
- * - map Course query parameters into the read application boundary;
- * - delegate to the Course application services;
+ * - map HTTP Course query parameters into the application validation input;
+ * - map application query results into the HTTP response contract;
+ * - delegate to Course application services;
  * - return application-service results.
  *
  * Deliberately excluded:
@@ -63,15 +69,22 @@ export class CourseController {
   /**
    * Lists/discovers Courses through the dedicated read/query boundary.
    *
-   * Query execution deliberately does not use CourseApplicationService
-   * because discovery/listing is a read-side concern and must return
-   * projections rather than hydrated Course aggregates.
+   * HTTP query parameters are transport strings. They are mapped into
+   * the application validation input without applying defaults or
+   * performing validation in the controller.
    *
-   * Runtime validation is performed by DefaultCourseQueryApplicationService.
+   * Validation, coercion, defaults, enum validation, pagination limits,
+   * and sort validation remain owned by the application query service.
    */
   @Get()
-  async query(@Query() request: CourseQueryRequest) {
-    return this.courseQueryApplication.search(request);
+  async query(@Query() request: CourseQueryDto) {
+    const applicationRequest =
+      mapCourseQueryDtoToApplicationRequest(request);
+
+    const result =
+      await this.courseQueryApplication.search(applicationRequest);
+
+    return mapCourseQueryResultPageToResponseDto(result);
   }
 
   /**

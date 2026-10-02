@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type {
   CourseApplicationService,
-  CourseQueryRequest,
   CourseQueryResultPage,
   CourseVersionApplicationService,
 } from '@gurusthalam/courses';
@@ -10,6 +9,7 @@ import type {
 import type {
   AssignCourseOwnershipDto,
   CreateCourseDto,
+  CourseQueryDto,
   GetCourseDto,
   RemoveCourseOwnershipDto,
   ReplaceCourseOwnershipDto,
@@ -164,179 +164,328 @@ const createCourseController = ({
 
 describe('CourseController', () => {
   describe('Course read/query boundary', () => {
-    it('delegates Course discovery to the query application service', async () => {
-      const courseQueryApplication = createCourseQueryApplicationMock();
+  it('maps HTTP query parameters and delegates Course discovery to the query application service', async () => {
+    const courseQueryApplication =
+      createCourseQueryApplicationMock();
 
-      const expected: CourseQueryResultPage = {
-        items: [
-          {
-            id: 'course-001',
-            title: 'Physics',
-            description: 'Introduction to physics',
-            level: 'BEGINNER',
-            type: 'SELF_PACED',
-            visibility: 'PRIVATE',
-            status: 'DRAFT',
-            instructorId: 'instructor-001',
-            createdAt: new Date('2026-09-01T00:00:00.000Z'),
-            updatedAt: new Date('2026-09-01T00:00:00.000Z'),
-          },
-        ],
-        meta: {
-          page: 1,
-          limit: 20,
-          total: 1,
-          totalPages: 1,
-          hasNextPage: false,
-          hasPreviousPage: false,
+    const expected: CourseQueryResultPage = {
+      items: [
+        {
+          id: 'course-001',
+          title: 'Physics',
+          description: 'Introduction to physics',
+          level: 'BEGINNER',
+          type: 'SELF_PACED',
+          visibility: 'PRIVATE',
+          status: 'DRAFT',
+          instructorId: 'instructor-001',
+          createdAt: new Date('2026-09-01T00:00:00.000Z'),
+          updatedAt: new Date('2026-09-01T00:00:00.000Z'),
         },
-      };
-
-      vi.mocked(courseQueryApplication.search).mockResolvedValue(expected);
-
-      const { controller } = createCourseController({
-        courseQueryApplication,
-      });
-
-      const request: CourseQueryRequest = {
+      ],
+      meta: {
         page: 1,
         limit: 20,
-        sortOrder: 'asc',
-        sortBy: 'title',
-        query: 'physics',
-        status: 'DRAFT',
-        visibility: 'PRIVATE',
-        level: 'BEGINNER',
-        type: 'SELF_PACED',
-        instructorId: 'instructor-001',
-      };
+        total: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      },
+    };
 
-      const result = await controller.query(request);
+    vi.mocked(courseQueryApplication.search).mockResolvedValue(
+      expected,
+    );
 
-      expect(courseQueryApplication.search).toHaveBeenCalledTimes(1);
-      expect(courseQueryApplication.search).toHaveBeenCalledWith(request);
-      expect(result).toBe(expected);
+    const { controller } = createCourseController({
+      courseQueryApplication,
     });
 
-    it('passes pagination and sorting parameters unchanged to the query boundary', async () => {
-      const courseQueryApplication = createCourseQueryApplicationMock();
+    const request: CourseQueryDto = {
+      page: '1',
+      limit: '20',
+      sortOrder: 'asc',
+      sortBy: 'title',
+      query: 'physics',
+      status: 'DRAFT',
+      visibility: 'PRIVATE',
+      level: 'BEGINNER',
+      type: 'SELF_PACED',
+      instructorId: 'instructor-001',
+    };
 
-      const expected: CourseQueryResultPage = {
-        items: [],
-        meta: {
-          page: 2,
-          limit: 10,
-          total: 0,
-          totalPages: 0,
-          hasNextPage: false,
-          hasPreviousPage: true,
+    const result = await controller.query(request);
+
+    expect(courseQueryApplication.search).toHaveBeenCalledTimes(1);
+
+    expect(courseQueryApplication.search).toHaveBeenCalledWith({
+      page: '1',
+      limit: '20',
+      sortOrder: 'asc',
+      sortBy: 'title',
+      query: 'physics',
+      status: 'DRAFT',
+      visibility: 'PRIVATE',
+      level: 'BEGINNER',
+      type: 'SELF_PACED',
+      instructorId: 'instructor-001',
+    });
+
+    expect(result).toEqual({
+      items: [
+        {
+          id: 'course-001',
+          title: 'Physics',
+          description: 'Introduction to physics',
+          level: 'BEGINNER',
+          type: 'SELF_PACED',
+          visibility: 'PRIVATE',
+          status: 'DRAFT',
+          instructorId: 'instructor-001',
+          createdAt: new Date('2026-09-01T00:00:00.000Z'),
+          updatedAt: new Date('2026-09-01T00:00:00.000Z'),
         },
-      };
+      ],
+      meta: {
+        page: 1,
+        limit: 20,
+        total: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      },
+    });
 
-      vi.mocked(courseQueryApplication.search).mockResolvedValue(expected);
+    expect(result).not.toBe(expected);
+  });
 
-      const { controller } = createCourseController({
-        courseQueryApplication,
-      });
+  it('preserves HTTP pagination and sorting values for application-layer validation', async () => {
+    const courseQueryApplication =
+      createCourseQueryApplicationMock();
 
-      const request: CourseQueryRequest = {
+    const expected: CourseQueryResultPage = {
+      items: [],
+      meta: {
         page: 2,
         limit: 10,
-        sortOrder: 'desc',
-        sortBy: 'updatedAt',
-        query: 'advanced',
-        status: 'PUBLISHED',
-        visibility: 'PUBLIC',
-        level: 'ADVANCED',
-        type: 'SELF_PACED',
-        instructorId: 'instructor-002',
-      };
+        total: 0,
+        totalPages: 0,
+        hasNextPage: false,
+        hasPreviousPage: true,
+      },
+    };
 
-      const result = await controller.query(request);
+    vi.mocked(courseQueryApplication.search).mockResolvedValue(
+      expected,
+    );
 
-      expect(courseQueryApplication.search).toHaveBeenCalledTimes(1);
-      expect(courseQueryApplication.search).toHaveBeenCalledWith(request);
-      expect(result).toBe(expected);
+    const { controller } = createCourseController({
+      courseQueryApplication,
     });
 
-    it('supports a query with only required pagination fields', async () => {
-      const courseQueryApplication = createCourseQueryApplicationMock();
+    const request: CourseQueryDto = {
+      page: '2',
+      limit: '10',
+      sortOrder: 'desc',
+      sortBy: 'updatedAt',
+      query: 'advanced',
+      status: 'PUBLISHED',
+      visibility: 'PUBLIC',
+      level: 'ADVANCED',
+      type: 'SELF_PACED',
+      instructorId: 'instructor-002',
+    };
 
-      const expected: CourseQueryResultPage = {
-        items: [],
-        meta: {
-          page: 1,
-          limit: 20,
-          total: 0,
-          totalPages: 0,
-          hasNextPage: false,
-          hasPreviousPage: false,
-        },
-      };
+    const result = await controller.query(request);
 
-      vi.mocked(courseQueryApplication.search).mockResolvedValue(expected);
+    expect(courseQueryApplication.search).toHaveBeenCalledTimes(1);
 
-      const { controller } = createCourseController({
-        courseQueryApplication,
-      });
-
-      const request: CourseQueryRequest = {
-        page: 1,
-        limit: 20,
-        sortOrder: 'desc',
-      };
-
-      const result = await controller.query(request);
-
-      expect(courseQueryApplication.search).toHaveBeenCalledTimes(1);
-      expect(courseQueryApplication.search).toHaveBeenCalledWith(request);
-      expect(result).toBe(expected);
+    expect(courseQueryApplication.search).toHaveBeenCalledWith({
+      page: '2',
+      limit: '10',
+      sortOrder: 'desc',
+      sortBy: 'updatedAt',
+      query: 'advanced',
+      status: 'PUBLISHED',
+      visibility: 'PUBLIC',
+      level: 'ADVANCED',
+      type: 'SELF_PACED',
+      instructorId: 'instructor-002',
     });
 
-    it('does not route Course queries through the mutation application service', async () => {
-      const courseApplication = createCourseApplicationMock();
-      const courseQueryApplication = createCourseQueryApplicationMock();
-
-      const expected: CourseQueryResultPage = {
-        items: [],
-        meta: {
-          page: 1,
-          limit: 20,
-          total: 0,
-          totalPages: 0,
-          hasNextPage: false,
-          hasPreviousPage: false,
-        },
-      };
-
-      vi.mocked(courseQueryApplication.search).mockResolvedValue(expected);
-
-      const { controller } = createCourseController({
-        courseApplication,
-        courseQueryApplication,
-      });
-
-      await controller.query({
-        page: 1,
-        limit: 20,
-        sortOrder: 'asc',
-        sortBy: 'createdAt',
-        query: 'physics',
-      });
-
-      expect(courseQueryApplication.search).toHaveBeenCalledTimes(1);
-
-      expect(courseApplication.getCourse).not.toHaveBeenCalled();
-
-      expect(courseApplication.createCourse).not.toHaveBeenCalled();
-
-      expect(courseApplication.updateCourse).not.toHaveBeenCalled();
-
-      expect(courseApplication.publish).not.toHaveBeenCalled();
-
-      expect(courseApplication.archive).not.toHaveBeenCalled();
-    });
+    expect(result).toEqual(expected);
   });
+
+  it('does not apply application defaults in the HTTP controller', async () => {
+    const courseQueryApplication =
+      createCourseQueryApplicationMock();
+
+    const expected: CourseQueryResultPage = {
+      items: [],
+      meta: {
+        page: 1,
+        limit: 20,
+        total: 0,
+        totalPages: 0,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      },
+    };
+
+    vi.mocked(courseQueryApplication.search).mockResolvedValue(
+      expected,
+    );
+
+    const { controller } = createCourseController({
+      courseQueryApplication,
+    });
+
+    const request: CourseQueryDto = {};
+
+    const result = await controller.query(request);
+
+    expect(courseQueryApplication.search).toHaveBeenCalledTimes(1);
+
+    expect(courseQueryApplication.search).toHaveBeenCalledWith({});
+
+    expect(result).toEqual(expected);
+  });
+
+  it('does not perform query validation inside the controller', async () => {
+    const courseQueryApplication =
+      createCourseQueryApplicationMock();
+
+    const expected: CourseQueryResultPage = {
+      items: [],
+      meta: {
+        page: 1,
+        limit: 20,
+        total: 0,
+        totalPages: 0,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      },
+    };
+
+    vi.mocked(courseQueryApplication.search).mockResolvedValue(
+      expected,
+    );
+
+    const { controller } = createCourseController({
+      courseQueryApplication,
+    });
+
+    const request: CourseQueryDto = {
+      page: 'not-a-number',
+      limit: 'invalid',
+      sortBy: 'unsupported-field',
+      sortOrder: 'invalid-order',
+    };
+
+    await controller.query(request);
+
+    expect(courseQueryApplication.search).toHaveBeenCalledTimes(1);
+
+    expect(courseQueryApplication.search).toHaveBeenCalledWith(
+      request,
+    );
+  });
+
+  it('maps the application result into a separate HTTP response object', async () => {
+    const courseQueryApplication =
+      createCourseQueryApplicationMock();
+
+    const expected: CourseQueryResultPage = {
+      items: [
+        {
+          id: 'course-001',
+          title: 'Physics',
+          description: null,
+          level: 'BEGINNER',
+          type: 'SELF_PACED',
+          visibility: 'PUBLIC',
+          status: 'PUBLISHED',
+          instructorId: 'instructor-001',
+          createdAt: new Date('2026-09-01T00:00:00.000Z'),
+          updatedAt: new Date('2026-09-02T00:00:00.000Z'),
+        },
+      ],
+      meta: {
+        page: 1,
+        limit: 20,
+        total: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      },
+    };
+
+    vi.mocked(courseQueryApplication.search).mockResolvedValue(
+      expected,
+    );
+
+    const { controller } = createCourseController({
+      courseQueryApplication,
+    });
+
+    const result = await controller.query({
+      query: 'physics',
+    });
+
+    expect(result).toEqual(expected);
+    expect(result).not.toBe(expected);
+    expect(result.items).not.toBe(expected.items);
+    expect(result.meta).not.toBe(expected.meta);
+    expect(result.items[0]).not.toBe(expected.items[0]);
+  });
+
+  it('does not route Course queries through the mutation application service', async () => {
+    const courseApplication = createCourseApplicationMock();
+    const courseQueryApplication =
+      createCourseQueryApplicationMock();
+
+    const expected: CourseQueryResultPage = {
+      items: [],
+      meta: {
+        page: 1,
+        limit: 20,
+        total: 0,
+        totalPages: 0,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      },
+    };
+
+    vi.mocked(courseQueryApplication.search).mockResolvedValue(
+      expected,
+    );
+
+    const { controller } = createCourseController({
+      courseApplication,
+      courseQueryApplication,
+    });
+
+    await controller.query({
+      page: '1',
+      limit: '20',
+      sortOrder: 'asc',
+      sortBy: 'createdAt',
+      query: 'physics',
+    });
+
+    expect(courseQueryApplication.search).toHaveBeenCalledTimes(1);
+
+    expect(courseApplication.getCourse).not.toHaveBeenCalled();
+
+    expect(courseApplication.createCourse).not.toHaveBeenCalled();
+
+    expect(courseApplication.updateCourse).not.toHaveBeenCalled();
+
+    expect(courseApplication.publish).not.toHaveBeenCalled();
+
+    expect(courseApplication.archive).not.toHaveBeenCalled();
+  });
+});
 
   describe('Course commands', () => {
     it('delegates Course creation to the application service', async () => {

@@ -22,6 +22,9 @@
   "exclude": ["node_modules", "dist", "out-tsc", "eslint.config.mjs"],
   "references": [
     {
+      "path": "../../libs/courses/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/shared/tsconfig.lib.json"
     },
     {

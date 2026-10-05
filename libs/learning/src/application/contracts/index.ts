@@ -1,12 +1,33 @@
+export type {
+  CancelEnrollmentInput,
+  EnrollLearnerInput,
+  EnrollmentApplicationService,
+  GetEnrollmentInput,
+} from './enrollment-application.contracts.js';
+
 export {
+  cancelEnrollmentInputSchema,
   enrollLearnerInputSchema,
   getEnrollmentInputSchema,
-  cancelEnrollmentInputSchema,
 } from './enrollment-application.validation.js';
 
 export type {
-  EnrollLearnerInput,
-  GetEnrollmentInput,
-  CancelEnrollmentInput,
-  EnrollmentApplicationService,
-} from './enrollment-application.contracts.js';
+  CheckEntitlementAccessInput,
+  EntitlementApplicationService,
+  ExpireEntitlementInput,
+  GetEntitlementInput,
+  GrantEntitlementInput,
+  RestoreEntitlementInput,
+  RevokeEntitlementInput,
+  SuspendEntitlementInput,
+} from './entitlement-application.contracts.js';
+
+export {
+  checkEntitlementAccessInputSchema,
+  expireEntitlementInputSchema,
+  getEntitlementInputSchema,
+  grantEntitlementInputSchema,
+  restoreEntitlementInputSchema,
+  revokeEntitlementInputSchema,
+  suspendEntitlementInputSchema,
+} from './entitlement-application.validation.js';

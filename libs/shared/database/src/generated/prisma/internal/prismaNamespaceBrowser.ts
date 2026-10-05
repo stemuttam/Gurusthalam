@@ -56,6 +56,7 @@ export const ModelName = {
   CourseVersion: 'CourseVersion',
   CourseVersionAudit: 'CourseVersionAudit',
   CourseVersionLineage: 'CourseVersionLineage',
+  Enrollment: 'Enrollment',
   CourseCatalogProjection: 'CourseCatalogProjection',
   CourseSearchProjection: 'CourseSearchProjection',
   NotificationTemplate: 'NotificationTemplate',
@@ -153,6 +154,24 @@ export const CourseVersionLineageScalarFieldEnum = {
 } as const
 
 export type CourseVersionLineageScalarFieldEnum = (typeof CourseVersionLineageScalarFieldEnum)[keyof typeof CourseVersionLineageScalarFieldEnum]
+
+
+export const EnrollmentScalarFieldEnum = {
+  id: 'id',
+  learnerId: 'learnerId',
+  courseId: 'courseId',
+  courseVersionId: 'courseVersionId',
+  status: 'status',
+  source: 'source',
+  startsAt: 'startsAt',
+  expiresAt: 'expiresAt',
+  completedAt: 'completedAt',
+  cancelledAt: 'cancelledAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type EnrollmentScalarFieldEnum = (typeof EnrollmentScalarFieldEnum)[keyof typeof EnrollmentScalarFieldEnum]
 
 
 export const CourseCatalogProjectionScalarFieldEnum = {

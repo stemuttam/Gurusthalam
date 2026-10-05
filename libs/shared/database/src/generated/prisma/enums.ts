@@ -70,6 +70,27 @@ export const CourseOwnershipRole = {
 export type CourseOwnershipRole = (typeof CourseOwnershipRole)[keyof typeof CourseOwnershipRole]
 
 
+export const EnrollmentStatus = {
+  PENDING: 'PENDING',
+  ACTIVE: 'ACTIVE',
+  COMPLETED: 'COMPLETED',
+  CANCELLED: 'CANCELLED',
+  EXPIRED: 'EXPIRED'
+} as const
+
+export type EnrollmentStatus = (typeof EnrollmentStatus)[keyof typeof EnrollmentStatus]
+
+
+export const EnrollmentSource = {
+  DIRECT: 'DIRECT',
+  COHORT: 'COHORT',
+  ORGANIZATION: 'ORGANIZATION',
+  SUBSCRIPTION: 'SUBSCRIPTION'
+} as const
+
+export type EnrollmentSource = (typeof EnrollmentSource)[keyof typeof EnrollmentSource]
+
+
 export const NotificationChannel = {
   EMAIL: 'EMAIL',
   IN_APP: 'IN_APP',

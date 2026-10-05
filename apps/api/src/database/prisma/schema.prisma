@@ -54,6 +54,21 @@ enum CourseOwnershipRole {
   PUBLISHER
 }
 
+enum EnrollmentStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+  EXPIRED
+}
+
+enum EnrollmentSource {
+  DIRECT
+  COHORT
+  ORGANIZATION
+  SUBSCRIPTION
+}
+
 model Course {
   id String @id @default(uuid())
 
@@ -73,6 +88,7 @@ model Course {
 
   versions             CourseVersion[]
   ownershipAssignments CourseOwnershipAssignment[]
+  enrollments Enrollment[]
 
   @@index([instructorId])
   @@index([status])
@@ -113,6 +129,7 @@ model CourseVersion {
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   auditEntries CourseVersionAudit[]
+  enrollments Enrollment[]
 
   lineageAsSource CourseVersionLineage[] @relation("CourseVersionLineageSource")
   lineageAsTarget CourseVersionLineage[] @relation("CourseVersionLineageTarget")
@@ -173,6 +190,35 @@ model CourseVersionLineage {
   @@index([courseId, targetVersion])
   @@index([sourceVersionId])
   @@index([targetVersionId])
+}
+
+model Enrollment {
+  id String @id @default(uuid())
+
+  learnerId String
+
+  courseId        String
+  courseVersionId String
+
+  status EnrollmentStatus @default(ACTIVE)
+  source EnrollmentSource
+
+  startsAt  DateTime
+  expiresAt DateTime?
+
+  completedAt DateTime?
+  cancelledAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  course        Course        @relation(fields: [courseId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  courseVersion CourseVersion @relation(fields: [courseVersionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([learnerId, status, createdAt])
+  @@index([courseId, status, createdAt])
+  @@index([courseVersionId, status])
+  @@index([status, expiresAt])
 }
 
 // =============================================================

@@ -43,6 +43,11 @@ export type CourseVersionAudit = Prisma.CourseVersionAuditModel
  */
 export type CourseVersionLineage = Prisma.CourseVersionLineageModel
 /**
+ * Model Enrollment
+ *
+ */
+export type Enrollment = Prisma.EnrollmentModel
+/**
  * Model CourseCatalogProjection
  * *
  *  * CourseCatalogProjection

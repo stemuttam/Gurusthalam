@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 
 import type { CourseQueryRequest } from '@gurusthalam/courses';
@@ -11,8 +13,40 @@ describe('PrismaCourseQuery — PostgreSQL integration — 4.14-H', () => {
 
   const query = new PrismaCourseQuery(prisma);
 
-  const courseIdPrefix = 'course-query-4-14-h-';
-  const testInstructorId = 'course-query-4-14-h-test-instructor';
+  /**
+   * PostgreSQL integration tests may execute concurrently with other
+   * integration suites against the same database.
+   *
+   * These tests therefore MUST NOT use globally deterministic identities.
+   *
+   * Isolation is deliberately two-level:
+   *
+   * 1. A suite-level namespace prevents collisions with other executions of
+   *    this suite/process.
+   * 2. A fresh per-test namespace prevents collisions between individual
+   *    H1-H24 scenarios and protects the suite from stale rows left behind
+   *    by an interrupted/failed test.
+   *
+   * The query layer filters by instructorId as well as course attributes,
+   * therefore instructor identities are isolated together with course IDs.
+   *
+   * We intentionally do not disable Vitest parallelism and do not modify the
+   * production PrismaCourseQuery implementation merely to accommodate tests.
+   */
+
+  const suiteIsolationPrefix = `course-query-4-14-h-${process.pid}-${randomUUID()}`;
+
+  let courseIdPrefix!: string;
+  let testInstructorId!: string;
+  let secondaryInstructorId!: string;
+
+  function createTestIdentity(): void {
+    const testIdentity = `${suiteIsolationPrefix}-${randomUUID()}`;
+
+    courseIdPrefix = `${testIdentity}-`;
+    testInstructorId = `${testIdentity}-test-instructor`;
+    secondaryInstructorId = `${testIdentity}-secondary-instructor`;
+  }
 
   function courseId(suffix: string): string {
     return `${courseIdPrefix}${suffix}`;
@@ -50,16 +84,25 @@ describe('PrismaCourseQuery — PostgreSQL integration — 4.14-H', () => {
     };
   }
 
+  /**
+   * Deletes only rows belonging to this test suite's unique namespace.
+   *
+   * Because the namespace itself contains a UUID, this cleanup cannot touch
+   * rows belonging to another execution of this suite.
+   */
   async function clearRows(): Promise<void> {
     await prisma.courseCatalogProjection.deleteMany({
       where: {
         courseId: {
-          startsWith: courseIdPrefix,
+          startsWith: suiteIsolationPrefix,
         },
       },
     });
   }
 
+  /**
+   * Seeds only the current test's isolated fixture rows.
+   */
   async function seed(
     projections: readonly ReturnType<typeof projection>[],
   ): Promise<void> {
@@ -68,6 +111,12 @@ describe('PrismaCourseQuery — PostgreSQL integration — 4.14-H', () => {
     });
   }
 
+  /**
+   * Executes the production CourseQuery contract with safe defaults for the
+   * current isolated test identity.
+   *
+   * Individual tests may override any request property explicitly.
+   */
   async function search(overrides: Partial<CourseQueryRequest> = {}) {
     const request: CourseQueryRequest = {
       page: 1,
@@ -80,7 +129,14 @@ describe('PrismaCourseQuery — PostgreSQL integration — 4.14-H', () => {
   }
 
   beforeEach(async () => {
+    /*
+     * Each test receives a completely new namespace.
+     *
+     * We intentionally create the identity after cleanup so cleanup never
+     * depends on mutable per-test identity state.
+     */
     await clearRows();
+    createTestIdentity();
   });
 
   afterAll(async () => {
@@ -261,7 +317,6 @@ describe('PrismaCourseQuery — PostgreSQL integration — 4.14-H', () => {
     });
 
     expect(result.items).toHaveLength(2);
-
     expect(result.meta.total).toBe(3);
     expect(result.meta.totalPages).toBe(2);
     expect(result.meta.hasNextPage).toBe(true);
@@ -388,18 +443,18 @@ describe('PrismaCourseQuery — PostgreSQL integration — 4.14-H', () => {
   it('H12 — filters by instructorId', async () => {
     await seed([
       projection('001', {
-        instructorId: 'instructor-001',
+        instructorId: testInstructorId,
       }),
       projection('002', {
-        instructorId: 'instructor-002',
+        instructorId: secondaryInstructorId,
       }),
       projection('003', {
-        instructorId: 'instructor-001',
+        instructorId: testInstructorId,
       }),
     ]);
 
     const result = await search({
-      instructorId: 'instructor-001',
+      instructorId: testInstructorId,
     });
 
     expect(result.items.map((item) => item.id)).toEqual([
@@ -651,7 +706,7 @@ describe('PrismaCourseQuery — PostgreSQL integration — 4.14-H', () => {
 
   /*
    * --------------------------------------------------------------------------
-   * H21 — H25
+   * H21 — H24
    * Combined filtering, sorting and pagination
    * --------------------------------------------------------------------------
    */
@@ -694,29 +749,29 @@ describe('PrismaCourseQuery — PostgreSQL integration — 4.14-H', () => {
       projection('001', {
         level: 'ADVANCED',
         type: 'SELF_PACED',
-        instructorId: 'instructor-001',
+        instructorId: testInstructorId,
       }),
       projection('002', {
         level: 'ADVANCED',
         type: 'LIVE',
-        instructorId: 'instructor-001',
+        instructorId: testInstructorId,
       }),
       projection('003', {
         level: 'ADVANCED',
         type: 'SELF_PACED',
-        instructorId: 'instructor-002',
+        instructorId: secondaryInstructorId,
       }),
       projection('004', {
         level: 'BEGINNER',
         type: 'SELF_PACED',
-        instructorId: 'instructor-001',
+        instructorId: testInstructorId,
       }),
     ]);
 
     const result = await search({
       level: 'ADVANCED',
       type: 'SELF_PACED',
-      instructorId: 'instructor-001',
+      instructorId: testInstructorId,
     });
 
     expect(result.items.map((item) => item.id)).toEqual([courseId('001')]);

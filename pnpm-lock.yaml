@@ -232,6 +232,9 @@ importers:
       '@gurusthalam/database':
         specifier: workspace:*
         version: link:../../libs/shared/database
+      '@gurusthalam/learning':
+        specifier: workspace:*
+        version: link:../../libs/learning
       '@gurusthalam/logger':
         specifier: workspace:*
         version: link:../../libs/shared/logger
@@ -320,6 +323,18 @@ importers:
       '@gurusthalam/validation':
         specifier: workspace:*
         version: link:../shared/validation
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+
+  libs/learning:
+    dependencies:
+      '@gurusthalam/courses':
+        specifier: workspace:*
+        version: link:../courses
       tslib:
         specifier: ^2.3.0
         version: 2.8.1

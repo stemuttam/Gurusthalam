@@ -43,6 +43,9 @@
     },
     {
       "path": "./libs/courses"
+    },
+    {
+      "path": "./libs/learning"
     }
   ]
 }

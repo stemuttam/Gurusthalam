@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 
 import type {
@@ -22,48 +23,54 @@ describe('Course read-model PostgreSQL persistence — 4.14-G', () => {
   const searchPersistence = new PrismaCourseSearchProjectionPersistence(prisma);
 
   /**
+
    * PostgreSQL integration tests may execute concurrently with other
+
    * integration suites in the same Vitest worker/process.
+
    *
+
    * Therefore this suite must never use a globally fixed Course identity.
+
    *
+
    * The process id creates a process-scoped identity while keeping the
+
    * identity deterministic for the lifetime of this test suite.
+
    */
+
   const isolationPrefix = `course-read-model-g-regression-${process.pid}`;
+  let courseId!: string;
+  let testInstructorId!: string;
+  let baseCatalogProjection!: CourseCatalogProjection;
+  let baseSearchProjection!: CourseSearchProjection;
 
-  const courseId = `${isolationPrefix}-001`;
-
-  /**
-   * This is the identity used by the original 4.14-G test suite before
-   * process-scoped isolation was introduced.
-   *
-   * It is retained only for deterministic cleanup of a possible stale row
-   * left behind by an earlier local test run.
-   *
-   * It is NOT used by any new test data.
-   */
   const legacyCourseId = 'course-read-model-g-regression-001';
 
-  const baseCatalogProjection: CourseCatalogProjection = {
-    courseId,
-    title: 'Introduction to Physics',
-    description: 'Mechanics and motion.',
-    level: 'BEGINNER',
-    type: 'SELF_PACED',
-    visibility: 'PUBLIC',
-    status: 'PUBLISHED',
-    instructorId: 'instructor-001',
-    createdAt: new Date('2026-01-01T00:00:00.000Z'),
-    updatedAt: new Date('2026-01-02T00:00:00.000Z'),
-    projectionSchemaVersion: 1,
-  };
-
-  const baseSearchProjection: CourseSearchProjection = {
-    ...baseCatalogProjection,
-    searchText: 'Introduction to Physics Mechanics and motion.',
-    searchProjectionSchemaVersion: 1,
-  };
+  function createTestIdentity(): void {
+    const testIdentity = `${isolationPrefix}-${randomUUID()}`;
+    courseId = `${testIdentity}-course`;
+    testInstructorId = `${testIdentity}-instructor`;
+    baseCatalogProjection = {
+      courseId,
+      title: 'Introduction to Physics',
+      description: 'Mechanics and motion.',
+      level: 'BEGINNER',
+      type: 'SELF_PACED',
+      visibility: 'PUBLIC',
+      status: 'PUBLISHED',
+      instructorId: testInstructorId,
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-01-02T00:00:00.000Z'),
+      projectionSchemaVersion: 1,
+    };
+    baseSearchProjection = {
+      ...baseCatalogProjection,
+      searchText: 'Introduction to Physics Mechanics and motion.',
+      searchProjectionSchemaVersion: 1,
+    };
+  }
 
   function catalogAt(
     updatedAt: string,
@@ -101,6 +108,7 @@ describe('Course read-model PostgreSQL persistence — 4.14-G', () => {
 
         return current;
       },
+
       undefined,
     );
 
@@ -125,6 +133,7 @@ describe('Course read-model PostgreSQL persistence — 4.14-G', () => {
 
         return current;
       },
+
       undefined,
     );
 
@@ -136,37 +145,43 @@ describe('Course read-model PostgreSQL persistence — 4.14-G', () => {
   }
 
   /**
+
    * Removes only rows owned by this test suite.
+
    *
+
    * The current process-scoped identity is always removed.
+
    *
+
    * The legacy fixed identity is also removed to clean up stale data
+
    * created by older versions of this integration test.
+
    *
+
    * No global truncation or unrestricted delete is performed.
+
    */
+
   async function clearProjectionRows(): Promise<void> {
-    const courseIds = [courseId, legacyCourseId];
-
     await prisma.courseSearchProjection.deleteMany({
-      where: {
-        courseId: {
-          in: courseIds,
-        },
-      },
+      where: { courseId: { startsWith: isolationPrefix } },
     });
-
     await prisma.courseCatalogProjection.deleteMany({
-      where: {
-        courseId: {
-          in: courseIds,
-        },
-      },
+      where: { courseId: { startsWith: isolationPrefix } },
+    });
+    await prisma.courseSearchProjection.deleteMany({
+      where: { courseId: legacyCourseId },
+    });
+    await prisma.courseCatalogProjection.deleteMany({
+      where: { courseId: legacyCourseId },
     });
   }
 
   beforeEach(async () => {
     await clearProjectionRows();
+    createTestIdentity();
   });
 
   afterAll(async () => {
@@ -175,10 +190,15 @@ describe('Course read-model PostgreSQL persistence — 4.14-G', () => {
   });
 
   /*
+
    * --------------------------------------------------------------------------
+
    * G1 — G10
+
    * Deterministic replay, ordering and lifecycle independence
+
    * --------------------------------------------------------------------------
+
    */
 
   it('G1 — creates a catalog projection on first write', async () => {
@@ -220,6 +240,7 @@ describe('Course read-model PostgreSQL persistence — 4.14-G', () => {
 
     const replay = catalogAt('2026-01-02T00:00:00.000Z', {
       title: baseCatalogProjection.title,
+
       description: baseCatalogProjection.description,
     });
 
@@ -235,7 +256,9 @@ describe('Course read-model PostgreSQL persistence — 4.14-G', () => {
 
     const newer = catalogAt('2026-01-03T00:00:00.000Z', {
       title: 'Advanced Physics',
+
       description: 'Advanced mechanics and motion.',
+
       level: 'ADVANCED',
     });
 
@@ -274,6 +297,7 @@ describe('Course read-model PostgreSQL persistence — 4.14-G', () => {
     });
 
     await catalogPersistence.upsert(initial);
+
     await catalogPersistence.upsert(newer);
 
     const staleReplay = await catalogPersistence.upsert(initial);
@@ -293,6 +317,7 @@ describe('Course read-model PostgreSQL persistence — 4.14-G', () => {
 
   it('G8 — removes only the catalog projection', async () => {
     await catalogPersistence.upsert(baseCatalogProjection);
+
     await searchPersistence.upsert(baseSearchProjection);
 
     await catalogPersistence.removeByCourseId(courseId);
@@ -333,11 +358,13 @@ describe('Course read-model PostgreSQL persistence — 4.14-G', () => {
   it('G10 — rejects a stale search projection', async () => {
     const newer = searchAt('2026-01-04T00:00:00.000Z', {
       title: 'Newest Physics',
+
       searchText: 'Newest Physics',
     });
 
     const older = searchAt('2026-01-02T00:00:00.000Z', {
       title: 'Old Physics',
+
       searchText: 'Old Physics',
     });
 
@@ -351,10 +378,15 @@ describe('Course read-model PostgreSQL persistence — 4.14-G', () => {
   });
 
   /*
+
    * --------------------------------------------------------------------------
+
    * G11 — G20
+
    * Database-level atomic concurrency boundary
+
    * --------------------------------------------------------------------------
+
    */
 
   it('G11 — safely converges concurrent catalog writes to the newest timestamp', async () => {
@@ -368,7 +400,9 @@ describe('Course read-model PostgreSQL persistence — 4.14-G', () => {
 
     await Promise.all(
       [...projections]
+
         .reverse()
+
         .map((projection) => catalogPersistence.upsert(projection)),
     );
 
@@ -389,6 +423,7 @@ describe('Course read-model PostgreSQL persistence — 4.14-G', () => {
     const projections = Array.from({ length: 20 }, (_, index) =>
       searchAt(`2026-01-01T00:00:${String(index).padStart(2, '0')}.000Z`, {
         title: `Physics ${index}`,
+
         searchText: `Physics ${index}`,
       }),
     );
@@ -397,7 +432,9 @@ describe('Course read-model PostgreSQL persistence — 4.14-G', () => {
 
     await Promise.all(
       [...projections]
+
         .reverse()
+
         .map((projection) => searchPersistence.upsert(projection)),
     );
 
@@ -427,15 +464,20 @@ describe('Course read-model PostgreSQL persistence — 4.14-G', () => {
 
     const results = await Promise.all([
       catalogPersistence.upsert(older),
+
       catalogPersistence.upsert(newer),
+
       catalogPersistence.upsert(older),
+
       catalogPersistence.upsert(newer),
     ]);
 
     expect(results[0]).toBe(false);
+
     expect(results[2]).toBe(false);
 
     expect(results[1]).toBe(true);
+
     expect(results[3]).toBe(true);
 
     await expect(catalogPersistence.findByCourseId(courseId)).resolves.toEqual(
@@ -446,11 +488,13 @@ describe('Course read-model PostgreSQL persistence — 4.14-G', () => {
   it('G14 — prevents an older concurrent search write from regressing state', async () => {
     const newer = searchAt('2026-02-01T00:00:00.000Z', {
       title: 'Newest Physics',
+
       searchText: 'Newest Physics',
     });
 
     const older = searchAt('2026-01-01T00:00:00.000Z', {
       title: 'Old Physics',
+
       searchText: 'Old Physics',
     });
 
@@ -458,15 +502,20 @@ describe('Course read-model PostgreSQL persistence — 4.14-G', () => {
 
     const results = await Promise.all([
       searchPersistence.upsert(older),
+
       searchPersistence.upsert(newer),
+
       searchPersistence.upsert(older),
+
       searchPersistence.upsert(newer),
     ]);
 
     expect(results[0]).toBe(false);
+
     expect(results[2]).toBe(false);
 
     expect(results[1]).toBe(true);
+
     expect(results[3]).toBe(true);
 
     await expect(searchPersistence.findByCourseId(courseId)).resolves.toEqual(
@@ -479,15 +528,19 @@ describe('Course read-model PostgreSQL persistence — 4.14-G', () => {
       catalogAt('2026-03-05T00:00:00.000Z', {
         title: 'Version 5',
       }),
+
       catalogAt('2026-03-01T00:00:00.000Z', {
         title: 'Version 1',
       }),
+
       catalogAt('2026-03-04T00:00:00.000Z', {
         title: 'Version 4',
       }),
+
       catalogAt('2026-03-02T00:00:00.000Z', {
         title: 'Version 2',
       }),
+
       catalogAt('2026-03-03T00:00:00.000Z', {
         title: 'Version 3',
       }),
@@ -532,6 +585,7 @@ describe('Course read-model PostgreSQL persistence — 4.14-G', () => {
     const projections = Array.from({ length: 50 }, () =>
       searchAt('2026-04-01T00:00:00.000Z', {
         title: 'Concurrent Physics',
+
         searchText: 'Concurrent Physics',
       }),
     );
@@ -565,6 +619,7 @@ describe('Course read-model PostgreSQL persistence — 4.14-G', () => {
     await searchPersistence.upsert(
       searchAt('2026-06-01T00:00:00.000Z', {
         title: 'Search Physics',
+
         searchText: 'Search Physics',
       }),
     );
@@ -579,6 +634,7 @@ describe('Course read-model PostgreSQL persistence — 4.14-G', () => {
       searchPersistence.findByCourseId(courseId),
     ).resolves.toMatchObject({
       title: 'Search Physics',
+
       searchText: 'Search Physics',
     });
   });
@@ -614,6 +670,7 @@ describe('Course read-model PostgreSQL persistence — 4.14-G', () => {
   it('G20 — remains idempotent under high-contention duplicate replay', async () => {
     const projection = catalogAt('2026-08-01T00:00:00.000Z', {
       title: 'High Contention Physics',
+
       description: 'Replay-safe projection.',
     });
 
@@ -639,9 +696,13 @@ describe('Course read-model PostgreSQL persistence — 4.14-G', () => {
   });
 
   /*
+
    * --------------------------------------------------------------------------
+
    * Existing foundational persistence guarantees
+
    * --------------------------------------------------------------------------
+
    */
 
   it('preserves catalog/search independence when only catalog is written', async () => {
@@ -670,6 +731,7 @@ describe('Course read-model PostgreSQL persistence — 4.14-G', () => {
 
   it('removes search without touching catalog', async () => {
     await catalogPersistence.upsert(baseCatalogProjection);
+
     await searchPersistence.upsert(baseSearchProjection);
 
     await searchPersistence.removeByCourseId(courseId);

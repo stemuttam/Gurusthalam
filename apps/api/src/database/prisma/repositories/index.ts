@@ -11,10 +11,13 @@ export {
   PrismaCourseVersionAuditRepository,
   PrismaCourseVersionLineageRepository,
 } from './courses/index.js';
+
 export {} from '../read-models/index.js';
 
 export {
   ENROLLMENT_REPOSITORY,
+  ENTITLEMENT_REPOSITORY,
   LearningPersistenceModule,
   PrismaEnrollmentRepository,
+  PrismaEntitlementRepository,
 } from './learning/index.js';

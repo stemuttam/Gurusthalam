@@ -4,9 +4,14 @@ import { DatabaseModule } from '../../../database.module.js';
 
 import { PrismaService } from '../../prisma.service.js';
 
-import { PrismaEnrollmentRepository } from './prisma-enrollment.repository.js';
+import {
+  ENTITLEMENT_REPOSITORY,
+  ENROLLMENT_REPOSITORY,
+} from './learning-repository.tokens.js';
 
-import { ENROLLMENT_REPOSITORY } from './learning-repository.tokens.js';
+import { PrismaEntitlementRepository } from './prisma-entitlement.repository.js';
+
+import { PrismaEnrollmentRepository } from './prisma-enrollment.repository.js';
 
 @Module({
   imports: [DatabaseModule],
@@ -20,8 +25,17 @@ import { ENROLLMENT_REPOSITORY } from './learning-repository.tokens.js';
       useFactory: (prisma: PrismaService): PrismaEnrollmentRepository =>
         new PrismaEnrollmentRepository(prisma),
     },
+
+    {
+      provide: ENTITLEMENT_REPOSITORY,
+
+      inject: [PrismaService],
+
+      useFactory: (prisma: PrismaService): PrismaEntitlementRepository =>
+        new PrismaEntitlementRepository(prisma),
+    },
   ],
 
-  exports: [ENROLLMENT_REPOSITORY],
+  exports: [ENROLLMENT_REPOSITORY, ENTITLEMENT_REPOSITORY],
 })
 export class LearningPersistenceModule {}

@@ -2,7 +2,9 @@ import { Module } from '@nestjs/common';
 
 import {
   DefaultEnrollmentApplicationService,
+  DefaultEntitlementApplicationService,
   type EnrollmentRepository,
+  type EntitlementRepository,
 } from '@gurusthalam/learning';
 
 import type {
@@ -17,6 +19,7 @@ import {
 } from '../database/prisma/repositories/index.js';
 
 import {
+  ENTITLEMENT_REPOSITORY,
   ENROLLMENT_REPOSITORY,
   LearningPersistenceModule,
 } from '../database/prisma/repositories/learning/index.js';
@@ -45,8 +48,26 @@ import {
           courseVersionRepository,
         ),
     },
+
+    {
+      provide: DefaultEntitlementApplicationService,
+
+      inject: [ENTITLEMENT_REPOSITORY, ENROLLMENT_REPOSITORY],
+
+      useFactory: (
+        entitlementRepository: EntitlementRepository,
+        enrollmentRepository: EnrollmentRepository,
+      ): DefaultEntitlementApplicationService =>
+        new DefaultEntitlementApplicationService(
+          entitlementRepository,
+          enrollmentRepository,
+        ),
+    },
   ],
 
-  exports: [DefaultEnrollmentApplicationService],
+  exports: [
+    DefaultEnrollmentApplicationService,
+    DefaultEntitlementApplicationService,
+  ],
 })
 export class LearningApplicationModule {}

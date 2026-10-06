@@ -51,20 +51,70 @@ function createPersistenceRecord(
 }
 
 function createPrismaMock() {
-  return {
+  const findUnique = vi.fn();
+
+  const findFirst = vi.fn();
+
+  const upsert = vi.fn();
+
+  const outboxCreate = vi.fn();
+
+  type TransactionClient = {
     entitlement: {
-      findUnique: vi.fn(),
-      findFirst: vi.fn(),
-      upsert: vi.fn(),
+      upsert: typeof upsert;
+    };
+
+    outboxEvent: {
+      create: typeof outboxCreate;
+    };
+  };
+
+  const transactionClient: TransactionClient = {
+    entitlement: {
+      upsert,
     },
-  } as unknown as PrismaClient;
+
+    outboxEvent: {
+      create: outboxCreate,
+    },
+  };
+
+  const transaction = vi.fn(
+    async (
+      callback: (transactionClient: TransactionClient) => Promise<void>,
+    ): Promise<void> => callback(transactionClient),
+  );
+
+  return {
+    prisma: {
+      entitlement: {
+        findUnique,
+
+        findFirst,
+      },
+
+      $transaction: transaction,
+    } as unknown as PrismaClient,
+
+    mocks: {
+      findUnique,
+
+      findFirst,
+
+      upsert,
+
+      outboxCreate,
+
+      transaction,
+    },
+  };
 }
 
 describe('PrismaEntitlementRepository', () => {
   it('returns null when Entitlement does not exist', async () => {
-    const prisma = createPrismaMock();
+    const { prisma, mocks } = createPrismaMock();
 
-    vi.mocked(prisma.entitlement.findUnique).mockResolvedValue(null);
+    mocks.findUnique.mockResolvedValue(null);
 
     const repository = new PrismaEntitlementRepository(prisma);
 
@@ -72,7 +122,7 @@ describe('PrismaEntitlementRepository', () => {
 
     expect(result).toBeNull();
 
-    expect(prisma.entitlement.findUnique).toHaveBeenCalledWith({
+    expect(mocks.findUnique).toHaveBeenCalledWith({
       where: {
         id: 'missing-entitlement',
       },
@@ -80,11 +130,11 @@ describe('PrismaEntitlementRepository', () => {
   });
 
   it('rehydrates an Entitlement without generating domain events', async () => {
-    const prisma = createPrismaMock();
+    const { prisma, mocks } = createPrismaMock();
 
     const record = createPersistenceRecord();
 
-    vi.mocked(prisma.entitlement.findUnique).mockResolvedValue(record as never);
+    mocks.findUnique.mockResolvedValue(record as never);
 
     const repository = new PrismaEntitlementRepository(prisma);
 
@@ -110,13 +160,13 @@ describe('PrismaEntitlementRepository', () => {
   });
 
   it('finds ACTIVE Entitlement for an Enrollment', async () => {
-    const prisma = createPrismaMock();
+    const { prisma, mocks } = createPrismaMock();
 
     const record = createPersistenceRecord({
       status: EntitlementStatus.ACTIVE,
     });
 
-    vi.mocked(prisma.entitlement.findFirst).mockResolvedValue(record as never);
+    mocks.findFirst.mockResolvedValue(record as never);
 
     const repository = new PrismaEntitlementRepository(prisma);
 
@@ -126,7 +176,7 @@ describe('PrismaEntitlementRepository', () => {
 
     expect(result?.id).toBe(record.id);
 
-    expect(prisma.entitlement.findFirst).toHaveBeenCalledWith({
+    expect(mocks.findFirst).toHaveBeenCalledWith({
       where: {
         enrollmentId: record.enrollmentId,
 
@@ -142,13 +192,13 @@ describe('PrismaEntitlementRepository', () => {
   });
 
   it('finds SUSPENDED Entitlement for an Enrollment', async () => {
-    const prisma = createPrismaMock();
+    const { prisma, mocks } = createPrismaMock();
 
     const record = createPersistenceRecord({
       status: EntitlementStatus.SUSPENDED,
     });
 
-    vi.mocked(prisma.entitlement.findFirst).mockResolvedValue(record as never);
+    mocks.findFirst.mockResolvedValue(record as never);
 
     const repository = new PrismaEntitlementRepository(prisma);
 
@@ -160,9 +210,9 @@ describe('PrismaEntitlementRepository', () => {
   });
 
   it('returns null when no ACTIVE or SUSPENDED Entitlement exists', async () => {
-    const prisma = createPrismaMock();
+    const { prisma, mocks } = createPrismaMock();
 
-    vi.mocked(prisma.entitlement.findFirst).mockResolvedValue(null);
+    mocks.findFirst.mockResolvedValue(null);
 
     const repository = new PrismaEntitlementRepository(prisma);
 
@@ -171,12 +221,14 @@ describe('PrismaEntitlementRepository', () => {
     expect(result).toBeNull();
   });
 
-  it('persists a newly created Entitlement', async () => {
-    const prisma = createPrismaMock();
+  it('persists a newly created Entitlement and its domain event transactionally', async () => {
+    const { prisma, mocks } = createPrismaMock();
 
-    vi.mocked(prisma.entitlement.upsert).mockResolvedValue(
-      createPersistenceRecord() as never,
-    );
+    mocks.upsert.mockResolvedValue(createPersistenceRecord() as never);
+
+    mocks.outboxCreate.mockResolvedValue({
+      id: 'outbox-1',
+    });
 
     const repository = new PrismaEntitlementRepository(prisma);
 
@@ -192,11 +244,27 @@ describe('PrismaEntitlementRepository', () => {
       now: CREATED_AT,
     });
 
+    const pendingEvents = entitlement.getDomainEvents();
+
+    expect(pendingEvents).toHaveLength(1);
+
+    const event = pendingEvents[0];
+
+    if (event === undefined) {
+      throw new Error('Expected Entitlement domain event.');
+    }
+
+    expect(event.eventName).toBe('learning.entitlement.granted');
+
     await repository.save(entitlement);
 
-    expect(prisma.entitlement.upsert).toHaveBeenCalledTimes(1);
+    expect(mocks.transaction).toHaveBeenCalledTimes(1);
 
-    const call = vi.mocked(prisma.entitlement.upsert).mock.calls[0];
+    expect(mocks.upsert).toHaveBeenCalledTimes(1);
+
+    expect(mocks.outboxCreate).toHaveBeenCalledTimes(1);
+
+    const call = mocks.upsert.mock.calls[0];
 
     expect(call).toBeDefined();
 
@@ -240,21 +308,67 @@ describe('PrismaEntitlementRepository', () => {
       revokedAt: null,
     });
 
+    expect(mocks.outboxCreate).toHaveBeenCalledWith({
+      data: {
+        eventType: event.eventName,
+
+        aggregateType: 'Entitlement',
+
+        aggregateId: entitlement.id,
+
+        dedupeKey: `learning.entitlement:${event.eventId}`,
+
+        payload: {
+          eventId: event.eventId,
+
+          eventName: event.eventName,
+
+          eventVersion: event.eventVersion,
+
+          aggregateId: event.aggregateId,
+
+          occurredAt: event.occurredAt.toISOString(),
+
+          payload:
+            event.eventName === 'learning.entitlement.granted'
+              ? {
+                  ...event.payload,
+                  startsAt: event.payload.startsAt.toISOString(),
+                  expiresAt: event.payload.expiresAt?.toISOString() ?? null,
+                }
+              : event.payload,
+        },
+
+        status: 'PENDING',
+
+        attempts: 0,
+
+        availableAt: expect.any(Date),
+      },
+    });
+
     /*
-     * Phase 5.2-G deliberately does not
-     * drain domain events.
+     * Phase 5.2-H:
+     *
+     * Domain events are drained only after the
+     * transactional Entitlement + Outbox persistence
+     * successfully completes.
      */
-    expect(entitlement.getDomainEvents()).toHaveLength(1);
+    expect(entitlement.getDomainEvents()).toHaveLength(0);
   });
 
-  it('persists lifecycle state without draining domain events', async () => {
-    const prisma = createPrismaMock();
+  it('persists lifecycle state and drains domain events after successful transaction', async () => {
+    const { prisma, mocks } = createPrismaMock();
 
-    vi.mocked(prisma.entitlement.upsert).mockResolvedValue(
+    mocks.upsert.mockResolvedValue(
       createPersistenceRecord({
         status: EntitlementStatus.SUSPENDED,
       }) as never,
     );
+
+    mocks.outboxCreate.mockResolvedValue({
+      id: 'outbox-1',
+    });
 
     const repository = new PrismaEntitlementRepository(prisma);
 
@@ -264,18 +378,108 @@ describe('PrismaEntitlementRepository', () => {
 
     expect(entitlement.status).toBe(EntitlementStatus.SUSPENDED);
 
-    expect(entitlement.getDomainEvents()).toHaveLength(1);
+    const pendingEvents = entitlement.getDomainEvents();
+
+    expect(pendingEvents).toHaveLength(1);
+
+    const event = pendingEvents[0];
+
+    if (event === undefined) {
+      throw new Error('Expected Entitlement lifecycle event.');
+    }
 
     await repository.save(entitlement);
 
+    expect(mocks.transaction).toHaveBeenCalledTimes(1);
+
+    expect(mocks.upsert).toHaveBeenCalledTimes(1);
+
+    expect(mocks.outboxCreate).toHaveBeenCalledTimes(1);
+
+    expect(mocks.outboxCreate).toHaveBeenCalledWith({
+      data: {
+        eventType: event.eventName,
+
+        aggregateType: 'Entitlement',
+
+        aggregateId: entitlement.id,
+
+        dedupeKey: `learning.entitlement:${event.eventId}`,
+
+        payload: {
+          eventId: event.eventId,
+
+          eventName: event.eventName,
+
+          eventVersion: event.eventVersion,
+
+          aggregateId: event.aggregateId,
+
+          occurredAt: event.occurredAt.toISOString(),
+
+          payload: event.payload,
+        },
+
+        status: 'PENDING',
+
+        attempts: 0,
+
+        availableAt: expect.any(Date),
+      },
+    });
+
+    expect(entitlement.getDomainEvents()).toHaveLength(0);
+  });
+
+  it('keeps domain events pending when the transactional Outbox write fails', async () => {
+    const { prisma, mocks } = createPrismaMock();
+
+    mocks.upsert.mockResolvedValue(createPersistenceRecord() as never);
+
+    mocks.outboxCreate.mockRejectedValue({
+      code: 'P2002',
+
+      message: 'Unique constraint failed.',
+    });
+
+    const repository = new PrismaEntitlementRepository(prisma);
+
+    const entitlement = Entitlement.create({
+      enrollmentId: 'enrollment-1',
+
+      source: EntitlementSource.DIRECT,
+
+      now: CREATED_AT,
+    });
+
+    expect(entitlement.getDomainEvents()).toHaveLength(1);
+
+    await expect(repository.save(entitlement)).rejects.toMatchObject({
+      code: PrismaRepositoryErrorCode.UNIQUE_CONSTRAINT,
+
+      prismaCode: 'P2002',
+    });
+
+    expect(mocks.transaction).toHaveBeenCalledTimes(1);
+
+    expect(mocks.upsert).toHaveBeenCalledTimes(1);
+
+    expect(mocks.outboxCreate).toHaveBeenCalledTimes(1);
+
+    /*
+     * The transaction failed, therefore the aggregate must
+     * retain its pending domain event. The repository must
+     * never drain events before transaction commit.
+     */
     expect(entitlement.getDomainEvents()).toHaveLength(1);
   });
 
   it('maps PostgreSQL unique constraint failures through repository error boundary', async () => {
-    const prisma = createPrismaMock();
+    const { prisma, mocks } = createPrismaMock();
 
-    vi.mocked(prisma.entitlement.upsert).mockRejectedValue({
+    mocks.upsert.mockRejectedValue({
       code: 'P2002',
+
       message: 'Unique constraint failed.',
     });
 
@@ -295,6 +499,12 @@ describe('PrismaEntitlementRepository', () => {
       prismaCode: 'P2002',
     });
 
+    expect(mocks.transaction).toHaveBeenCalledTimes(1);
+
+    expect(mocks.upsert).toHaveBeenCalledTimes(1);
+
+    expect(mocks.outboxCreate).not.toHaveBeenCalled();
+
     await expect(repository.save(entitlement)).rejects.toBeInstanceOf(
       PrismaRepositoryError,
     );
@@ -307,10 +517,11 @@ describe('PrismaEntitlementRepository', () => {
   });
 
   it('does not leak raw Prisma errors', async () => {
-    const prisma = createPrismaMock();
+    const { prisma, mocks } = createPrismaMock();
 
-    vi.mocked(prisma.entitlement.findUnique).mockRejectedValue({
+    mocks.findUnique.mockRejectedValue({
       code: 'P2025',
+
       message: 'Record not found.',
     });
 

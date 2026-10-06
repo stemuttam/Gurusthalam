@@ -1,37 +1,50 @@
 import { Entitlement } from '@gurusthalam/learning';
 
 import type {
+  EntitlementEvent,
   EntitlementProps,
   EntitlementRepository,
 } from '@gurusthalam/learning';
 
-import type { PrismaClient } from '@gurusthalam/database';
+import type { Prisma, PrismaClient } from '@gurusthalam/database';
 
 import { withPrismaRepositoryErrorBoundary } from '../prisma-repository-error.mapper.js';
 
 /**
  * Prisma-backed Entitlement repository.
  *
- * Phase 5.2-G responsibility:
+ * Phase 5.2-H responsibility:
  *
  *   Entitlement aggregate state
+ *          +
+ *   Entitlement domain events
  *          ↓
- *   PostgreSQL Entitlement
+ *   PostgreSQL transaction
+ *          ↓
+ *   Entitlement + OutboxEvent
  *
- * This repository intentionally does NOT drain domain events.
+ * Both records are committed atomically.
  *
- * Transactional domain-event → Outbox persistence belongs to
- * Phase 5.2-H, where Entitlement state and its corresponding
- * OutboxEvent records will become one atomic PostgreSQL transaction.
+ * Domain events are intentionally drained from the aggregate ONLY
+ * after the PostgreSQL transaction has successfully committed.
  *
- * The aggregate therefore retains its pending domain events after
- * a successful Phase 5.2-G persistence operation.
+ * This guarantees:
+ *
+ * - Entitlement persistence failure -> no Outbox event
+ * - Outbox persistence failure -> Entitlement mutation rolls back
+ * - transaction failure -> domain events remain available
+ * - successful commit -> domain events are consumed
+ *
+ * The repository therefore owns the complete transactional persistence
+ * boundary for the Entitlement aggregate.
  */
 export class PrismaEntitlementRepository implements EntitlementRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
   /**
-   * Finds an Entitlement by its aggregate identity.
+   * Finds an Entitlement by aggregate identity.
+   *
+   * Rehydration never creates domain events.
    */
   async findById(id: string): Promise<Entitlement | null> {
     return withPrismaRepositoryErrorBoundary(
@@ -53,14 +66,13 @@ export class PrismaEntitlementRepository implements EntitlementRepository {
    * for an Enrollment.
    *
    * ACTIVE and SUSPENDED are both included because PostgreSQL
-   * enforces their mutual exclusivity through:
-   *
-   *   Entitlement_active_enrollment_unique
+   * treats both states as occupying the same active entitlement
+   * uniqueness boundary.
    *
    * Terminal states are deliberately excluded:
    *
-   *   REVOKED
-   *   EXPIRED
+   * - REVOKED
+   * - EXPIRED
    *
    * PostgreSQL remains the final concurrency authority.
    */
@@ -73,12 +85,10 @@ export class PrismaEntitlementRepository implements EntitlementRepository {
         const record = await this.prisma.entitlement.findFirst({
           where: {
             enrollmentId,
-
             status: {
               in: ['ACTIVE', 'SUSPENDED'],
             },
           },
-
           orderBy: {
             createdAt: 'desc',
           },
@@ -90,20 +100,36 @@ export class PrismaEntitlementRepository implements EntitlementRepository {
   }
 
   /**
-   * Persists Entitlement aggregate state.
+   * Persists Entitlement aggregate state and all currently pending
+   * Entitlement domain events atomically.
    *
-   * IMPORTANT:
+   * Transaction boundary:
    *
-   * Domain events are intentionally NOT pulled here.
+   *   1. Entitlement state
+   *   2. Entitlement domain events -> OutboxEvent
    *
-   * This preserves the aggregate's pending events until
-   * Phase 5.2-H introduces the transactional Outbox boundary.
+   * are persisted using the SAME PostgreSQL transaction.
    *
-   * If persistence fails:
+   * Domain events are snapshotted using getDomainEvents(), which is
+   * non-destructive.
    *
-   * - the database operation is rolled back by Prisma;
-   * - the aggregate remains unchanged in memory;
-   * - pending domain events remain available to the caller.
+   * They are drained ONLY after $transaction() resolves successfully.
+   *
+   * Therefore:
+   *
+   *   Entitlement failure
+   *       -> rollback
+   *       -> no OutboxEvent
+   *       -> events remain pending
+   *
+   *   Outbox failure
+   *       -> rollback
+   *       -> Entitlement state remains unchanged in PostgreSQL
+   *       -> events remain pending
+   *
+   *   Successful commit
+   *       -> Entitlement + OutboxEvent durable
+   *       -> aggregate events consumed
    */
   async save(entitlement: Entitlement): Promise<void> {
     await withPrismaRepositoryErrorBoundary(
@@ -111,91 +137,176 @@ export class PrismaEntitlementRepository implements EntitlementRepository {
       async () => {
         const persistence = this.toPersistence(entitlement);
 
-        await this.prisma.entitlement.upsert({
-          where: {
-            id: persistence.id,
-          },
+        /*
+         * ---------------------------------------------------------
+         * Domain-event snapshot
+         * ---------------------------------------------------------
+         *
+         * This is intentionally NON-DESTRUCTIVE.
+         *
+         * Never call pullDomainEvents() before the transaction.
+         */
+        const pendingEvents = entitlement.getDomainEvents();
 
-          create: {
-            id: persistence.id,
+        await this.prisma.$transaction(async (transaction) => {
+          /*
+           * -------------------------------------------------------
+           * 1. Entitlement persistence
+           * -------------------------------------------------------
+           */
+          await transaction.entitlement.upsert({
+            where: {
+              id: persistence.id,
+            },
 
-            enrollmentId: persistence.enrollmentId,
+            create: {
+              id: persistence.id,
+              enrollmentId: persistence.enrollmentId,
+              status: persistence.status,
+              source: persistence.source,
+              startsAt: persistence.startsAt,
+              expiresAt: persistence.expiresAt,
+              revokedAt: persistence.revokedAt,
+              createdAt: persistence.createdAt,
+              updatedAt: persistence.updatedAt,
+            },
 
-            status: persistence.status,
+            update: {
+              enrollmentId: persistence.enrollmentId,
+              status: persistence.status,
+              source: persistence.source,
+              startsAt: persistence.startsAt,
+              expiresAt: persistence.expiresAt,
+              revokedAt: persistence.revokedAt,
+              updatedAt: persistence.updatedAt,
+            },
+          });
 
-            source: persistence.source,
+          /*
+           * -------------------------------------------------------
+           * 2. Domain events -> Outbox
+           * -------------------------------------------------------
+           *
+           * Every currently pending domain event is persisted in
+           * the SAME transaction.
+           *
+           * The complete event envelope is retained in JSON:
+           *
+           * - eventId
+           * - eventName
+           * - eventVersion
+           * - aggregateId
+           * - occurredAt
+           * - payload
+           */
+          for (const event of pendingEvents) {
+            await transaction.outboxEvent.create({
+              data: {
+                eventType: event.eventName,
 
-            startsAt: persistence.startsAt,
+                aggregateType: 'Entitlement',
 
-            expiresAt: persistence.expiresAt,
+                aggregateId: event.aggregateId,
 
-            revokedAt: persistence.revokedAt,
+                dedupeKey: PrismaEntitlementRepository.toDedupeKey(event),
 
-            createdAt: persistence.createdAt,
+                payload: PrismaEntitlementRepository.toOutboxPayload(event),
 
-            updatedAt: persistence.updatedAt,
-          },
+                status: 'PENDING',
 
-          update: {
-            enrollmentId: persistence.enrollmentId,
+                attempts: 0,
 
-            status: persistence.status,
-
-            source: persistence.source,
-
-            startsAt: persistence.startsAt,
-
-            expiresAt: persistence.expiresAt,
-
-            revokedAt: persistence.revokedAt,
-
-            updatedAt: persistence.updatedAt,
-          },
+                availableAt: new Date(),
+              },
+            });
+          }
         });
+
+        /*
+         * ---------------------------------------------------------
+         * Transaction committed successfully.
+         * ---------------------------------------------------------
+         *
+         * Only now is it safe to consume the aggregate events.
+         *
+         * If anything inside the transaction had failed, execution
+         * would have thrown before reaching this point and the
+         * aggregate events would remain available.
+         */
+        if (pendingEvents.length > 0) {
+          entitlement.pullDomainEvents();
+        }
       },
     );
   }
 
   /**
-   * Rehydrates a persistence record into the Entitlement
-   * domain aggregate without generating new domain events.
+   * Rehydrates a persistence record into the Entitlement aggregate.
+   *
+   * Entitlement.rehydrate() intentionally creates no domain events.
    */
   private toDomain(record: EntitlementPersistenceRecord): Entitlement {
     return Entitlement.rehydrate({
       id: record.id,
-
       enrollmentId: record.enrollmentId,
-
       status: record.status,
-
       source: record.source,
-
       startsAt: new Date(record.startsAt),
-
       expiresAt: record.expiresAt === null ? null : new Date(record.expiresAt),
-
       revokedAt: record.revokedAt === null ? null : new Date(record.revokedAt),
-
       createdAt: new Date(record.createdAt),
-
       updatedAt: new Date(record.updatedAt),
     });
   }
 
   /**
-   * Converts the domain aggregate into its persistence
-   * representation.
+   * Converts the domain aggregate into its persistence representation.
    */
   private toPersistence(entitlement: Entitlement): EntitlementProps {
     return entitlement.toPrimitives();
   }
+
+  /**
+   * Generates the durable Outbox deduplication identity.
+   *
+   * One domain-event occurrence has exactly one eventId.
+   *
+   * Event type + aggregate ID alone is insufficient because one
+   * Entitlement can legitimately emit multiple lifecycle events of
+   * the same category across its lifetime.
+   */
+  private static toDedupeKey(event: EntitlementEvent): string {
+    return `learning.entitlement:${event.eventId}`;
+  }
+
+  /**
+   * Converts a domain event into a Prisma JSON-safe Outbox payload.
+   *
+   * Dates are normalized to ISO strings by JSON serialization.
+   *
+   * The complete event envelope is preserved so downstream consumers
+   * never need to reconstruct event metadata from persistence fields.
+   */
+  private static toOutboxPayload(
+    event: EntitlementEvent,
+  ): Prisma.InputJsonValue {
+    return JSON.parse(
+      JSON.stringify({
+        eventId: event.eventId,
+        eventName: event.eventName,
+        eventVersion: event.eventVersion,
+        aggregateId: event.aggregateId,
+        occurredAt: event.occurredAt,
+        payload: event.payload,
+      }),
+    ) as Prisma.InputJsonValue;
+  }
 }
 
 /**
- * Explicit persistence shape used by the repository mapping
- * boundary.
+ * Explicit persistence shape used by the repository mapping boundary.
  *
- * Keeping this alias local prevents Prisma-generated model
- * types from leaking into the domain layer.
+ * Prisma-generated model types intentionally do not leak into the
+ * learning domain package.
  */
 type EntitlementPersistenceRecord = EntitlementProps;

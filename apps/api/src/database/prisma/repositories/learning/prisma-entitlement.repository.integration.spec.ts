@@ -17,7 +17,7 @@ import {
   PrismaRepositoryErrorCode,
 } from '../prisma-repository.error.js';
 
-const TEST_NAMESPACE = `phase-5-2-g-entitlement-${process.pid}-${randomUUID()}`;
+const TEST_NAMESPACE = `phase-5-2-h-entitlement-${process.pid}-${randomUUID()}`;
 
 const TEST_LEARNER_PREFIX = `${TEST_NAMESPACE}-learner-`;
 
@@ -39,6 +39,8 @@ const createdEnrollmentIds = new Set<string>();
 const createdEntitlementIds = new Set<string>();
 
 const createdCourseIds = new Set<string>();
+
+const createdOutboxIds = new Set<string>();
 
 function learnerId(suffix: string): string {
   return `${TEST_LEARNER_PREFIX}${suffix}`;
@@ -70,7 +72,7 @@ async function createEnrollmentFixture(
   await prisma.course.create({
     data: {
       id: courseId,
-      title: `Phase 5.2-G Entitlement Course ${courseId}`,
+      title: `Phase 5.2-H Entitlement Course ${courseId}`,
       description: 'Production PostgreSQL entitlement integration fixture.',
       level: 'BEGINNER',
       type: 'SELF_PACED',
@@ -86,7 +88,7 @@ async function createEnrollmentFixture(
       courseId,
       version: 1,
       status: 'PUBLISHED',
-      title: `Phase 5.2-G Entitlement Course Version ${courseId}`,
+      title: `Phase 5.2-H Entitlement Course Version ${courseId}`,
       description:
         'Published CourseVersion for Entitlement PostgreSQL integration tests.',
       publishedAt: new Date(),
@@ -136,6 +138,40 @@ function createEntitlement(
 
 async function cleanupTestData(): Promise<void> {
   /*
+   * Phase 5.2-H:
+   *
+   * Entitlement persistence now owns the transactional Outbox write.
+   * Therefore OutboxEvent records must be removed before their aggregate
+   * Entitlement records and before the referenced Enrollment records.
+   */
+  if (createdOutboxIds.size > 0) {
+    await prisma.outboxEvent.deleteMany({
+      where: {
+        id: {
+          in: Array.from(createdOutboxIds),
+        },
+      },
+    });
+  }
+
+  /*
+   * Defensive namespace cleanup for Entitlement Outbox records.
+   *
+   * This handles records that were created successfully but whose IDs
+   * could not be tracked because a test failed immediately afterwards.
+   */
+  if (createdEntitlementIds.size > 0) {
+    await prisma.outboxEvent.deleteMany({
+      where: {
+        aggregateType: 'Entitlement',
+        aggregateId: {
+          in: Array.from(createdEntitlementIds),
+        },
+      },
+    });
+  }
+
+  /*
    * Entitlement owns no child records, but Enrollment owns the FK target.
    *
    * Therefore Entitlement must always be deleted before Enrollment.
@@ -157,6 +193,17 @@ async function cleanupTestData(): Promise<void> {
   const enrollmentIds = Array.from(createdEnrollmentIds);
 
   if (enrollmentIds.length > 0) {
+    await prisma.outboxEvent.deleteMany({
+      where: {
+        aggregateType: 'Entitlement',
+        aggregateId: {
+          in: createdEntitlementIds.size
+            ? Array.from(createdEntitlementIds)
+            : [],
+        },
+      },
+    });
+
     await prisma.entitlement.deleteMany({
       where: {
         enrollmentId: {
@@ -198,12 +245,13 @@ async function cleanupTestData(): Promise<void> {
     });
   }
 
+  createdOutboxIds.clear();
   createdEntitlementIds.clear();
   createdEnrollmentIds.clear();
   createdCourseIds.clear();
 }
 
-describe('PrismaEntitlementRepository - PostgreSQL integration - Phase 5.2-G', () => {
+describe('PrismaEntitlementRepository - PostgreSQL integration - Phase 5.2-H', () => {
   beforeAll(async () => {
     await prisma.$connect();
   });
@@ -276,6 +324,8 @@ describe('PrismaEntitlementRepository - PostgreSQL integration - Phase 5.2-G', (
       expect(rehydrated?.createdAt).toEqual(entitlement.createdAt);
 
       expect(rehydrated?.updatedAt).toEqual(entitlement.updatedAt);
+
+      expect(entitlement.getDomainEvents()).toHaveLength(0);
     });
   });
 
@@ -458,26 +508,540 @@ describe('PrismaEntitlementRepository - PostgreSQL integration - Phase 5.2-G', (
 
       expect(persisted?.revokedAt).toEqual(revokedAt);
     });
-  });
 
-  describe('Domain-event ownership boundary', () => {
-    it('does not drain pending domain events when persistence succeeds', async () => {
-      const fixture = await createEnrollmentFixture('event-retention');
+    it('persists each lifecycle event through the transactional Outbox', async () => {
+      const fixture = await createEnrollmentFixture('all-lifecycle-events');
 
       const entitlement = createEntitlement(fixture.enrollmentId);
 
       createdEntitlementIds.add(entitlement.id);
 
-      expect(entitlement.getDomainEvents()).toHaveLength(1);
+      const grantedEvent = entitlement.getDomainEvents()[0];
+
+      if (grantedEvent === undefined) {
+        throw new Error('Expected EntitlementGranted event.');
+      }
+
+      await repository.save(entitlement);
+
+      const suspendedAt = new Date('2026-10-06T20:00:00.000Z');
+
+      entitlement.suspend(suspendedAt);
+
+      const suspendedEvent = entitlement.getDomainEvents()[0];
+
+      if (suspendedEvent === undefined) {
+        throw new Error('Expected EntitlementSuspended event.');
+      }
+
+      await repository.save(entitlement);
+
+      const restoredAt = new Date('2026-10-06T21:00:00.000Z');
+
+      entitlement.restore(restoredAt);
+
+      const restoredEvent = entitlement.getDomainEvents()[0];
+
+      if (restoredEvent === undefined) {
+        throw new Error('Expected EntitlementRestored event.');
+      }
+
+      await repository.save(entitlement);
+
+      const revokedAt = new Date('2026-10-06T22:00:00.000Z');
+
+      entitlement.revoke(revokedAt);
+
+      const revokedEvent = entitlement.getDomainEvents()[0];
+
+      if (revokedEvent === undefined) {
+        throw new Error('Expected EntitlementRevoked event.');
+      }
+
+      await repository.save(entitlement);
+
+      const outboxEvents = await prisma.outboxEvent.findMany({
+        where: {
+          aggregateType: 'Entitlement',
+          aggregateId: entitlement.id,
+        },
+      });
+
+      for (const outboxEvent of outboxEvents) {
+        createdOutboxIds.add(outboxEvent.id);
+      }
+
+      expect(outboxEvents).toHaveLength(4);
+
+      const expectedEvents = [
+        grantedEvent,
+        suspendedEvent,
+        restoredEvent,
+        revokedEvent,
+      ];
+
+      for (const expectedEvent of expectedEvents) {
+        const matchingOutboxEvent = outboxEvents.find(
+          (outboxEvent) =>
+            outboxEvent.dedupeKey ===
+            `learning.entitlement:${expectedEvent.eventId}`,
+        );
+
+        expect(matchingOutboxEvent).toBeDefined();
+
+        expect(matchingOutboxEvent?.eventType).toBe(expectedEvent.eventName);
+
+        expect(matchingOutboxEvent?.aggregateType).toBe('Entitlement');
+
+        expect(matchingOutboxEvent?.aggregateId).toBe(entitlement.id);
+      }
+
+      expect(entitlement.getDomainEvents()).toHaveLength(0);
+    });
+
+    it('persists an EXPIRED lifecycle event through the transactional Outbox', async () => {
+      const fixture = await createEnrollmentFixture('expired-event');
+
+      const entitlement = createEntitlement(fixture.enrollmentId);
+
+      createdEntitlementIds.add(entitlement.id);
+
+      await repository.save(entitlement);
+
+      const expiredAt = new Date('2026-10-06T23:00:00.000Z');
+
+      entitlement.expire(expiredAt);
+
+      const pendingEvents = entitlement.getDomainEvents();
+
+      expect(pendingEvents).toHaveLength(1);
+
+      const expiredEvent = pendingEvents[0];
+
+      if (expiredEvent === undefined) {
+        throw new Error('Expected EntitlementExpired event.');
+      }
+
+      await repository.save(entitlement);
+
+      const persistedOutboxEvent = await prisma.outboxEvent.findUnique({
+        where: {
+          dedupeKey: `learning.entitlement:${expiredEvent.eventId}`,
+        },
+      });
+
+      expect(persistedOutboxEvent).not.toBeNull();
+
+      expect(persistedOutboxEvent?.eventType).toBe(
+        'learning.entitlement.expired',
+      );
+
+      expect(persistedOutboxEvent?.aggregateId).toBe(entitlement.id);
+
+      expect(entitlement.getDomainEvents()).toHaveLength(0);
+    });
+  });
+
+  describe('Transactional Outbox and domain-event ownership', () => {
+    it('persists the domain event to the Outbox and drains it after successful transaction commit', async () => {
+      const fixture = await createEnrollmentFixture('event-transaction');
+
+      const entitlement = createEntitlement(fixture.enrollmentId);
+
+      createdEntitlementIds.add(entitlement.id);
+
+      const pendingEvents = entitlement.getDomainEvents();
+
+      expect(pendingEvents).toHaveLength(1);
+
+      const event = pendingEvents[0];
+
+      if (event === undefined) {
+        throw new Error(
+          'Expected a pending Entitlement domain event before persistence.',
+        );
+      }
+
+      expect(event.eventName).toBe('learning.entitlement.granted');
+
+      expect(event.aggregateId).toBe(entitlement.id);
+
+      expect(event.eventVersion).toBe(1);
 
       await repository.save(entitlement);
 
       /*
-       * 5.2-G repository responsibility ends at persistence.
+       * 5.2-H transactional ownership:
        *
-       * Transactional Outbox ownership belongs to 5.2-H.
+       * Entitlement persistence and its Outbox record must commit
+       * atomically. Only after the transaction succeeds may the
+       * repository drain the aggregate's pending domain events.
+       */
+      expect(entitlement.getDomainEvents()).toHaveLength(0);
+
+      const persistedEntitlement = await prisma.entitlement.findUnique({
+        where: {
+          id: entitlement.id,
+        },
+      });
+
+      expect(persistedEntitlement).not.toBeNull();
+
+      const persistedOutboxEvent = await prisma.outboxEvent.findUnique({
+        where: {
+          dedupeKey: `learning.entitlement:${event.eventId}`,
+        },
+      });
+
+      expect(persistedOutboxEvent).not.toBeNull();
+
+      if (persistedOutboxEvent !== null) {
+        createdOutboxIds.add(persistedOutboxEvent.id);
+      }
+
+      expect(persistedOutboxEvent?.eventType).toBe(event.eventName);
+
+      expect(persistedOutboxEvent?.aggregateType).toBe('Entitlement');
+
+      expect(persistedOutboxEvent?.aggregateId).toBe(entitlement.id);
+
+      expect(persistedOutboxEvent?.status).toBe('PENDING');
+
+      expect(persistedOutboxEvent?.attempts).toBe(0);
+
+      /*
+       * Compare the complete event envelope after JSON serialization.
+       *
+       * This verifies:
+       *
+       * - eventId
+       * - eventName
+       * - eventVersion
+       * - aggregateId
+       * - occurredAt
+       * - complete business payload
+       *
+       * Date values are normalized to JSON ISO strings in exactly the
+       * same way as the repository's Outbox serialization boundary.
+       */
+      const expectedOutboxPayload: unknown = JSON.parse(JSON.stringify(event));
+
+      expect(persistedOutboxEvent?.payload).toEqual(expectedOutboxPayload);
+    });
+
+    it('persists multiple pending domain events from one aggregate transaction', async () => {
+      const fixture = await createEnrollmentFixture('multiple-events');
+
+      const entitlement = createEntitlement(fixture.enrollmentId);
+
+      createdEntitlementIds.add(entitlement.id);
+
+      entitlement.suspend(new Date('2026-10-06T20:00:00.000Z'));
+
+      entitlement.restore(new Date('2026-10-06T21:00:00.000Z'));
+
+      entitlement.suspend(new Date('2026-10-06T22:00:00.000Z'));
+
+      const pendingEvents = entitlement.getDomainEvents();
+
+      expect(pendingEvents).toHaveLength(4);
+
+      await repository.save(entitlement);
+
+      expect(entitlement.getDomainEvents()).toHaveLength(0);
+
+      const outboxEvents = await prisma.outboxEvent.findMany({
+        where: {
+          aggregateType: 'Entitlement',
+          aggregateId: entitlement.id,
+        },
+      });
+
+      for (const outboxEvent of outboxEvents) {
+        createdOutboxIds.add(outboxEvent.id);
+      }
+
+      expect(outboxEvents).toHaveLength(4);
+
+      for (const pendingEvent of pendingEvents) {
+        const persistedEvent = outboxEvents.find(
+          (outboxEvent) =>
+            outboxEvent.dedupeKey ===
+            `learning.entitlement:${pendingEvent.eventId}`,
+        );
+
+        expect(persistedEvent).toBeDefined();
+
+        expect(persistedEvent?.eventType).toBe(pendingEvent.eventName);
+
+        expect(persistedEvent?.aggregateId).toBe(pendingEvent.aggregateId);
+      }
+    });
+
+    it('does not create Outbox events when saving a rehydrated unchanged Entitlement', async () => {
+      const fixture = await createEnrollmentFixture('no-pending-events');
+
+      const now = new Date('2026-10-06T09:00:00.000Z');
+
+      const entitlement = Entitlement.rehydrate({
+        id: randomUUID(),
+        enrollmentId: fixture.enrollmentId,
+        status: EntitlementStatus.ACTIVE,
+        source: EntitlementSource.DIRECT,
+        startsAt: now,
+        expiresAt: null,
+        revokedAt: null,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      createdEntitlementIds.add(entitlement.id);
+
+      expect(entitlement.getDomainEvents()).toHaveLength(0);
+
+      await repository.save(entitlement);
+
+      expect(entitlement.getDomainEvents()).toHaveLength(0);
+
+      const outboxEvents = await prisma.outboxEvent.findMany({
+        where: {
+          aggregateType: 'Entitlement',
+          aggregateId: entitlement.id,
+        },
+      });
+
+      expect(outboxEvents).toHaveLength(0);
+    });
+
+    it('keeps the aggregate event pending when a real PostgreSQL Outbox constraint failure rolls back the transaction', async () => {
+      const fixture = await createEnrollmentFixture('forced-outbox-failure');
+
+      const entitlement = createEntitlement(fixture.enrollmentId);
+
+      const pendingEvents = entitlement.getDomainEvents();
+
+      expect(pendingEvents).toHaveLength(1);
+
+      const event = pendingEvents[0];
+
+      if (event === undefined) {
+        throw new Error(
+          'Expected a pending Entitlement domain event before forced failure.',
+        );
+      }
+
+      const conflictingOutboxId = randomUUID();
+
+      const dedupeKey = `learning.entitlement:${event.eventId}`;
+
+      await prisma.outboxEvent.create({
+        data: {
+          id: conflictingOutboxId,
+          eventType: 'learning.entitlement.conflict',
+          aggregateType: 'Entitlement',
+          aggregateId: entitlement.id,
+          dedupeKey,
+          payload: {
+            conflict: true,
+            testNamespace: TEST_NAMESPACE,
+          },
+          status: 'PENDING',
+          attempts: 0,
+          availableAt: new Date(),
+        },
+      });
+
+      createdOutboxIds.add(conflictingOutboxId);
+
+      await expect(repository.save(entitlement)).rejects.toSatisfy(
+        (error: unknown) => {
+          expect(error).toBeInstanceOf(PrismaRepositoryError);
+
+          const repositoryError = error as PrismaRepositoryError;
+
+          expect(repositoryError.code).toBe(
+            PrismaRepositoryErrorCode.UNIQUE_CONSTRAINT,
+          );
+
+          expect(repositoryError.prismaCode).toBe('P2002');
+
+          expect(repositoryError.cause).toBeDefined();
+
+          return true;
+        },
+      );
+
+      /*
+       * The aggregate was intentionally NOT added to the cleanup set
+       * before save(). The transaction failed, so the Entitlement row
+       * must never have committed.
+       */
+      const persistedEntitlement = await prisma.entitlement.findUnique({
+        where: {
+          id: entitlement.id,
+        },
+      });
+
+      expect(persistedEntitlement).toBeNull();
+
+      /*
+       * The conflicting Outbox row must remain because it was created
+       * before the failing transaction and is therefore independent
+       * committed state.
+       */
+      const conflictingOutbox = await prisma.outboxEvent.findUnique({
+        where: {
+          id: conflictingOutboxId,
+        },
+      });
+
+      expect(conflictingOutbox).not.toBeNull();
+
+      expect(conflictingOutbox?.dedupeKey).toBe(dedupeKey);
+
+      /*
+       * The failed transaction must NEVER consume the aggregate event.
        */
       expect(entitlement.getDomainEvents()).toHaveLength(1);
+
+      expect(entitlement.getDomainEvents()[0]?.eventId).toBe(event.eventId);
+    });
+
+    it('rolls back a lifecycle persistence failure and preserves the previously committed state', async () => {
+      const fixture = await createEnrollmentFixture('lifecycle-rollback');
+
+      const entitlement = createEntitlement(fixture.enrollmentId);
+
+      createdEntitlementIds.add(entitlement.id);
+
+      await repository.save(entitlement);
+
+      const originalPersisted = await prisma.entitlement.findUnique({
+        where: {
+          id: entitlement.id,
+        },
+      });
+
+      expect(originalPersisted?.status).toBe('ACTIVE');
+
+      const suspendedAt = new Date('2026-10-06T20:30:00.000Z');
+
+      entitlement.suspend(suspendedAt);
+
+      const pendingEvents = entitlement.getDomainEvents();
+
+      expect(pendingEvents).toHaveLength(1);
+
+      const lifecycleEvent = pendingEvents[0];
+
+      if (lifecycleEvent === undefined) {
+        throw new Error(
+          'Expected EntitlementSuspended event before forced rollback.',
+        );
+      }
+
+      const conflictingOutboxId = randomUUID();
+
+      const dedupeKey = `learning.entitlement:${lifecycleEvent.eventId}`;
+
+      await prisma.outboxEvent.create({
+        data: {
+          id: conflictingOutboxId,
+          eventType: 'learning.entitlement.conflict',
+          aggregateType: 'Entitlement',
+          aggregateId: entitlement.id,
+          dedupeKey,
+          payload: {
+            conflict: true,
+            testNamespace: TEST_NAMESPACE,
+          },
+          status: 'PENDING',
+          attempts: 0,
+          availableAt: new Date(),
+        },
+      });
+
+      createdOutboxIds.add(conflictingOutboxId);
+
+      await expect(repository.save(entitlement)).rejects.toSatisfy(
+        (error: unknown) => {
+          expect(error).toBeInstanceOf(PrismaRepositoryError);
+
+          const repositoryError = error as PrismaRepositoryError;
+
+          expect(repositoryError.code).toBe(
+            PrismaRepositoryErrorCode.UNIQUE_CONSTRAINT,
+          );
+
+          expect(repositoryError.prismaCode).toBe('P2002');
+
+          return true;
+        },
+      );
+
+      const persistedAfterFailure = await prisma.entitlement.findUnique({
+        where: {
+          id: entitlement.id,
+        },
+      });
+
+      /*
+       * The previous ACTIVE database state must survive the failed
+       * SUSPENDED transaction.
+       */
+      expect(persistedAfterFailure?.status).toBe('ACTIVE');
+
+      expect(persistedAfterFailure?.revokedAt).toBeNull();
+
+      expect(persistedAfterFailure?.updatedAt).toEqual(
+        originalPersisted?.updatedAt,
+      );
+
+      /*
+       * The aggregate still contains the lifecycle event because the
+       * failed transaction never reached pullDomainEvents().
+       */
+      expect(entitlement.getDomainEvents()).toHaveLength(1);
+
+      expect(entitlement.getDomainEvents()[0]?.eventId).toBe(
+        lifecycleEvent.eventId,
+      );
+    });
+
+    it('uses the domain event identifier as the durable Outbox dedupe identity', async () => {
+      const fixture = await createEnrollmentFixture('dedupe-identity');
+
+      const entitlement = createEntitlement(fixture.enrollmentId);
+
+      createdEntitlementIds.add(entitlement.id);
+
+      const event = entitlement.getDomainEvents()[0];
+
+      if (event === undefined) {
+        throw new Error('Expected EntitlementGranted event.');
+      }
+
+      await repository.save(entitlement);
+
+      const persistedOutboxEvent = await prisma.outboxEvent.findUnique({
+        where: {
+          dedupeKey: `learning.entitlement:${event.eventId}`,
+        },
+      });
+
+      expect(persistedOutboxEvent).not.toBeNull();
+
+      if (persistedOutboxEvent !== null) {
+        createdOutboxIds.add(persistedOutboxEvent.id);
+      }
+
+      expect(persistedOutboxEvent?.dedupeKey).toBe(
+        `learning.entitlement:${event.eventId}`,
+      );
+
+      expect(persistedOutboxEvent?.eventType).toBe(event.eventName);
+
+      expect(persistedOutboxEvent?.aggregateId).toBe(entitlement.id);
     });
   });
 
@@ -512,6 +1076,12 @@ describe('PrismaEntitlementRepository - PostgreSQL integration - Phase 5.2-G', (
       });
 
       expect(persisted).toBeNull();
+
+      /*
+       * The failed transaction must not drain the aggregate's pending
+       * event because neither the Entitlement nor Outbox write committed.
+       */
+      expect(entitlement.getDomainEvents()).toHaveLength(1);
     });
   });
 
@@ -577,6 +1147,45 @@ describe('PrismaEntitlementRepository - PostgreSQL integration - Phase 5.2-G', (
       });
 
       expect(persisted).toHaveLength(1);
+
+      /*
+       * The successful transaction drains its event.
+       */
+      const successfulEntitlement =
+        results[0]?.status === 'fulfilled' ? first : second;
+
+      const rejectedEntitlement =
+        successfulEntitlement === first ? second : first;
+
+      expect(successfulEntitlement.getDomainEvents()).toHaveLength(0);
+
+      /*
+       * The losing transaction is rolled back by PostgreSQL's partial
+       * unique index, so its event remains pending.
+       */
+      expect(rejectedEntitlement.getDomainEvents()).toHaveLength(1);
+
+      const successfulEvent = successfulEntitlement.getDomainEvents()[0];
+
+      expect(successfulEvent).toBeUndefined();
+
+      const rejectedEvent = rejectedEntitlement.getDomainEvents()[0];
+
+      expect(rejectedEvent).toBeDefined();
+
+      if (rejectedEvent !== undefined) {
+        const rejectedOutbox = await prisma.outboxEvent.findUnique({
+          where: {
+            dedupeKey: `learning.entitlement:${rejectedEvent.eventId}`,
+          },
+        });
+
+        /*
+         * No Outbox record may exist for the transaction that lost the
+         * database uniqueness race.
+         */
+        expect(rejectedOutbox).toBeNull();
+      }
     });
 
     it('allows a new ACTIVE Entitlement after the previous Entitlement becomes REVOKED', async () => {
@@ -728,6 +1337,20 @@ describe('PrismaEntitlementRepository - PostgreSQL integration - Phase 5.2-G', (
       expect(found?.id).toBe(first.id);
 
       expect(found?.status).toBe(EntitlementStatus.SUSPENDED);
+
+      expect(second.getDomainEvents()).toHaveLength(1);
+
+      const rejectedEvent = second.getDomainEvents()[0];
+
+      if (rejectedEvent !== undefined) {
+        const rejectedOutbox = await prisma.outboxEvent.findUnique({
+          where: {
+            dedupeKey: `learning.entitlement:${rejectedEvent.eventId}`,
+          },
+        });
+
+        expect(rejectedOutbox).toBeNull();
+      }
     });
   });
 });

@@ -12,18 +12,18 @@ import {
   EnrollmentStatus,
 } from '@gurusthalam/learning';
 
-import { PrismaService } from '../database/prisma/prisma.service.js';
+import { PrismaService } from '../../prisma.service.js';
 
-import { PrismaCourseRepository } from '../database/prisma/repositories/courses/prisma-course.repository.js';
+import { PrismaCourseRepository } from '../courses/prisma-course.repository.js';
 
-import { PrismaCourseVersionRepository } from '../database/prisma/repositories/courses/prisma-course-version.repository.js';
+import { PrismaCourseVersionRepository } from '../courses/prisma-course-version.repository.js';
 
-import { PrismaEnrollmentRepository } from '../database/prisma/repositories/learning/prisma-enrollment.repository.js';
+import { PrismaEnrollmentRepository } from './prisma-enrollment.repository.js';
 
 import {
   PrismaRepositoryError,
   PrismaRepositoryErrorCode,
-} from '../database/prisma/repositories/prisma-repository.error.js';
+} from '../prisma-repository.error.js';
 
 const TEST_NAMESPACE = `phase-5-1-enrollment-${process.pid}-${randomUUID()}`;
 

@@ -417,6 +417,23 @@ export type EnumProgressStatusWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedEnumProgressStatusFilter<$PrismaModel>
 }
 
+export type EnumLessonProgressStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.LessonProgressStatus | Prisma.EnumLessonProgressStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.LessonProgressStatus[] | Prisma.ListEnumLessonProgressStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.LessonProgressStatus[] | Prisma.ListEnumLessonProgressStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumLessonProgressStatusFilter<$PrismaModel> | $Enums.LessonProgressStatus
+}
+
+export type EnumLessonProgressStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.LessonProgressStatus | Prisma.EnumLessonProgressStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.LessonProgressStatus[] | Prisma.ListEnumLessonProgressStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.LessonProgressStatus[] | Prisma.ListEnumLessonProgressStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumLessonProgressStatusWithAggregatesFilter<$PrismaModel> | $Enums.LessonProgressStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumLessonProgressStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumLessonProgressStatusFilter<$PrismaModel>
+}
+
 export type EnumNotificationTemplateChannelFilter<$PrismaModel = never> = {
   equals?: $Enums.NotificationTemplateChannel | Prisma.EnumNotificationTemplateChannelFieldRefInput<$PrismaModel>
   in?: $Enums.NotificationTemplateChannel[] | Prisma.ListEnumNotificationTemplateChannelFieldRefInput<$PrismaModel>
@@ -1018,6 +1035,23 @@ export type NestedEnumProgressStatusWithAggregatesFilter<$PrismaModel = never> =
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumProgressStatusFilter<$PrismaModel>
   _max?: Prisma.NestedEnumProgressStatusFilter<$PrismaModel>
+}
+
+export type NestedEnumLessonProgressStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.LessonProgressStatus | Prisma.EnumLessonProgressStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.LessonProgressStatus[] | Prisma.ListEnumLessonProgressStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.LessonProgressStatus[] | Prisma.ListEnumLessonProgressStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumLessonProgressStatusFilter<$PrismaModel> | $Enums.LessonProgressStatus
+}
+
+export type NestedEnumLessonProgressStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.LessonProgressStatus | Prisma.EnumLessonProgressStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.LessonProgressStatus[] | Prisma.ListEnumLessonProgressStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.LessonProgressStatus[] | Prisma.ListEnumLessonProgressStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumLessonProgressStatusWithAggregatesFilter<$PrismaModel> | $Enums.LessonProgressStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumLessonProgressStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumLessonProgressStatusFilter<$PrismaModel>
 }
 
 export type NestedEnumNotificationTemplateChannelFilter<$PrismaModel = never> = {

@@ -60,6 +60,7 @@ export const ModelName = {
   Entitlement: 'Entitlement',
   LearningSession: 'LearningSession',
   Progress: 'Progress',
+  LessonProgress: 'LessonProgress',
   CourseCatalogProjection: 'CourseCatalogProjection',
   CourseSearchProjection: 'CourseSearchProjection',
   NotificationTemplate: 'NotificationTemplate',
@@ -218,6 +219,21 @@ export const ProgressScalarFieldEnum = {
 } as const
 
 export type ProgressScalarFieldEnum = (typeof ProgressScalarFieldEnum)[keyof typeof ProgressScalarFieldEnum]
+
+
+export const LessonProgressScalarFieldEnum = {
+  id: 'id',
+  enrollmentId: 'enrollmentId',
+  learningUnitId: 'learningUnitId',
+  status: 'status',
+  percentage: 'percentage',
+  startedAt: 'startedAt',
+  completedAt: 'completedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type LessonProgressScalarFieldEnum = (typeof LessonProgressScalarFieldEnum)[keyof typeof LessonProgressScalarFieldEnum]
 
 
 export const CourseCatalogProjectionScalarFieldEnum = {

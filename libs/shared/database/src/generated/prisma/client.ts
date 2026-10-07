@@ -87,6 +87,11 @@ export type LearningSession = Prisma.LearningSessionModel
  */
 export type Progress = Prisma.ProgressModel
 /**
+ * Model LessonProgress
+ * 
+ */
+export type LessonProgress = Prisma.LessonProgressModel
+/**
  * Model CourseCatalogProjection
  * *
  *  * CourseCatalogProjection

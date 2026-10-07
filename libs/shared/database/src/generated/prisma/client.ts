@@ -77,6 +77,11 @@ export type Enrollment = Prisma.EnrollmentModel
  */
 export type Entitlement = Prisma.EntitlementModel
 /**
+ * Model LearningSession
+ *
+ */
+export type LearningSession = Prisma.LearningSessionModel
+/**
  * Model CourseCatalogProjection
  * *
  *  * CourseCatalogProjection

@@ -383,6 +383,23 @@ export type EnumEntitlementSourceWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedEnumEntitlementSourceFilter<$PrismaModel>
 }
 
+export type EnumLearningSessionStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.LearningSessionStatus | Prisma.EnumLearningSessionStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.LearningSessionStatus[] | Prisma.ListEnumLearningSessionStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.LearningSessionStatus[] | Prisma.ListEnumLearningSessionStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumLearningSessionStatusFilter<$PrismaModel> | $Enums.LearningSessionStatus
+}
+
+export type EnumLearningSessionStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.LearningSessionStatus | Prisma.EnumLearningSessionStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.LearningSessionStatus[] | Prisma.ListEnumLearningSessionStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.LearningSessionStatus[] | Prisma.ListEnumLearningSessionStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumLearningSessionStatusWithAggregatesFilter<$PrismaModel> | $Enums.LearningSessionStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumLearningSessionStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumLearningSessionStatusFilter<$PrismaModel>
+}
+
 export type EnumNotificationTemplateChannelFilter<$PrismaModel = never> = {
   equals?: $Enums.NotificationTemplateChannel | Prisma.EnumNotificationTemplateChannelFieldRefInput<$PrismaModel>
   in?: $Enums.NotificationTemplateChannel[] | Prisma.ListEnumNotificationTemplateChannelFieldRefInput<$PrismaModel>
@@ -950,6 +967,23 @@ export type NestedEnumEntitlementSourceWithAggregatesFilter<$PrismaModel = never
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumEntitlementSourceFilter<$PrismaModel>
   _max?: Prisma.NestedEnumEntitlementSourceFilter<$PrismaModel>
+}
+
+export type NestedEnumLearningSessionStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.LearningSessionStatus | Prisma.EnumLearningSessionStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.LearningSessionStatus[] | Prisma.ListEnumLearningSessionStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.LearningSessionStatus[] | Prisma.ListEnumLearningSessionStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumLearningSessionStatusFilter<$PrismaModel> | $Enums.LearningSessionStatus
+}
+
+export type NestedEnumLearningSessionStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.LearningSessionStatus | Prisma.EnumLearningSessionStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.LearningSessionStatus[] | Prisma.ListEnumLearningSessionStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.LearningSessionStatus[] | Prisma.ListEnumLearningSessionStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumLearningSessionStatusWithAggregatesFilter<$PrismaModel> | $Enums.LearningSessionStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumLearningSessionStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumLearningSessionStatusFilter<$PrismaModel>
 }
 
 export type NestedEnumNotificationTemplateChannelFilter<$PrismaModel = never> = {

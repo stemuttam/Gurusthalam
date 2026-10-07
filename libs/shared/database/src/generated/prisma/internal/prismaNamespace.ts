@@ -404,6 +404,7 @@ export const ModelName = {
   CourseVersionLineage: 'CourseVersionLineage',
   Enrollment: 'Enrollment',
   Entitlement: 'Entitlement',
+  LearningSession: 'LearningSession',
   CourseCatalogProjection: 'CourseCatalogProjection',
   CourseSearchProjection: 'CourseSearchProjection',
   NotificationTemplate: 'NotificationTemplate',
@@ -428,7 +429,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "course" | "courseOwnershipAssignment" | "courseVersion" | "courseVersionAudit" | "courseVersionLineage" | "enrollment" | "entitlement" | "courseCatalogProjection" | "courseSearchProjection" | "notificationTemplate" | "notificationTemplateVersion" | "notification" | "notificationDelivery" | "outboxEvent" | "notificationAggregation" | "notificationAggregationItem"
+    modelProps: "course" | "courseOwnershipAssignment" | "courseVersion" | "courseVersionAudit" | "courseVersionLineage" | "enrollment" | "entitlement" | "learningSession" | "courseCatalogProjection" | "courseSearchProjection" | "notificationTemplate" | "notificationTemplateVersion" | "notification" | "notificationDelivery" | "outboxEvent" | "notificationAggregation" | "notificationAggregationItem"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -947,6 +948,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.EntitlementCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.EntitlementCountAggregateOutputType> | number
+        }
+      }
+    }
+    LearningSession: {
+      payload: Prisma.$LearningSessionPayload<ExtArgs>
+      fields: Prisma.LearningSessionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.LearningSessionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LearningSessionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.LearningSessionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LearningSessionPayload>
+        }
+        findFirst: {
+          args: Prisma.LearningSessionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LearningSessionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.LearningSessionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LearningSessionPayload>
+        }
+        findMany: {
+          args: Prisma.LearningSessionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LearningSessionPayload>[]
+        }
+        create: {
+          args: Prisma.LearningSessionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LearningSessionPayload>
+        }
+        createMany: {
+          args: Prisma.LearningSessionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.LearningSessionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LearningSessionPayload>[]
+        }
+        delete: {
+          args: Prisma.LearningSessionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LearningSessionPayload>
+        }
+        update: {
+          args: Prisma.LearningSessionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LearningSessionPayload>
+        }
+        deleteMany: {
+          args: Prisma.LearningSessionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.LearningSessionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.LearningSessionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LearningSessionPayload>[]
+        }
+        upsert: {
+          args: Prisma.LearningSessionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LearningSessionPayload>
+        }
+        aggregate: {
+          args: Prisma.LearningSessionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateLearningSession>
+        }
+        groupBy: {
+          args: Prisma.LearningSessionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.LearningSessionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.LearningSessionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.LearningSessionCountAggregateOutputType> | number
         }
       }
     }
@@ -1760,6 +1835,20 @@ export const EntitlementScalarFieldEnum = {
 export type EntitlementScalarFieldEnum = (typeof EntitlementScalarFieldEnum)[keyof typeof EntitlementScalarFieldEnum]
 
 
+export const LearningSessionScalarFieldEnum = {
+  id: 'id',
+  enrollmentId: 'enrollmentId',
+  status: 'status',
+  startedAt: 'startedAt',
+  pausedAt: 'pausedAt',
+  endedAt: 'endedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type LearningSessionScalarFieldEnum = (typeof LearningSessionScalarFieldEnum)[keyof typeof LearningSessionScalarFieldEnum]
+
+
 export const CourseCatalogProjectionScalarFieldEnum = {
   courseId: 'courseId',
   title: 'title',
@@ -2189,6 +2278,20 @@ export type ListEnumEntitlementSourceFieldRefInput<$PrismaModel> = FieldRefInput
 
 
 /**
+ * Reference to a field of type 'LearningSessionStatus'
+ */
+export type EnumLearningSessionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'LearningSessionStatus'>
+
+
+
+/**
+ * Reference to a field of type 'LearningSessionStatus[]'
+ */
+export type ListEnumLearningSessionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'LearningSessionStatus[]'>
+
+
+
+/**
  * Reference to a field of type 'NotificationTemplateChannel'
  */
 export type EnumNotificationTemplateChannelFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'NotificationTemplateChannel'>
@@ -2471,6 +2574,7 @@ export type GlobalOmitConfig = {
   courseVersionLineage?: Prisma.CourseVersionLineageOmit
   enrollment?: Prisma.EnrollmentOmit
   entitlement?: Prisma.EntitlementOmit
+  learningSession?: Prisma.LearningSessionOmit
   courseCatalogProjection?: Prisma.CourseCatalogProjectionOmit
   courseSearchProjection?: Prisma.CourseSearchProjectionOmit
   notificationTemplate?: Prisma.NotificationTemplateOmit

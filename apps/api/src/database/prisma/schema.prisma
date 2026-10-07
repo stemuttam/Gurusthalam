@@ -76,6 +76,13 @@ enum EntitlementStatus {
   EXPIRED
 }
 
+enum LearningSessionStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ABANDONED
+}
+
 enum EntitlementSource {
   DIRECT
   COHORT
@@ -229,7 +236,8 @@ model Enrollment {
   course        Course        @relation(fields: [courseId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   courseVersion CourseVersion @relation(fields: [courseVersionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
-  entitlements Entitlement[]
+  entitlements     Entitlement[]
+  learningSessions LearningSession[]
 
   @@index([learnerId, status, createdAt])
   @@index([courseId, status, createdAt])
@@ -257,6 +265,26 @@ model Entitlement {
   @@index([enrollmentId, status, createdAt])
   @@index([status, expiresAt])
   @@index([source, status])
+}
+
+model LearningSession {
+  id String @id @default(uuid())
+
+  enrollmentId String
+
+  status LearningSessionStatus @default(ACTIVE)
+
+  startedAt DateTime
+  pausedAt  DateTime?
+  endedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([enrollmentId, startedAt])
+  @@index([status, endedAt])
 }
 
 // =============================================================

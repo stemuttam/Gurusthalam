@@ -83,6 +83,12 @@ enum LearningSessionStatus {
   ABANDONED
 }
 
+enum ProgressStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
 enum EntitlementSource {
   DIRECT
   COHORT
@@ -238,6 +244,7 @@ model Enrollment {
 
   entitlements     Entitlement[]
   learningSessions LearningSession[]
+  progress         Progress?
 
   @@index([learnerId, status, createdAt])
   @@index([courseId, status, createdAt])
@@ -285,6 +292,26 @@ model LearningSession {
 
   @@index([enrollmentId, startedAt])
   @@index([status, endedAt])
+}
+
+model Progress {
+  id String @id @default(uuid())
+
+  enrollmentId String
+
+  status ProgressStatus @default(NOT_STARTED)
+
+  percentage Int @default(0)
+
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([enrollmentId])
 }
 
 // =============================================================

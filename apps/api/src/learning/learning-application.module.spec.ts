@@ -5,6 +5,7 @@ import { Test } from '@nestjs/testing';
 import {
   DefaultEnrollmentApplicationService,
   DefaultEntitlementApplicationService,
+  DefaultLessonProgressApplicationService,
 } from '@gurusthalam/learning';
 
 import { PrismaService } from '../database/prisma/prisma.service.js';
@@ -48,7 +49,21 @@ describe('LearningApplicationModule', () => {
     }
   });
 
-  it('resolves independent Enrollment and Entitlement application boundaries', async () => {
+  it('resolves the LessonProgress application service', async () => {
+    const moduleRef = await createTestingModule();
+
+    try {
+      const service = moduleRef.get<DefaultLessonProgressApplicationService>(
+        DefaultLessonProgressApplicationService,
+      );
+
+      expect(service).toBeInstanceOf(DefaultLessonProgressApplicationService);
+    } finally {
+      await moduleRef.close();
+    }
+  });
+
+  it('resolves independent Enrollment, Entitlement, and LessonProgress application boundaries', async () => {
     const moduleRef = await createTestingModule();
 
     try {
@@ -62,6 +77,11 @@ describe('LearningApplicationModule', () => {
           DefaultEntitlementApplicationService,
         );
 
+      const lessonProgressService =
+        moduleRef.get<DefaultLessonProgressApplicationService>(
+          DefaultLessonProgressApplicationService,
+        );
+
       expect(enrollmentService).toBeInstanceOf(
         DefaultEnrollmentApplicationService,
       );
@@ -70,7 +90,13 @@ describe('LearningApplicationModule', () => {
         DefaultEntitlementApplicationService,
       );
 
+      expect(lessonProgressService).toBeInstanceOf(
+        DefaultLessonProgressApplicationService,
+      );
+
       expect(enrollmentService).not.toBe(entitlementService);
+      expect(enrollmentService).not.toBe(lessonProgressService);
+      expect(entitlementService).not.toBe(lessonProgressService);
     } finally {
       await moduleRef.close();
     }

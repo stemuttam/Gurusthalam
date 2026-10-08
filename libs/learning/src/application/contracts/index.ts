@@ -31,3 +31,12 @@ export {
   revokeEntitlementInputSchema,
   suspendEntitlementInputSchema,
 } from './entitlement-application.validation.js';
+
+export type {
+  CompleteLessonProgressInput,
+  GetLessonProgressByEnrollmentAndLearningUnitInput,
+  GetLessonProgressInput,
+  LessonProgressApplicationService,
+  StartLessonProgressInput,
+  UpdateLessonProgressInput,
+} from './lesson-progress-application.contracts.js';

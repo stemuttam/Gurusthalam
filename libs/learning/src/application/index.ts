@@ -2,6 +2,8 @@ export { DefaultEnrollmentApplicationService } from './services/enrollment-appli
 
 export { DefaultEntitlementApplicationService } from './services/entitlement-application.service.js';
 
+export { DefaultLessonProgressApplicationService } from './services/lesson-progress-application.service.js';
+
 export type {
   CancelEnrollmentInput,
   EnrollLearnerInput,
@@ -34,6 +36,23 @@ export {
   revokeEntitlementInputSchema,
   suspendEntitlementInputSchema,
 } from './contracts/index.js';
+
+export type {
+  CompleteLessonProgressInput,
+  GetLessonProgressByEnrollmentAndLearningUnitInput,
+  GetLessonProgressInput,
+  LessonProgressApplicationService,
+  StartLessonProgressInput,
+  UpdateLessonProgressInput,
+} from './contracts/index.js';
+
+export {
+  LessonProgressApplicationError,
+  LessonProgressApplicationErrorCode,
+  LessonProgressAccessDeniedError,
+  type LessonProgressAccessDeniedReason,
+  type LessonProgressApplicationErrorIssue,
+} from './errors/lesson-progress-application.error.js';
 
 export {
   EntitlementAccessDecisionReason,

@@ -35,6 +35,10 @@
 
     "test": {
       "executor": "nx:run-commands",
+      "dependsOn": [
+        "@gurusthalam/learning:build",
+        "@gurusthalam/database:build"
+      ],
       "options": {
         "command": "pnpm exec vitest run --config vitest.config.mts",
         "cwd": "apps/api"

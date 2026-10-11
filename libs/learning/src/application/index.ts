@@ -4,6 +4,8 @@ export { DefaultEntitlementApplicationService } from './services/entitlement-app
 
 export { DefaultLessonProgressApplicationService } from './services/lesson-progress-application.service.js';
 
+export { DefaultProgressApplicationService } from './services/progress-application.service.js';
+
 export { DefaultSectionProgressApplicationService } from './services/section-progress-application.service.js';
 
 export type {
@@ -55,6 +57,31 @@ export {
   type LessonProgressAccessDeniedReason,
   type LessonProgressApplicationErrorIssue,
 } from './errors/lesson-progress-application.error.js';
+
+export type {
+  CompleteProgressInput,
+  GetProgressByEnrollmentInput,
+  GetProgressInput,
+  ProgressApplicationService,
+  StartProgressInput,
+  UpdateProgressInput,
+} from './contracts/index.js';
+
+export {
+  completeProgressInputSchema,
+  getProgressByEnrollmentInputSchema,
+  getProgressInputSchema,
+  startProgressInputSchema,
+  updateProgressInputSchema,
+} from './contracts/index.js';
+
+export {
+  ProgressApplicationError,
+  ProgressApplicationErrorCode,
+  ProgressAccessDeniedError,
+  type ProgressAccessDeniedReason,
+  type ProgressApplicationErrorIssue,
+} from './errors/progress-application.error.js';
 
 export {
   EntitlementAccessDecisionReason,

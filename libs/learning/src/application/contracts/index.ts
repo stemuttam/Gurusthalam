@@ -42,6 +42,23 @@ export type {
 } from './lesson-progress-application.contracts.js';
 
 export type {
+  CompleteProgressInput,
+  GetProgressByEnrollmentInput,
+  GetProgressInput,
+  ProgressApplicationService,
+  StartProgressInput,
+  UpdateProgressInput,
+} from './progress-application.contracts.js';
+
+export {
+  completeProgressInputSchema,
+  getProgressByEnrollmentInputSchema,
+  getProgressInputSchema,
+  startProgressInputSchema,
+  updateProgressInputSchema,
+} from './progress-application.validation.js';
+
+export type {
   CompleteSectionProgressInput,
   GetSectionProgressByEnrollmentAndSectionInput,
   GetSectionProgressInput,

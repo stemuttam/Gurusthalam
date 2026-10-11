@@ -6,6 +6,7 @@ import {
   DefaultEnrollmentApplicationService,
   DefaultEntitlementApplicationService,
   DefaultLessonProgressApplicationService,
+  DefaultProgressApplicationService,
   DefaultSectionProgressApplicationService,
 } from '@gurusthalam/learning';
 
@@ -64,24 +65,35 @@ describe('LearningApplicationModule', () => {
     }
   });
 
-  it('resolves the SectionProgress application service', async () => {
-  const moduleRef = await createTestingModule();
+  it('resolves the Progress application service', async () => {
+    const moduleRef = await createTestingModule();
 
-  try {
-    const service =
-      moduleRef.get<DefaultSectionProgressApplicationService>(
+    try {
+      const service = moduleRef.get<DefaultProgressApplicationService>(
+        DefaultProgressApplicationService,
+      );
+
+      expect(service).toBeInstanceOf(DefaultProgressApplicationService);
+    } finally {
+      await moduleRef.close();
+    }
+  });
+
+  it('resolves the SectionProgress application service', async () => {
+    const moduleRef = await createTestingModule();
+
+    try {
+      const service = moduleRef.get<DefaultSectionProgressApplicationService>(
         DefaultSectionProgressApplicationService,
       );
 
-    expect(service).toBeInstanceOf(
-      DefaultSectionProgressApplicationService,
-    );
-  } finally {
-    await moduleRef.close();
-  }
-});
+      expect(service).toBeInstanceOf(DefaultSectionProgressApplicationService);
+    } finally {
+      await moduleRef.close();
+    }
+  });
 
-  it('resolves independent Enrollment, Entitlement, and LessonProgress application boundaries', async () => {
+  it('resolves independent learning application boundaries', async () => {
     const moduleRef = await createTestingModule();
 
     try {
@@ -100,6 +112,23 @@ describe('LearningApplicationModule', () => {
           DefaultLessonProgressApplicationService,
         );
 
+      const progressService = moduleRef.get<DefaultProgressApplicationService>(
+        DefaultProgressApplicationService,
+      );
+
+      const sectionProgressService =
+        moduleRef.get<DefaultSectionProgressApplicationService>(
+          DefaultSectionProgressApplicationService,
+        );
+
+      const services = [
+        enrollmentService,
+        entitlementService,
+        lessonProgressService,
+        progressService,
+        sectionProgressService,
+      ];
+
       expect(enrollmentService).toBeInstanceOf(
         DefaultEnrollmentApplicationService,
       );
@@ -112,9 +141,17 @@ describe('LearningApplicationModule', () => {
         DefaultLessonProgressApplicationService,
       );
 
-      expect(enrollmentService).not.toBe(entitlementService);
-      expect(enrollmentService).not.toBe(lessonProgressService);
-      expect(entitlementService).not.toBe(lessonProgressService);
+      expect(progressService).toBeInstanceOf(DefaultProgressApplicationService);
+
+      expect(sectionProgressService).toBeInstanceOf(
+        DefaultSectionProgressApplicationService,
+      );
+
+      for (let left = 0; left < services.length; left += 1) {
+        for (let right = left + 1; right < services.length; right += 1) {
+          expect(services[left]).not.toBe(services[right]);
+        }
+      }
     } finally {
       await moduleRef.close();
     }

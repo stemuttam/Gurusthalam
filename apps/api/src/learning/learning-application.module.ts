@@ -4,10 +4,12 @@ import {
   DefaultEnrollmentApplicationService,
   DefaultEntitlementApplicationService,
   DefaultLessonProgressApplicationService,
+  DefaultSectionProgressApplicationService,
   type EnrollmentRepository,
   type EntitlementApplicationService,
   type EntitlementRepository,
   type LessonProgressRepository,
+  type SectionProgressRepository,
 } from '@gurusthalam/learning';
 
 import type {
@@ -25,6 +27,7 @@ import {
   ENTITLEMENT_REPOSITORY,
   ENROLLMENT_REPOSITORY,
   LESSON_PROGRESS_REPOSITORY,
+  SECTION_PROGRESS_REPOSITORY,
   LearningPersistenceModule,
 } from '../database/prisma/repositories/learning/index.js';
 
@@ -85,12 +88,31 @@ import {
           entitlementApplicationService,
         ),
     },
+
+    {
+  provide: DefaultSectionProgressApplicationService,
+
+  inject: [
+    SECTION_PROGRESS_REPOSITORY,
+    DefaultEntitlementApplicationService,
+  ],
+
+  useFactory: (
+    sectionProgressRepository: SectionProgressRepository,
+    entitlementApplicationService: EntitlementApplicationService,
+  ): DefaultSectionProgressApplicationService =>
+    new DefaultSectionProgressApplicationService(
+      sectionProgressRepository,
+      entitlementApplicationService,
+    ),
+},
   ],
 
   exports: [
     DefaultEnrollmentApplicationService,
     DefaultEntitlementApplicationService,
     DefaultLessonProgressApplicationService,
+    DefaultSectionProgressApplicationService,
   ],
 })
 export class LearningApplicationModule {}

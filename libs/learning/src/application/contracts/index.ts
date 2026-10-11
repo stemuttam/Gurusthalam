@@ -40,3 +40,20 @@ export type {
   StartLessonProgressInput,
   UpdateLessonProgressInput,
 } from './lesson-progress-application.contracts.js';
+
+export type {
+  CompleteSectionProgressInput,
+  GetSectionProgressByEnrollmentAndSectionInput,
+  GetSectionProgressInput,
+  SectionProgressApplicationService,
+  StartSectionProgressInput,
+  UpdateSectionProgressInput,
+} from './section-progress-application.contracts.js';
+
+export {
+  completeSectionProgressInputSchema,
+  getSectionProgressByEnrollmentAndSectionInputSchema,
+  getSectionProgressInputSchema,
+  startSectionProgressInputSchema,
+  updateSectionProgressInputSchema,
+} from './section-progress-application.validation.js';

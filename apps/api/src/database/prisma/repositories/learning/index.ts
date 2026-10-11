@@ -4,6 +4,7 @@ export {
   LEARNING_SESSION_REPOSITORY,
   LESSON_PROGRESS_REPOSITORY,
   PROGRESS_REPOSITORY,
+  SECTION_PROGRESS_REPOSITORY,
 } from './learning-repository.tokens.js';
 
 export { LearningPersistenceModule } from './learning-persistence.module.js';
@@ -17,3 +18,5 @@ export { PrismaLearningSessionRepository } from './prisma-learning-session.repos
 export { PrismaLessonProgressRepository } from './prisma-lesson-progress.repository.js';
 
 export { PrismaProgressRepository } from './prisma-progress.repository.js';
+
+export { PrismaSectionProgressRepository } from './prisma-section-progress.repository.js';

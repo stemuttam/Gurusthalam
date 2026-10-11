@@ -4,6 +4,8 @@ export { DefaultEntitlementApplicationService } from './services/entitlement-app
 
 export { DefaultLessonProgressApplicationService } from './services/lesson-progress-application.service.js';
 
+export { DefaultSectionProgressApplicationService } from './services/section-progress-application.service.js';
+
 export type {
   CancelEnrollmentInput,
   EnrollLearnerInput,
@@ -60,3 +62,28 @@ export {
   type EntitlementAccessDecision,
   type EntitlementAccessPolicyInput,
 } from './policies/entitlement-access.policy.js';
+
+export type {
+  CompleteSectionProgressInput,
+  GetSectionProgressByEnrollmentAndSectionInput,
+  GetSectionProgressInput,
+  SectionProgressApplicationService,
+  StartSectionProgressInput,
+  UpdateSectionProgressInput,
+} from './contracts/index.js';
+
+export {
+  completeSectionProgressInputSchema,
+  getSectionProgressByEnrollmentAndSectionInputSchema,
+  getSectionProgressInputSchema,
+  startSectionProgressInputSchema,
+  updateSectionProgressInputSchema,
+} from './contracts/index.js';
+
+export {
+  SectionProgressApplicationError,
+  SectionProgressApplicationErrorCode,
+  SectionProgressAccessDeniedError,
+  type SectionProgressAccessDeniedReason,
+  type SectionProgressApplicationErrorIssue,
+} from './errors/section-progress-application.error.js';

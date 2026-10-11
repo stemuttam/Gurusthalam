@@ -1,3 +1,4 @@
+
 import { Module } from '@nestjs/common';
 
 import { DatabaseModule } from '../../../database.module.js';
@@ -10,6 +11,7 @@ import {
   LEARNING_SESSION_REPOSITORY,
   LESSON_PROGRESS_REPOSITORY,
   PROGRESS_REPOSITORY,
+  SECTION_PROGRESS_REPOSITORY,
 } from './learning-repository.tokens.js';
 
 import { PrismaEntitlementRepository } from './prisma-entitlement.repository.js';
@@ -21,6 +23,8 @@ import { PrismaLearningSessionRepository } from './prisma-learning-session.repos
 import { PrismaLessonProgressRepository } from './prisma-lesson-progress.repository.js';
 
 import { PrismaProgressRepository } from './prisma-progress.repository.js';
+
+import { PrismaSectionProgressRepository } from './prisma-section-progress.repository.js';
 
 @Module({
   imports: [DatabaseModule],
@@ -70,6 +74,15 @@ import { PrismaProgressRepository } from './prisma-progress.repository.js';
       useFactory: (prisma: PrismaService): PrismaLessonProgressRepository =>
         new PrismaLessonProgressRepository(prisma),
     },
+
+    {
+      provide: SECTION_PROGRESS_REPOSITORY,
+
+      inject: [PrismaService],
+
+      useFactory: (prisma: PrismaService): PrismaSectionProgressRepository =>
+        new PrismaSectionProgressRepository(prisma),
+    },
   ],
 
   exports: [
@@ -78,6 +91,7 @@ import { PrismaProgressRepository } from './prisma-progress.repository.js';
     LEARNING_SESSION_REPOSITORY,
     PROGRESS_REPOSITORY,
     LESSON_PROGRESS_REPOSITORY,
+    SECTION_PROGRESS_REPOSITORY,
   ],
 })
 export class LearningPersistenceModule {}

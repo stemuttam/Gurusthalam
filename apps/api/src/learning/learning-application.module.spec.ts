@@ -6,6 +6,7 @@ import {
   DefaultEnrollmentApplicationService,
   DefaultEntitlementApplicationService,
   DefaultLessonProgressApplicationService,
+  DefaultSectionProgressApplicationService,
 } from '@gurusthalam/learning';
 
 import { PrismaService } from '../database/prisma/prisma.service.js';
@@ -62,6 +63,23 @@ describe('LearningApplicationModule', () => {
       await moduleRef.close();
     }
   });
+
+  it('resolves the SectionProgress application service', async () => {
+  const moduleRef = await createTestingModule();
+
+  try {
+    const service =
+      moduleRef.get<DefaultSectionProgressApplicationService>(
+        DefaultSectionProgressApplicationService,
+      );
+
+    expect(service).toBeInstanceOf(
+      DefaultSectionProgressApplicationService,
+    );
+  } finally {
+    await moduleRef.close();
+  }
+});
 
   it('resolves independent Enrollment, Entitlement, and LessonProgress application boundaries', async () => {
     const moduleRef = await createTestingModule();

@@ -56,8 +56,7 @@ export class SectionProgress {
 
     this.props = {
       ...props,
-      startedAt:
-        props.startedAt === null ? null : new Date(props.startedAt),
+      startedAt: props.startedAt === null ? null : new Date(props.startedAt),
       completedAt:
         props.completedAt === null ? null : new Date(props.completedAt),
       createdAt: new Date(props.createdAt),
@@ -269,8 +268,7 @@ export class SectionProgress {
         [
           {
             field: 'percentage',
-            message:
-              `Expected ${MAX_PERCENTAGE}, received ${this.percentage}.`,
+            message: `Expected ${MAX_PERCENTAGE}, received ${this.percentage}.`,
           },
         ],
       );
@@ -430,8 +428,7 @@ export class SectionProgress {
     if (props.completedAt !== null && !isValidDate(props.completedAt)) {
       issues.push({
         field: 'completedAt',
-        message:
-          'SectionProgress completion timestamp must be valid or null.',
+        message: 'SectionProgress completion timestamp must be valid or null.',
       });
     }
 

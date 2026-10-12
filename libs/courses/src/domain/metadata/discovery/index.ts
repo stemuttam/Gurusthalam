@@ -29,9 +29,7 @@ export type { LearningObjective } from './learning-objective.js';
 
 export { LanguageCode } from './language-code.js';
 
-export {
-  createCourseDiscoveryMetadata,
-} from './course-discovery-metadata.js';
+export { createCourseDiscoveryMetadata } from './course-discovery-metadata.js';
 
 export type {
   CourseDiscoveryMetadata,

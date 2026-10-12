@@ -12,6 +12,8 @@ import {
   PROGRESS_REPOSITORY,
   SECTION_PROGRESS_REPOSITORY,
   LEARNING_ACTIVITY_EVENT_REPOSITORY,
+  LESSON_PROGRESS_BATCH_QUERY_REPOSITORY,
+  COURSE_PROGRESS_READ_MODEL_REPOSITORY,
 } from './learning-repository.tokens.js';
 
 import { PrismaEntitlementRepository } from './prisma-entitlement.repository.js';
@@ -28,8 +30,14 @@ import { PrismaSectionProgressRepository } from './prisma-section-progress.repos
 
 import { PrismaLearningActivityEventRepository } from './prisma-learning-activity-event.repository.js';
 
+import { CoursesPersistenceModule } from '../courses/courses-persistence.module.js';
+
+import { PrismaLessonProgressBatchQueryRepository } from './prisma-lesson-progress-batch-query.repository.js';
+
+import { PrismaCourseProgressReadModelRepository } from './prisma-course-progress-read-model.repository.js';
+
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, CoursesPersistenceModule],
 
   providers: [
     {
@@ -96,6 +104,23 @@ import { PrismaLearningActivityEventRepository } from './prisma-learning-activit
       ): PrismaLearningActivityEventRepository =>
         new PrismaLearningActivityEventRepository(prisma),
     },
+
+    {
+      provide: LESSON_PROGRESS_BATCH_QUERY_REPOSITORY,
+      inject: [PrismaService],
+      useFactory: (
+        prisma: PrismaService,
+      ): PrismaLessonProgressBatchQueryRepository =>
+        new PrismaLessonProgressBatchQueryRepository(prisma),
+    },
+    {
+      provide: COURSE_PROGRESS_READ_MODEL_REPOSITORY,
+      inject: [PrismaService],
+      useFactory: (
+        prisma: PrismaService,
+      ): PrismaCourseProgressReadModelRepository =>
+        new PrismaCourseProgressReadModelRepository(prisma),
+    },
   ],
 
   exports: [
@@ -106,6 +131,8 @@ import { PrismaLearningActivityEventRepository } from './prisma-learning-activit
     LESSON_PROGRESS_REPOSITORY,
     SECTION_PROGRESS_REPOSITORY,
     LEARNING_ACTIVITY_EVENT_REPOSITORY,
+    LESSON_PROGRESS_BATCH_QUERY_REPOSITORY,
+    COURSE_PROGRESS_READ_MODEL_REPOSITORY,
   ],
 })
 export class LearningPersistenceModule {}

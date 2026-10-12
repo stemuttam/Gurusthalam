@@ -1,14 +1,17 @@
 import { Module } from '@nestjs/common';
 
 import {
+  DefaultCourseProgressApplicationService,
   DefaultEnrollmentApplicationService,
   DefaultEntitlementApplicationService,
   DefaultLessonProgressApplicationService,
   DefaultProgressApplicationService,
   DefaultSectionProgressApplicationService,
+  type CourseProgressReadModelRepository,
   type EnrollmentRepository,
   type EntitlementApplicationService,
   type EntitlementRepository,
+  type LessonProgressBatchQueryRepository,
   type LessonProgressRepository,
   type ProgressRepository,
   type SectionProgressRepository,
@@ -16,6 +19,7 @@ import {
 
 import type {
   CourseRepository,
+  CourseStructureRepository,
   CourseVersionRepository,
 } from '@gurusthalam/courses';
 
@@ -26,13 +30,17 @@ import {
 } from '../database/prisma/repositories/index.js';
 
 import {
-  ENTITLEMENT_REPOSITORY,
+  COURSE_PROGRESS_READ_MODEL_REPOSITORY,
   ENROLLMENT_REPOSITORY,
+  ENTITLEMENT_REPOSITORY,
+  LESSON_PROGRESS_BATCH_QUERY_REPOSITORY,
   LESSON_PROGRESS_REPOSITORY,
+  LearningPersistenceModule,
   PROGRESS_REPOSITORY,
   SECTION_PROGRESS_REPOSITORY,
-  LearningPersistenceModule,
 } from '../database/prisma/repositories/learning/index.js';
+
+import { COURSE_STRUCTURE_REPOSITORY } from '../database/prisma/repositories/courses/courses-repository.tokens.js';
 
 @Module({
   imports: [CoursesPersistenceModule, LearningPersistenceModule],
@@ -40,13 +48,11 @@ import {
   providers: [
     {
       provide: DefaultEnrollmentApplicationService,
-
       inject: [
         ENROLLMENT_REPOSITORY,
         COURSE_REPOSITORY,
         COURSE_VERSION_REPOSITORY,
       ],
-
       useFactory: (
         enrollmentRepository: EnrollmentRepository,
         courseRepository: CourseRepository,
@@ -61,9 +67,7 @@ import {
 
     {
       provide: DefaultEntitlementApplicationService,
-
       inject: [ENTITLEMENT_REPOSITORY, ENROLLMENT_REPOSITORY],
-
       useFactory: (
         entitlementRepository: EntitlementRepository,
         enrollmentRepository: EnrollmentRepository,
@@ -76,12 +80,10 @@ import {
 
     {
       provide: DefaultLessonProgressApplicationService,
-
       inject: [
         LESSON_PROGRESS_REPOSITORY,
         DefaultEntitlementApplicationService,
       ],
-
       useFactory: (
         lessonProgressRepository: LessonProgressRepository,
         entitlementApplicationService: EntitlementApplicationService,
@@ -94,9 +96,7 @@ import {
 
     {
       provide: DefaultProgressApplicationService,
-
       inject: [PROGRESS_REPOSITORY, DefaultEntitlementApplicationService],
-
       useFactory: (
         progressRepository: ProgressRepository,
         entitlementApplicationService: EntitlementApplicationService,
@@ -109,12 +109,10 @@ import {
 
     {
       provide: DefaultSectionProgressApplicationService,
-
       inject: [
         SECTION_PROGRESS_REPOSITORY,
         DefaultEntitlementApplicationService,
       ],
-
       useFactory: (
         sectionProgressRepository: SectionProgressRepository,
         entitlementApplicationService: EntitlementApplicationService,
@@ -122,6 +120,28 @@ import {
         new DefaultSectionProgressApplicationService(
           sectionProgressRepository,
           entitlementApplicationService,
+        ),
+    },
+
+    {
+      provide: DefaultCourseProgressApplicationService,
+      inject: [
+        ENROLLMENT_REPOSITORY,
+        COURSE_STRUCTURE_REPOSITORY,
+        LESSON_PROGRESS_BATCH_QUERY_REPOSITORY,
+        COURSE_PROGRESS_READ_MODEL_REPOSITORY,
+      ],
+      useFactory: (
+        enrollmentRepository: EnrollmentRepository,
+        courseStructureRepository: CourseStructureRepository,
+        lessonProgressBatchQueryRepository: LessonProgressBatchQueryRepository,
+        courseProgressReadModelRepository: CourseProgressReadModelRepository,
+      ): DefaultCourseProgressApplicationService =>
+        new DefaultCourseProgressApplicationService(
+          enrollmentRepository,
+          courseStructureRepository,
+          lessonProgressBatchQueryRepository,
+          courseProgressReadModelRepository,
         ),
     },
   ],
@@ -132,6 +152,7 @@ import {
     DefaultLessonProgressApplicationService,
     DefaultProgressApplicationService,
     DefaultSectionProgressApplicationService,
+    DefaultCourseProgressApplicationService,
   ],
 })
 export class LearningApplicationModule {}

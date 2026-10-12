@@ -33,9 +33,7 @@ const publishCourse = (): Course => {
 const getPublishedEvent = (course: Course) =>
   course
     .getDomainEvents()
-    .find(
-      (event) => event.eventName === CourseDomainEventName.PUBLISHED,
-    );
+    .find((event) => event.eventName === CourseDomainEventName.PUBLISHED);
 
 describe('Course publication event consistency', () => {
   describe('event identity', () => {
@@ -44,9 +42,7 @@ describe('Course publication event consistency', () => {
 
       const publishedEvents = course
         .getDomainEvents()
-        .filter(
-          (event) => event.eventName === CourseDomainEventName.PUBLISHED,
-        );
+        .filter((event) => event.eventName === CourseDomainEventName.PUBLISHED);
 
       expect(publishedEvents).toHaveLength(1);
     });
@@ -79,9 +75,7 @@ describe('Course publication event consistency', () => {
       const course = publishCourse();
       const event = getPublishedEvent(course);
 
-      expect(event?.eventName).toBe(
-        CourseDomainEventName.PUBLISHED,
-      );
+      expect(event?.eventName).toBe(CourseDomainEventName.PUBLISHED);
     });
 
     it('does not use another lifecycle event name for publication', () => {
@@ -92,13 +86,9 @@ describe('Course publication event consistency', () => {
         CourseDomainEventName.SUBMITTED_FOR_REVIEW,
       );
 
-      expect(event?.eventName).not.toBe(
-        CourseDomainEventName.UNPUBLISHED,
-      );
+      expect(event?.eventName).not.toBe(CourseDomainEventName.UNPUBLISHED);
 
-      expect(event?.eventName).not.toBe(
-        CourseDomainEventName.ARCHIVED,
-      );
+      expect(event?.eventName).not.toBe(CourseDomainEventName.ARCHIVED);
     });
   });
 
@@ -163,9 +153,7 @@ describe('Course publication event consistency', () => {
       const events = course.getDomainEvents();
       const lastEvent = events.at(-1);
 
-      expect(lastEvent?.eventName).toBe(
-        CourseDomainEventName.PUBLISHED,
-      );
+      expect(lastEvent?.eventName).toBe(CourseDomainEventName.PUBLISHED);
     });
 
     it('preserves chronological event timestamps', () => {
@@ -218,8 +206,7 @@ describe('Course publication event consistency', () => {
         .getDomainEvents()
         .find(
           (event) =>
-            event.eventName ===
-            CourseDomainEventName.SUBMITTED_FOR_REVIEW,
+            event.eventName === CourseDomainEventName.SUBMITTED_FOR_REVIEW,
         );
 
       const reviewUpdatedAt = course.updatedAt;
@@ -250,9 +237,7 @@ describe('Course publication event consistency', () => {
       const events = course.getDomainEvents();
       const originalLength = events.length;
 
-      (
-        events as Array<unknown>
-      ).push({
+      (events as Array<unknown>).push({
         eventName: 'invalid.test.event',
       });
 
@@ -301,16 +286,13 @@ describe('Course publication event consistency', () => {
     it('does not create PUBLISHED when publishing from DRAFT', () => {
       const course = createCourse();
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(
         course
           .getDomainEvents()
           .filter(
-            (event) =>
-              event.eventName === CourseDomainEventName.PUBLISHED,
+            (event) => event.eventName === CourseDomainEventName.PUBLISHED,
           ),
       ).toHaveLength(0);
     });
@@ -320,9 +302,7 @@ describe('Course publication event consistency', () => {
 
       const eventsBefore = course.getDomainEvents();
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.getDomainEvents()).toEqual(eventsBefore);
       expect(getPublishedEvent(course)?.payload).toEqual({

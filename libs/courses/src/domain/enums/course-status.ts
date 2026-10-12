@@ -12,14 +12,14 @@ export const CourseStatus = {
   ARCHIVED: 'ARCHIVED',
 } as const;
 
-export type CourseStatus =
-  (typeof CourseStatus)[keyof typeof CourseStatus];
+export type CourseStatus = (typeof CourseStatus)[keyof typeof CourseStatus];
 
-export const COURSE_STATUSES = Object.values(CourseStatus) as readonly CourseStatus[];
+export const COURSE_STATUSES = Object.values(
+  CourseStatus,
+) as readonly CourseStatus[];
 
 export function isCourseStatus(value: unknown): value is CourseStatus {
   return (
-    typeof value === 'string' &&
-    COURSE_STATUSES.includes(value as CourseStatus)
+    typeof value === 'string' && COURSE_STATUSES.includes(value as CourseStatus)
   );
 }

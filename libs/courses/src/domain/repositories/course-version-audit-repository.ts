@@ -19,9 +19,7 @@ export interface CourseVersionAuditRepository {
    *
    * Implementations must not update or overwrite an existing audit entry.
    */
-  append(
-    audit: CourseVersionAudit,
-  ): Promise<void>;
+  append(audit: CourseVersionAudit): Promise<void>;
 
   /**
    * Returns audit entries for one CourseVersion.
@@ -39,7 +37,5 @@ export interface CourseVersionAuditRepository {
    * Results must be deterministic:
    * occurredAt ASC, version ASC, then audit id ASC.
    */
-  findByCourseId(
-    courseId: string,
-  ): Promise<readonly CourseVersionAudit[]>;
+  findByCourseId(courseId: string): Promise<readonly CourseVersionAudit[]>;
 }

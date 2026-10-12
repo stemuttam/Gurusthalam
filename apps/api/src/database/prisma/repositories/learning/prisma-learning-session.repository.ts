@@ -29,9 +29,7 @@ import { withPrismaRepositoryErrorBoundary } from '../prisma-repository-error.ma
  * Domain events are drained ONLY after the transaction successfully
  * commits.
  */
-export class PrismaLearningSessionRepository
-  implements LearningSessionRepository
-{
+export class PrismaLearningSessionRepository implements LearningSessionRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
   /**
@@ -155,11 +153,9 @@ export class PrismaLearningSessionRepository
 
                 aggregateId: event.aggregateId,
 
-                dedupeKey:
-                  PrismaLearningSessionRepository.toDedupeKey(event),
+                dedupeKey: PrismaLearningSessionRepository.toDedupeKey(event),
 
-                payload:
-                  PrismaLearningSessionRepository.toOutboxPayload(event),
+                payload: PrismaLearningSessionRepository.toOutboxPayload(event),
 
                 status: 'PENDING',
 

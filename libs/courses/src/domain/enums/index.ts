@@ -12,22 +12,12 @@ export {
   isCourseVisibility,
 } from './course-visibility.js';
 
-export type {
-  CourseVisibility as CourseVisibilityValue,
-} from './course-visibility.js';
+export type { CourseVisibility as CourseVisibilityValue } from './course-visibility.js';
 
-export {
-  CourseLevel,
-  COURSE_LEVELS,
-  isCourseLevel,
-} from './course-level.js';
+export { CourseLevel, COURSE_LEVELS, isCourseLevel } from './course-level.js';
 
 export type { CourseLevel as CourseLevelValue } from './course-level.js';
 
-export {
-  CourseType,
-  COURSE_TYPES,
-  isCourseType,
-} from './course-type.js';
+export { CourseType, COURSE_TYPES, isCourseType } from './course-type.js';
 
 export type { CourseType as CourseTypeValue } from './course-type.js';

@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common';
 
-import type { CourseQuery } from '@gurusthalam/courses';
+import type {
+  CourseQuery,
+  CourseStructureRepository,
+} from '@gurusthalam/courses';
 
 import { DatabaseModule } from '../../../database.module.js';
 
@@ -9,6 +12,8 @@ import { PrismaService } from '../../prisma.service.js';
 import { PrismaCourseQuery } from './prisma-course.query.js';
 
 import { PrismaCourseRepository } from './prisma-course.repository.js';
+
+import { PrismaCourseStructureRepository } from './prisma-course-structure.repository.js';
 
 import { PrismaCourseVersionAuditRepository } from './prisma-course-version-audit.repository.js';
 
@@ -19,6 +24,7 @@ import { PrismaCourseVersionRepository } from './prisma-course-version.repositor
 import {
   COURSE_QUERY,
   COURSE_REPOSITORY,
+  COURSE_STRUCTURE_REPOSITORY,
   COURSE_VERSION_AUDIT_REPOSITORY,
   COURSE_VERSION_LINEAGE_REPOSITORY,
   COURSE_VERSION_REPOSITORY,
@@ -30,45 +36,37 @@ import {
   providers: [
     {
       provide: COURSE_REPOSITORY,
-
       inject: [PrismaService],
-
       useFactory: (prisma: PrismaService): PrismaCourseRepository =>
         new PrismaCourseRepository(prisma),
     },
-
     {
       provide: COURSE_QUERY,
-
       inject: [PrismaService],
-
       useFactory: (prisma: PrismaService): CourseQuery =>
         new PrismaCourseQuery(prisma),
     },
-
     {
       provide: COURSE_VERSION_REPOSITORY,
-
       inject: [PrismaService],
-
       useFactory: (prisma: PrismaService): PrismaCourseVersionRepository =>
         new PrismaCourseVersionRepository(prisma),
     },
-
+    {
+      provide: COURSE_STRUCTURE_REPOSITORY,
+      inject: [PrismaService],
+      useFactory: (prisma: PrismaService): CourseStructureRepository =>
+        new PrismaCourseStructureRepository(prisma),
+    },
     {
       provide: COURSE_VERSION_AUDIT_REPOSITORY,
-
       inject: [PrismaService],
-
       useFactory: (prisma: PrismaService): PrismaCourseVersionAuditRepository =>
         new PrismaCourseVersionAuditRepository(prisma),
     },
-
     {
       provide: COURSE_VERSION_LINEAGE_REPOSITORY,
-
       inject: [PrismaService],
-
       useFactory: (
         prisma: PrismaService,
       ): PrismaCourseVersionLineageRepository =>
@@ -80,6 +78,7 @@ import {
     COURSE_REPOSITORY,
     COURSE_QUERY,
     COURSE_VERSION_REPOSITORY,
+    COURSE_STRUCTURE_REPOSITORY,
     COURSE_VERSION_AUDIT_REPOSITORY,
     COURSE_VERSION_LINEAGE_REPOSITORY,
   ],

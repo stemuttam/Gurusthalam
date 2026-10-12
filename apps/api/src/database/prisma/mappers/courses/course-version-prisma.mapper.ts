@@ -28,24 +28,18 @@ export class CourseVersionPrismaMapper {
     // Static mapper; instantiation is intentionally disabled.
   }
 
-  static toDomain(
-    record: PrismaCourseVersionRecord,
-  ): CourseVersion {
+  static toDomain(record: PrismaCourseVersionRecord): CourseVersion {
     return CourseVersion.rehydrate({
       id: CourseVersionId.from(record.id),
       courseId: record.courseId,
       version: record.version,
-      status: CourseVersionPrismaMapper.toDomainStatus(
-        record.status,
-      ),
+      status: CourseVersionPrismaMapper.toDomainStatus(record.status),
       title: record.title,
       description: record.description,
       createdAt: new Date(record.createdAt),
       updatedAt: new Date(record.updatedAt),
       publishedAt:
-        record.publishedAt === null
-          ? null
-          : new Date(record.publishedAt),
+        record.publishedAt === null ? null : new Date(record.publishedAt),
     });
   }
 
@@ -58,17 +52,13 @@ export class CourseVersionPrismaMapper {
       id: props.id.value,
       courseId: props.courseId,
       version: props.version,
-      status: CourseVersionPrismaMapper.toPrismaStatus(
-        props.status,
-      ),
+      status: CourseVersionPrismaMapper.toPrismaStatus(props.status),
       title: props.title,
       description: props.description,
       createdAt: new Date(props.createdAt),
       updatedAt: new Date(props.updatedAt),
       publishedAt:
-        props.publishedAt === null
-          ? null
-          : new Date(props.publishedAt),
+        props.publishedAt === null ? null : new Date(props.publishedAt),
     };
   }
 

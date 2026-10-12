@@ -16,9 +16,7 @@ import {
   type LearningObjective,
 } from './learning-objective.js';
 import { LanguageCode } from './language-code.js';
-import {
-  createCourseDiscoveryMetadata,
-  } from './course-discovery-metadata.js';
+import { createCourseDiscoveryMetadata } from './course-discovery-metadata.js';
 
 describe('LanguageCode', () => {
   it('creates a valid language code', () => {
@@ -54,13 +52,9 @@ describe('LanguageCode', () => {
   });
 
   it('supports equality', () => {
-    expect(LanguageCode.from('en').equals(LanguageCode.from('en'))).toBe(
-      true,
-    );
+    expect(LanguageCode.from('en').equals(LanguageCode.from('en'))).toBe(true);
 
-    expect(LanguageCode.from('en').equals(LanguageCode.from('hi'))).toBe(
-      false,
-    );
+    expect(LanguageCode.from('en').equals(LanguageCode.from('hi'))).toBe(false);
   });
 
   it('is immutable', () => {
@@ -266,10 +260,7 @@ describe('FutureDiscoverySignal', () => {
     });
 
     expect(signal.key).toBe('discovery.search-intent');
-    expect(signal.values).toEqual([
-      'algebra fundamentals',
-      'linear equations',
-    ]);
+    expect(signal.values).toEqual(['algebra fundamentals', 'linear equations']);
   });
 
   it('rejects invalid keys', () => {

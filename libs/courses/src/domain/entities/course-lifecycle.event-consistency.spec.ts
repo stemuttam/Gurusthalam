@@ -125,9 +125,7 @@ describe('Course lifecycle event consistency', () => {
       course.unpublish();
       course.archive();
 
-      const eventIds = course
-        .getDomainEvents()
-        .map((event) => event.eventId);
+      const eventIds = course.getDomainEvents().map((event) => event.eventId);
 
       expect(eventIds).toHaveLength(4);
       expect(new Set(eventIds).size).toBe(4);

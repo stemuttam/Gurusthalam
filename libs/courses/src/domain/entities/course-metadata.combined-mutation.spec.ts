@@ -66,9 +66,7 @@ describe('Course combined metadata mutation boundary', () => {
       });
 
       expect(course.title).toBe('Updated   Course   Title');
-      expect(course.description).toBe(
-        'Updated   course   description.',
-      );
+      expect(course.description).toBe('Updated   course   description.');
     });
 
     it('preserves the aggregate identity', () => {
@@ -157,9 +155,7 @@ describe('Course combined metadata mutation boundary', () => {
         description: 'Updated description.',
       });
 
-      expect(course.getDomainEvents()).toHaveLength(
-        originalEventCount + 1,
-      );
+      expect(course.getDomainEvents()).toHaveLength(originalEventCount + 1);
     });
 
     it('records metadata-updated as the final event', () => {
@@ -235,9 +231,7 @@ describe('Course combined metadata mutation boundary', () => {
         });
       }).toThrow(CourseValidationError);
 
-      expect(course.getDomainEvents()).toHaveLength(
-        originalEventCount,
-      );
+      expect(course.getDomainEvents()).toHaveLength(originalEventCount);
     });
   });
 
@@ -295,9 +289,7 @@ describe('Course combined metadata mutation boundary', () => {
         });
       }).toThrow(CourseValidationError);
 
-      expect(course.getDomainEvents()).toHaveLength(
-        originalEventCount,
-      );
+      expect(course.getDomainEvents()).toHaveLength(originalEventCount);
     });
   });
 

@@ -1,13 +1,8 @@
-import {
-  CourseValidationError,
-} from '../errors/index.js';
+import { CourseValidationError } from '../errors/index.js';
 import { CourseVersionId } from '../value-objects/course-version-id.js';
 
 export type CourseVersionStatus =
-  | 'DRAFT'
-  | 'IN_REVIEW'
-  | 'PUBLISHED'
-  | 'ARCHIVED';
+  'DRAFT' | 'IN_REVIEW' | 'PUBLISHED' | 'ARCHIVED';
 
 export interface CourseVersionProps {
   readonly id: CourseVersionId;
@@ -51,9 +46,7 @@ export class CourseVersion {
       createdAt: new Date(props.createdAt),
       updatedAt: new Date(props.updatedAt),
       publishedAt:
-        props.publishedAt === null
-          ? null
-          : new Date(props.publishedAt),
+        props.publishedAt === null ? null : new Date(props.publishedAt),
     };
   }
 
@@ -277,24 +270,17 @@ export class CourseVersion {
       });
     }
 
-    if (
-      !Number.isInteger(props.version) ||
-      props.version < 1
-    ) {
+    if (!Number.isInteger(props.version) || props.version < 1) {
       issues.push({
         field: 'version',
         message: 'CourseVersion number must be a positive integer.',
       });
     }
 
-    this.collectValidationIssue(
-      issues,
-      () => this.validateTitle(props.title),
-    );
+    this.collectValidationIssue(issues, () => this.validateTitle(props.title));
 
-    this.collectValidationIssue(
-      issues,
-      () => this.validateDescription(props.description),
+    this.collectValidationIssue(issues, () =>
+      this.validateDescription(props.description),
     );
 
     if (!this.isValidDate(props.createdAt)) {
@@ -311,31 +297,21 @@ export class CourseVersion {
       });
     }
 
-    if (
-      props.publishedAt !== null &&
-      !this.isValidDate(props.publishedAt)
-    ) {
+    if (props.publishedAt !== null && !this.isValidDate(props.publishedAt)) {
       issues.push({
         field: 'publishedAt',
         message: 'Publication timestamp must be a valid Date or null.',
       });
     }
 
-    if (
-      props.status === 'PUBLISHED' &&
-      props.publishedAt === null
-    ) {
+    if (props.status === 'PUBLISHED' && props.publishedAt === null) {
       issues.push({
         field: 'publishedAt',
-        message:
-          'A published CourseVersion must have a publication timestamp.',
+        message: 'A published CourseVersion must have a publication timestamp.',
       });
     }
 
-    if (
-      props.status !== 'PUBLISHED' &&
-      props.publishedAt !== null
-    ) {
+    if (props.status !== 'PUBLISHED' && props.publishedAt !== null) {
       issues.push({
         field: 'publishedAt',
         message:
@@ -368,43 +344,27 @@ export class CourseVersion {
   }
 
   private validateTitle(title: string): void {
-    if (
-      typeof title !== 'string' ||
-      title.trim().length === 0
-    ) {
-      throw new CourseValidationError(
-        'CourseVersion title is required.',
-        [
-          {
-            field: 'title',
-            message:
-              'CourseVersion title must be a non-empty string.',
-          },
-        ],
-      );
+    if (typeof title !== 'string' || title.trim().length === 0) {
+      throw new CourseValidationError('CourseVersion title is required.', [
+        {
+          field: 'title',
+          message: 'CourseVersion title must be a non-empty string.',
+        },
+      ]);
     }
 
     if (title.trim().length > 200) {
-      throw new CourseValidationError(
-        'CourseVersion title is too long.',
-        [
-          {
-            field: 'title',
-            message:
-              'CourseVersion title must not exceed 200 characters.',
-          },
-        ],
-      );
+      throw new CourseValidationError('CourseVersion title is too long.', [
+        {
+          field: 'title',
+          message: 'CourseVersion title must not exceed 200 characters.',
+        },
+      ]);
     }
   }
 
-  private validateDescription(
-    description: string | null,
-  ): void {
-    if (
-      description !== null &&
-      description.trim().length === 0
-    ) {
+  private validateDescription(description: string | null): void {
+    if (description !== null && description.trim().length === 0) {
       throw new CourseValidationError(
         'CourseVersion description cannot be empty.',
         [
@@ -417,10 +377,7 @@ export class CourseVersion {
       );
     }
 
-    if (
-      description !== null &&
-      description.trim().length > 10_000
-    ) {
+    if (description !== null && description.trim().length > 10_000) {
       throw new CourseValidationError(
         'CourseVersion description is too long.',
         [
@@ -435,9 +392,6 @@ export class CourseVersion {
   }
 
   private isValidDate(value: Date): boolean {
-    return (
-      value instanceof Date &&
-      !Number.isNaN(value.getTime())
-    );
+    return value instanceof Date && !Number.isNaN(value.getTime());
   }
 }

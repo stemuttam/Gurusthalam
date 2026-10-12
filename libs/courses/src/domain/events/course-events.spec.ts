@@ -36,9 +36,7 @@ describe('Course domain events', () => {
       const events = course.getDomainEvents();
 
       expect(events).toHaveLength(1);
-      expect(events[0]?.eventName).toBe(
-        CourseDomainEventName.CREATED,
-      );
+      expect(events[0]?.eventName).toBe(CourseDomainEventName.CREATED);
     });
 
     it('records the correct aggregate identifier', () => {
@@ -103,9 +101,7 @@ describe('Course domain events', () => {
 
       expect(firstRead).toHaveLength(1);
       expect(secondRead).toHaveLength(1);
-      expect(secondRead[0]?.eventId).toBe(
-        firstRead[0]?.eventId,
-      );
+      expect(secondRead[0]?.eventId).toBe(firstRead[0]?.eventId);
     });
 
     it('returns a new array instead of exposing the internal collection', () => {
@@ -136,9 +132,7 @@ describe('Course domain events', () => {
       const events = course.getDomainEvents();
 
       expect(events).toHaveLength(1);
-      expect(events[0]?.eventName).toBe(
-        CourseDomainEventName.METADATA_UPDATED,
-      );
+      expect(events[0]?.eventName).toBe(CourseDomainEventName.METADATA_UPDATED);
     });
 
     it('records the updated metadata in the payload', () => {
@@ -182,9 +176,7 @@ describe('Course domain events', () => {
       });
 
       expect(course.getDomainEvents()).toHaveLength(0);
-      expect(course.updatedAt.getTime()).toBe(
-        updatedAtBefore.getTime(),
-      );
+      expect(course.updatedAt.getTime()).toBe(updatedAtBefore.getTime());
     });
 
     it('does not create an event when only metadata whitespace is normalized away', () => {
@@ -202,13 +194,9 @@ describe('Course domain events', () => {
       expect(course.getDomainEvents()).toHaveLength(0);
 
       expect(course.title).toBe('TypeScript Fundamentals');
-      expect(course.description).toBe(
-        'Learn TypeScript from the ground up.',
-      );
+      expect(course.description).toBe('Learn TypeScript from the ground up.');
 
-      expect(course.updatedAt.getTime()).toBe(
-        updatedAtBefore.getTime(),
-      );
+      expect(course.updatedAt.getTime()).toBe(updatedAtBefore.getTime());
     });
 
     it('updates only the changed metadata field and records one event', () => {
@@ -223,9 +211,7 @@ describe('Course domain events', () => {
       });
 
       expect(course.title).toBe('Advanced TypeScript');
-      expect(course.description).toBe(
-        'Learn TypeScript from the ground up.',
-      );
+      expect(course.description).toBe('Learn TypeScript from the ground up.');
       expect(course.level).toBe(CourseLevel.BEGINNER);
       expect(course.type).toBe(CourseType.SELF_PACED);
       expect(course.visibility).toBe(CourseVisibility.PRIVATE);
@@ -233,9 +219,7 @@ describe('Course domain events', () => {
       const events = course.getDomainEvents();
 
       expect(events).toHaveLength(1);
-      expect(events[0]?.eventName).toBe(
-        CourseDomainEventName.METADATA_UPDATED,
-      );
+      expect(events[0]?.eventName).toBe(CourseDomainEventName.METADATA_UPDATED);
 
       expect(events[0]?.payload).toEqual({
         courseId: course.id.toString(),
@@ -262,9 +246,7 @@ describe('Course domain events', () => {
 
       const [event] = course.getDomainEvents();
 
-      expect(event?.occurredAt.getTime()).toBe(
-        course.updatedAt.getTime(),
-      );
+      expect(event?.occurredAt.getTime()).toBe(course.updatedAt.getTime());
     });
 
     it('records metadata events in order for multiple genuine changes', () => {
@@ -335,9 +317,7 @@ describe('Course domain events', () => {
       expect(course.level).toBe(originalLevel);
       expect(course.type).toBe(originalType);
       expect(course.visibility).toBe(originalVisibility);
-      expect(course.updatedAt.getTime()).toBe(
-        originalUpdatedAt.getTime(),
-      );
+      expect(course.updatedAt.getTime()).toBe(originalUpdatedAt.getTime());
       expect(course.getDomainEvents()).toHaveLength(0);
     });
 
@@ -389,9 +369,7 @@ describe('Course domain events', () => {
       expect(course.level).toBe(originalLevel);
       expect(course.type).toBe(originalType);
       expect(course.visibility).toBe(originalVisibility);
-      expect(course.updatedAt.getTime()).toBe(
-        originalUpdatedAt.getTime(),
-      );
+      expect(course.updatedAt.getTime()).toBe(originalUpdatedAt.getTime());
       expect(course.getDomainEvents()).toHaveLength(0);
     });
   });
@@ -406,9 +384,7 @@ describe('Course domain events', () => {
 
       const [event] = course.getDomainEvents();
 
-      expect(event?.eventName).toBe(
-        CourseDomainEventName.SUBMITTED_FOR_REVIEW,
-      );
+      expect(event?.eventName).toBe(CourseDomainEventName.SUBMITTED_FOR_REVIEW);
     });
 
     it('records the status transition', () => {
@@ -453,9 +429,7 @@ describe('Course domain events', () => {
 
       const [event] = course.getDomainEvents();
 
-      expect(event?.eventName).toBe(
-        CourseDomainEventName.PUBLISHED,
-      );
+      expect(event?.eventName).toBe(CourseDomainEventName.PUBLISHED);
     });
 
     it('records the status transition', () => {
@@ -503,9 +477,7 @@ describe('Course domain events', () => {
 
       const [event] = course.getDomainEvents();
 
-      expect(event?.eventName).toBe(
-        CourseDomainEventName.UNPUBLISHED,
-      );
+      expect(event?.eventName).toBe(CourseDomainEventName.UNPUBLISHED);
     });
 
     it('records the status transition', () => {
@@ -555,9 +527,7 @@ describe('Course domain events', () => {
 
       const [event] = course.getDomainEvents();
 
-      expect(event?.eventName).toBe(
-        CourseDomainEventName.ARCHIVED,
-      );
+      expect(event?.eventName).toBe(CourseDomainEventName.ARCHIVED);
     });
 
     it('records CourseArchived from UNPUBLISHED', () => {
@@ -575,9 +545,7 @@ describe('Course domain events', () => {
 
       const [event] = course.getDomainEvents();
 
-      expect(event?.eventName).toBe(
-        CourseDomainEventName.ARCHIVED,
-      );
+      expect(event?.eventName).toBe(CourseDomainEventName.ARCHIVED);
     });
 
     it('does not create an event when archiving is invalid', () => {
@@ -618,9 +586,7 @@ describe('Course domain events', () => {
 
       const events = course.getDomainEvents();
 
-      expect(events[0]?.eventId).not.toBe(
-        events[1]?.eventId,
-      );
+      expect(events[0]?.eventId).not.toBe(events[1]?.eventId);
     });
   });
 
@@ -634,9 +600,7 @@ describe('Course domain events', () => {
 
       expect(events).toHaveLength(2);
 
-      expect(events[0]?.eventName).toBe(
-        CourseDomainEventName.CREATED,
-      );
+      expect(events[0]?.eventName).toBe(CourseDomainEventName.CREATED);
 
       expect(events[1]?.eventName).toBe(
         CourseDomainEventName.SUBMITTED_FOR_REVIEW,
@@ -682,9 +646,7 @@ describe('Course domain events', () => {
     it('does not generate domain events', () => {
       const course = createCourse();
 
-      const rehydrated = Course.rehydrate(
-        course.toPrimitives(),
-      );
+      const rehydrated = Course.rehydrate(course.toPrimitives());
 
       expect(rehydrated.getDomainEvents()).toHaveLength(0);
     });
@@ -692,9 +654,7 @@ describe('Course domain events', () => {
     it('preserves the original aggregate identity', () => {
       const course = createCourse();
 
-      const rehydrated = Course.rehydrate(
-        course.toPrimitives(),
-      );
+      const rehydrated = Course.rehydrate(course.toPrimitives());
 
       expect(rehydrated.id.equals(course.id)).toBe(true);
     });
@@ -702,17 +662,13 @@ describe('Course domain events', () => {
     it('can subsequently generate events from new domain actions', () => {
       const course = createCourse();
 
-      const rehydrated = Course.rehydrate(
-        course.toPrimitives(),
-      );
+      const rehydrated = Course.rehydrate(course.toPrimitives());
 
       rehydrated.submitForReview();
 
       const [event] = rehydrated.getDomainEvents();
 
-      expect(event?.eventName).toBe(
-        CourseDomainEventName.SUBMITTED_FOR_REVIEW,
-      );
+      expect(event?.eventName).toBe(CourseDomainEventName.SUBMITTED_FOR_REVIEW);
     });
   });
 });

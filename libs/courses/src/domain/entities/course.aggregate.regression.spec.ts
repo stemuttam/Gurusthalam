@@ -75,9 +75,7 @@ function getCreatedEvent(
   expect(event.eventName).toBe(CourseDomainEventName.CREATED);
 
   if (event.eventName !== CourseDomainEventName.CREATED) {
-    throw new Error(
-      `Expected CREATED event but received ${event.eventName}`,
-    );
+    throw new Error(`Expected CREATED event but received ${event.eventName}`);
   }
 
   return event;
@@ -89,9 +87,7 @@ function getMetadataUpdatedEvent(
 ): CourseMetadataUpdatedEvent {
   const event = getEventAt(events, index);
 
-  expect(event.eventName).toBe(
-    CourseDomainEventName.METADATA_UPDATED,
-  );
+  expect(event.eventName).toBe(CourseDomainEventName.METADATA_UPDATED);
 
   if (event.eventName !== CourseDomainEventName.METADATA_UPDATED) {
     throw new Error(
@@ -257,9 +253,7 @@ describe('Course aggregate regression — 4.1.9', () => {
       const events = course.getDomainEvents();
 
       expect(events).toHaveLength(2);
-      expect(events[1]?.eventName).toBe(
-        CourseDomainEventName.METADATA_UPDATED,
-      );
+      expect(events[1]?.eventName).toBe(CourseDomainEventName.METADATA_UPDATED);
     });
 
     it('records the updated metadata payload', () => {
@@ -271,10 +265,7 @@ describe('Course aggregate regression — 4.1.9', () => {
         visibility: CourseVisibility.PUBLIC,
       });
 
-      const event = getMetadataUpdatedEvent(
-        course.getDomainEvents(),
-        1,
-      );
+      const event = getMetadataUpdatedEvent(course.getDomainEvents(), 1);
 
       expect(event.payload.courseId).toBe(course.id.value);
       expect(event.payload.title).toBe(course.title);
@@ -332,9 +323,7 @@ describe('Course aggregate regression — 4.1.9', () => {
       const events = course.getDomainEvents();
       const event = getEventAt(events, 1);
 
-      expect(event.eventName).toBe(
-        CourseDomainEventName.SUBMITTED_FOR_REVIEW,
-      );
+      expect(event.eventName).toBe(CourseDomainEventName.SUBMITTED_FOR_REVIEW);
 
       expectStatusTransition(
         event,
@@ -362,9 +351,7 @@ describe('Course aggregate regression — 4.1.9', () => {
       const events = course.getDomainEvents();
       const event = getEventAt(events, 2);
 
-      expect(event.eventName).toBe(
-        CourseDomainEventName.PUBLISHED,
-      );
+      expect(event.eventName).toBe(CourseDomainEventName.PUBLISHED);
 
       expectStatusTransition(
         event,
@@ -390,9 +377,7 @@ describe('Course aggregate regression — 4.1.9', () => {
       const events = course.getDomainEvents();
       const event = getEventAt(events, 4);
 
-      expect(event.eventName).toBe(
-        CourseDomainEventName.UNPUBLISHED,
-      );
+      expect(event.eventName).toBe(CourseDomainEventName.UNPUBLISHED);
 
       expectStatusTransition(
         event,
@@ -427,9 +412,7 @@ describe('Course aggregate regression — 4.1.9', () => {
       const events = course.getDomainEvents();
       const event = getEventAt(events, 4);
 
-      expect(event.eventName).toBe(
-        CourseDomainEventName.ARCHIVED,
-      );
+      expect(event.eventName).toBe(CourseDomainEventName.ARCHIVED);
 
       expectStatusTransition(
         event,
@@ -696,9 +679,7 @@ describe('Course aggregate regression — 4.1.9', () => {
     it('rehydrates without creating domain events', () => {
       const original = createCourse();
 
-      const rehydrated = Course.rehydrate(
-        original.toPrimitives(),
-      );
+      const rehydrated = Course.rehydrate(original.toPrimitives());
 
       expect(rehydrated.getDomainEvents()).toHaveLength(0);
     });
@@ -706,9 +687,7 @@ describe('Course aggregate regression — 4.1.9', () => {
     it('preserves aggregate identity during rehydration', () => {
       const original = createCourse();
 
-      const rehydrated = Course.rehydrate(
-        original.toPrimitives(),
-      );
+      const rehydrated = Course.rehydrate(original.toPrimitives());
 
       expect(rehydrated.id.equals(original.id)).toBe(true);
     });
@@ -716,9 +695,7 @@ describe('Course aggregate regression — 4.1.9', () => {
     it('preserves aggregate state during rehydration', () => {
       const original = createCourse();
 
-      const rehydrated = Course.rehydrate(
-        original.toPrimitives(),
-      );
+      const rehydrated = Course.rehydrate(original.toPrimitives());
 
       expect(rehydrated.id.value).toBe(original.id.value);
       expect(rehydrated.title).toBe(original.title);
@@ -728,20 +705,14 @@ describe('Course aggregate regression — 4.1.9', () => {
       expect(rehydrated.visibility).toBe(original.visibility);
       expect(rehydrated.status).toBe(original.status);
       expect(rehydrated.instructorId).toBe(original.instructorId);
-      expect(rehydrated.createdAt.getTime()).toBe(
-        original.createdAt.getTime(),
-      );
-      expect(rehydrated.updatedAt.getTime()).toBe(
-        original.updatedAt.getTime(),
-      );
+      expect(rehydrated.createdAt.getTime()).toBe(original.createdAt.getTime());
+      expect(rehydrated.updatedAt.getTime()).toBe(original.updatedAt.getTime());
     });
 
     it('can continue the lifecycle after rehydration', () => {
       const original = createCourse();
 
-      const rehydrated = Course.rehydrate(
-        original.toPrimitives(),
-      );
+      const rehydrated = Course.rehydrate(original.toPrimitives());
 
       rehydrated.submitForReview();
       rehydrated.publish();
@@ -759,9 +730,7 @@ describe('Course aggregate regression — 4.1.9', () => {
     it('does not inherit pending events from the original aggregate', () => {
       const original = createCourse();
 
-      const rehydrated = Course.rehydrate(
-        original.toPrimitives(),
-      );
+      const rehydrated = Course.rehydrate(original.toPrimitives());
 
       expect(original.getDomainEvents()).toHaveLength(1);
       expect(rehydrated.getDomainEvents()).toHaveLength(0);
@@ -785,9 +754,7 @@ describe('Course aggregate regression — 4.1.9', () => {
 
       expect(course.status).toBe(CourseStatus.ARCHIVED);
 
-      expect(
-        course.getDomainEvents().map((event) => event.eventName),
-      ).toEqual([
+      expect(course.getDomainEvents().map((event) => event.eventName)).toEqual([
         CourseDomainEventName.CREATED,
         CourseDomainEventName.METADATA_UPDATED,
         CourseDomainEventName.SUBMITTED_FOR_REVIEW,
@@ -845,9 +812,11 @@ describe('Course aggregate regression — 4.1.9', () => {
       const beforeCount = course.getDomainEvents().length;
 
       expect(() => course.submitForReview()).toThrow();
-      expect(() => course.updateMetadata({
-        title: 'Rejected',
-      })).toThrow();
+      expect(() =>
+        course.updateMetadata({
+          title: 'Rejected',
+        }),
+      ).toThrow();
 
       expect(course.getDomainEvents()).toHaveLength(beforeCount);
     });

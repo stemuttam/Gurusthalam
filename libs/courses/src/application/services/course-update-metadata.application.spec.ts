@@ -71,9 +71,7 @@ describe('DefaultCourseApplicationService — UpdateMetadata — 4.10-E', () => 
     const events = course.getDomainEvents();
 
     expect(events).toHaveLength(1);
-    expect(events[0]?.eventName).toBe(
-      CourseDomainEventName.METADATA_UPDATED,
-    );
+    expect(events[0]?.eventName).toBe(CourseDomainEventName.METADATA_UPDATED);
   });
 
   it('supports partial metadata updates', async () => {

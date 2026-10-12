@@ -7,11 +7,7 @@ import {
   CourseVersionLineage,
 } from './course-version-lineage.js';
 
-const createVersion = (
-  courseId: string,
-  version: number,
-  title: string,
-) =>
+const createVersion = (courseId: string, version: number, title: string) =>
   CourseVersion.rehydrate({
     id: CourseVersionId.generate(),
     courseId,
@@ -26,17 +22,9 @@ const createVersion = (
 
 describe('CourseVersionLineage', () => {
   it('creates a lineage relationship between versions of the same Course', () => {
-    const source = createVersion(
-      'course-123',
-      1,
-      'Version One',
-    );
+    const source = createVersion('course-123', 1, 'Version One');
 
-    const target = createVersion(
-      'course-123',
-      2,
-      'Version Two',
-    );
+    const target = createVersion('course-123', 2, 'Version Two');
 
     const lineage = CourseVersionLineage.create({
       source,
@@ -45,34 +33,18 @@ describe('CourseVersionLineage', () => {
     });
 
     expect(lineage.courseId).toBe('course-123');
-    expect(lineage.sourceVersionId.equals(source.id)).toBe(
-      true,
-    );
+    expect(lineage.sourceVersionId.equals(source.id)).toBe(true);
     expect(lineage.sourceVersion).toBe(1);
-    expect(lineage.targetVersionId.equals(target.id)).toBe(
-      true,
-    );
+    expect(lineage.targetVersionId.equals(target.id)).toBe(true);
     expect(lineage.targetVersion).toBe(2);
-    expect(lineage.relation).toBe(
-      COURSE_VERSION_LINEAGE_RELATION,
-    );
-    expect(lineage.reason).toBe(
-      'Rollback-derived restoration.',
-    );
+    expect(lineage.relation).toBe(COURSE_VERSION_LINEAGE_RELATION);
+    expect(lineage.reason).toBe('Rollback-derived restoration.');
   });
 
   it('trims the lineage reason', () => {
-    const source = createVersion(
-      'course-123',
-      1,
-      'Version One',
-    );
+    const source = createVersion('course-123', 1, 'Version One');
 
-    const target = createVersion(
-      'course-123',
-      2,
-      'Version Two',
-    );
+    const target = createVersion('course-123', 2, 'Version Two');
 
     const lineage = CourseVersionLineage.create({
       source,
@@ -84,17 +56,9 @@ describe('CourseVersionLineage', () => {
   });
 
   it('rejects lineage across different Courses', () => {
-    const source = createVersion(
-      'course-123',
-      1,
-      'Version One',
-    );
+    const source = createVersion('course-123', 1, 'Version One');
 
-    const target = createVersion(
-      'course-999',
-      2,
-      'Version Two',
-    );
+    const target = createVersion('course-999', 2, 'Version Two');
 
     expect(() =>
       CourseVersionLineage.create({
@@ -106,11 +70,7 @@ describe('CourseVersionLineage', () => {
   });
 
   it('rejects self-lineage', () => {
-    const version = createVersion(
-      'course-123',
-      1,
-      'Version One',
-    );
+    const version = createVersion('course-123', 1, 'Version One');
 
     expect(() =>
       CourseVersionLineage.create({
@@ -122,17 +82,9 @@ describe('CourseVersionLineage', () => {
   });
 
   it('rejects a non-forward version relationship', () => {
-    const source = createVersion(
-      'course-123',
-      2,
-      'Version Two',
-    );
+    const source = createVersion('course-123', 2, 'Version Two');
 
-    const target = createVersion(
-      'course-123',
-      1,
-      'Version One',
-    );
+    const target = createVersion('course-123', 1, 'Version One');
 
     expect(() =>
       CourseVersionLineage.create({
@@ -144,17 +96,9 @@ describe('CourseVersionLineage', () => {
   });
 
   it('rejects equal version numbers with different identities', () => {
-    const source = createVersion(
-      'course-123',
-      1,
-      'Version One A',
-    );
+    const source = createVersion('course-123', 1, 'Version One A');
 
-    const target = createVersion(
-      'course-123',
-      1,
-      'Version One B',
-    );
+    const target = createVersion('course-123', 1, 'Version One B');
 
     expect(() =>
       CourseVersionLineage.create({
@@ -166,17 +110,9 @@ describe('CourseVersionLineage', () => {
   });
 
   it('rejects a blank reason', () => {
-    const source = createVersion(
-      'course-123',
-      1,
-      'Version One',
-    );
+    const source = createVersion('course-123', 1, 'Version One');
 
-    const target = createVersion(
-      'course-123',
-      2,
-      'Version Two',
-    );
+    const target = createVersion('course-123', 2, 'Version Two');
 
     expect(() =>
       CourseVersionLineage.create({
@@ -188,17 +124,9 @@ describe('CourseVersionLineage', () => {
   });
 
   it('rejects an oversized reason', () => {
-    const source = createVersion(
-      'course-123',
-      1,
-      'Version One',
-    );
+    const source = createVersion('course-123', 1, 'Version One');
 
-    const target = createVersion(
-      'course-123',
-      2,
-      'Version Two',
-    );
+    const target = createVersion('course-123', 2, 'Version Two');
 
     expect(() =>
       CourseVersionLineage.create({
@@ -223,28 +151,16 @@ describe('CourseVersionLineage', () => {
       reason: 'Curriculum modernization.',
     });
 
-    expect(lineage.sourceVersionId.equals(sourceId)).toBe(
-      true,
-    );
-    expect(lineage.targetVersionId.equals(targetId)).toBe(
-      true,
-    );
+    expect(lineage.sourceVersionId.equals(sourceId)).toBe(true);
+    expect(lineage.targetVersionId.equals(targetId)).toBe(true);
     expect(lineage.sourceVersion).toBe(3);
     expect(lineage.targetVersion).toBe(4);
   });
 
   it('returns detached primitives', () => {
-    const source = createVersion(
-      'course-123',
-      1,
-      'Version One',
-    );
+    const source = createVersion('course-123', 1, 'Version One');
 
-    const target = createVersion(
-      'course-123',
-      2,
-      'Version Two',
-    );
+    const target = createVersion('course-123', 2, 'Version Two');
 
     const lineage = CourseVersionLineage.create({
       source,
@@ -266,17 +182,9 @@ describe('CourseVersionLineage', () => {
   });
 
   it('is immutable', () => {
-    const source = createVersion(
-      'course-123',
-      1,
-      'Version One',
-    );
+    const source = createVersion('course-123', 1, 'Version One');
 
-    const target = createVersion(
-      'course-123',
-      2,
-      'Version Two',
-    );
+    const target = createVersion('course-123', 2, 'Version Two');
 
     const lineage = CourseVersionLineage.create({
       source,
@@ -285,23 +193,13 @@ describe('CourseVersionLineage', () => {
     });
 
     expect(Object.isFrozen(lineage)).toBe(true);
-    expect(Object.isFrozen(lineage.toPrimitives())).toBe(
-      false,
-    );
+    expect(Object.isFrozen(lineage.toPrimitives())).toBe(false);
   });
 
   it('preserves the lineage relationship after source version mutation is attempted', () => {
-    const source = createVersion(
-      'course-123',
-      1,
-      'Version One',
-    );
+    const source = createVersion('course-123', 1, 'Version One');
 
-    const target = createVersion(
-      'course-123',
-      2,
-      'Version Two',
-    );
+    const target = createVersion('course-123', 2, 'Version Two');
 
     const lineage = CourseVersionLineage.create({
       source,

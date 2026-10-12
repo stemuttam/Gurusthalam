@@ -75,27 +75,20 @@ export class CourseStructure {
 
   private constructor(input: RehydrateCourseStructureProps) {
     if (!input.courseVersionId) {
-      throw new CourseValidationError(
-        'CourseStructure validation failed.',
-        [
-          {
-            field: 'courseVersionId',
-            message: 'CourseVersion identifier is required.',
-          },
-        ],
-      );
+      throw new CourseValidationError('CourseStructure validation failed.', [
+        {
+          field: 'courseVersionId',
+          message: 'CourseVersion identifier is required.',
+        },
+      ]);
     }
 
     this.structureCourseVersionId = input.courseVersionId;
 
     this.sections.push(...(input.sections ?? []));
     this.learningUnits.push(...(input.learningUnits ?? []));
-    this.contentItemReferences.push(
-      ...(input.contentItemReferences ?? []),
-    );
-    this.assessmentReferences.push(
-      ...(input.assessmentReferences ?? []),
-    );
+    this.contentItemReferences.push(...(input.contentItemReferences ?? []));
+    this.assessmentReferences.push(...(input.assessmentReferences ?? []));
 
     this.validateInvariantState();
   }
@@ -103,9 +96,7 @@ export class CourseStructure {
   /**
    * Creates an empty CourseStructure for one CourseVersion.
    */
-  static create(
-    input: CreateCourseStructureProps,
-  ): CourseStructure {
+  static create(input: CreateCourseStructureProps): CourseStructure {
     return new CourseStructure({
       courseVersionId: input.courseVersionId,
     });
@@ -116,9 +107,7 @@ export class CourseStructure {
    *
    * Existing identities are preserved.
    */
-  static rehydrate(
-    input: RehydrateCourseStructureProps,
-  ): CourseStructure {
+  static rehydrate(input: RehydrateCourseStructureProps): CourseStructure {
     return new CourseStructure(input);
   }
 
@@ -134,9 +123,7 @@ export class CourseStructure {
   getSections(): readonly Section[] {
     return [...this.sections]
       .sort(compareSections)
-      .map((section) =>
-        Section.rehydrate(section.toPrimitives()),
-      );
+      .map((section) => Section.rehydrate(section.toPrimitives()));
   }
 
   /**
@@ -147,13 +134,9 @@ export class CourseStructure {
    */
   getLearningUnits(): readonly LearningUnit[] {
     return [...this.learningUnits]
-      .sort((first, second) =>
-        this.compareLearningUnits(first, second),
-      )
+      .sort((first, second) => this.compareLearningUnits(first, second))
       .map((learningUnit) =>
-        LearningUnit.rehydrate(
-          learningUnit.toPrimitives(),
-        ),
+        LearningUnit.rehydrate(learningUnit.toPrimitives()),
       );
   }
 
@@ -165,12 +148,8 @@ export class CourseStructure {
    */
   getContentItemReferences(): readonly ContentItemReferenceProps[] {
     return [...this.contentItemReferences]
-      .sort((first, second) =>
-        this.compareContentReferences(first, second),
-      )
-      .map((reference) =>
-        rehydrateContentItemReference(reference),
-      );
+      .sort((first, second) => this.compareContentReferences(first, second))
+      .map((reference) => rehydrateContentItemReference(reference));
   }
 
   /**
@@ -181,12 +160,8 @@ export class CourseStructure {
    */
   getAssessmentReferences(): readonly AssessmentReferenceProps[] {
     return [...this.assessmentReferences]
-      .sort((first, second) =>
-        this.compareAssessmentReferences(first, second),
-      )
-      .map((reference) =>
-        rehydrateAssessmentReference(reference),
-      );
+      .sort((first, second) => this.compareAssessmentReferences(first, second))
+      .map((reference) => rehydrateAssessmentReference(reference));
   }
 
   /**
@@ -199,11 +174,7 @@ export class CourseStructure {
     this.assertSectionBelongsToStructure(section);
     this.assertUniqueSectionId(section.id);
 
-    const position = clamp(
-      section.position,
-      1,
-      this.sections.length + 1,
-    );
+    const position = clamp(section.position, 1, this.sections.length + 1);
 
     const storedSection = Section.rehydrate({
       ...section.toPrimitives(),
@@ -212,10 +183,7 @@ export class CourseStructure {
 
     this.sections.push(storedSection);
 
-    this.reorderSections(
-      storedSection.id,
-      position,
-    );
+    this.reorderSections(storedSection.id, position);
   }
 
   /**
@@ -238,22 +206,15 @@ export class CourseStructure {
 
     if (
       this.learningUnits.some((learningUnit) =>
-        this.learningUnitBelongsToSection(
-          learningUnit,
-          section.id,
-        ),
+        this.learningUnitBelongsToSection(learningUnit, section.id),
       )
     ) {
-      throw new CourseValidationError(
-        'Section cannot be removed.',
-        [
-          {
-            field: 'sectionId',
-            message:
-              'Section must not contain Learning Units before removal.',
-          },
-        ],
-      );
+      throw new CourseValidationError('Section cannot be removed.', [
+        {
+          field: 'sectionId',
+          message: 'Section must not contain Learning Units before removal.',
+        },
+      ]);
     }
 
     this.sections.splice(index, 1);
@@ -266,10 +227,7 @@ export class CourseStructure {
    *
    * Section identity remains unchanged.
    */
-  moveSection(
-    sectionId: SectionId,
-    position: number,
-  ): void {
+  moveSection(sectionId: SectionId, position: number): void {
     this.validatePositiveInteger(
       position,
       'position',
@@ -283,10 +241,7 @@ export class CourseStructure {
       );
     }
 
-    this.reorderSections(
-      sectionId,
-      position,
-    );
+    this.reorderSections(sectionId, position);
   }
 
   /**
@@ -294,41 +249,27 @@ export class CourseStructure {
    *
    * The incoming Learning Unit is defensively rehydrated.
    */
-  addLearningUnit(
-    learningUnit: LearningUnit,
-  ): void {
+  addLearningUnit(learningUnit: LearningUnit): void {
     if (!this.findSection(learningUnit.sectionId)) {
-      throw new CourseValidationError(
-        'LearningUnit cannot be added.',
-        [
-          {
-            field: 'sectionId',
-            message:
-              'LearningUnit parent Section does not belong to this CourseStructure.',
-          },
-        ],
-      );
+      throw new CourseValidationError('LearningUnit cannot be added.', [
+        {
+          field: 'sectionId',
+          message:
+            'LearningUnit parent Section does not belong to this CourseStructure.',
+        },
+      ]);
     }
 
-    this.assertUniqueLearningUnitId(
-      learningUnit.id,
-    );
+    this.assertUniqueLearningUnitId(learningUnit.id);
 
-    const siblings = this.getLearningUnitsForSection(
-      learningUnit.sectionId,
-    );
+    const siblings = this.getLearningUnitsForSection(learningUnit.sectionId);
 
-    const position = clamp(
-      learningUnit.position,
-      1,
-      siblings.length + 1,
-    );
+    const position = clamp(learningUnit.position, 1, siblings.length + 1);
 
-    const storedLearningUnit =
-      LearningUnit.rehydrate({
-        ...learningUnit.toPrimitives(),
-        position,
-      });
+    const storedLearningUnit = LearningUnit.rehydrate({
+      ...learningUnit.toPrimitives(),
+      position,
+    });
 
     this.learningUnits.push(storedLearningUnit);
 
@@ -342,12 +283,8 @@ export class CourseStructure {
   /**
    * Removes a Learning Unit only when it has no structural references.
    */
-  removeLearningUnit(
-    learningUnitId: LearningUnitId,
-  ): void {
-    const index = this.findLearningUnitIndex(
-      learningUnitId,
-    );
+  removeLearningUnit(learningUnitId: LearningUnitId): void {
+    const index = this.findLearningUnitIndex(learningUnitId);
 
     if (index === -1) {
       throw this.structureNotFound(
@@ -356,40 +293,30 @@ export class CourseStructure {
       );
     }
 
-    const learningUnit =
-      this.getRequiredLearningUnitAt(index);
+    const learningUnit = this.getRequiredLearningUnitAt(index);
 
     if (
       this.contentItemReferences.some((reference) =>
-        reference.learningUnitId.equals(
-          learningUnit.id,
-        ),
+        reference.learningUnitId.equals(learningUnit.id),
       ) ||
       this.assessmentReferences.some((reference) =>
-        reference.learningUnitId.equals(
-          learningUnit.id,
-        ),
+        reference.learningUnitId.equals(learningUnit.id),
       )
     ) {
-      throw new CourseValidationError(
-        'LearningUnit cannot be removed.',
-        [
-          {
-            field: 'learningUnitId',
-            message:
-              'LearningUnit must not contain Content or Assessment references before removal.',
-          },
-        ],
-      );
+      throw new CourseValidationError('LearningUnit cannot be removed.', [
+        {
+          field: 'learningUnitId',
+          message:
+            'LearningUnit must not contain Content or Assessment references before removal.',
+        },
+      ]);
     }
 
     const sectionId = learningUnit.sectionId;
 
     this.learningUnits.splice(index, 1);
 
-    this.normalizeLearningUnitPositions(
-      sectionId,
-    );
+    this.normalizeLearningUnitPositions(sectionId);
   }
 
   /**
@@ -397,18 +324,14 @@ export class CourseStructure {
    *
    * LearningUnit identity remains unchanged.
    */
-  moveLearningUnit(
-    learningUnitId: LearningUnitId,
-    position: number,
-  ): void {
+  moveLearningUnit(learningUnitId: LearningUnitId, position: number): void {
     this.validatePositiveInteger(
       position,
       'position',
       'LearningUnit position must be a positive integer.',
     );
 
-    const learningUnit =
-      this.findLearningUnit(learningUnitId);
+    const learningUnit = this.findLearningUnit(learningUnitId);
 
     if (!learningUnit) {
       throw this.structureNotFound(
@@ -440,8 +363,7 @@ export class CourseStructure {
       'LearningUnit position must be a positive integer.',
     );
 
-    const learningUnit =
-      this.findLearningUnit(learningUnitId);
+    const learningUnit = this.findLearningUnit(learningUnitId);
 
     if (!learningUnit) {
       throw this.structureNotFound(
@@ -451,33 +373,23 @@ export class CourseStructure {
     }
 
     if (!this.findSection(targetSectionId)) {
-      throw new CourseValidationError(
-        'LearningUnit cannot be moved.',
-        [
-          {
-            field: 'targetSectionId',
-            message:
-              'Target Section does not belong to this CourseStructure.',
-          },
-        ],
-      );
+      throw new CourseValidationError('LearningUnit cannot be moved.', [
+        {
+          field: 'targetSectionId',
+          message: 'Target Section does not belong to this CourseStructure.',
+        },
+      ]);
     }
 
-    const sourceSectionId =
-      learningUnit.sectionId;
+    const sourceSectionId = learningUnit.sectionId;
 
     if (sourceSectionId.equals(targetSectionId)) {
-      this.reorderLearningUnits(
-        sourceSectionId,
-        learningUnitId,
-        position,
-      );
+      this.reorderLearningUnits(sourceSectionId, learningUnitId, position);
 
       return;
     }
 
-    const index =
-      this.findLearningUnitIndex(learningUnitId);
+    const index = this.findLearningUnitIndex(learningUnitId);
 
     if (index === -1) {
       throw this.structureNotFound(
@@ -486,25 +398,15 @@ export class CourseStructure {
       );
     }
 
-    const targetSiblings =
-      this.getLearningUnitsForSection(
-        targetSectionId,
-      );
+    const targetSiblings = this.getLearningUnitsForSection(targetSectionId);
 
-    const targetPosition = clamp(
-      position,
-      1,
-      targetSiblings.length + 1,
-    );
+    const targetPosition = clamp(position, 1, targetSiblings.length + 1);
 
-    const movedSource =
-      this.getRequiredLearningUnitAt(index);
+    const movedSource = this.getRequiredLearningUnitAt(index);
 
     this.learningUnits.splice(index, 1);
 
-    this.normalizeLearningUnitPositions(
-      sourceSectionId,
-    );
+    this.normalizeLearningUnitPositions(sourceSectionId);
 
     const movedTarget = LearningUnit.rehydrate({
       ...movedSource.toPrimitives(),
@@ -514,11 +416,7 @@ export class CourseStructure {
 
     this.learningUnits.push(movedTarget);
 
-    this.reorderLearningUnits(
-      targetSectionId,
-      movedTarget.id,
-      targetPosition,
-    );
+    this.reorderLearningUnits(targetSectionId, movedTarget.id, targetPosition);
   }
 
   /**
@@ -526,36 +424,22 @@ export class CourseStructure {
    *
    * The reference is normalized and stored immutably.
    */
-  attachContentItemReference(
-    reference: ContentItemReferenceProps,
-  ): void {
-    this.assertLearningUnitExists(
+  attachContentItemReference(reference: ContentItemReferenceProps): void {
+    this.assertLearningUnitExists(reference.learningUnitId);
+    this.assertUniqueContentItemReferenceId(reference.id);
+
+    const siblings = this.getContentItemReferencesForLearningUnit(
       reference.learningUnitId,
     );
-    this.assertUniqueContentItemReferenceId(
-      reference.id,
-    );
 
-    const siblings =
-      this.getContentItemReferencesForLearningUnit(
-        reference.learningUnitId,
-      );
+    const position = clamp(reference.position, 1, siblings.length + 1);
 
-    const position = clamp(
-      reference.position,
-      1,
-      siblings.length + 1,
-    );
+    const normalizedReference = rehydrateContentItemReference({
+      ...reference,
+      position,
+    });
 
-    const normalizedReference =
-      rehydrateContentItemReference({
-        ...reference,
-        position,
-      });
-
-    this.contentItemReferences.push(
-      normalizedReference,
-    );
+    this.contentItemReferences.push(normalizedReference);
 
     this.reorderContentItemReferences(
       normalizedReference.learningUnitId,
@@ -567,13 +451,8 @@ export class CourseStructure {
   /**
    * Detaches a Content Item reference.
    */
-  detachContentItemReference(
-    referenceId: ContentItemReferenceId,
-  ): void {
-    const index =
-      this.findContentItemReferenceIndex(
-        referenceId,
-      );
+  detachContentItemReference(referenceId: ContentItemReferenceId): void {
+    const index = this.findContentItemReferenceIndex(referenceId);
 
     if (index === -1) {
       throw this.structureNotFound(
@@ -582,16 +461,11 @@ export class CourseStructure {
       );
     }
 
-    const reference =
-      this.getRequiredContentItemReferenceAt(
-        index,
-      );
+    const reference = this.getRequiredContentItemReferenceAt(index);
 
     this.contentItemReferences.splice(index, 1);
 
-    this.normalizeContentItemReferencePositions(
-      reference.learningUnitId,
-    );
+    this.normalizeContentItemReferencePositions(reference.learningUnitId);
   }
 
   /**
@@ -609,8 +483,7 @@ export class CourseStructure {
       'Content Item reference position must be a positive integer.',
     );
 
-    const reference =
-      this.findContentItemReference(referenceId);
+    const reference = this.findContentItemReference(referenceId);
 
     if (!reference) {
       throw this.structureNotFound(
@@ -629,36 +502,22 @@ export class CourseStructure {
   /**
    * Attaches an Assessment reference to an existing Learning Unit.
    */
-  attachAssessmentReference(
-    reference: AssessmentReferenceProps,
-  ): void {
-    this.assertLearningUnitExists(
+  attachAssessmentReference(reference: AssessmentReferenceProps): void {
+    this.assertLearningUnitExists(reference.learningUnitId);
+    this.assertUniqueAssessmentReferenceId(reference.id);
+
+    const siblings = this.getAssessmentReferencesForLearningUnit(
       reference.learningUnitId,
     );
-    this.assertUniqueAssessmentReferenceId(
-      reference.id,
-    );
 
-    const siblings =
-      this.getAssessmentReferencesForLearningUnit(
-        reference.learningUnitId,
-      );
+    const position = clamp(reference.position, 1, siblings.length + 1);
 
-    const position = clamp(
-      reference.position,
-      1,
-      siblings.length + 1,
-    );
+    const normalizedReference = rehydrateAssessmentReference({
+      ...reference,
+      position,
+    });
 
-    const normalizedReference =
-      rehydrateAssessmentReference({
-        ...reference,
-        position,
-      });
-
-    this.assessmentReferences.push(
-      normalizedReference,
-    );
+    this.assessmentReferences.push(normalizedReference);
 
     this.reorderAssessmentReferences(
       normalizedReference.learningUnitId,
@@ -670,13 +529,8 @@ export class CourseStructure {
   /**
    * Detaches an Assessment reference.
    */
-  detachAssessmentReference(
-    referenceId: AssessmentReferenceId,
-  ): void {
-    const index =
-      this.findAssessmentReferenceIndex(
-        referenceId,
-      );
+  detachAssessmentReference(referenceId: AssessmentReferenceId): void {
+    const index = this.findAssessmentReferenceIndex(referenceId);
 
     if (index === -1) {
       throw this.structureNotFound(
@@ -685,16 +539,11 @@ export class CourseStructure {
       );
     }
 
-    const reference =
-      this.getRequiredAssessmentReferenceAt(
-        index,
-      );
+    const reference = this.getRequiredAssessmentReferenceAt(index);
 
     this.assessmentReferences.splice(index, 1);
 
-    this.normalizeAssessmentReferencePositions(
-      reference.learningUnitId,
-    );
+    this.normalizeAssessmentReferencePositions(reference.learningUnitId);
   }
 
   /**
@@ -712,8 +561,7 @@ export class CourseStructure {
       'Assessment reference position must be a positive integer.',
     );
 
-    const reference =
-      this.findAssessmentReference(referenceId);
+    const reference = this.findAssessmentReference(referenceId);
 
     if (!reference) {
       throw this.structureNotFound(
@@ -737,27 +585,17 @@ export class CourseStructure {
       courseVersionId: this.courseVersionId,
       sections: this.getSections(),
       learningUnits: this.getLearningUnits(),
-      contentItemReferences:
-        this.getContentItemReferences(),
-      assessmentReferences:
-        this.getAssessmentReferences(),
+      contentItemReferences: this.getContentItemReferences(),
+      assessmentReferences: this.getAssessmentReferences(),
     };
   }
 
-  private findSection(
-    sectionId: SectionId,
-  ): Section | undefined {
-    return this.sections.find((section) =>
-      section.id.equals(sectionId),
-    );
+  private findSection(sectionId: SectionId): Section | undefined {
+    return this.sections.find((section) => section.id.equals(sectionId));
   }
 
-  private findSectionIndex(
-    sectionId: SectionId,
-  ): number {
-    return this.sections.findIndex((section) =>
-      section.id.equals(sectionId),
-    );
+  private findSectionIndex(sectionId: SectionId): number {
+    return this.sections.findIndex((section) => section.id.equals(sectionId));
   }
 
   private findLearningUnit(
@@ -768,54 +606,45 @@ export class CourseStructure {
     );
   }
 
-  private findLearningUnitIndex(
-    learningUnitId: LearningUnitId,
-  ): number {
-    return this.learningUnits.findIndex(
-      (learningUnit) =>
-        learningUnit.id.equals(learningUnitId),
+  private findLearningUnitIndex(learningUnitId: LearningUnitId): number {
+    return this.learningUnits.findIndex((learningUnit) =>
+      learningUnit.id.equals(learningUnitId),
     );
   }
 
   private findContentItemReference(
     referenceId: ContentItemReferenceId,
   ): ContentItemReferenceProps | undefined {
-    return this.contentItemReferences.find(
-      (reference) =>
-        reference.id.equals(referenceId),
+    return this.contentItemReferences.find((reference) =>
+      reference.id.equals(referenceId),
     );
   }
 
   private findContentItemReferenceIndex(
     referenceId: ContentItemReferenceId,
   ): number {
-    return this.contentItemReferences.findIndex(
-      (reference) =>
-        reference.id.equals(referenceId),
+    return this.contentItemReferences.findIndex((reference) =>
+      reference.id.equals(referenceId),
     );
   }
 
   private findAssessmentReference(
     referenceId: AssessmentReferenceId,
   ): AssessmentReferenceProps | undefined {
-    return this.assessmentReferences.find(
-      (reference) =>
-        reference.id.equals(referenceId),
+    return this.assessmentReferences.find((reference) =>
+      reference.id.equals(referenceId),
     );
   }
 
   private findAssessmentReferenceIndex(
     referenceId: AssessmentReferenceId,
   ): number {
-    return this.assessmentReferences.findIndex(
-      (reference) =>
-        reference.id.equals(referenceId),
+    return this.assessmentReferences.findIndex((reference) =>
+      reference.id.equals(referenceId),
     );
   }
 
-  private getRequiredSectionAt(
-    index: number,
-  ): Section {
+  private getRequiredSectionAt(index: number): Section {
     const section = this.sections[index];
 
     if (!section) {
@@ -827,11 +656,8 @@ export class CourseStructure {
     return section;
   }
 
-  private getRequiredLearningUnitAt(
-    index: number,
-  ): LearningUnit {
-    const learningUnit =
-      this.learningUnits[index];
+  private getRequiredLearningUnitAt(index: number): LearningUnit {
+    const learningUnit = this.learningUnits[index];
 
     if (!learningUnit) {
       throw new Error(
@@ -845,8 +671,7 @@ export class CourseStructure {
   private getRequiredContentItemReferenceAt(
     index: number,
   ): ContentItemReferenceProps {
-    const reference =
-      this.contentItemReferences[index];
+    const reference = this.contentItemReferences[index];
 
     if (!reference) {
       throw new Error(
@@ -860,8 +685,7 @@ export class CourseStructure {
   private getRequiredAssessmentReferenceAt(
     index: number,
   ): AssessmentReferenceProps {
-    const reference =
-      this.assessmentReferences[index];
+    const reference = this.assessmentReferences[index];
 
     if (!reference) {
       throw new Error(
@@ -872,13 +696,9 @@ export class CourseStructure {
     return reference;
   }
 
-  private getLearningUnitsForSection(
-    sectionId: SectionId,
-  ): LearningUnit[] {
+  private getLearningUnitsForSection(sectionId: SectionId): LearningUnit[] {
     return this.learningUnits
-      .filter((learningUnit) =>
-        learningUnit.sectionId.equals(sectionId),
-      )
+      .filter((learningUnit) => learningUnit.sectionId.equals(sectionId))
       .sort(compareLearningUnitsByPosition);
   }
 
@@ -886,11 +706,7 @@ export class CourseStructure {
     learningUnitId: LearningUnitId,
   ): ContentItemReferenceProps[] {
     return this.contentItemReferences
-      .filter((reference) =>
-        reference.learningUnitId.equals(
-          learningUnitId,
-        ),
-      )
+      .filter((reference) => reference.learningUnitId.equals(learningUnitId))
       .sort(compareReferencesByPosition);
   }
 
@@ -898,66 +714,41 @@ export class CourseStructure {
     learningUnitId: LearningUnitId,
   ): AssessmentReferenceProps[] {
     return this.assessmentReferences
-      .filter((reference) =>
-        reference.learningUnitId.equals(
-          learningUnitId,
-        ),
-      )
+      .filter((reference) => reference.learningUnitId.equals(learningUnitId))
       .sort(compareReferencesByPosition);
   }
 
-  private assertSectionBelongsToStructure(
-    section: Section,
-  ): void {
-    if (
-      !section.courseVersionId.equals(
-        this.courseVersionId,
-      )
-    ) {
-      throw new CourseValidationError(
-        'Section cannot be added.',
-        [
-          {
-            field: 'courseVersionId',
-            message:
-              'Section belongs to a different CourseVersion.',
-          },
-        ],
-      );
+  private assertSectionBelongsToStructure(section: Section): void {
+    if (!section.courseVersionId.equals(this.courseVersionId)) {
+      throw new CourseValidationError('Section cannot be added.', [
+        {
+          field: 'courseVersionId',
+          message: 'Section belongs to a different CourseVersion.',
+        },
+      ]);
     }
   }
 
-  private assertUniqueSectionId(
-    sectionId: SectionId,
-  ): void {
+  private assertUniqueSectionId(sectionId: SectionId): void {
     if (this.findSection(sectionId)) {
-      throw new CourseValidationError(
-        'Section cannot be added.',
-        [
-          {
-            field: 'id',
-            message:
-              'Section identifier already exists in this CourseStructure.',
-          },
-        ],
-      );
+      throw new CourseValidationError('Section cannot be added.', [
+        {
+          field: 'id',
+          message: 'Section identifier already exists in this CourseStructure.',
+        },
+      ]);
     }
   }
 
-  private assertUniqueLearningUnitId(
-    learningUnitId: LearningUnitId,
-  ): void {
+  private assertUniqueLearningUnitId(learningUnitId: LearningUnitId): void {
     if (this.findLearningUnit(learningUnitId)) {
-      throw new CourseValidationError(
-        'LearningUnit cannot be added.',
-        [
-          {
-            field: 'id',
-            message:
-              'LearningUnit identifier already exists in this CourseStructure.',
-          },
-        ],
-      );
+      throw new CourseValidationError('LearningUnit cannot be added.', [
+        {
+          field: 'id',
+          message:
+            'LearningUnit identifier already exists in this CourseStructure.',
+        },
+      ]);
     }
   }
 
@@ -982,33 +773,24 @@ export class CourseStructure {
     referenceId: AssessmentReferenceId,
   ): void {
     if (this.findAssessmentReference(referenceId)) {
-      throw new CourseValidationError(
-        'Assessment reference cannot be added.',
-        [
-          {
-            field: 'id',
-            message:
-              'Assessment reference identifier already exists in this CourseStructure.',
-          },
-        ],
-      );
+      throw new CourseValidationError('Assessment reference cannot be added.', [
+        {
+          field: 'id',
+          message:
+            'Assessment reference identifier already exists in this CourseStructure.',
+        },
+      ]);
     }
   }
 
-  private assertLearningUnitExists(
-    learningUnitId: LearningUnitId,
-  ): void {
+  private assertLearningUnitExists(learningUnitId: LearningUnitId): void {
     if (!this.findLearningUnit(learningUnitId)) {
-      throw new CourseValidationError(
-        'Reference cannot be attached.',
-        [
-          {
-            field: 'learningUnitId',
-            message:
-              'LearningUnit does not belong to this CourseStructure.',
-          },
-        ],
-      );
+      throw new CourseValidationError('Reference cannot be attached.', [
+        {
+          field: 'learningUnitId',
+          message: 'LearningUnit does not belong to this CourseStructure.',
+        },
+      ]);
     }
   }
 
@@ -1016,22 +798,17 @@ export class CourseStructure {
     learningUnit: LearningUnit,
     sectionId: SectionId,
   ): boolean {
-    return learningUnit.sectionId.equals(
-      sectionId,
-    );
+    return learningUnit.sectionId.equals(sectionId);
   }
 
   private reorderSections(
     sectionId: SectionId,
     requestedPosition: number,
   ): void {
-    const ordered = [...this.sections].sort(
-      compareSections,
-    );
+    const ordered = [...this.sections].sort(compareSections);
 
-    const currentIndex = ordered.findIndex(
-      (section) =>
-        section.id.equals(sectionId),
+    const currentIndex = ordered.findIndex((section) =>
+      section.id.equals(sectionId),
     );
 
     if (currentIndex === -1) {
@@ -1041,50 +818,33 @@ export class CourseStructure {
       );
     }
 
-    const targetIndex = clamp(
-      requestedPosition - 1,
-      0,
-      ordered.length - 1,
-    );
+    const targetIndex = clamp(requestedPosition - 1, 0, ordered.length - 1);
 
-    const moved = this.removeArrayItem(
-      ordered,
-      currentIndex,
-    );
+    const moved = this.removeArrayItem(ordered, currentIndex);
 
     ordered.splice(targetIndex, 0, moved);
 
-    const normalized = ordered.map(
-      (section, index) =>
-        Section.rehydrate({
-          ...section.toPrimitives(),
-          position: index + 1,
-        }),
+    const normalized = ordered.map((section, index) =>
+      Section.rehydrate({
+        ...section.toPrimitives(),
+        position: index + 1,
+      }),
     );
 
-    this.replaceArray(
-      this.sections,
-      normalized,
-    );
+    this.replaceArray(this.sections, normalized);
   }
 
   private normalizeSectionPositions(): void {
-    const ordered = [...this.sections].sort(
-      compareSections,
+    const ordered = [...this.sections].sort(compareSections);
+
+    const normalized = ordered.map((section, index) =>
+      Section.rehydrate({
+        ...section.toPrimitives(),
+        position: index + 1,
+      }),
     );
 
-    const normalized = ordered.map(
-      (section, index) =>
-        Section.rehydrate({
-          ...section.toPrimitives(),
-          position: index + 1,
-        }),
-    );
-
-    this.replaceArray(
-      this.sections,
-      normalized,
-    );
+    this.replaceArray(this.sections, normalized);
   }
 
   private reorderLearningUnits(
@@ -1092,14 +852,10 @@ export class CourseStructure {
     learningUnitId: LearningUnitId,
     requestedPosition: number,
   ): void {
-    const ordered =
-      this.getLearningUnitsForSection(sectionId);
+    const ordered = this.getLearningUnitsForSection(sectionId);
 
-    const currentIndex = ordered.findIndex(
-      (learningUnit) =>
-        learningUnit.id.equals(
-          learningUnitId,
-        ),
+    const currentIndex = ordered.findIndex((learningUnit) =>
+      learningUnit.id.equals(learningUnitId),
     );
 
     if (currentIndex === -1) {
@@ -1109,61 +865,41 @@ export class CourseStructure {
       );
     }
 
-    const targetIndex = clamp(
-      requestedPosition - 1,
-      0,
-      ordered.length - 1,
-    );
+    const targetIndex = clamp(requestedPosition - 1, 0, ordered.length - 1);
 
-    const moved = this.removeArrayItem(
-      ordered,
-      currentIndex,
-    );
+    const moved = this.removeArrayItem(ordered, currentIndex);
 
     ordered.splice(targetIndex, 0, moved);
 
-    const normalized = ordered.map(
-      (learningUnit, index) =>
-        LearningUnit.rehydrate({
-          ...learningUnit.toPrimitives(),
-          position: index + 1,
-        }),
+    const normalized = ordered.map((learningUnit, index) =>
+      LearningUnit.rehydrate({
+        ...learningUnit.toPrimitives(),
+        position: index + 1,
+      }),
     );
 
     const unrelated = this.learningUnits.filter(
-      (learningUnit) =>
-        !learningUnit.sectionId.equals(sectionId),
+      (learningUnit) => !learningUnit.sectionId.equals(sectionId),
     );
 
-    this.replaceArray(this.learningUnits, [
-      ...unrelated,
-      ...normalized,
-    ]);
+    this.replaceArray(this.learningUnits, [...unrelated, ...normalized]);
   }
 
-  private normalizeLearningUnitPositions(
-    sectionId: SectionId,
-  ): void {
-    const ordered =
-      this.getLearningUnitsForSection(sectionId);
+  private normalizeLearningUnitPositions(sectionId: SectionId): void {
+    const ordered = this.getLearningUnitsForSection(sectionId);
 
-    const normalized = ordered.map(
-      (learningUnit, index) =>
-        LearningUnit.rehydrate({
-          ...learningUnit.toPrimitives(),
-          position: index + 1,
-        }),
+    const normalized = ordered.map((learningUnit, index) =>
+      LearningUnit.rehydrate({
+        ...learningUnit.toPrimitives(),
+        position: index + 1,
+      }),
     );
 
     const unrelated = this.learningUnits.filter(
-      (learningUnit) =>
-        !learningUnit.sectionId.equals(sectionId),
+      (learningUnit) => !learningUnit.sectionId.equals(sectionId),
     );
 
-    this.replaceArray(this.learningUnits, [
-      ...unrelated,
-      ...normalized,
-    ]);
+    this.replaceArray(this.learningUnits, [...unrelated, ...normalized]);
   }
 
   private reorderContentItemReferences(
@@ -1172,13 +908,10 @@ export class CourseStructure {
     requestedPosition: number,
   ): void {
     const ordered =
-      this.getContentItemReferencesForLearningUnit(
-        learningUnitId,
-      );
+      this.getContentItemReferencesForLearningUnit(learningUnitId);
 
-    const currentIndex = ordered.findIndex(
-      (reference) =>
-        reference.id.equals(referenceId),
+    const currentIndex = ordered.findIndex((reference) =>
+      reference.id.equals(referenceId),
     );
 
     if (currentIndex === -1) {
@@ -1188,69 +921,50 @@ export class CourseStructure {
       );
     }
 
-    const targetIndex = clamp(
-      requestedPosition - 1,
-      0,
-      ordered.length - 1,
-    );
+    const targetIndex = clamp(requestedPosition - 1, 0, ordered.length - 1);
 
-    const moved = this.removeArrayItem(
-      ordered,
-      currentIndex,
-    );
+    const moved = this.removeArrayItem(ordered, currentIndex);
 
     ordered.splice(targetIndex, 0, moved);
 
-    const normalized = ordered.map(
-      (reference, index) =>
-        rehydrateContentItemReference({
-          ...reference,
-          position: index + 1,
-        }),
+    const normalized = ordered.map((reference, index) =>
+      rehydrateContentItemReference({
+        ...reference,
+        position: index + 1,
+      }),
     );
 
-    const unrelated =
-      this.contentItemReferences.filter(
-        (reference) =>
-          !reference.learningUnitId.equals(
-            learningUnitId,
-          ),
-      );
-
-    this.replaceArray(
-      this.contentItemReferences,
-      [...unrelated, ...normalized],
+    const unrelated = this.contentItemReferences.filter(
+      (reference) => !reference.learningUnitId.equals(learningUnitId),
     );
+
+    this.replaceArray(this.contentItemReferences, [
+      ...unrelated,
+      ...normalized,
+    ]);
   }
 
   private normalizeContentItemReferencePositions(
     learningUnitId: LearningUnitId,
   ): void {
     const ordered =
-      this.getContentItemReferencesForLearningUnit(
-        learningUnitId,
-      );
+      this.getContentItemReferencesForLearningUnit(learningUnitId);
 
-    const normalized = ordered.map(
-      (reference, index) =>
-        rehydrateContentItemReference({
-          ...reference,
-          position: index + 1,
-        }),
+    const normalized = ordered.map((reference, index) =>
+      rehydrateContentItemReference({
+        ...reference,
+        position: index + 1,
+      }),
     );
 
-    const unrelated =
-      this.contentItemReferences.filter(
-        (reference) =>
-          !reference.learningUnitId.equals(
-            learningUnitId,
-          ),
-      );
-
-    this.replaceArray(
-      this.contentItemReferences,
-      [...unrelated, ...normalized],
+    const unrelated = this.contentItemReferences.filter(
+      (reference) => !reference.learningUnitId.equals(learningUnitId),
     );
+
+    this.replaceArray(this.contentItemReferences, [
+      ...unrelated,
+      ...normalized,
+    ]);
   }
 
   private reorderAssessmentReferences(
@@ -1258,14 +972,10 @@ export class CourseStructure {
     referenceId: AssessmentReferenceId,
     requestedPosition: number,
   ): void {
-    const ordered =
-      this.getAssessmentReferencesForLearningUnit(
-        learningUnitId,
-      );
+    const ordered = this.getAssessmentReferencesForLearningUnit(learningUnitId);
 
-    const currentIndex = ordered.findIndex(
-      (reference) =>
-        reference.id.equals(referenceId),
+    const currentIndex = ordered.findIndex((reference) =>
+      reference.id.equals(referenceId),
     );
 
     if (currentIndex === -1) {
@@ -1275,69 +985,43 @@ export class CourseStructure {
       );
     }
 
-    const targetIndex = clamp(
-      requestedPosition - 1,
-      0,
-      ordered.length - 1,
-    );
+    const targetIndex = clamp(requestedPosition - 1, 0, ordered.length - 1);
 
-    const moved = this.removeArrayItem(
-      ordered,
-      currentIndex,
-    );
+    const moved = this.removeArrayItem(ordered, currentIndex);
 
     ordered.splice(targetIndex, 0, moved);
 
-    const normalized = ordered.map(
-      (reference, index) =>
-        rehydrateAssessmentReference({
-          ...reference,
-          position: index + 1,
-        }),
+    const normalized = ordered.map((reference, index) =>
+      rehydrateAssessmentReference({
+        ...reference,
+        position: index + 1,
+      }),
     );
 
-    const unrelated =
-      this.assessmentReferences.filter(
-        (reference) =>
-          !reference.learningUnitId.equals(
-            learningUnitId,
-          ),
-      );
-
-    this.replaceArray(
-      this.assessmentReferences,
-      [...unrelated, ...normalized],
+    const unrelated = this.assessmentReferences.filter(
+      (reference) => !reference.learningUnitId.equals(learningUnitId),
     );
+
+    this.replaceArray(this.assessmentReferences, [...unrelated, ...normalized]);
   }
 
   private normalizeAssessmentReferencePositions(
     learningUnitId: LearningUnitId,
   ): void {
-    const ordered =
-      this.getAssessmentReferencesForLearningUnit(
-        learningUnitId,
-      );
+    const ordered = this.getAssessmentReferencesForLearningUnit(learningUnitId);
 
-    const normalized = ordered.map(
-      (reference, index) =>
-        rehydrateAssessmentReference({
-          ...reference,
-          position: index + 1,
-        }),
+    const normalized = ordered.map((reference, index) =>
+      rehydrateAssessmentReference({
+        ...reference,
+        position: index + 1,
+      }),
     );
 
-    const unrelated =
-      this.assessmentReferences.filter(
-        (reference) =>
-          !reference.learningUnitId.equals(
-            learningUnitId,
-          ),
-      );
-
-    this.replaceArray(
-      this.assessmentReferences,
-      [...unrelated, ...normalized],
+    const unrelated = this.assessmentReferences.filter(
+      (reference) => !reference.learningUnitId.equals(learningUnitId),
     );
+
+    this.replaceArray(this.assessmentReferences, [...unrelated, ...normalized]);
   }
 
   private validateInvariantState(): void {
@@ -1349,11 +1033,7 @@ export class CourseStructure {
     const sectionIds = new Set<string>();
 
     for (const section of this.sections) {
-      if (
-        !section.courseVersionId.equals(
-          this.courseVersionId,
-        )
-      ) {
+      if (!section.courseVersionId.equals(this.courseVersionId)) {
         issues.push({
           field: 'sections.courseVersionId',
           message:
@@ -1373,9 +1053,7 @@ export class CourseStructure {
     }
 
     this.validateContiguousPositions(
-      this.sections.map(
-        (section) => section.position,
-      ),
+      this.sections.map((section) => section.position),
       'sections.position',
       issues,
     );
@@ -1385,9 +1063,7 @@ export class CourseStructure {
     for (const learningUnit of this.learningUnits) {
       if (
         !this.sections.some((section) =>
-          section.id.equals(
-            learningUnit.sectionId,
-          ),
+          section.id.equals(learningUnit.sectionId),
         )
       ) {
         issues.push({
@@ -1397,11 +1073,7 @@ export class CourseStructure {
         });
       }
 
-      if (
-        learningUnitIds.has(
-          learningUnit.id.value,
-        )
-      ) {
+      if (learningUnitIds.has(learningUnit.id.value)) {
         issues.push({
           field: 'learningUnits.id',
           message:
@@ -1414,57 +1086,39 @@ export class CourseStructure {
 
     for (const section of this.sections) {
       this.validateContiguousPositions(
-        this.getLearningUnitsForSection(
-          section.id,
-        ).map(
-          (learningUnit) =>
-            learningUnit.position,
+        this.getLearningUnitsForSection(section.id).map(
+          (learningUnit) => learningUnit.position,
         ),
         `learningUnits.${section.id.value}.position`,
         issues,
       );
     }
 
-    const contentReferenceIds =
-      new Set<string>();
+    const contentReferenceIds = new Set<string>();
 
     for (const reference of this.contentItemReferences) {
-      if (
-        !learningUnitIds.has(
-          reference.learningUnitId.value,
-        )
-      ) {
+      if (!learningUnitIds.has(reference.learningUnitId.value)) {
         issues.push({
-          field:
-            'contentItemReferences.learningUnitId',
+          field: 'contentItemReferences.learningUnitId',
           message:
             'Every Content Item reference must belong to a LearningUnit in this CourseStructure.',
         });
       }
 
-      if (
-        contentReferenceIds.has(
-          reference.id.value,
-        )
-      ) {
+      if (contentReferenceIds.has(reference.id.value)) {
         issues.push({
-          field:
-            'contentItemReferences.id',
+          field: 'contentItemReferences.id',
           message:
             'Content Item reference identifiers must be unique within a CourseStructure.',
         });
       }
 
-      contentReferenceIds.add(
-        reference.id.value,
-      );
+      contentReferenceIds.add(reference.id.value);
     }
 
     for (const learningUnit of this.learningUnits) {
       this.validateContiguousPositions(
-        this.getContentItemReferencesForLearningUnit(
-          learningUnit.id,
-        ).map(
+        this.getContentItemReferencesForLearningUnit(learningUnit.id).map(
           (reference) => reference.position,
         ),
         `contentItemReferences.${learningUnit.id.value}.position`,
@@ -1472,46 +1126,31 @@ export class CourseStructure {
       );
     }
 
-    const assessmentReferenceIds =
-      new Set<string>();
+    const assessmentReferenceIds = new Set<string>();
 
     for (const reference of this.assessmentReferences) {
-      if (
-        !learningUnitIds.has(
-          reference.learningUnitId.value,
-        )
-      ) {
+      if (!learningUnitIds.has(reference.learningUnitId.value)) {
         issues.push({
-          field:
-            'assessmentReferences.learningUnitId',
+          field: 'assessmentReferences.learningUnitId',
           message:
             'Every Assessment reference must belong to a LearningUnit in this CourseStructure.',
         });
       }
 
-      if (
-        assessmentReferenceIds.has(
-          reference.id.value,
-        )
-      ) {
+      if (assessmentReferenceIds.has(reference.id.value)) {
         issues.push({
-          field:
-            'assessmentReferences.id',
+          field: 'assessmentReferences.id',
           message:
             'Assessment reference identifiers must be unique within a CourseStructure.',
         });
       }
 
-      assessmentReferenceIds.add(
-        reference.id.value,
-      );
+      assessmentReferenceIds.add(reference.id.value);
     }
 
     for (const learningUnit of this.learningUnits) {
       this.validateContiguousPositions(
-        this.getAssessmentReferencesForLearningUnit(
-          learningUnit.id,
-        ).map(
+        this.getAssessmentReferencesForLearningUnit(learningUnit.id).map(
           (reference) => reference.position,
         ),
         `assessmentReferences.${learningUnit.id.value}.position`,
@@ -1535,9 +1174,7 @@ export class CourseStructure {
       message: string;
     }>,
   ): void {
-    const sorted = [...positions].sort(
-      (first, second) => first - second,
-    );
+    const sorted = [...positions].sort((first, second) => first - second);
 
     sorted.forEach((position, index) => {
       const expectedPosition = index + 1;
@@ -1545,8 +1182,7 @@ export class CourseStructure {
       if (position !== expectedPosition) {
         issues.push({
           field,
-          message:
-            `Positions must form a contiguous sequence starting at 1. Expected ${expectedPosition} but found ${position}.`,
+          message: `Positions must form a contiguous sequence starting at 1. Expected ${expectedPosition} but found ${position}.`,
         });
       }
     });
@@ -1558,15 +1194,12 @@ export class CourseStructure {
     message: string,
   ): void {
     if (!Number.isInteger(value) || value < 1) {
-      throw new CourseValidationError(
-        'CourseStructure validation failed.',
-        [
-          {
-            field,
-            message,
-          },
-        ],
-      );
+      throw new CourseValidationError('CourseStructure validation failed.', [
+        {
+          field,
+          message,
+        },
+      ]);
     }
   }
 
@@ -1574,88 +1207,66 @@ export class CourseStructure {
     field: string,
     message: string,
   ): CourseValidationError {
-    return new CourseValidationError(
-      'CourseStructure entity not found.',
-      [
-        {
-          field,
-          message,
-        },
-      ],
-    );
+    return new CourseValidationError('CourseStructure entity not found.', [
+      {
+        field,
+        message,
+      },
+    ]);
   }
 
   private compareLearningUnits(
     first: LearningUnit,
     second: LearningUnit,
   ): number {
-    const sectionOrder =
-      this.compareSectionIds(
-        first.sectionId,
-        second.sectionId,
-      );
+    const sectionOrder = this.compareSectionIds(
+      first.sectionId,
+      second.sectionId,
+    );
 
     if (sectionOrder !== 0) {
       return sectionOrder;
     }
 
-    return compareLearningUnitsByPosition(
-      first,
-      second,
-    );
+    return compareLearningUnitsByPosition(first, second);
   }
 
   private compareContentReferences(
     first: ContentItemReferenceProps,
     second: ContentItemReferenceProps,
   ): number {
-    const parentOrder =
-      first.learningUnitId.value.localeCompare(
-        second.learningUnitId.value,
-      );
+    const parentOrder = first.learningUnitId.value.localeCompare(
+      second.learningUnitId.value,
+    );
 
     if (parentOrder !== 0) {
       return parentOrder;
     }
 
-    return compareReferencesByPosition(
-      first,
-      second,
-    );
+    return compareReferencesByPosition(first, second);
   }
 
   private compareAssessmentReferences(
     first: AssessmentReferenceProps,
     second: AssessmentReferenceProps,
   ): number {
-    const parentOrder =
-      first.learningUnitId.value.localeCompare(
-        second.learningUnitId.value,
-      );
+    const parentOrder = first.learningUnitId.value.localeCompare(
+      second.learningUnitId.value,
+    );
 
     if (parentOrder !== 0) {
       return parentOrder;
     }
 
-    return compareReferencesByPosition(
-      first,
-      second,
-    );
+    return compareReferencesByPosition(first, second);
   }
 
-  private compareSectionIds(
-    first: SectionId,
-    second: SectionId,
-  ): number {
-    const firstSection =
-      this.findSection(first);
-    const secondSection =
-      this.findSection(second);
+  private compareSectionIds(first: SectionId, second: SectionId): number {
+    const firstSection = this.findSection(first);
+    const secondSection = this.findSection(second);
 
     if (!firstSection && !secondSection) {
-      return first.value.localeCompare(
-        second.value,
-      );
+      return first.value.localeCompare(second.value);
     }
 
     if (!firstSection) {
@@ -1666,31 +1277,21 @@ export class CourseStructure {
       return -1;
     }
 
-    const positionOrder =
-      firstSection.position -
-      secondSection.position;
+    const positionOrder = firstSection.position - secondSection.position;
 
     if (positionOrder !== 0) {
       return positionOrder;
     }
 
-    return first.value.localeCompare(
-      second.value,
-    );
+    return first.value.localeCompare(second.value);
   }
 
-  private replaceArray<T>(
-    target: T[],
-    values: readonly T[],
-  ): void {
+  private replaceArray<T>(target: T[], values: readonly T[]): void {
     target.length = 0;
     target.push(...values);
   }
 
-  private removeArrayItem<T>(
-    array: T[],
-    index: number,
-  ): T {
+  private removeArrayItem<T>(array: T[], index: number): T {
     const value = array[index];
 
     if (value === undefined) {
@@ -1705,65 +1306,42 @@ export class CourseStructure {
   }
 }
 
-function compareSections(
-  first: Section,
-  second: Section,
-): number {
-  const positionOrder =
-    first.position - second.position;
+function compareSections(first: Section, second: Section): number {
+  const positionOrder = first.position - second.position;
 
   if (positionOrder !== 0) {
     return positionOrder;
   }
 
-  return first.id.value.localeCompare(
-    second.id.value,
-  );
+  return first.id.value.localeCompare(second.id.value);
 }
 
 function compareLearningUnitsByPosition(
   first: LearningUnit,
   second: LearningUnit,
 ): number {
-  const positionOrder =
-    first.position - second.position;
+  const positionOrder = first.position - second.position;
 
   if (positionOrder !== 0) {
     return positionOrder;
   }
 
-  return first.id.value.localeCompare(
-    second.id.value,
-  );
+  return first.id.value.localeCompare(second.id.value);
 }
 
 function compareReferencesByPosition(
-  first:
-    | ContentItemReferenceProps
-    | AssessmentReferenceProps,
-  second:
-    | ContentItemReferenceProps
-    | AssessmentReferenceProps,
+  first: ContentItemReferenceProps | AssessmentReferenceProps,
+  second: ContentItemReferenceProps | AssessmentReferenceProps,
 ): number {
-  const positionOrder =
-    first.position - second.position;
+  const positionOrder = first.position - second.position;
 
   if (positionOrder !== 0) {
     return positionOrder;
   }
 
-  return first.id.value.localeCompare(
-    second.id.value,
-  );
+  return first.id.value.localeCompare(second.id.value);
 }
 
-function clamp(
-  value: number,
-  minimum: number,
-  maximum: number,
-): number {
-  return Math.min(
-    Math.max(value, minimum),
-    maximum,
-  );
+function clamp(value: number, minimum: number, maximum: number): number {
+  return Math.min(Math.max(value, minimum), maximum);
 }

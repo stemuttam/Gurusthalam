@@ -1,9 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type {
-  CourseQuery,
-  CourseQueryResultPage,
-} from '../contracts/index.js';
+import type { CourseQuery, CourseQueryResultPage } from '../contracts/index.js';
 
 import { CourseValidationError } from '../../domain/errors/course-validation.error.js';
 
@@ -31,8 +28,7 @@ describe('DefaultCourseQueryApplicationService', () => {
 
     vi.mocked(courseQuery.search).mockResolvedValue(expected);
 
-    const service =
-      new DefaultCourseQueryApplicationService(courseQuery);
+    const service = new DefaultCourseQueryApplicationService(courseQuery);
 
     const result = await service.search({});
 
@@ -64,8 +60,7 @@ describe('DefaultCourseQueryApplicationService', () => {
 
     vi.mocked(courseQuery.search).mockResolvedValue(expected);
 
-    const service =
-      new DefaultCourseQueryApplicationService(courseQuery);
+    const service = new DefaultCourseQueryApplicationService(courseQuery);
 
     const result = await service.search({
       page: '3',
@@ -99,8 +94,7 @@ describe('DefaultCourseQueryApplicationService', () => {
 
     vi.mocked(courseQuery.search).mockResolvedValue(expected);
 
-    const service =
-      new DefaultCourseQueryApplicationService(courseQuery);
+    const service = new DefaultCourseQueryApplicationService(courseQuery);
 
     await service.search({
       page: '2',
@@ -132,8 +126,7 @@ describe('DefaultCourseQueryApplicationService', () => {
   it('rejects invalid pagination values with CourseValidationError', async () => {
     const courseQuery = createCourseQueryMock();
 
-    const service =
-      new DefaultCourseQueryApplicationService(courseQuery);
+    const service = new DefaultCourseQueryApplicationService(courseQuery);
 
     await expect(
       service.search({
@@ -147,8 +140,7 @@ describe('DefaultCourseQueryApplicationService', () => {
   it('rejects invalid enum values with CourseValidationError', async () => {
     const courseQuery = createCourseQueryMock();
 
-    const service =
-      new DefaultCourseQueryApplicationService(courseQuery);
+    const service = new DefaultCourseQueryApplicationService(courseQuery);
 
     await expect(
       service.search({
@@ -162,8 +154,7 @@ describe('DefaultCourseQueryApplicationService', () => {
   it('rejects unsupported sort fields with CourseValidationError', async () => {
     const courseQuery = createCourseQueryMock();
 
-    const service =
-      new DefaultCourseQueryApplicationService(courseQuery);
+    const service = new DefaultCourseQueryApplicationService(courseQuery);
 
     await expect(
       service.search({
@@ -177,8 +168,7 @@ describe('DefaultCourseQueryApplicationService', () => {
   it('rejects unexpected fields with CourseValidationError', async () => {
     const courseQuery = createCourseQueryMock();
 
-    const service =
-      new DefaultCourseQueryApplicationService(courseQuery);
+    const service = new DefaultCourseQueryApplicationService(courseQuery);
 
     await expect(
       service.search({
@@ -192,22 +182,18 @@ describe('DefaultCourseQueryApplicationService', () => {
   it('exposes structured validation issues', async () => {
     const courseQuery = createCourseQueryMock();
 
-    const service =
-      new DefaultCourseQueryApplicationService(courseQuery);
+    const service = new DefaultCourseQueryApplicationService(courseQuery);
 
     try {
       await service.search({
         page: 'invalid',
       });
 
-      throw new Error(
-        'Expected CourseValidationError to be thrown.',
-      );
+      throw new Error('Expected CourseValidationError to be thrown.');
     } catch (error) {
       expect(error).toBeInstanceOf(CourseValidationError);
 
-      const validationError =
-        error as CourseValidationError;
+      const validationError = error as CourseValidationError;
 
       expect(validationError.issues.length).toBeGreaterThan(0);
 
@@ -232,8 +218,7 @@ describe('DefaultCourseQueryApplicationService', () => {
 
     vi.mocked(courseQuery.search).mockResolvedValue(expected);
 
-    const service =
-      new DefaultCourseQueryApplicationService(courseQuery);
+    const service = new DefaultCourseQueryApplicationService(courseQuery);
 
     const request = {
       query: ' physics ',

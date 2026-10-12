@@ -16,7 +16,6 @@ export const COURSE_TYPES = Object.values(CourseType) as readonly CourseType[];
 
 export function isCourseType(value: unknown): value is CourseType {
   return (
-    typeof value === 'string' &&
-    COURSE_TYPES.includes(value as CourseType)
+    typeof value === 'string' && COURSE_TYPES.includes(value as CourseType)
   );
 }

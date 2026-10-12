@@ -24,9 +24,7 @@ const createCourse = () =>
 const getPublishedEvents = (course: Course) =>
   course
     .getDomainEvents()
-    .filter(
-      (event) => event.eventName === CourseDomainEventName.PUBLISHED,
-    );
+    .filter((event) => event.eventName === CourseDomainEventName.PUBLISHED);
 
 describe('Course publication atomicity', () => {
   describe('rejected publication', () => {
@@ -35,9 +33,7 @@ describe('Course publication atomicity', () => {
 
       const before = course.toPrimitives();
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       const after = course.toPrimitives();
 
@@ -50,9 +46,7 @@ describe('Course publication atomicity', () => {
 
       const before = course.toPrimitives();
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       const after = course.toPrimitives();
 
@@ -69,9 +63,7 @@ describe('Course publication atomicity', () => {
 
       const before = course.id.toString();
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.id.toString()).toBe(before);
     });
@@ -81,9 +73,7 @@ describe('Course publication atomicity', () => {
 
       const before = course.createdAt;
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.createdAt).toEqual(before);
     });
@@ -93,9 +83,7 @@ describe('Course publication atomicity', () => {
 
       const before = course.updatedAt;
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.updatedAt).toEqual(before);
     });
@@ -105,9 +93,7 @@ describe('Course publication atomicity', () => {
 
       const eventsBefore = course.getDomainEvents();
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       const eventsAfter = course.getDomainEvents();
 
@@ -131,9 +117,7 @@ describe('Course publication atomicity', () => {
 
       const eventsBefore = course.getDomainEvents();
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.getDomainEvents()).toEqual(eventsBefore);
     });
@@ -141,9 +125,7 @@ describe('Course publication atomicity', () => {
     it('keeps the aggregate usable after a rejected publication', () => {
       const course = createCourse();
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.status).toBe(CourseStatus.DRAFT);
       expect(course.id.toString()).toBeTypeOf('string');
@@ -233,9 +215,7 @@ describe('Course publication atomicity', () => {
       expect(course.status).toBe(CourseStatus.PUBLISHED);
       expect(course.id.toString()).toBeTypeOf('string');
       expect(course.title).toBe('TypeScript Fundamentals');
-      expect(course.description).toBe(
-        'Learn TypeScript from the ground up.',
-      );
+      expect(course.description).toBe('Learn TypeScript from the ground up.');
     });
   });
 
@@ -248,9 +228,7 @@ describe('Course publication atomicity', () => {
 
       const eventsBefore = course.getDomainEvents();
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.getDomainEvents()).toEqual(eventsBefore);
       expect(getPublishedEvents(course)).toHaveLength(1);
@@ -262,9 +240,7 @@ describe('Course publication atomicity', () => {
       course.submitForReview();
       course.publish();
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.status).toBe(CourseStatus.PUBLISHED);
     });
@@ -278,9 +254,7 @@ describe('Course publication atomicity', () => {
       const before = course.toPrimitives();
       const eventsBefore = course.getDomainEvents();
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.toPrimitives()).toEqual(before);
       expect(course.getDomainEvents()).toEqual(eventsBefore);

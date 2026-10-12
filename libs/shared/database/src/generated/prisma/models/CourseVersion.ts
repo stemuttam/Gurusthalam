@@ -251,6 +251,8 @@ export type CourseVersionWhereInput = {
   course?: Prisma.XOR<Prisma.CourseScalarRelationFilter, Prisma.CourseWhereInput>
   auditEntries?: Prisma.CourseVersionAuditListRelationFilter
   enrollments?: Prisma.EnrollmentListRelationFilter
+  structureSections?: Prisma.CourseStructureSectionListRelationFilter
+  courseProgressReadModels?: Prisma.CourseProgressReadModelListRelationFilter
   lineageAsSource?: Prisma.CourseVersionLineageListRelationFilter
   lineageAsTarget?: Prisma.CourseVersionLineageListRelationFilter
 }
@@ -268,6 +270,8 @@ export type CourseVersionOrderByWithRelationInput = {
   course?: Prisma.CourseOrderByWithRelationInput
   auditEntries?: Prisma.CourseVersionAuditOrderByRelationAggregateInput
   enrollments?: Prisma.EnrollmentOrderByRelationAggregateInput
+  structureSections?: Prisma.CourseStructureSectionOrderByRelationAggregateInput
+  courseProgressReadModels?: Prisma.CourseProgressReadModelOrderByRelationAggregateInput
   lineageAsSource?: Prisma.CourseVersionLineageOrderByRelationAggregateInput
   lineageAsTarget?: Prisma.CourseVersionLineageOrderByRelationAggregateInput
 }
@@ -289,6 +293,8 @@ export type CourseVersionWhereUniqueInput = Prisma.AtLeast<{
   course?: Prisma.XOR<Prisma.CourseScalarRelationFilter, Prisma.CourseWhereInput>
   auditEntries?: Prisma.CourseVersionAuditListRelationFilter
   enrollments?: Prisma.EnrollmentListRelationFilter
+  structureSections?: Prisma.CourseStructureSectionListRelationFilter
+  courseProgressReadModels?: Prisma.CourseProgressReadModelListRelationFilter
   lineageAsSource?: Prisma.CourseVersionLineageListRelationFilter
   lineageAsTarget?: Prisma.CourseVersionLineageListRelationFilter
 }, "id" | "courseId_version">
@@ -337,6 +343,8 @@ export type CourseVersionCreateInput = {
   course: Prisma.CourseCreateNestedOneWithoutVersionsInput
   auditEntries?: Prisma.CourseVersionAuditCreateNestedManyWithoutCourseVersionInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutCourseVersionInput
+  structureSections?: Prisma.CourseStructureSectionCreateNestedManyWithoutCourseVersionInput
+  courseProgressReadModels?: Prisma.CourseProgressReadModelCreateNestedManyWithoutCourseVersionInput
   lineageAsSource?: Prisma.CourseVersionLineageCreateNestedManyWithoutSourceVersionRecordInput
   lineageAsTarget?: Prisma.CourseVersionLineageCreateNestedManyWithoutTargetVersionRecordInput
 }
@@ -353,6 +361,8 @@ export type CourseVersionUncheckedCreateInput = {
   publishedAt?: Date | string | null
   auditEntries?: Prisma.CourseVersionAuditUncheckedCreateNestedManyWithoutCourseVersionInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutCourseVersionInput
+  structureSections?: Prisma.CourseStructureSectionUncheckedCreateNestedManyWithoutCourseVersionInput
+  courseProgressReadModels?: Prisma.CourseProgressReadModelUncheckedCreateNestedManyWithoutCourseVersionInput
   lineageAsSource?: Prisma.CourseVersionLineageUncheckedCreateNestedManyWithoutSourceVersionRecordInput
   lineageAsTarget?: Prisma.CourseVersionLineageUncheckedCreateNestedManyWithoutTargetVersionRecordInput
 }
@@ -369,6 +379,8 @@ export type CourseVersionUpdateInput = {
   course?: Prisma.CourseUpdateOneRequiredWithoutVersionsNestedInput
   auditEntries?: Prisma.CourseVersionAuditUpdateManyWithoutCourseVersionNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutCourseVersionNestedInput
+  structureSections?: Prisma.CourseStructureSectionUpdateManyWithoutCourseVersionNestedInput
+  courseProgressReadModels?: Prisma.CourseProgressReadModelUpdateManyWithoutCourseVersionNestedInput
   lineageAsSource?: Prisma.CourseVersionLineageUpdateManyWithoutSourceVersionRecordNestedInput
   lineageAsTarget?: Prisma.CourseVersionLineageUpdateManyWithoutTargetVersionRecordNestedInput
 }
@@ -385,6 +397,8 @@ export type CourseVersionUncheckedUpdateInput = {
   publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   auditEntries?: Prisma.CourseVersionAuditUncheckedUpdateManyWithoutCourseVersionNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutCourseVersionNestedInput
+  structureSections?: Prisma.CourseStructureSectionUncheckedUpdateManyWithoutCourseVersionNestedInput
+  courseProgressReadModels?: Prisma.CourseProgressReadModelUncheckedUpdateManyWithoutCourseVersionNestedInput
   lineageAsSource?: Prisma.CourseVersionLineageUncheckedUpdateManyWithoutSourceVersionRecordNestedInput
   lineageAsTarget?: Prisma.CourseVersionLineageUncheckedUpdateManyWithoutTargetVersionRecordNestedInput
 }
@@ -594,6 +608,34 @@ export type CourseVersionUpdateOneRequiredWithoutEnrollmentsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.CourseVersionUpdateToOneWithWhereWithoutEnrollmentsInput, Prisma.CourseVersionUpdateWithoutEnrollmentsInput>, Prisma.CourseVersionUncheckedUpdateWithoutEnrollmentsInput>
 }
 
+export type CourseVersionCreateNestedOneWithoutStructureSectionsInput = {
+  create?: Prisma.XOR<Prisma.CourseVersionCreateWithoutStructureSectionsInput, Prisma.CourseVersionUncheckedCreateWithoutStructureSectionsInput>
+  connectOrCreate?: Prisma.CourseVersionCreateOrConnectWithoutStructureSectionsInput
+  connect?: Prisma.CourseVersionWhereUniqueInput
+}
+
+export type CourseVersionUpdateOneRequiredWithoutStructureSectionsNestedInput = {
+  create?: Prisma.XOR<Prisma.CourseVersionCreateWithoutStructureSectionsInput, Prisma.CourseVersionUncheckedCreateWithoutStructureSectionsInput>
+  connectOrCreate?: Prisma.CourseVersionCreateOrConnectWithoutStructureSectionsInput
+  upsert?: Prisma.CourseVersionUpsertWithoutStructureSectionsInput
+  connect?: Prisma.CourseVersionWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CourseVersionUpdateToOneWithWhereWithoutStructureSectionsInput, Prisma.CourseVersionUpdateWithoutStructureSectionsInput>, Prisma.CourseVersionUncheckedUpdateWithoutStructureSectionsInput>
+}
+
+export type CourseVersionCreateNestedOneWithoutCourseProgressReadModelsInput = {
+  create?: Prisma.XOR<Prisma.CourseVersionCreateWithoutCourseProgressReadModelsInput, Prisma.CourseVersionUncheckedCreateWithoutCourseProgressReadModelsInput>
+  connectOrCreate?: Prisma.CourseVersionCreateOrConnectWithoutCourseProgressReadModelsInput
+  connect?: Prisma.CourseVersionWhereUniqueInput
+}
+
+export type CourseVersionUpdateOneRequiredWithoutCourseProgressReadModelsNestedInput = {
+  create?: Prisma.XOR<Prisma.CourseVersionCreateWithoutCourseProgressReadModelsInput, Prisma.CourseVersionUncheckedCreateWithoutCourseProgressReadModelsInput>
+  connectOrCreate?: Prisma.CourseVersionCreateOrConnectWithoutCourseProgressReadModelsInput
+  upsert?: Prisma.CourseVersionUpsertWithoutCourseProgressReadModelsInput
+  connect?: Prisma.CourseVersionWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CourseVersionUpdateToOneWithWhereWithoutCourseProgressReadModelsInput, Prisma.CourseVersionUpdateWithoutCourseProgressReadModelsInput>, Prisma.CourseVersionUncheckedUpdateWithoutCourseProgressReadModelsInput>
+}
+
 export type CourseVersionCreateWithoutCourseInput = {
   id?: string
   version: number
@@ -605,6 +647,8 @@ export type CourseVersionCreateWithoutCourseInput = {
   publishedAt?: Date | string | null
   auditEntries?: Prisma.CourseVersionAuditCreateNestedManyWithoutCourseVersionInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutCourseVersionInput
+  structureSections?: Prisma.CourseStructureSectionCreateNestedManyWithoutCourseVersionInput
+  courseProgressReadModels?: Prisma.CourseProgressReadModelCreateNestedManyWithoutCourseVersionInput
   lineageAsSource?: Prisma.CourseVersionLineageCreateNestedManyWithoutSourceVersionRecordInput
   lineageAsTarget?: Prisma.CourseVersionLineageCreateNestedManyWithoutTargetVersionRecordInput
 }
@@ -620,6 +664,8 @@ export type CourseVersionUncheckedCreateWithoutCourseInput = {
   publishedAt?: Date | string | null
   auditEntries?: Prisma.CourseVersionAuditUncheckedCreateNestedManyWithoutCourseVersionInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutCourseVersionInput
+  structureSections?: Prisma.CourseStructureSectionUncheckedCreateNestedManyWithoutCourseVersionInput
+  courseProgressReadModels?: Prisma.CourseProgressReadModelUncheckedCreateNestedManyWithoutCourseVersionInput
   lineageAsSource?: Prisma.CourseVersionLineageUncheckedCreateNestedManyWithoutSourceVersionRecordInput
   lineageAsTarget?: Prisma.CourseVersionLineageUncheckedCreateNestedManyWithoutTargetVersionRecordInput
 }
@@ -676,6 +722,8 @@ export type CourseVersionCreateWithoutAuditEntriesInput = {
   publishedAt?: Date | string | null
   course: Prisma.CourseCreateNestedOneWithoutVersionsInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutCourseVersionInput
+  structureSections?: Prisma.CourseStructureSectionCreateNestedManyWithoutCourseVersionInput
+  courseProgressReadModels?: Prisma.CourseProgressReadModelCreateNestedManyWithoutCourseVersionInput
   lineageAsSource?: Prisma.CourseVersionLineageCreateNestedManyWithoutSourceVersionRecordInput
   lineageAsTarget?: Prisma.CourseVersionLineageCreateNestedManyWithoutTargetVersionRecordInput
 }
@@ -691,6 +739,8 @@ export type CourseVersionUncheckedCreateWithoutAuditEntriesInput = {
   updatedAt?: Date | string
   publishedAt?: Date | string | null
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutCourseVersionInput
+  structureSections?: Prisma.CourseStructureSectionUncheckedCreateNestedManyWithoutCourseVersionInput
+  courseProgressReadModels?: Prisma.CourseProgressReadModelUncheckedCreateNestedManyWithoutCourseVersionInput
   lineageAsSource?: Prisma.CourseVersionLineageUncheckedCreateNestedManyWithoutSourceVersionRecordInput
   lineageAsTarget?: Prisma.CourseVersionLineageUncheckedCreateNestedManyWithoutTargetVersionRecordInput
 }
@@ -722,6 +772,8 @@ export type CourseVersionUpdateWithoutAuditEntriesInput = {
   publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   course?: Prisma.CourseUpdateOneRequiredWithoutVersionsNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutCourseVersionNestedInput
+  structureSections?: Prisma.CourseStructureSectionUpdateManyWithoutCourseVersionNestedInput
+  courseProgressReadModels?: Prisma.CourseProgressReadModelUpdateManyWithoutCourseVersionNestedInput
   lineageAsSource?: Prisma.CourseVersionLineageUpdateManyWithoutSourceVersionRecordNestedInput
   lineageAsTarget?: Prisma.CourseVersionLineageUpdateManyWithoutTargetVersionRecordNestedInput
 }
@@ -737,6 +789,8 @@ export type CourseVersionUncheckedUpdateWithoutAuditEntriesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutCourseVersionNestedInput
+  structureSections?: Prisma.CourseStructureSectionUncheckedUpdateManyWithoutCourseVersionNestedInput
+  courseProgressReadModels?: Prisma.CourseProgressReadModelUncheckedUpdateManyWithoutCourseVersionNestedInput
   lineageAsSource?: Prisma.CourseVersionLineageUncheckedUpdateManyWithoutSourceVersionRecordNestedInput
   lineageAsTarget?: Prisma.CourseVersionLineageUncheckedUpdateManyWithoutTargetVersionRecordNestedInput
 }
@@ -753,6 +807,8 @@ export type CourseVersionCreateWithoutLineageAsSourceInput = {
   course: Prisma.CourseCreateNestedOneWithoutVersionsInput
   auditEntries?: Prisma.CourseVersionAuditCreateNestedManyWithoutCourseVersionInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutCourseVersionInput
+  structureSections?: Prisma.CourseStructureSectionCreateNestedManyWithoutCourseVersionInput
+  courseProgressReadModels?: Prisma.CourseProgressReadModelCreateNestedManyWithoutCourseVersionInput
   lineageAsTarget?: Prisma.CourseVersionLineageCreateNestedManyWithoutTargetVersionRecordInput
 }
 
@@ -768,6 +824,8 @@ export type CourseVersionUncheckedCreateWithoutLineageAsSourceInput = {
   publishedAt?: Date | string | null
   auditEntries?: Prisma.CourseVersionAuditUncheckedCreateNestedManyWithoutCourseVersionInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutCourseVersionInput
+  structureSections?: Prisma.CourseStructureSectionUncheckedCreateNestedManyWithoutCourseVersionInput
+  courseProgressReadModels?: Prisma.CourseProgressReadModelUncheckedCreateNestedManyWithoutCourseVersionInput
   lineageAsTarget?: Prisma.CourseVersionLineageUncheckedCreateNestedManyWithoutTargetVersionRecordInput
 }
 
@@ -788,6 +846,8 @@ export type CourseVersionCreateWithoutLineageAsTargetInput = {
   course: Prisma.CourseCreateNestedOneWithoutVersionsInput
   auditEntries?: Prisma.CourseVersionAuditCreateNestedManyWithoutCourseVersionInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutCourseVersionInput
+  structureSections?: Prisma.CourseStructureSectionCreateNestedManyWithoutCourseVersionInput
+  courseProgressReadModels?: Prisma.CourseProgressReadModelCreateNestedManyWithoutCourseVersionInput
   lineageAsSource?: Prisma.CourseVersionLineageCreateNestedManyWithoutSourceVersionRecordInput
 }
 
@@ -803,6 +863,8 @@ export type CourseVersionUncheckedCreateWithoutLineageAsTargetInput = {
   publishedAt?: Date | string | null
   auditEntries?: Prisma.CourseVersionAuditUncheckedCreateNestedManyWithoutCourseVersionInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutCourseVersionInput
+  structureSections?: Prisma.CourseStructureSectionUncheckedCreateNestedManyWithoutCourseVersionInput
+  courseProgressReadModels?: Prisma.CourseProgressReadModelUncheckedCreateNestedManyWithoutCourseVersionInput
   lineageAsSource?: Prisma.CourseVersionLineageUncheckedCreateNestedManyWithoutSourceVersionRecordInput
 }
 
@@ -834,6 +896,8 @@ export type CourseVersionUpdateWithoutLineageAsSourceInput = {
   course?: Prisma.CourseUpdateOneRequiredWithoutVersionsNestedInput
   auditEntries?: Prisma.CourseVersionAuditUpdateManyWithoutCourseVersionNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutCourseVersionNestedInput
+  structureSections?: Prisma.CourseStructureSectionUpdateManyWithoutCourseVersionNestedInput
+  courseProgressReadModels?: Prisma.CourseProgressReadModelUpdateManyWithoutCourseVersionNestedInput
   lineageAsTarget?: Prisma.CourseVersionLineageUpdateManyWithoutTargetVersionRecordNestedInput
 }
 
@@ -849,6 +913,8 @@ export type CourseVersionUncheckedUpdateWithoutLineageAsSourceInput = {
   publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   auditEntries?: Prisma.CourseVersionAuditUncheckedUpdateManyWithoutCourseVersionNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutCourseVersionNestedInput
+  structureSections?: Prisma.CourseStructureSectionUncheckedUpdateManyWithoutCourseVersionNestedInput
+  courseProgressReadModels?: Prisma.CourseProgressReadModelUncheckedUpdateManyWithoutCourseVersionNestedInput
   lineageAsTarget?: Prisma.CourseVersionLineageUncheckedUpdateManyWithoutTargetVersionRecordNestedInput
 }
 
@@ -875,6 +941,8 @@ export type CourseVersionUpdateWithoutLineageAsTargetInput = {
   course?: Prisma.CourseUpdateOneRequiredWithoutVersionsNestedInput
   auditEntries?: Prisma.CourseVersionAuditUpdateManyWithoutCourseVersionNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutCourseVersionNestedInput
+  structureSections?: Prisma.CourseStructureSectionUpdateManyWithoutCourseVersionNestedInput
+  courseProgressReadModels?: Prisma.CourseProgressReadModelUpdateManyWithoutCourseVersionNestedInput
   lineageAsSource?: Prisma.CourseVersionLineageUpdateManyWithoutSourceVersionRecordNestedInput
 }
 
@@ -890,6 +958,8 @@ export type CourseVersionUncheckedUpdateWithoutLineageAsTargetInput = {
   publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   auditEntries?: Prisma.CourseVersionAuditUncheckedUpdateManyWithoutCourseVersionNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutCourseVersionNestedInput
+  structureSections?: Prisma.CourseStructureSectionUncheckedUpdateManyWithoutCourseVersionNestedInput
+  courseProgressReadModels?: Prisma.CourseProgressReadModelUncheckedUpdateManyWithoutCourseVersionNestedInput
   lineageAsSource?: Prisma.CourseVersionLineageUncheckedUpdateManyWithoutSourceVersionRecordNestedInput
 }
 
@@ -904,6 +974,8 @@ export type CourseVersionCreateWithoutEnrollmentsInput = {
   publishedAt?: Date | string | null
   course: Prisma.CourseCreateNestedOneWithoutVersionsInput
   auditEntries?: Prisma.CourseVersionAuditCreateNestedManyWithoutCourseVersionInput
+  structureSections?: Prisma.CourseStructureSectionCreateNestedManyWithoutCourseVersionInput
+  courseProgressReadModels?: Prisma.CourseProgressReadModelCreateNestedManyWithoutCourseVersionInput
   lineageAsSource?: Prisma.CourseVersionLineageCreateNestedManyWithoutSourceVersionRecordInput
   lineageAsTarget?: Prisma.CourseVersionLineageCreateNestedManyWithoutTargetVersionRecordInput
 }
@@ -919,6 +991,8 @@ export type CourseVersionUncheckedCreateWithoutEnrollmentsInput = {
   updatedAt?: Date | string
   publishedAt?: Date | string | null
   auditEntries?: Prisma.CourseVersionAuditUncheckedCreateNestedManyWithoutCourseVersionInput
+  structureSections?: Prisma.CourseStructureSectionUncheckedCreateNestedManyWithoutCourseVersionInput
+  courseProgressReadModels?: Prisma.CourseProgressReadModelUncheckedCreateNestedManyWithoutCourseVersionInput
   lineageAsSource?: Prisma.CourseVersionLineageUncheckedCreateNestedManyWithoutSourceVersionRecordInput
   lineageAsTarget?: Prisma.CourseVersionLineageUncheckedCreateNestedManyWithoutTargetVersionRecordInput
 }
@@ -950,6 +1024,8 @@ export type CourseVersionUpdateWithoutEnrollmentsInput = {
   publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   course?: Prisma.CourseUpdateOneRequiredWithoutVersionsNestedInput
   auditEntries?: Prisma.CourseVersionAuditUpdateManyWithoutCourseVersionNestedInput
+  structureSections?: Prisma.CourseStructureSectionUpdateManyWithoutCourseVersionNestedInput
+  courseProgressReadModels?: Prisma.CourseProgressReadModelUpdateManyWithoutCourseVersionNestedInput
   lineageAsSource?: Prisma.CourseVersionLineageUpdateManyWithoutSourceVersionRecordNestedInput
   lineageAsTarget?: Prisma.CourseVersionLineageUpdateManyWithoutTargetVersionRecordNestedInput
 }
@@ -965,6 +1041,176 @@ export type CourseVersionUncheckedUpdateWithoutEnrollmentsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   auditEntries?: Prisma.CourseVersionAuditUncheckedUpdateManyWithoutCourseVersionNestedInput
+  structureSections?: Prisma.CourseStructureSectionUncheckedUpdateManyWithoutCourseVersionNestedInput
+  courseProgressReadModels?: Prisma.CourseProgressReadModelUncheckedUpdateManyWithoutCourseVersionNestedInput
+  lineageAsSource?: Prisma.CourseVersionLineageUncheckedUpdateManyWithoutSourceVersionRecordNestedInput
+  lineageAsTarget?: Prisma.CourseVersionLineageUncheckedUpdateManyWithoutTargetVersionRecordNestedInput
+}
+
+export type CourseVersionCreateWithoutStructureSectionsInput = {
+  id?: string
+  version: number
+  status?: $Enums.CourseVersionStatus
+  title: string
+  description?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  publishedAt?: Date | string | null
+  course: Prisma.CourseCreateNestedOneWithoutVersionsInput
+  auditEntries?: Prisma.CourseVersionAuditCreateNestedManyWithoutCourseVersionInput
+  enrollments?: Prisma.EnrollmentCreateNestedManyWithoutCourseVersionInput
+  courseProgressReadModels?: Prisma.CourseProgressReadModelCreateNestedManyWithoutCourseVersionInput
+  lineageAsSource?: Prisma.CourseVersionLineageCreateNestedManyWithoutSourceVersionRecordInput
+  lineageAsTarget?: Prisma.CourseVersionLineageCreateNestedManyWithoutTargetVersionRecordInput
+}
+
+export type CourseVersionUncheckedCreateWithoutStructureSectionsInput = {
+  id?: string
+  courseId: string
+  version: number
+  status?: $Enums.CourseVersionStatus
+  title: string
+  description?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  publishedAt?: Date | string | null
+  auditEntries?: Prisma.CourseVersionAuditUncheckedCreateNestedManyWithoutCourseVersionInput
+  enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutCourseVersionInput
+  courseProgressReadModels?: Prisma.CourseProgressReadModelUncheckedCreateNestedManyWithoutCourseVersionInput
+  lineageAsSource?: Prisma.CourseVersionLineageUncheckedCreateNestedManyWithoutSourceVersionRecordInput
+  lineageAsTarget?: Prisma.CourseVersionLineageUncheckedCreateNestedManyWithoutTargetVersionRecordInput
+}
+
+export type CourseVersionCreateOrConnectWithoutStructureSectionsInput = {
+  where: Prisma.CourseVersionWhereUniqueInput
+  create: Prisma.XOR<Prisma.CourseVersionCreateWithoutStructureSectionsInput, Prisma.CourseVersionUncheckedCreateWithoutStructureSectionsInput>
+}
+
+export type CourseVersionUpsertWithoutStructureSectionsInput = {
+  update: Prisma.XOR<Prisma.CourseVersionUpdateWithoutStructureSectionsInput, Prisma.CourseVersionUncheckedUpdateWithoutStructureSectionsInput>
+  create: Prisma.XOR<Prisma.CourseVersionCreateWithoutStructureSectionsInput, Prisma.CourseVersionUncheckedCreateWithoutStructureSectionsInput>
+  where?: Prisma.CourseVersionWhereInput
+}
+
+export type CourseVersionUpdateToOneWithWhereWithoutStructureSectionsInput = {
+  where?: Prisma.CourseVersionWhereInput
+  data: Prisma.XOR<Prisma.CourseVersionUpdateWithoutStructureSectionsInput, Prisma.CourseVersionUncheckedUpdateWithoutStructureSectionsInput>
+}
+
+export type CourseVersionUpdateWithoutStructureSectionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumCourseVersionStatusFieldUpdateOperationsInput | $Enums.CourseVersionStatus
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  course?: Prisma.CourseUpdateOneRequiredWithoutVersionsNestedInput
+  auditEntries?: Prisma.CourseVersionAuditUpdateManyWithoutCourseVersionNestedInput
+  enrollments?: Prisma.EnrollmentUpdateManyWithoutCourseVersionNestedInput
+  courseProgressReadModels?: Prisma.CourseProgressReadModelUpdateManyWithoutCourseVersionNestedInput
+  lineageAsSource?: Prisma.CourseVersionLineageUpdateManyWithoutSourceVersionRecordNestedInput
+  lineageAsTarget?: Prisma.CourseVersionLineageUpdateManyWithoutTargetVersionRecordNestedInput
+}
+
+export type CourseVersionUncheckedUpdateWithoutStructureSectionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  courseId?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumCourseVersionStatusFieldUpdateOperationsInput | $Enums.CourseVersionStatus
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  auditEntries?: Prisma.CourseVersionAuditUncheckedUpdateManyWithoutCourseVersionNestedInput
+  enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutCourseVersionNestedInput
+  courseProgressReadModels?: Prisma.CourseProgressReadModelUncheckedUpdateManyWithoutCourseVersionNestedInput
+  lineageAsSource?: Prisma.CourseVersionLineageUncheckedUpdateManyWithoutSourceVersionRecordNestedInput
+  lineageAsTarget?: Prisma.CourseVersionLineageUncheckedUpdateManyWithoutTargetVersionRecordNestedInput
+}
+
+export type CourseVersionCreateWithoutCourseProgressReadModelsInput = {
+  id?: string
+  version: number
+  status?: $Enums.CourseVersionStatus
+  title: string
+  description?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  publishedAt?: Date | string | null
+  course: Prisma.CourseCreateNestedOneWithoutVersionsInput
+  auditEntries?: Prisma.CourseVersionAuditCreateNestedManyWithoutCourseVersionInput
+  enrollments?: Prisma.EnrollmentCreateNestedManyWithoutCourseVersionInput
+  structureSections?: Prisma.CourseStructureSectionCreateNestedManyWithoutCourseVersionInput
+  lineageAsSource?: Prisma.CourseVersionLineageCreateNestedManyWithoutSourceVersionRecordInput
+  lineageAsTarget?: Prisma.CourseVersionLineageCreateNestedManyWithoutTargetVersionRecordInput
+}
+
+export type CourseVersionUncheckedCreateWithoutCourseProgressReadModelsInput = {
+  id?: string
+  courseId: string
+  version: number
+  status?: $Enums.CourseVersionStatus
+  title: string
+  description?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  publishedAt?: Date | string | null
+  auditEntries?: Prisma.CourseVersionAuditUncheckedCreateNestedManyWithoutCourseVersionInput
+  enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutCourseVersionInput
+  structureSections?: Prisma.CourseStructureSectionUncheckedCreateNestedManyWithoutCourseVersionInput
+  lineageAsSource?: Prisma.CourseVersionLineageUncheckedCreateNestedManyWithoutSourceVersionRecordInput
+  lineageAsTarget?: Prisma.CourseVersionLineageUncheckedCreateNestedManyWithoutTargetVersionRecordInput
+}
+
+export type CourseVersionCreateOrConnectWithoutCourseProgressReadModelsInput = {
+  where: Prisma.CourseVersionWhereUniqueInput
+  create: Prisma.XOR<Prisma.CourseVersionCreateWithoutCourseProgressReadModelsInput, Prisma.CourseVersionUncheckedCreateWithoutCourseProgressReadModelsInput>
+}
+
+export type CourseVersionUpsertWithoutCourseProgressReadModelsInput = {
+  update: Prisma.XOR<Prisma.CourseVersionUpdateWithoutCourseProgressReadModelsInput, Prisma.CourseVersionUncheckedUpdateWithoutCourseProgressReadModelsInput>
+  create: Prisma.XOR<Prisma.CourseVersionCreateWithoutCourseProgressReadModelsInput, Prisma.CourseVersionUncheckedCreateWithoutCourseProgressReadModelsInput>
+  where?: Prisma.CourseVersionWhereInput
+}
+
+export type CourseVersionUpdateToOneWithWhereWithoutCourseProgressReadModelsInput = {
+  where?: Prisma.CourseVersionWhereInput
+  data: Prisma.XOR<Prisma.CourseVersionUpdateWithoutCourseProgressReadModelsInput, Prisma.CourseVersionUncheckedUpdateWithoutCourseProgressReadModelsInput>
+}
+
+export type CourseVersionUpdateWithoutCourseProgressReadModelsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumCourseVersionStatusFieldUpdateOperationsInput | $Enums.CourseVersionStatus
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  course?: Prisma.CourseUpdateOneRequiredWithoutVersionsNestedInput
+  auditEntries?: Prisma.CourseVersionAuditUpdateManyWithoutCourseVersionNestedInput
+  enrollments?: Prisma.EnrollmentUpdateManyWithoutCourseVersionNestedInput
+  structureSections?: Prisma.CourseStructureSectionUpdateManyWithoutCourseVersionNestedInput
+  lineageAsSource?: Prisma.CourseVersionLineageUpdateManyWithoutSourceVersionRecordNestedInput
+  lineageAsTarget?: Prisma.CourseVersionLineageUpdateManyWithoutTargetVersionRecordNestedInput
+}
+
+export type CourseVersionUncheckedUpdateWithoutCourseProgressReadModelsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  courseId?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumCourseVersionStatusFieldUpdateOperationsInput | $Enums.CourseVersionStatus
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  auditEntries?: Prisma.CourseVersionAuditUncheckedUpdateManyWithoutCourseVersionNestedInput
+  enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutCourseVersionNestedInput
+  structureSections?: Prisma.CourseStructureSectionUncheckedUpdateManyWithoutCourseVersionNestedInput
   lineageAsSource?: Prisma.CourseVersionLineageUncheckedUpdateManyWithoutSourceVersionRecordNestedInput
   lineageAsTarget?: Prisma.CourseVersionLineageUncheckedUpdateManyWithoutTargetVersionRecordNestedInput
 }
@@ -991,6 +1237,8 @@ export type CourseVersionUpdateWithoutCourseInput = {
   publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   auditEntries?: Prisma.CourseVersionAuditUpdateManyWithoutCourseVersionNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutCourseVersionNestedInput
+  structureSections?: Prisma.CourseStructureSectionUpdateManyWithoutCourseVersionNestedInput
+  courseProgressReadModels?: Prisma.CourseProgressReadModelUpdateManyWithoutCourseVersionNestedInput
   lineageAsSource?: Prisma.CourseVersionLineageUpdateManyWithoutSourceVersionRecordNestedInput
   lineageAsTarget?: Prisma.CourseVersionLineageUpdateManyWithoutTargetVersionRecordNestedInput
 }
@@ -1006,6 +1254,8 @@ export type CourseVersionUncheckedUpdateWithoutCourseInput = {
   publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   auditEntries?: Prisma.CourseVersionAuditUncheckedUpdateManyWithoutCourseVersionNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutCourseVersionNestedInput
+  structureSections?: Prisma.CourseStructureSectionUncheckedUpdateManyWithoutCourseVersionNestedInput
+  courseProgressReadModels?: Prisma.CourseProgressReadModelUncheckedUpdateManyWithoutCourseVersionNestedInput
   lineageAsSource?: Prisma.CourseVersionLineageUncheckedUpdateManyWithoutSourceVersionRecordNestedInput
   lineageAsTarget?: Prisma.CourseVersionLineageUncheckedUpdateManyWithoutTargetVersionRecordNestedInput
 }
@@ -1029,6 +1279,8 @@ export type CourseVersionUncheckedUpdateManyWithoutCourseInput = {
 export type CourseVersionCountOutputType = {
   auditEntries: number
   enrollments: number
+  structureSections: number
+  courseProgressReadModels: number
   lineageAsSource: number
   lineageAsTarget: number
 }
@@ -1036,6 +1288,8 @@ export type CourseVersionCountOutputType = {
 export type CourseVersionCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   auditEntries?: boolean | CourseVersionCountOutputTypeCountAuditEntriesArgs
   enrollments?: boolean | CourseVersionCountOutputTypeCountEnrollmentsArgs
+  structureSections?: boolean | CourseVersionCountOutputTypeCountStructureSectionsArgs
+  courseProgressReadModels?: boolean | CourseVersionCountOutputTypeCountCourseProgressReadModelsArgs
   lineageAsSource?: boolean | CourseVersionCountOutputTypeCountLineageAsSourceArgs
   lineageAsTarget?: boolean | CourseVersionCountOutputTypeCountLineageAsTargetArgs
 }
@@ -1067,6 +1321,20 @@ export type CourseVersionCountOutputTypeCountEnrollmentsArgs<ExtArgs extends run
 /**
  * CourseVersionCountOutputType without action
  */
+export type CourseVersionCountOutputTypeCountStructureSectionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.CourseStructureSectionWhereInput
+}
+
+/**
+ * CourseVersionCountOutputType without action
+ */
+export type CourseVersionCountOutputTypeCountCourseProgressReadModelsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.CourseProgressReadModelWhereInput
+}
+
+/**
+ * CourseVersionCountOutputType without action
+ */
 export type CourseVersionCountOutputTypeCountLineageAsSourceArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.CourseVersionLineageWhereInput
 }
@@ -1092,6 +1360,8 @@ export type CourseVersionSelect<ExtArgs extends runtime.Types.Extensions.Interna
   course?: boolean | Prisma.CourseDefaultArgs<ExtArgs>
   auditEntries?: boolean | Prisma.CourseVersion$auditEntriesArgs<ExtArgs>
   enrollments?: boolean | Prisma.CourseVersion$enrollmentsArgs<ExtArgs>
+  structureSections?: boolean | Prisma.CourseVersion$structureSectionsArgs<ExtArgs>
+  courseProgressReadModels?: boolean | Prisma.CourseVersion$courseProgressReadModelsArgs<ExtArgs>
   lineageAsSource?: boolean | Prisma.CourseVersion$lineageAsSourceArgs<ExtArgs>
   lineageAsTarget?: boolean | Prisma.CourseVersion$lineageAsTargetArgs<ExtArgs>
   _count?: boolean | Prisma.CourseVersionCountOutputTypeDefaultArgs<ExtArgs>
@@ -1140,6 +1410,8 @@ export type CourseVersionInclude<ExtArgs extends runtime.Types.Extensions.Intern
   course?: boolean | Prisma.CourseDefaultArgs<ExtArgs>
   auditEntries?: boolean | Prisma.CourseVersion$auditEntriesArgs<ExtArgs>
   enrollments?: boolean | Prisma.CourseVersion$enrollmentsArgs<ExtArgs>
+  structureSections?: boolean | Prisma.CourseVersion$structureSectionsArgs<ExtArgs>
+  courseProgressReadModels?: boolean | Prisma.CourseVersion$courseProgressReadModelsArgs<ExtArgs>
   lineageAsSource?: boolean | Prisma.CourseVersion$lineageAsSourceArgs<ExtArgs>
   lineageAsTarget?: boolean | Prisma.CourseVersion$lineageAsTargetArgs<ExtArgs>
   _count?: boolean | Prisma.CourseVersionCountOutputTypeDefaultArgs<ExtArgs>
@@ -1157,6 +1429,8 @@ export type $CourseVersionPayload<ExtArgs extends runtime.Types.Extensions.Inter
     course: Prisma.$CoursePayload<ExtArgs>
     auditEntries: Prisma.$CourseVersionAuditPayload<ExtArgs>[]
     enrollments: Prisma.$EnrollmentPayload<ExtArgs>[]
+    structureSections: Prisma.$CourseStructureSectionPayload<ExtArgs>[]
+    courseProgressReadModels: Prisma.$CourseProgressReadModelPayload<ExtArgs>[]
     lineageAsSource: Prisma.$CourseVersionLineagePayload<ExtArgs>[]
     lineageAsTarget: Prisma.$CourseVersionLineagePayload<ExtArgs>[]
   }
@@ -1567,6 +1841,8 @@ export interface Prisma__CourseVersionClient<T, Null = never, ExtArgs extends ru
   course<T extends Prisma.CourseDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CourseDefaultArgs<ExtArgs>>): Prisma.Prisma__CourseClient<runtime.Types.Result.GetResult<Prisma.$CoursePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   auditEntries<T extends Prisma.CourseVersion$auditEntriesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CourseVersion$auditEntriesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CourseVersionAuditPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   enrollments<T extends Prisma.CourseVersion$enrollmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CourseVersion$enrollmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EnrollmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  structureSections<T extends Prisma.CourseVersion$structureSectionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CourseVersion$structureSectionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CourseStructureSectionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  courseProgressReadModels<T extends Prisma.CourseVersion$courseProgressReadModelsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CourseVersion$courseProgressReadModelsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CourseProgressReadModelPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   lineageAsSource<T extends Prisma.CourseVersion$lineageAsSourceArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CourseVersion$lineageAsSourceArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CourseVersionLineagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   lineageAsTarget<T extends Prisma.CourseVersion$lineageAsTargetArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CourseVersion$lineageAsTargetArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CourseVersionLineagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -2053,6 +2329,54 @@ export type CourseVersion$enrollmentsArgs<ExtArgs extends runtime.Types.Extensio
   take?: number
   skip?: number
   distinct?: Prisma.EnrollmentScalarFieldEnum | Prisma.EnrollmentScalarFieldEnum[]
+}
+
+/**
+ * CourseVersion.structureSections
+ */
+export type CourseVersion$structureSectionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the CourseStructureSection
+   */
+  select?: Prisma.CourseStructureSectionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the CourseStructureSection
+   */
+  omit?: Prisma.CourseStructureSectionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CourseStructureSectionInclude<ExtArgs> | null
+  where?: Prisma.CourseStructureSectionWhereInput
+  orderBy?: Prisma.CourseStructureSectionOrderByWithRelationInput | Prisma.CourseStructureSectionOrderByWithRelationInput[]
+  cursor?: Prisma.CourseStructureSectionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.CourseStructureSectionScalarFieldEnum | Prisma.CourseStructureSectionScalarFieldEnum[]
+}
+
+/**
+ * CourseVersion.courseProgressReadModels
+ */
+export type CourseVersion$courseProgressReadModelsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the CourseProgressReadModel
+   */
+  select?: Prisma.CourseProgressReadModelSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the CourseProgressReadModel
+   */
+  omit?: Prisma.CourseProgressReadModelOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CourseProgressReadModelInclude<ExtArgs> | null
+  where?: Prisma.CourseProgressReadModelWhereInput
+  orderBy?: Prisma.CourseProgressReadModelOrderByWithRelationInput | Prisma.CourseProgressReadModelOrderByWithRelationInput[]
+  cursor?: Prisma.CourseProgressReadModelWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.CourseProgressReadModelScalarFieldEnum | Prisma.CourseProgressReadModelScalarFieldEnum[]
 }
 
 /**

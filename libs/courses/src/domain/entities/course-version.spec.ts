@@ -21,9 +21,7 @@ describe('CourseVersion', () => {
       expect(version.version).toBe(1);
       expect(version.status).toBe('DRAFT');
       expect(version.title).toBe('TypeScript Fundamentals');
-      expect(version.description).toBe(
-        'Learn TypeScript from the ground up.',
-      );
+      expect(version.description).toBe('Learn TypeScript from the ground up.');
       expect(version.publishedAt).toBeNull();
     });
 
@@ -100,9 +98,7 @@ describe('CourseVersion', () => {
       });
 
       expect(version.title).toBe('Updated Title');
-      expect(version.description).toBe(
-        'Learn TypeScript from the ground up.',
-      );
+      expect(version.description).toBe('Learn TypeScript from the ground up.');
     });
   });
 
@@ -217,9 +213,7 @@ describe('CourseVersion', () => {
     it('does not allow publishing directly from DRAFT', () => {
       const version = createVersion();
 
-      expect(() => version.publish()).toThrow(
-        CourseValidationError,
-      );
+      expect(() => version.publish()).toThrow(CourseValidationError);
     });
 
     it('does not allow publishing twice', () => {
@@ -228,9 +222,7 @@ describe('CourseVersion', () => {
       version.submitForReview();
       version.publish();
 
-      expect(() => version.publish()).toThrow(
-        CourseValidationError,
-      );
+      expect(() => version.publish()).toThrow(CourseValidationError);
     });
 
     it('does not allow submitting an archived version for review', () => {
@@ -238,9 +230,7 @@ describe('CourseVersion', () => {
 
       version.archive();
 
-      expect(() => version.submitForReview()).toThrow(
-        CourseValidationError,
-      );
+      expect(() => version.submitForReview()).toThrow(CourseValidationError);
     });
 
     it('does not allow archiving an archived version', () => {
@@ -248,9 +238,7 @@ describe('CourseVersion', () => {
 
       version.archive();
 
-      expect(() => version.archive()).toThrow(
-        CourseValidationError,
-      );
+      expect(() => version.archive()).toThrow(CourseValidationError);
     });
   });
 
@@ -297,17 +285,13 @@ describe('CourseVersion', () => {
       version.submitForReview();
       version.publish();
 
-      const rehydrated = CourseVersion.rehydrate(
-        version.toPrimitives(),
-      );
+      const rehydrated = CourseVersion.rehydrate(version.toPrimitives());
 
       expect(rehydrated.id.equals(version.id)).toBe(true);
       expect(rehydrated.courseId).toBe(version.courseId);
       expect(rehydrated.version).toBe(version.version);
       expect(rehydrated.status).toBe('PUBLISHED');
-      expect(rehydrated.publishedAt).toEqual(
-        version.publishedAt,
-      );
+      expect(rehydrated.publishedAt).toEqual(version.publishedAt);
     });
   });
 });

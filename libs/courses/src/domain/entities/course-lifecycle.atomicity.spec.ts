@@ -182,9 +182,7 @@ describe('Course lifecycle transition atomicity', () => {
       const [event] = course.getDomainEvents();
 
       expect(course.getDomainEvents()).toHaveLength(1);
-      expect(event?.eventName).toBe(
-        CourseDomainEventName.SUBMITTED_FOR_REVIEW,
-      );
+      expect(event?.eventName).toBe(CourseDomainEventName.SUBMITTED_FOR_REVIEW);
       expect(event?.aggregateId).toBe(course.id.toString());
     });
 
@@ -276,9 +274,7 @@ describe('Course lifecycle transition atomicity', () => {
 
       const status = course.status;
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.status).toBe(status);
     });
@@ -288,9 +284,7 @@ describe('Course lifecycle transition atomicity', () => {
 
       const createdAt = course.createdAt;
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.createdAt).toEqual(createdAt);
     });
@@ -300,9 +294,7 @@ describe('Course lifecycle transition atomicity', () => {
 
       const updatedAt = course.updatedAt.getTime();
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.updatedAt.getTime()).toBe(updatedAt);
     });
@@ -312,9 +304,7 @@ describe('Course lifecycle transition atomicity', () => {
 
       const id = course.id;
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.id).toBe(id);
     });
@@ -331,9 +321,7 @@ describe('Course lifecycle transition atomicity', () => {
         instructorId: course.instructorId,
       };
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.title).toBe(metadata.title);
       expect(course.description).toBe(metadata.description);
@@ -348,9 +336,7 @@ describe('Course lifecycle transition atomicity', () => {
 
       course.pullDomainEvents();
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.getDomainEvents()).toHaveLength(0);
     });
@@ -366,15 +352,11 @@ describe('Course lifecycle transition atomicity', () => {
       const updatedAt = course.updatedAt.getTime();
       const id = course.id;
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
       expect(() => course.unpublish()).toThrow(
         InvalidCourseStateTransitionError,
       );
-      expect(() => course.archive()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.archive()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.status).toBe(CourseStatus.DRAFT);
       expect(course.createdAt).toEqual(createdAt);
@@ -396,9 +378,7 @@ describe('Course lifecycle transition atomicity', () => {
       expect(() => course.unpublish()).toThrow(
         InvalidCourseStateTransitionError,
       );
-      expect(() => course.archive()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.archive()).toThrow(InvalidCourseStateTransitionError);
       expect(() => course.submitForReview()).toThrow(
         InvalidCourseStateTransitionError,
       );
@@ -423,9 +403,7 @@ describe('Course lifecycle transition atomicity', () => {
       expect(() => course.submitForReview()).toThrow(
         InvalidCourseStateTransitionError,
       );
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.status).toBe(CourseStatus.PUBLISHED);
       expect(course.createdAt).toEqual(createdAt);
@@ -444,9 +422,7 @@ describe('Course lifecycle transition atomicity', () => {
       const updatedAt = course.updatedAt.getTime();
       const id = course.id;
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
       expect(() => course.submitForReview()).toThrow(
         InvalidCourseStateTransitionError,
       );
@@ -474,15 +450,11 @@ describe('Course lifecycle transition atomicity', () => {
       expect(() => course.submitForReview()).toThrow(
         InvalidCourseStateTransitionError,
       );
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
       expect(() => course.unpublish()).toThrow(
         InvalidCourseStateTransitionError,
       );
-      expect(() => course.archive()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.archive()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.status).toBe(CourseStatus.ARCHIVED);
       expect(course.createdAt).toEqual(createdAt);

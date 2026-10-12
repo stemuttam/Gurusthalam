@@ -47,9 +47,7 @@ export class CourseOwnershipPrismaMapper {
   ): CourseOwnershipAssignmentProps[] {
     return [...records]
       .sort((left, right) => left.position - right.position)
-      .map((record) =>
-        CourseOwnershipPrismaMapper.toDomain(record),
-      );
+      .map((record) => CourseOwnershipPrismaMapper.toDomain(record));
   }
 
   static toPersistence(
@@ -60,9 +58,7 @@ export class CourseOwnershipPrismaMapper {
     return {
       courseId,
       principalId: assignment.principalId.toString(),
-      role: CourseOwnershipPrismaMapper.toPrismaRole(
-        assignment.role,
-      ),
+      role: CourseOwnershipPrismaMapper.toPrismaRole(assignment.role),
       position,
     };
   }

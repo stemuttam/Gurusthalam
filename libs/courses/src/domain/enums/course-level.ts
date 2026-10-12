@@ -13,11 +13,12 @@ export const CourseLevel = {
 
 export type CourseLevel = (typeof CourseLevel)[keyof typeof CourseLevel];
 
-export const COURSE_LEVELS = Object.values(CourseLevel) as readonly CourseLevel[];
+export const COURSE_LEVELS = Object.values(
+  CourseLevel,
+) as readonly CourseLevel[];
 
 export function isCourseLevel(value: unknown): value is CourseLevel {
   return (
-    typeof value === 'string' &&
-    COURSE_LEVELS.includes(value as CourseLevel)
+    typeof value === 'string' && COURSE_LEVELS.includes(value as CourseLevel)
   );
 }

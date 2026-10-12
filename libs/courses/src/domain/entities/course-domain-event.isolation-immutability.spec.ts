@@ -250,9 +250,7 @@ describe('Course domain-event isolation and immutability', () => {
       expect(rereadEvent.payload.description).toBe(
         'Original course description',
       );
-      expect(rereadEvent.payload.description).not.toBe(
-        'Tampered Description',
-      );
+      expect(rereadEvent.payload.description).not.toBe('Tampered Description');
     });
 
     it('prevents payload courseId mutation from leaking into the aggregate', () => {
@@ -282,9 +280,7 @@ describe('Course domain-event isolation and immutability', () => {
       expect(rereadEvent.payload.instructorId).toBe(
         'instructor-isolation-test',
       );
-      expect(rereadEvent.payload.instructorId).not.toBe(
-        'tampered-instructor',
-      );
+      expect(rereadEvent.payload.instructorId).not.toBe('tampered-instructor');
     });
 
     it('isolates metadata payloads from subsequent reads', () => {
@@ -428,13 +424,9 @@ describe('Course domain-event isolation and immutability', () => {
       const rereadCreatedEvent = getCreatedEvent(rereadEvents);
       const rereadMetadataEvent = getMetadataUpdatedEvent(rereadEvents);
 
-      expect(rereadCreatedEvent.eventName).toBe(
-        CourseDomainEventName.CREATED,
-      );
+      expect(rereadCreatedEvent.eventName).toBe(CourseDomainEventName.CREATED);
       expect(rereadCreatedEvent.aggregateId).toBe(course.id.value);
-      expect(rereadCreatedEvent.payload.title).toBe(
-        'Isolation Test Course',
-      );
+      expect(rereadCreatedEvent.payload.title).toBe('Isolation Test Course');
       expect(rereadCreatedEvent.occurredAt.getTime()).not.toBe(0);
 
       expect(rereadMetadataEvent.eventName).toBe(

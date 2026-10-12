@@ -65,9 +65,7 @@ function getCreatedEvent(
   const event = getEventAt(events, index);
 
   if (event.eventName !== CourseDomainEventName.CREATED) {
-    throw new Error(
-      `Expected CREATED event but received ${event.eventName}`,
-    );
+    throw new Error(`Expected CREATED event but received ${event.eventName}`);
   }
 
   return event;
@@ -110,9 +108,7 @@ function getPublishedEvent(
   const event = getEventAt(events, index);
 
   if (event.eventName !== CourseDomainEventName.PUBLISHED) {
-    throw new Error(
-      `Expected PUBLISHED event but received ${event.eventName}`,
-    );
+    throw new Error(`Expected PUBLISHED event but received ${event.eventName}`);
   }
 
   return event;
@@ -140,9 +136,7 @@ function getArchivedEvent(
   const event = getEventAt(events, index);
 
   if (event.eventName !== CourseDomainEventName.ARCHIVED) {
-    throw new Error(
-      `Expected ARCHIVED event but received ${event.eventName}`,
-    );
+    throw new Error(`Expected ARCHIVED event but received ${event.eventName}`);
   }
 
   return event;
@@ -274,16 +268,11 @@ describe('Course domain-event draining semantics', () => {
 
       const beforePull = course.getDomainEvents();
       const createdEventId = getCreatedEvent(beforePull, 0).eventId;
-      const metadataEventId = getMetadataUpdatedEvent(
-        beforePull,
-        1,
-      ).eventId;
+      const metadataEventId = getMetadataUpdatedEvent(beforePull, 1).eventId;
 
       const drainedEvents = course.pullDomainEvents();
 
-      expect(getCreatedEvent(drainedEvents, 0).eventId).toBe(
-        createdEventId,
-      );
+      expect(getCreatedEvent(drainedEvents, 0).eventId).toBe(createdEventId);
       expect(getMetadataUpdatedEvent(drainedEvents, 1).eventId).toBe(
         metadataEventId,
       );
@@ -306,9 +295,9 @@ describe('Course domain-event draining semantics', () => {
 
       const drainedEvents = course.pullDomainEvents();
 
-      expect(
-        getCreatedEvent(drainedEvents, 0).occurredAt.getTime(),
-      ).toBe(createdOccurredAt);
+      expect(getCreatedEvent(drainedEvents, 0).occurredAt.getTime()).toBe(
+        createdOccurredAt,
+      );
 
       expect(
         getMetadataUpdatedEvent(drainedEvents, 1).occurredAt.getTime(),
@@ -332,9 +321,9 @@ describe('Course domain-event draining semantics', () => {
       const secondPull = course.pullDomainEvents();
 
       expect(secondPull).toHaveLength(1);
-      expect(
-        getMetadataUpdatedEvent(secondPull, 0).eventName,
-      ).toBe(CourseDomainEventName.METADATA_UPDATED);
+      expect(getMetadataUpdatedEvent(secondPull, 0).eventName).toBe(
+        CourseDomainEventName.METADATA_UPDATED,
+      );
     });
 
     it('does not re-emit previously drained events', () => {
@@ -379,9 +368,9 @@ describe('Course domain-event draining semantics', () => {
       const thirdPull = course.pullDomainEvents();
 
       expect(thirdPull).toHaveLength(1);
-      expect(
-        getSubmittedForReviewEvent(thirdPull, 0).eventName,
-      ).toBe(CourseDomainEventName.SUBMITTED_FOR_REVIEW);
+      expect(getSubmittedForReviewEvent(thirdPull, 0).eventName).toBe(
+        CourseDomainEventName.SUBMITTED_FOR_REVIEW,
+      );
     });
 
     it('does not combine events from separate drain cycles', () => {
@@ -451,11 +440,7 @@ describe('Course domain-event draining semantics', () => {
       const drainedEvent = getCreatedEvent(drainedEvents, 0);
 
       Reflect.set(drainedEvent.payload, 'title', 'Tampered Title');
-      Reflect.set(
-        drainedEvent.payload,
-        'instructorId',
-        'Tampered Instructor',
-      );
+      Reflect.set(drainedEvent.payload, 'instructorId', 'Tampered Instructor');
 
       expect(course.title).toBe('Draining Test Course');
       expect(course.instructorId).toBe('instructor-draining-test');

@@ -51,12 +51,7 @@ export class SectionProgressValidationError extends SectionProgressDomainError {
       readonly cause?: unknown;
     },
   ) {
-    super(
-      message,
-      SectionProgressDomainErrorCode.VALIDATION,
-      issues,
-      options,
-    );
+    super(message, SectionProgressDomainErrorCode.VALIDATION, issues, options);
 
     this.name = 'SectionProgressValidationError';
   }
@@ -67,11 +62,7 @@ export class InvalidSectionProgressTransitionError extends SectionProgressDomain
     message: string,
     issues: readonly SectionProgressValidationIssue[] = [],
   ) {
-    super(
-      message,
-      SectionProgressDomainErrorCode.INVALID_TRANSITION,
-      issues,
-    );
+    super(message, SectionProgressDomainErrorCode.INVALID_TRANSITION, issues);
 
     this.name = 'InvalidSectionProgressTransitionError';
   }

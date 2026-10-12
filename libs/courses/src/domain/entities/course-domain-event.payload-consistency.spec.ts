@@ -25,10 +25,7 @@ const createCourse = (): Course =>
 const getEvents = (course: Course): readonly CourseDomainEvent[] =>
   course.getDomainEvents();
 
-const getEventAt = (
-  course: Course,
-  index: number,
-): CourseDomainEvent => {
+const getEventAt = (course: Course, index: number): CourseDomainEvent => {
   const event = getEvents(course)[index];
 
   expect.assert(event);
@@ -72,9 +69,7 @@ const getSubmittedForReviewEvent = (
 > => {
   const event = getEventAt(course, index);
 
-  if (
-    event.eventName !== CourseDomainEventName.SUBMITTED_FOR_REVIEW
-  ) {
+  if (event.eventName !== CourseDomainEventName.SUBMITTED_FOR_REVIEW) {
     throw new Error(
       `Expected SUBMITTED_FOR_REVIEW event at index ${index}, received "${event.eventName}".`,
     );
@@ -223,9 +218,7 @@ describe('Course domain-event payload consistency', () => {
       const event = getMetadataUpdatedEvent(course);
 
       expect(event.payload.title).toBe('Advanced TypeScript');
-      expect(event.payload.description).toBe(
-        'Advanced TypeScript course.',
-      );
+      expect(event.payload.description).toBe('Advanced TypeScript course.');
       expect(event.payload.level).toBe(CourseLevel.INTERMEDIATE);
       expect(event.payload.type).toBe(CourseType.LIVE);
       expect(event.payload.visibility).toBe(CourseVisibility.PUBLIC);
@@ -442,9 +435,7 @@ describe('Course domain-event payload consistency', () => {
 
       const secondEvent = getCreatedEvent(course);
 
-      expect(secondEvent.payload.title).toBe(
-        'TypeScript Fundamentals',
-      );
+      expect(secondEvent.payload.title).toBe('TypeScript Fundamentals');
       expect(course.title).toBe('TypeScript Fundamentals');
     });
 
@@ -461,9 +452,7 @@ describe('Course domain-event payload consistency', () => {
 
       const secondEvent = getMetadataUpdatedEvent(course);
 
-      expect(secondEvent.payload.title).toBe(
-        'Advanced TypeScript',
-      );
+      expect(secondEvent.payload.title).toBe('Advanced TypeScript');
       expect(course.title).toBe('Advanced TypeScript');
     });
 
@@ -481,12 +470,8 @@ describe('Course domain-event payload consistency', () => {
       const firstEvent = getMetadataUpdatedEvent(course, 1);
       const secondEvent = getMetadataUpdatedEvent(course, 2);
 
-      expect(firstEvent.payload.title).toBe(
-        'Advanced TypeScript',
-      );
-      expect(secondEvent.payload.title).toBe(
-        'Expert TypeScript',
-      );
+      expect(firstEvent.payload.title).toBe('Advanced TypeScript');
+      expect(secondEvent.payload.title).toBe('Expert TypeScript');
       expect(firstEvent.payload).not.toBe(secondEvent.payload);
     });
 
@@ -504,9 +489,7 @@ describe('Course domain-event payload consistency', () => {
 
       const metadataEvent = getMetadataUpdatedEvent(course);
 
-      expect(metadataEvent.payload.title).toBe(
-        'Advanced TypeScript',
-      );
+      expect(metadataEvent.payload.title).toBe('Advanced TypeScript');
       expect(metadataEvent.payload.description).toBe(
         'Learn TypeScript from the ground up.',
       );
@@ -536,22 +519,13 @@ describe('Course domain-event payload consistency', () => {
 
       const created = getCreatedEvent(course);
 
-      const metadataUpdated = getMetadataUpdatedEvent(
-        course,
-        1,
-      );
+      const metadataUpdated = getMetadataUpdatedEvent(course, 1);
 
-      const submitted = getSubmittedForReviewEvent(
-        course,
-        2,
-      );
+      const submitted = getSubmittedForReviewEvent(course, 2);
 
       const published = getPublishedEvent(course, 3);
 
-      const unpublished = getUnpublishedEvent(
-        course,
-        4,
-      );
+      const unpublished = getUnpublishedEvent(course, 4);
 
       const archived = getArchivedEvent(course, 5);
 

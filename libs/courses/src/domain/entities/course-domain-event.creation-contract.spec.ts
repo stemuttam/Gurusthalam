@@ -40,9 +40,7 @@ describe('Course domain-event creation contract', () => {
     it('creates the canonical CREATED event', () => {
       const course = createCourse();
 
-      expect(getEventNames(course)).toEqual([
-        CourseDomainEventName.CREATED,
-      ]);
+      expect(getEventNames(course)).toEqual([CourseDomainEventName.CREATED]);
     });
 
     it('uses the aggregate Course ID', () => {
@@ -72,9 +70,7 @@ describe('Course domain-event creation contract', () => {
       const course = createCourse();
       const event = getEventAt(course, 0);
 
-      expect(event.occurredAt.getTime()).toBe(
-        course.updatedAt.getTime(),
-      );
+      expect(event.occurredAt.getTime()).toBe(course.updatedAt.getTime());
     });
 
     it('contains the complete creation payload', () => {
@@ -152,9 +148,7 @@ describe('Course domain-event creation contract', () => {
 
       const event = getEventAt(course, 1);
 
-      expect(event.occurredAt.getTime()).toBe(
-        course.updatedAt.getTime(),
-      );
+      expect(event.occurredAt.getTime()).toBe(course.updatedAt.getTime());
     });
 
     it('contains the updated metadata payload', () => {
@@ -230,9 +224,7 @@ describe('Course domain-event creation contract', () => {
 
       const event = getEventAt(course, 1);
 
-      expect(event.occurredAt.getTime()).toBe(
-        course.updatedAt.getTime(),
-      );
+      expect(event.occurredAt.getTime()).toBe(course.updatedAt.getTime());
     });
   });
 
@@ -247,8 +239,7 @@ describe('Course domain-event creation contract', () => {
 
       expect(
         events.filter(
-          (event) =>
-            event.eventName === CourseDomainEventName.PUBLISHED,
+          (event) => event.eventName === CourseDomainEventName.PUBLISHED,
         ),
       ).toHaveLength(1);
     });
@@ -301,9 +292,7 @@ describe('Course domain-event creation contract', () => {
 
       const event = getEventAt(course, 2);
 
-      expect(event.occurredAt.getTime()).toBe(
-        course.updatedAt.getTime(),
-      );
+      expect(event.occurredAt.getTime()).toBe(course.updatedAt.getTime());
     });
   });
 
@@ -332,9 +321,9 @@ describe('Course domain-event creation contract', () => {
       const firstRead = getEvents(course);
       const secondRead = getEvents(course);
 
-      expect(
-        secondRead.map((event) => event.eventId),
-      ).toEqual(firstRead.map((event) => event.eventId));
+      expect(secondRead.map((event) => event.eventId)).toEqual(
+        firstRead.map((event) => event.eventId),
+      );
     });
   });
 
@@ -378,9 +367,7 @@ describe('Course domain-event creation contract', () => {
         expect.assert(previousTimestamp !== undefined);
         expect.assert(currentTimestamp !== undefined);
 
-        expect(currentTimestamp).toBeGreaterThanOrEqual(
-          previousTimestamp,
-        );
+        expect(currentTimestamp).toBeGreaterThanOrEqual(previousTimestamp);
       }
     });
   });

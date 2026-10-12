@@ -153,9 +153,9 @@ describe('SectionProgress', () => {
     it('rejects starting a completed aggregate', () => {
       const progress = createCompletedProgress();
 
-      expect(() => progress.start(new Date('2026-10-08T10:16:00.000Z'))).toThrow(
-        InvalidSectionProgressTransitionError,
-      );
+      expect(() =>
+        progress.start(new Date('2026-10-08T10:16:00.000Z')),
+      ).toThrow(InvalidSectionProgressTransitionError);
     });
 
     it('rejects an invalid transition timestamp', () => {
@@ -211,14 +211,17 @@ describe('SectionProgress', () => {
       });
     });
 
-    it.each([0, 1, 99, 100])('allows the integer percentage %s', (percentage) => {
-      const progress = createProgress();
-      progress.start(STARTED_AT);
-      progress.updatePercentage(percentage, UPDATED_AT);
+    it.each([0, 1, 99, 100])(
+      'allows the integer percentage %s',
+      (percentage) => {
+        const progress = createProgress();
+        progress.start(STARTED_AT);
+        progress.updatePercentage(percentage, UPDATED_AT);
 
-      expect(progress.percentage).toBe(percentage);
-      expect(progress.status).toBe(SectionProgressStatus.IN_PROGRESS);
-    });
+        expect(progress.percentage).toBe(percentage);
+        expect(progress.status).toBe(SectionProgressStatus.IN_PROGRESS);
+      },
+    );
 
     it.each([-1, 101, Number.NaN, Number.POSITIVE_INFINITY, 42.5])(
       'rejects invalid percentage %s',
@@ -347,7 +350,9 @@ describe('SectionProgress', () => {
       const drained = progress.pullDomainEvents();
 
       expect(drained).toHaveLength(1);
-      expect(drained[0]?.eventName).toBe(SectionProgressDomainEventName.STARTED);
+      expect(drained[0]?.eventName).toBe(
+        SectionProgressDomainEventName.STARTED,
+      );
       expect(progress.getDomainEvents()).toEqual([]);
       expect(progress.pullDomainEvents()).toEqual([]);
     });

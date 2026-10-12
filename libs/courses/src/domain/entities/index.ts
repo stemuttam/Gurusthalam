@@ -1,6 +1,4 @@
-export {
-  Course,
-} from './course.js';
+export { Course } from './course.js';
 
 export type {
   CourseProps,
@@ -8,9 +6,7 @@ export type {
   UpdateCourseMetadataProps,
 } from './course.js';
 
-export {
-  CourseVersion,
-} from './course-version.js';
+export { CourseVersion } from './course-version.js';
 
 export type {
   CourseVersionProps,

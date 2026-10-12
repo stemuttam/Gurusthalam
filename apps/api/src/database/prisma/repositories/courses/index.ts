@@ -3,6 +3,7 @@ export { CoursesPersistenceModule } from './courses-persistence.module.js';
 export {
   COURSE_QUERY,
   COURSE_REPOSITORY,
+  COURSE_STRUCTURE_REPOSITORY,
   COURSE_VERSION_REPOSITORY,
   COURSE_VERSION_AUDIT_REPOSITORY,
   COURSE_VERSION_LINEAGE_REPOSITORY,
@@ -11,6 +12,8 @@ export {
 export { PrismaCourseQuery } from './prisma-course.query.js';
 
 export { PrismaCourseRepository } from './prisma-course.repository.js';
+
+export { PrismaCourseStructureRepository } from './prisma-course-structure.repository.js';
 
 export { PrismaCourseVersionRepository } from './prisma-course-version.repository.js';
 

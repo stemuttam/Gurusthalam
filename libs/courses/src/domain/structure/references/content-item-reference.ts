@@ -38,19 +38,15 @@ export function createContentItemReference(
   input: CreateContentItemReferenceProps,
 ): ContentItemReferenceProps {
   if (!input.learningUnitId) {
-    throw new CourseValidationError(
-      'ContentItemReference validation failed.',
-      [
-        {
-          field: 'learningUnitId',
-          message: 'LearningUnit identifier is required.',
-        },
-      ],
-    );
+    throw new CourseValidationError('ContentItemReference validation failed.', [
+      {
+        field: 'learningUnitId',
+        message: 'LearningUnit identifier is required.',
+      },
+    ]);
   }
 
-  const contentItemTargetId =
-    validateContentId(input.contentItemTargetId);
+  const contentItemTargetId = validateContentId(input.contentItemTargetId);
 
   const position = validatePosition(input.position);
 
@@ -74,37 +70,26 @@ export function rehydrateContentItemReference(
   props: ContentItemReferenceProps,
 ): ContentItemReferenceProps {
   if (!props.id) {
-    throw new CourseValidationError(
-      'ContentItemReference validation failed.',
-      [
-        {
-          field: 'id',
-          message:
-            'ContentItemReference identifier is required.',
-        },
-      ],
-    );
+    throw new CourseValidationError('ContentItemReference validation failed.', [
+      {
+        field: 'id',
+        message: 'ContentItemReference identifier is required.',
+      },
+    ]);
   }
 
   if (!props.learningUnitId) {
-    throw new CourseValidationError(
-      'ContentItemReference validation failed.',
-      [
-        {
-          field: 'learningUnitId',
-          message:
-            'LearningUnit identifier is required.',
-        },
-      ],
-    );
+    throw new CourseValidationError('ContentItemReference validation failed.', [
+      {
+        field: 'learningUnitId',
+        message: 'LearningUnit identifier is required.',
+      },
+    ]);
   }
 
-  const contentItemTargetId =
-    validateContentId(props.contentItemTargetId);
+  const contentItemTargetId = validateContentId(props.contentItemTargetId);
 
-  const position = validatePosition(
-    props.position,
-  );
+  const position = validatePosition(props.position);
 
   return Object.freeze({
     id: props.id,
@@ -114,17 +99,14 @@ export function rehydrateContentItemReference(
   });
 }
 
-function validateContentId(
-  value: ContentId,
-): ContentId {
+function validateContentId(value: ContentId): ContentId {
   if (!(value instanceof ContentId)) {
     throw new CourseValidationError(
       'ContentItemReference target identifier is invalid.',
       [
         {
           field: 'contentItemTargetId',
-          message:
-            'Content Item target identifier must be a ContentId.',
+          message: 'Content Item target identifier must be a ContentId.',
         },
       ],
     );
@@ -133,13 +115,8 @@ function validateContentId(
   return value;
 }
 
-function validatePosition(
-  position: number,
-): number {
-  if (
-    !Number.isInteger(position) ||
-    position < 1
-  ) {
+function validatePosition(position: number): number {
+  if (!Number.isInteger(position) || position < 1) {
     throw new CourseValidationError(
       'ContentItemReference position is invalid.',
       [

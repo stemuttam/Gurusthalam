@@ -185,9 +185,7 @@ describe('Course domain-event invariants', () => {
       const events = course.getDomainEvents();
 
       expect(events).toHaveLength(1);
-      expect(events[0]?.eventName).toBe(
-        'courses.course.metadata_updated',
-      );
+      expect(events[0]?.eventName).toBe('courses.course.metadata_updated');
     });
 
     it('records exactly one event for successful submission', () => {
@@ -200,9 +198,7 @@ describe('Course domain-event invariants', () => {
       const events = course.getDomainEvents();
 
       expect(events).toHaveLength(1);
-      expect(events[0]?.eventName).toBe(
-        'courses.course.submitted_for_review',
-      );
+      expect(events[0]?.eventName).toBe('courses.course.submitted_for_review');
     });
 
     it('records exactly one event for successful publication', () => {
@@ -286,9 +282,7 @@ describe('Course domain-event invariants', () => {
 
       course.pullDomainEvents();
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.getDomainEvents()).toHaveLength(0);
     });
@@ -310,9 +304,7 @@ describe('Course domain-event invariants', () => {
 
       course.pullDomainEvents();
 
-      expect(() => course.archive()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.archive()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.getDomainEvents()).toHaveLength(0);
     });
@@ -403,18 +395,11 @@ describe('Course domain-event invariants', () => {
         const previousTimestamp = timestamps[index - 1];
         const currentTimestamp = timestamps[index];
 
-        if (
-          previousTimestamp === undefined ||
-          currentTimestamp === undefined
-        ) {
-          throw new Error(
-            'Expected every event timestamp to be defined.',
-          );
+        if (previousTimestamp === undefined || currentTimestamp === undefined) {
+          throw new Error('Expected every event timestamp to be defined.');
         }
 
-        expect(currentTimestamp).toBeGreaterThanOrEqual(
-          previousTimestamp,
-        );
+        expect(currentTimestamp).toBeGreaterThanOrEqual(previousTimestamp);
       }
     });
   });
@@ -515,9 +500,7 @@ describe('Course domain-event invariants', () => {
       const events = course.getDomainEvents();
 
       expect(events).toHaveLength(1);
-      expect(events[0]?.eventName).toBe(
-        'courses.course.metadata_updated',
-      );
+      expect(events[0]?.eventName).toBe('courses.course.metadata_updated');
     });
   });
 
@@ -564,9 +547,7 @@ describe('Course domain-event invariants', () => {
       const events = rehydrated.getDomainEvents();
 
       expect(events).toHaveLength(1);
-      expect(events[0]?.eventName).toBe(
-        'courses.course.submitted_for_review',
-      );
+      expect(events[0]?.eventName).toBe('courses.course.submitted_for_review');
       expect(events[0]?.aggregateId).toBe(rehydrated.id.toString());
     });
   });

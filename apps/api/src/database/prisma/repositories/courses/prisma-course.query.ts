@@ -84,51 +84,46 @@ export class PrismaCourseQuery implements CourseCatalogProjectionQuery {
    * page query so pagination metadata cannot describe a different dataset.
    */
   async search(request: CourseQueryRequest): Promise<CourseQueryResultPage> {
-    return withPrismaRepositoryErrorBoundary(
-      'CourseQuery.search',
-      async () => {
-        const where = PrismaCourseQuery.buildWhere(request);
+    return withPrismaRepositoryErrorBoundary('CourseQuery.search', async () => {
+      const where = PrismaCourseQuery.buildWhere(request);
 
-        const sortBy = request.sortBy ?? DEFAULT_SORT_FIELD;
+      const sortBy = request.sortBy ?? DEFAULT_SORT_FIELD;
 
-        const sortOrder = request.sortOrder ?? DEFAULT_SORT_ORDER;
+      const sortOrder = request.sortOrder ?? DEFAULT_SORT_ORDER;
 
-        const skip = (request.page - 1) * request.limit;
+      const skip = (request.page - 1) * request.limit;
 
-        const [records, total] = await Promise.all([
-          this.prisma.courseCatalogProjection.findMany({
-            where,
-            orderBy: [
-              {
-                [sortBy]: sortOrder,
-              },
-              {
-                courseId: sortOrder,
-              },
-            ],
-            skip,
-            take: request.limit,
-            select: PrismaCourseQuery.selectProjection,
-          }),
+      const [records, total] = await Promise.all([
+        this.prisma.courseCatalogProjection.findMany({
+          where,
+          orderBy: [
+            {
+              [sortBy]: sortOrder,
+            },
+            {
+              courseId: sortOrder,
+            },
+          ],
+          skip,
+          take: request.limit,
+          select: PrismaCourseQuery.selectProjection,
+        }),
 
-          this.prisma.courseCatalogProjection.count({
-            where,
-          }),
-        ]);
+        this.prisma.courseCatalogProjection.count({
+          where,
+        }),
+      ]);
 
-        return {
-          items: records.map((record) =>
-            PrismaCourseQuery.toQueryResult(record),
-          ),
+      return {
+        items: records.map((record) => PrismaCourseQuery.toQueryResult(record)),
 
-          meta: PrismaCourseQuery.createPaginationMeta(
-            request.page,
-            request.limit,
-            total,
-          ),
-        };
-      },
-    );
+        meta: PrismaCourseQuery.createPaginationMeta(
+          request.page,
+          request.limit,
+          total,
+        ),
+      };
+    });
   }
 
   /**

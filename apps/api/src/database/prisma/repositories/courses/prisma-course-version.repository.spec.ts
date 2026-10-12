@@ -1,869 +1,463 @@
-import {
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import {
-  CourseId,
-  CourseVersion,
-  CourseVersionId,
-} from '@gurusthalam/courses';
+import { CourseId, CourseVersion, CourseVersionId } from '@gurusthalam/courses';
 
-import type {
-  PrismaClient,
-} from '@gurusthalam/database';
+import type { PrismaClient } from '@gurusthalam/database';
 
-import type {
-  PrismaCourseVersionPersistence,
-} from '../../mappers/courses/index.js';
+import type { PrismaCourseVersionPersistence } from '../../mappers/courses/index.js';
 
-import {
-  PrismaCourseVersionRepository,
-} from './prisma-course-version.repository.js';
+import { PrismaCourseVersionRepository } from './prisma-course-version.repository.js';
 
-describe(
-  'PrismaCourseVersionRepository',
-  () => {
-    const findUnique =
-      vi.fn();
+describe('PrismaCourseVersionRepository', () => {
+  const findUnique = vi.fn();
 
-    const findFirst =
-      vi.fn();
+  const findFirst = vi.fn();
 
-    const findMany =
-      vi.fn();
+  const findMany = vi.fn();
 
-    const upsert =
-      vi.fn();
+  const upsert = vi.fn();
 
-    const prisma = {
-      courseVersion: {
-        findUnique,
-        findFirst,
-        findMany,
-        upsert,
-      },
-    } as unknown as PrismaClient;
+  const prisma = {
+    courseVersion: {
+      findUnique,
+      findFirst,
+      findMany,
+      upsert,
+    },
+  } as unknown as PrismaClient;
 
-    const repository =
-      new PrismaCourseVersionRepository(
-        prisma,
-      );
+  const repository = new PrismaCourseVersionRepository(prisma);
 
-    const courseId =
-      CourseId.from(
-        'course-001',
-      );
+  const courseId = CourseId.from('course-001');
 
-    const versionId =
-      CourseVersionId.from(
-        'course-version-001',
-      );
+  const versionId = CourseVersionId.from('course-version-001');
 
-    const createCourseVersion =
-      (): CourseVersion =>
-        CourseVersion.rehydrate({
-          id:
-            versionId,
+  const createCourseVersion = (): CourseVersion =>
+    CourseVersion.rehydrate({
+      id: versionId,
 
-          courseId:
-            'course-001',
+      courseId: 'course-001',
 
-          version:
-            2,
+      version: 2,
 
-          status:
-            'DRAFT',
+      status: 'DRAFT',
 
-          title:
-            'TypeScript Fundamentals v2',
+      title: 'TypeScript Fundamentals v2',
 
-          description:
-            'Second version of the course.',
+      description: 'Second version of the course.',
 
-          createdAt:
-            new Date(
-              '2026-01-02T10:00:00.000Z',
-            ),
+      createdAt: new Date('2026-01-02T10:00:00.000Z'),
 
-          updatedAt:
-            new Date(
-              '2026-01-02T10:00:00.000Z',
-            ),
+      updatedAt: new Date('2026-01-02T10:00:00.000Z'),
 
-          publishedAt:
-            null,
-        });
+      publishedAt: null,
+    });
 
-    /**
-     * Explicitly typed against the mapper persistence contract.
-     *
-     * This keeps the repository tests coupled to the actual
-     * persistence boundary rather than the mapper implementation's
-     * inferred return type.
-     */
-    const record =
-      (): PrismaCourseVersionPersistence => ({
-        id:
-          'course-version-001',
+  /**
+   * Explicitly typed against the mapper persistence contract.
+   *
+   * This keeps the repository tests coupled to the actual
+   * persistence boundary rather than the mapper implementation's
+   * inferred return type.
+   */
+  const record = (): PrismaCourseVersionPersistence => ({
+    id: 'course-version-001',
 
-        courseId:
-          'course-001',
+    courseId: 'course-001',
 
-        version:
-          2,
+    version: 2,
 
-        status:
-          'DRAFT',
+    status: 'DRAFT',
 
-        title:
-          'TypeScript Fundamentals v2',
+    title: 'TypeScript Fundamentals v2',
 
-        description:
-          'Second version of the course.',
+    description: 'Second version of the course.',
 
-        createdAt:
-          new Date(
-            '2026-01-02T10:00:00.000Z',
-          ),
+    createdAt: new Date('2026-01-02T10:00:00.000Z'),
 
-        updatedAt:
-          new Date(
-            '2026-01-02T10:00:00.000Z',
-          ),
+    updatedAt: new Date('2026-01-02T10:00:00.000Z'),
 
-        publishedAt:
-          null,
-      });
+    publishedAt: null,
+  });
 
-    const resetMocks =
-    (): void => {
+  const resetMocks = (): void => {
     findUnique.mockReset();
     findFirst.mockReset();
     findMany.mockReset();
     upsert.mockReset();
   };
 
-    it(
-      'finds a CourseVersion by identifier and rehydrates it',
-      async () => {
-        resetMocks();
-
-        const persistence =
-          record();
-
-        findUnique.mockResolvedValue(
-          persistence,
-        );
-
-        const result =
-          await repository.findById(
-            versionId,
-          );
-
-        expect(
-          findUnique,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-
-        expect(
-          findUnique,
-        ).toHaveBeenCalledWith({
-          where: {
-            id:
-              'course-version-001',
-          },
-        });
-
-        expect(
-          result,
-        ).toBeInstanceOf(
-          CourseVersion,
-        );
-
-        expect(
-          result?.id.value,
-        ).toBe(
-          'course-version-001',
-        );
-
-        expect(
-          result?.courseId,
-        ).toBe(
-          'course-001',
-        );
-
-        expect(
-          result?.version,
-        ).toBe(
-          2,
-        );
-
-        expect(
-          result?.status,
-        ).toBe(
-          'DRAFT',
-        );
-
-        expect(
-          result?.title,
-        ).toBe(
-          'TypeScript Fundamentals v2',
-        );
-
-        expect(
-          result?.description,
-        ).toBe(
-          'Second version of the course.',
-        );
-
-        expect(
-          result?.publishedAt,
-        ).toBeNull();
-      },
-    );
-
-    it(
-      'returns null when the CourseVersion does not exist',
-      async () => {
-        resetMocks();
-
-        findUnique.mockResolvedValue(
-          null,
-        );
-
-        await expect(
-          repository.findById(
-            versionId,
-          ),
-        ).resolves.toBeNull();
-
-        expect(
-          findUnique,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-
-        expect(
-          findUnique,
-        ).toHaveBeenCalledWith({
-          where: {
-            id:
-              'course-version-001',
-          },
-        });
-      },
-    );
-
-    it(
-  'finds all CourseVersions ordered by ascending version number',
-  async () => {
+  it('finds a CourseVersion by identifier and rehydrates it', async () => {
     resetMocks();
 
-    const versionOne =
-      record();
+    const persistence = record();
 
-    const versionThree:
-      PrismaCourseVersionPersistence =
-      {
-        ...record(),
+    findUnique.mockResolvedValue(persistence);
 
-        id:
-          'course-version-003',
+    const result = await repository.findById(versionId);
 
-        version:
-          3,
+    expect(findUnique).toHaveBeenCalledTimes(1);
 
-        title:
-          'TypeScript Fundamentals v3',
-
-        createdAt:
-          new Date(
-            '2026-01-03T10:00:00.000Z',
-          ),
-
-        updatedAt:
-          new Date(
-            '2026-01-03T10:00:00.000Z',
-          ),
-      };
-
-    findMany.mockResolvedValue([
-      versionOne,
-      versionThree,
-    ]);
-
-    const result =
-      await repository.findAllByCourseId(
-        courseId,
-      );
-
-    expect(
-      findMany,
-    ).toHaveBeenCalledTimes(
-      1,
-    );
-
-    expect(
-      findMany,
-    ).toHaveBeenCalledWith({
+    expect(findUnique).toHaveBeenCalledWith({
       where: {
-        courseId:
-          'course-001',
-      },
-
-      orderBy: {
-        version:
-          'asc',
+        id: 'course-version-001',
       },
     });
 
-    expect(
-      result,
-    ).toHaveLength(
-      2,
-    );
+    expect(result).toBeInstanceOf(CourseVersion);
 
-    expect(
-      result.at(0)?.version,
-    ).toBe(
-      2,
-    );
+    expect(result?.id.value).toBe('course-version-001');
 
-    expect(
-      result.at(1)?.version,
-    ).toBe(
-      3,
-    );
+    expect(result?.courseId).toBe('course-001');
 
-    expect(
-      result.at(0),
-    ).toBeInstanceOf(
-      CourseVersion,
-    );
+    expect(result?.version).toBe(2);
 
-    expect(
-      result.at(1),
-    ).toBeInstanceOf(
-      CourseVersion,
-    );
-  },
-);
+    expect(result?.status).toBe('DRAFT');
 
-it(
-  'returns an empty collection when a Course has no versions',
-  async () => {
+    expect(result?.title).toBe('TypeScript Fundamentals v2');
+
+    expect(result?.description).toBe('Second version of the course.');
+
+    expect(result?.publishedAt).toBeNull();
+  });
+
+  it('returns null when the CourseVersion does not exist', async () => {
     resetMocks();
 
-    findMany.mockResolvedValue(
-      [],
-    );
+    findUnique.mockResolvedValue(null);
+
+    await expect(repository.findById(versionId)).resolves.toBeNull();
+
+    expect(findUnique).toHaveBeenCalledTimes(1);
+
+    expect(findUnique).toHaveBeenCalledWith({
+      where: {
+        id: 'course-version-001',
+      },
+    });
+  });
+
+  it('finds all CourseVersions ordered by ascending version number', async () => {
+    resetMocks();
+
+    const versionOne = record();
+
+    const versionThree: PrismaCourseVersionPersistence = {
+      ...record(),
+
+      id: 'course-version-003',
+
+      version: 3,
+
+      title: 'TypeScript Fundamentals v3',
+
+      createdAt: new Date('2026-01-03T10:00:00.000Z'),
+
+      updatedAt: new Date('2026-01-03T10:00:00.000Z'),
+    };
+
+    findMany.mockResolvedValue([versionOne, versionThree]);
+
+    const result = await repository.findAllByCourseId(courseId);
+
+    expect(findMany).toHaveBeenCalledTimes(1);
+
+    expect(findMany).toHaveBeenCalledWith({
+      where: {
+        courseId: 'course-001',
+      },
+
+      orderBy: {
+        version: 'asc',
+      },
+    });
+
+    expect(result).toHaveLength(2);
+
+    expect(result.at(0)?.version).toBe(2);
+
+    expect(result.at(1)?.version).toBe(3);
+
+    expect(result.at(0)).toBeInstanceOf(CourseVersion);
+
+    expect(result.at(1)).toBeInstanceOf(CourseVersion);
+  });
+
+  it('returns an empty collection when a Course has no versions', async () => {
+    resetMocks();
+
+    findMany.mockResolvedValue([]);
+
+    await expect(repository.findAllByCourseId(courseId)).resolves.toEqual([]);
+
+    expect(findMany).toHaveBeenCalledTimes(1);
+
+    expect(findMany).toHaveBeenCalledWith({
+      where: {
+        courseId: 'course-001',
+      },
+
+      orderBy: {
+        version: 'asc',
+      },
+    });
+  });
+
+  it('finds the latest version by descending version number', async () => {
+    resetMocks();
+
+    findFirst.mockResolvedValue(record());
+
+    const result = await repository.findLatestByCourseId(courseId);
+
+    expect(findFirst).toHaveBeenCalledTimes(1);
+
+    expect(findFirst).toHaveBeenCalledWith({
+      where: {
+        courseId: 'course-001',
+      },
+
+      orderBy: {
+        version: 'desc',
+      },
+    });
+
+    expect(result).toBeInstanceOf(CourseVersion);
+
+    expect(result?.version).toBe(2);
+  });
+
+  it('returns null when a Course has no versions', async () => {
+    resetMocks();
+
+    findFirst.mockResolvedValue(null);
+
+    await expect(repository.findLatestByCourseId(courseId)).resolves.toBeNull();
+
+    expect(findFirst).toHaveBeenCalledTimes(1);
+
+    expect(findFirst).toHaveBeenCalledWith({
+      where: {
+        courseId: 'course-001',
+      },
+
+      orderBy: {
+        version: 'desc',
+      },
+    });
+  });
+
+  it('finds the published version by status and descending version', async () => {
+    resetMocks();
+
+    const publishedRecord: PrismaCourseVersionPersistence = {
+      ...record(),
+
+      status: 'PUBLISHED',
+
+      publishedAt: new Date('2026-02-01T10:00:00.000Z'),
+    };
+
+    findFirst.mockResolvedValue(publishedRecord);
+
+    const result = await repository.findPublishedByCourseId(courseId);
+
+    expect(findFirst).toHaveBeenCalledTimes(1);
+
+    expect(findFirst).toHaveBeenCalledWith({
+      where: {
+        courseId: 'course-001',
+
+        status: 'PUBLISHED',
+      },
+
+      orderBy: {
+        version: 'desc',
+      },
+    });
+
+    expect(result).toBeInstanceOf(CourseVersion);
+
+    expect(result?.status).toBe('PUBLISHED');
+
+    expect(result?.version).toBe(2);
+
+    expect(result?.publishedAt).toEqual(new Date('2026-02-01T10:00:00.000Z'));
+  });
+
+  it('returns null when no published version exists', async () => {
+    resetMocks();
+
+    findFirst.mockResolvedValue(null);
 
     await expect(
-      repository.findAllByCourseId(
-        courseId,
-      ),
-    ).resolves.toEqual(
-      [],
-    );
+      repository.findPublishedByCourseId(courseId),
+    ).resolves.toBeNull();
 
-    expect(
-      findMany,
-    ).toHaveBeenCalledTimes(
-      1,
-    );
+    expect(findFirst).toHaveBeenCalledTimes(1);
 
-    expect(
-      findMany,
-    ).toHaveBeenCalledWith({
+    expect(findFirst).toHaveBeenCalledWith({
       where: {
-        courseId:
-          'course-001',
+        courseId: 'course-001',
+
+        status: 'PUBLISHED',
       },
 
       orderBy: {
-        version:
-          'asc',
+        version: 'desc',
       },
     });
-  },
-);
+  });
 
-    it(
-      'finds the latest version by descending version number',
-      async () => {
-        resetMocks();
+  it('checks version existence using the composite unique key', async () => {
+    resetMocks();
 
-        findFirst.mockResolvedValue(
-          record(),
-        );
+    findUnique.mockResolvedValue({
+      id: 'course-version-001',
+    });
 
-        const result =
-          await repository.findLatestByCourseId(
-            courseId,
-          );
+    await expect(
+      repository.existsByCourseIdAndVersion(courseId, 2),
+    ).resolves.toBe(true);
 
-        expect(
-          findFirst,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
+    expect(findUnique).toHaveBeenCalledTimes(1);
 
-        expect(
-          findFirst,
-        ).toHaveBeenCalledWith({
-          where: {
-            courseId:
-              'course-001',
-          },
+    expect(findUnique).toHaveBeenCalledWith({
+      where: {
+        courseId_version: {
+          courseId: 'course-001',
 
-          orderBy: {
-            version:
-              'desc',
-          },
-        });
-
-        expect(
-          result,
-        ).toBeInstanceOf(
-          CourseVersion,
-        );
-
-        expect(
-          result?.version,
-        ).toBe(
-          2,
-        );
+          version: 2,
+        },
       },
-    );
 
-    it(
-      'returns null when a Course has no versions',
-      async () => {
-        resetMocks();
-
-        findFirst.mockResolvedValue(
-          null,
-        );
-
-        await expect(
-          repository.findLatestByCourseId(
-            courseId,
-          ),
-        ).resolves.toBeNull();
-
-        expect(
-          findFirst,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-
-        expect(
-          findFirst,
-        ).toHaveBeenCalledWith({
-          where: {
-            courseId:
-              'course-001',
-          },
-
-          orderBy: {
-            version:
-              'desc',
-          },
-        });
+      select: {
+        id: true,
       },
-    );
+    });
+  });
 
-    it(
-      'finds the published version by status and descending version',
-      async () => {
-        resetMocks();
+  it('returns false when the requested version does not exist', async () => {
+    resetMocks();
 
-        const publishedRecord:
-          PrismaCourseVersionPersistence =
-          {
-            ...record(),
+    findUnique.mockResolvedValue(null);
 
-            status:
-              'PUBLISHED',
+    await expect(
+      repository.existsByCourseIdAndVersion(courseId, 99),
+    ).resolves.toBe(false);
 
-            publishedAt:
-              new Date(
-                '2026-02-01T10:00:00.000Z',
-              ),
-          };
+    expect(findUnique).toHaveBeenCalledTimes(1);
 
-        findFirst.mockResolvedValue(
-          publishedRecord,
-        );
+    expect(findUnique).toHaveBeenCalledWith({
+      where: {
+        courseId_version: {
+          courseId: 'course-001',
 
-        const result =
-          await repository.findPublishedByCourseId(
-            courseId,
-          );
-
-        expect(
-          findFirst,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-
-        expect(
-          findFirst,
-        ).toHaveBeenCalledWith({
-          where: {
-            courseId:
-              'course-001',
-
-            status:
-              'PUBLISHED',
-          },
-
-          orderBy: {
-            version:
-              'desc',
-          },
-        });
-
-        expect(
-          result,
-        ).toBeInstanceOf(
-          CourseVersion,
-        );
-
-        expect(
-          result?.status,
-        ).toBe(
-          'PUBLISHED',
-        );
-
-        expect(
-          result?.version,
-        ).toBe(
-          2,
-        );
-
-        expect(
-          result?.publishedAt,
-        ).toEqual(
-          new Date(
-            '2026-02-01T10:00:00.000Z',
-          ),
-        );
+          version: 99,
+        },
       },
-    );
 
-    it(
-      'returns null when no published version exists',
-      async () => {
-        resetMocks();
-
-        findFirst.mockResolvedValue(
-          null,
-        );
-
-        await expect(
-          repository.findPublishedByCourseId(
-            courseId,
-          ),
-        ).resolves.toBeNull();
-
-        expect(
-          findFirst,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-
-        expect(
-          findFirst,
-        ).toHaveBeenCalledWith({
-          where: {
-            courseId:
-              'course-001',
-
-            status:
-              'PUBLISHED',
-          },
-
-          orderBy: {
-            version:
-              'desc',
-          },
-        });
+      select: {
+        id: true,
       },
-    );
+    });
+  });
 
-    it(
-      'checks version existence using the composite unique key',
-      async () => {
-        resetMocks();
+  it('persists a CourseVersion through upsert', async () => {
+    resetMocks();
 
-        findUnique.mockResolvedValue({
-          id:
-            'course-version-001',
-        });
+    const courseVersion = createCourseVersion();
 
-        await expect(
-          repository.existsByCourseIdAndVersion(
-            courseId,
-            2,
-          ),
-        ).resolves.toBe(
-          true,
-        );
+    upsert.mockResolvedValue(record());
 
-        expect(
-          findUnique,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
+    await expect(repository.save(courseVersion)).resolves.toBeUndefined();
 
-        expect(
-          findUnique,
-        ).toHaveBeenCalledWith({
-          where: {
-            courseId_version: {
-              courseId:
-                'course-001',
+    expect(upsert).toHaveBeenCalledTimes(1);
 
-              version:
-                2,
-            },
-          },
-
-          select: {
-            id:
-              true,
-          },
-        });
+    expect(upsert).toHaveBeenCalledWith({
+      where: {
+        id: 'course-version-001',
       },
-    );
 
-    it(
-      'returns false when the requested version does not exist',
-      async () => {
-        resetMocks();
+      create: {
+        id: 'course-version-001',
 
-        findUnique.mockResolvedValue(
-          null,
-        );
+        courseId: 'course-001',
 
-        await expect(
-          repository.existsByCourseIdAndVersion(
-            courseId,
-            99,
-          ),
-        ).resolves.toBe(
-          false,
-        );
+        version: 2,
 
-        expect(
-          findUnique,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
+        status: 'DRAFT',
 
-        expect(
-          findUnique,
-        ).toHaveBeenCalledWith({
-          where: {
-            courseId_version: {
-              courseId:
-                'course-001',
+        title: 'TypeScript Fundamentals v2',
 
-              version:
-                99,
-            },
-          },
+        description: 'Second version of the course.',
 
-          select: {
-            id:
-              true,
-          },
-        });
+        createdAt: new Date('2026-01-02T10:00:00.000Z'),
+
+        updatedAt: new Date('2026-01-02T10:00:00.000Z'),
+
+        publishedAt: null,
       },
-    );
 
-    it(
-      'persists a CourseVersion through upsert',
-      async () => {
-        resetMocks();
+      update: {
+        status: 'DRAFT',
 
-        const courseVersion =
-          createCourseVersion();
+        title: 'TypeScript Fundamentals v2',
 
-        upsert.mockResolvedValue(
-          record(),
-        );
+        description: 'Second version of the course.',
 
-        await expect(
-          repository.save(
-            courseVersion,
-          ),
-        ).resolves.toBeUndefined();
+        updatedAt: new Date('2026-01-02T10:00:00.000Z'),
 
-        expect(
-          upsert,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-
-        expect(
-          upsert,
-        ).toHaveBeenCalledWith({
-          where: {
-            id:
-              'course-version-001',
-          },
-
-          create: {
-            id:
-              'course-version-001',
-
-            courseId:
-              'course-001',
-
-            version:
-              2,
-
-            status:
-              'DRAFT',
-
-            title:
-              'TypeScript Fundamentals v2',
-
-            description:
-              'Second version of the course.',
-
-            createdAt:
-              new Date(
-                '2026-01-02T10:00:00.000Z',
-              ),
-
-            updatedAt:
-              new Date(
-                '2026-01-02T10:00:00.000Z',
-              ),
-
-            publishedAt:
-              null,
-          },
-
-          update: {
-            status:
-              'DRAFT',
-
-            title:
-              'TypeScript Fundamentals v2',
-
-            description:
-              'Second version of the course.',
-
-            updatedAt:
-              new Date(
-                '2026-01-02T10:00:00.000Z',
-              ),
-
-            publishedAt:
-              null,
-          },
-        });
+        publishedAt: null,
       },
-    );
+    });
+  });
 
-    it(
-      'uses the CourseVersion aggregate identifier as the upsert key',
-      async () => {
-        resetMocks();
+  it('uses the CourseVersion aggregate identifier as the upsert key', async () => {
+    resetMocks();
 
-        const courseVersion =
-          createCourseVersion();
+    const courseVersion = createCourseVersion();
 
-        upsert.mockResolvedValue(
-          record(),
-        );
+    upsert.mockResolvedValue(record());
 
-        await repository.save(
-          courseVersion,
-        );
+    await repository.save(courseVersion);
 
-        const call =
-          upsert.mock.calls[0]?.[0];
+    const call = upsert.mock.calls[0]?.[0];
 
-        expect(
-          call?.where,
-        ).toEqual({
-          id:
-            versionId.value,
-        });
-      },
-    );
+    expect(call?.where).toEqual({
+      id: versionId.value,
+    });
+  });
 
-    it(
-      'does not execute additional Prisma operations during save',
-      async () => {
-        resetMocks();
+  it('does not execute additional Prisma operations during save', async () => {
+    resetMocks();
 
-        const courseVersion =
-          createCourseVersion();
+    const courseVersion = createCourseVersion();
 
-        upsert.mockResolvedValue(
-          record(),
-        );
+    upsert.mockResolvedValue(record());
 
-        await repository.save(
-          courseVersion,
-        );
+    await repository.save(courseVersion);
 
-        expect(
-          findUnique,
-        ).not.toHaveBeenCalled();
+    expect(findUnique).not.toHaveBeenCalled();
 
-        expect(
-          findFirst,
-        ).not.toHaveBeenCalled();
+    expect(findFirst).not.toHaveBeenCalled();
 
-        expect(
-          upsert,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-      },
-    );
+    expect(upsert).toHaveBeenCalledTimes(1);
+  });
 
-    it(
-      'does not perform an existence check before persisting',
-      async () => {
-        resetMocks();
+  it('does not perform an existence check before persisting', async () => {
+    resetMocks();
 
-        const courseVersion =
-          createCourseVersion();
+    const courseVersion = createCourseVersion();
 
-        upsert.mockResolvedValue(
-          record(),
-        );
+    upsert.mockResolvedValue(record());
 
-        await repository.save(
-          courseVersion,
-        );
+    await repository.save(courseVersion);
 
-        expect(
-          findUnique,
-        ).not.toHaveBeenCalled();
+    expect(findUnique).not.toHaveBeenCalled();
 
-        expect(
-          findFirst,
-        ).not.toHaveBeenCalled();
+    expect(findFirst).not.toHaveBeenCalled();
 
-        expect(
-          upsert,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-      },
-    );
-  },
-);
+    expect(upsert).toHaveBeenCalledTimes(1);
+  });
+});

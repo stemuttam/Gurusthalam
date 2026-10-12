@@ -167,8 +167,10 @@ model CourseVersion {
 
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  auditEntries CourseVersionAudit[]
-  enrollments  Enrollment[]
+  auditEntries             CourseVersionAudit[]
+  enrollments              Enrollment[]
+  structureSections        CourseStructureSection[]
+  courseProgressReadModels CourseProgressReadModel[]
 
   lineageAsSource CourseVersionLineage[] @relation("CourseVersionLineageSource")
   lineageAsTarget CourseVersionLineage[] @relation("CourseVersionLineageTarget")
@@ -254,11 +256,12 @@ model Enrollment {
   course        Course        @relation(fields: [courseId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   courseVersion CourseVersion @relation(fields: [courseVersionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
-  entitlements     Entitlement[]
-  learningSessions LearningSession[]
-  progress         Progress?
-  lessonProgress   LessonProgress[]
-  sectionProgress  SectionProgress[]
+  entitlements            Entitlement[]
+  learningSessions        LearningSession[]
+  progress                Progress?
+  lessonProgress          LessonProgress[]
+  sectionProgress         SectionProgress[]
+  courseProgressReadModel CourseProgressReadModel?
 
   @@index([learnerId, status, createdAt])
   @@index([courseId, status, createdAt])
@@ -374,7 +377,6 @@ model SectionProgress {
   @@index([sectionId, status])
 }
 
-
 /// Durable history of validated learner activity occurrences.
 ///
 /// This model intentionally has no foreign keys to learner, session,
@@ -387,7 +389,7 @@ model SectionProgress {
 model LearningActivityEvent {
   id String @id @default(uuid())
 
-  eventId   String @unique
+  eventId   String  @unique
   learnerId String
   tenantId  String?
   sessionId String?
@@ -821,4 +823,82 @@ model NotificationAggregationItem {
    * Deterministic retrieval order.
    */
   @@index([aggregationId, orderingKey])
+}
+
+model CourseStructureSection {
+  id              String   @id
+  courseVersionId String
+  title           String
+  description     String?
+  position        Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  courseVersion CourseVersion                 @relation(fields: [courseVersionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  learningUnits CourseStructureLearningUnit[]
+
+  @@unique([courseVersionId, position])
+  @@index([courseVersionId, id])
+}
+
+model CourseStructureLearningUnit {
+  id          String   @id
+  sectionId   String
+  title       String
+  description String?
+  position    Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  section               CourseStructureSection                @relation(fields: [sectionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  contentItemReferences CourseStructureContentItemReference[]
+  assessmentReferences  CourseStructureAssessmentReference[]
+
+  @@unique([sectionId, position])
+  @@index([sectionId, id])
+}
+
+model CourseStructureContentItemReference {
+  id                  String @id
+  learningUnitId      String
+  contentItemTargetId String
+  position            Int
+
+  learningUnit CourseStructureLearningUnit @relation(fields: [learningUnitId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([learningUnitId, position])
+  @@index([contentItemTargetId])
+}
+
+model CourseStructureAssessmentReference {
+  id                 String @id
+  learningUnitId     String
+  assessmentTargetId String
+  position           Int
+
+  learningUnit CourseStructureLearningUnit @relation(fields: [learningUnitId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([learningUnitId, position])
+  @@index([assessmentTargetId])
+}
+
+/// Derived, enrollment-scoped Course Progress projection.
+/// This model is not the authoritative Progress lifecycle aggregate.
+model CourseProgressReadModel {
+  enrollmentId           String   @id
+  courseVersionId        String
+  totalLearningUnits     Int
+  startedLearningUnits   Int
+  completedLearningUnits Int
+  percentage             Int
+  hasLearningUnits       Boolean
+  calculatedAt           DateTime
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  enrollment    Enrollment    @relation(fields: [enrollmentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  courseVersion CourseVersion @relation(fields: [courseVersionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([courseVersionId, calculatedAt])
+  @@index([calculatedAt])
 }

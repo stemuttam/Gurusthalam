@@ -1,448 +1,233 @@
-import {
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import {
-  CourseId,
-  CourseVersion,
-  CourseVersionId,
-} from '@gurusthalam/courses';
+import { CourseId, CourseVersion, CourseVersionId } from '@gurusthalam/courses';
 
-import type {
-  PrismaClient,
-} from '@gurusthalam/database';
+import type { PrismaClient } from '@gurusthalam/database';
 
 import {
   PrismaRepositoryError,
   PrismaRepositoryErrorCode,
 } from '../prisma-repository.error.js';
 
-import {
-  PrismaCourseVersionRepository,
-} from './prisma-course-version.repository.js';
+import { PrismaCourseVersionRepository } from './prisma-course-version.repository.js';
 
-describe(
-  'PrismaCourseVersionRepository concurrency guarantees',
-  () => {
-    const findUnique =
-      vi.fn();
+describe('PrismaCourseVersionRepository concurrency guarantees', () => {
+  const findUnique = vi.fn();
 
-    const findFirst =
-      vi.fn();
+  const findFirst = vi.fn();
 
-    const upsert =
-      vi.fn();
+  const upsert = vi.fn();
 
-    const prisma = {
-      courseVersion: {
-        findUnique,
-        findFirst,
-        upsert,
-      },
-    } as unknown as PrismaClient;
+  const prisma = {
+    courseVersion: {
+      findUnique,
+      findFirst,
+      upsert,
+    },
+  } as unknown as PrismaClient;
 
-    const repository =
-      new PrismaCourseVersionRepository(
-        prisma,
-      );
+  const repository = new PrismaCourseVersionRepository(prisma);
 
-    const courseId =
-      CourseId.from(
-        'course-001',
-      );
+  const courseId = CourseId.from('course-001');
 
-    const createCourseVersion =
-      (
-        id: string,
-        version: number,
-      ): CourseVersion =>
-        CourseVersion.rehydrate({
-          id:
-            CourseVersionId.from(
-              id,
-            ),
+  const createCourseVersion = (id: string, version: number): CourseVersion =>
+    CourseVersion.rehydrate({
+      id: CourseVersionId.from(id),
 
-          courseId:
-            courseId.value,
+      courseId: courseId.value,
 
-          version,
+      version,
 
-          status:
-            'DRAFT',
+      status: 'DRAFT',
 
-          title:
-            `TypeScript Fundamentals v${version}`,
+      title: `TypeScript Fundamentals v${version}`,
 
-          description:
-            `Course version ${version}.`,
+      description: `Course version ${version}.`,
 
-          createdAt:
-            new Date(
-              '2026-01-02T10:00:00.000Z',
-            ),
+      createdAt: new Date('2026-01-02T10:00:00.000Z'),
 
-          updatedAt:
-            new Date(
-              '2026-01-02T10:00:00.000Z',
-            ),
+      updatedAt: new Date('2026-01-02T10:00:00.000Z'),
 
-          publishedAt:
-            null,
-        });
+      publishedAt: null,
+    });
 
-    const resetMocks =
-      (): void => {
-        findUnique.mockReset();
-        findFirst.mockReset();
-        upsert.mockReset();
-      };
+  const resetMocks = (): void => {
+    findUnique.mockReset();
+    findFirst.mockReset();
+    upsert.mockReset();
+  };
 
-    it(
-      'uses aggregate identity as the only save upsert key',
-      async () => {
-        resetMocks();
+  it('uses aggregate identity as the only save upsert key', async () => {
+    resetMocks();
 
-        upsert.mockResolvedValue(
-          undefined,
-        );
+    upsert.mockResolvedValue(undefined);
 
-        const courseVersion =
-          createCourseVersion(
-            'course-version-001',
-            2,
-          );
+    const courseVersion = createCourseVersion('course-version-001', 2);
 
-        await repository.save(
-          courseVersion,
-        );
+    await repository.save(courseVersion);
 
-        expect(
-          upsert,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
+    expect(upsert).toHaveBeenCalledTimes(1);
 
-        expect(
-          upsert.mock.calls[0]?.[0]?.where,
-        ).toEqual({
-          id:
-            'course-version-001',
-        });
+    expect(upsert.mock.calls[0]?.[0]?.where).toEqual({
+      id: 'course-version-001',
+    });
 
-        expect(
-          findUnique,
-        ).not.toHaveBeenCalled();
+    expect(findUnique).not.toHaveBeenCalled();
 
-        expect(
-          findFirst,
-        ).not.toHaveBeenCalled();
-      },
+    expect(findFirst).not.toHaveBeenCalled();
+  });
+
+  it('does not perform an existence preflight before save', async () => {
+    resetMocks();
+
+    upsert.mockResolvedValue(undefined);
+
+    await repository.save(createCourseVersion('course-version-001', 2));
+
+    expect(findUnique).not.toHaveBeenCalled();
+
+    expect(findFirst).not.toHaveBeenCalled();
+
+    expect(upsert).toHaveBeenCalledTimes(1);
+  });
+
+  it('preserves a database uniqueness conflict from concurrent logical versions', async () => {
+    resetMocks();
+
+    const uniqueConstraintError = {
+      code: 'P2002',
+
+      message: 'Unique constraint failed on the fields: (`courseId`,`version`)',
+    };
+
+    upsert
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(uniqueConstraintError);
+
+    const firstWrite = repository.save(
+      createCourseVersion('course-version-001', 2),
     );
 
-    it(
-      'does not perform an existence preflight before save',
-      async () => {
-        resetMocks();
-
-        upsert.mockResolvedValue(
-          undefined,
-        );
-
-        await repository.save(
-          createCourseVersion(
-            'course-version-001',
-            2,
-          ),
-        );
-
-        expect(
-          findUnique,
-        ).not.toHaveBeenCalled();
-
-        expect(
-          findFirst,
-        ).not.toHaveBeenCalled();
-
-        expect(
-          upsert,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-      },
+    const secondWrite = repository.save(
+      createCourseVersion('course-version-002', 2),
     );
 
-    it(
-      'preserves a database uniqueness conflict from concurrent logical versions',
-      async () => {
-        resetMocks();
+    await expect(firstWrite).resolves.toBeUndefined();
 
-        const uniqueConstraintError = {
-          code:
-            'P2002',
+    await expect(secondWrite).rejects.toMatchObject({
+      name: 'PrismaRepositoryError',
 
-          message:
-            'Unique constraint failed on the fields: (`courseId`,`version`)',
-        };
+      code: PrismaRepositoryErrorCode.UNIQUE_CONSTRAINT,
 
-        upsert
-          .mockResolvedValueOnce(
-            undefined,
-          )
-          .mockRejectedValueOnce(
-            uniqueConstraintError,
-          );
+      prismaCode: 'P2002',
 
-        const firstWrite =
-          repository.save(
-            createCourseVersion(
-              'course-version-001',
-              2,
-            ),
-          );
+      cause: uniqueConstraintError,
+    });
 
-        const secondWrite =
-          repository.save(
-            createCourseVersion(
-              'course-version-002',
-              2,
-            ),
-          );
+    expect(upsert).toHaveBeenCalledTimes(2);
 
-        await expect(
-          firstWrite,
-        ).resolves.toBeUndefined();
+    expect(findUnique).not.toHaveBeenCalled();
 
-        await expect(
-          secondWrite,
-        ).rejects.toMatchObject({
-          name:
-            'PrismaRepositoryError',
+    expect(findFirst).not.toHaveBeenCalled();
+  });
 
-          code:
-            PrismaRepositoryErrorCode.UNIQUE_CONSTRAINT,
+  it('does not retry a unique constraint conflict inside the repository', async () => {
+    resetMocks();
 
-          prismaCode:
-            'P2002',
+    const uniqueConstraintError = {
+      code: 'P2002',
 
-          cause:
-            uniqueConstraintError,
-        });
+      message: 'Unique constraint failed',
+    };
 
-        expect(
-          upsert,
-        ).toHaveBeenCalledTimes(
-          2,
-        );
+    upsert.mockRejectedValue(uniqueConstraintError);
 
-        expect(
-          findUnique,
-        ).not.toHaveBeenCalled();
+    await expect(
+      repository.save(createCourseVersion('course-version-001', 2)),
+    ).rejects.toBeInstanceOf(PrismaRepositoryError);
 
-        expect(
-          findFirst,
-        ).not.toHaveBeenCalled();
+    expect(upsert).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not swallow transaction conflicts', async () => {
+    resetMocks();
+
+    const transactionConflictError = {
+      code: 'P2034',
+
+      message: 'Transaction failed due to a write conflict or a deadlock',
+    };
+
+    upsert.mockRejectedValue(transactionConflictError);
+
+    await expect(
+      repository.save(createCourseVersion('course-version-001', 2)),
+    ).rejects.toMatchObject({
+      name: 'PrismaRepositoryError',
+
+      code: PrismaRepositoryErrorCode.PERSISTENCE_FAILURE,
+
+      prismaCode: 'P2034',
+
+      cause: transactionConflictError,
+    });
+
+    expect(upsert).toHaveBeenCalledTimes(1);
+  });
+
+  it('allows concurrent saves with different aggregate identities and versions', async () => {
+    resetMocks();
+
+    upsert.mockImplementation(async () => undefined);
+
+    const firstVersion = createCourseVersion('course-version-001', 2);
+
+    const secondVersion = createCourseVersion('course-version-002', 3);
+
+    await expect(
+      Promise.all([
+        repository.save(firstVersion),
+
+        repository.save(secondVersion),
+      ]),
+    ).resolves.toEqual([undefined, undefined]);
+
+    expect(upsert).toHaveBeenCalledTimes(2);
+
+    expect(upsert.mock.calls.map((call) => call[0]?.where)).toEqual([
+      {
+        id: 'course-version-001',
       },
-    );
 
-    it(
-      'does not retry a unique constraint conflict inside the repository',
-      async () => {
-        resetMocks();
-
-        const uniqueConstraintError = {
-          code:
-            'P2002',
-
-          message:
-            'Unique constraint failed',
-        };
-
-        upsert.mockRejectedValue(
-          uniqueConstraintError,
-        );
-
-        await expect(
-          repository.save(
-            createCourseVersion(
-              'course-version-001',
-              2,
-            ),
-          ),
-        ).rejects.toBeInstanceOf(
-          PrismaRepositoryError,
-        );
-
-        expect(
-          upsert,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
+      {
+        id: 'course-version-002',
       },
-    );
+    ]);
 
-    it(
-      'does not swallow transaction conflicts',
-      async () => {
-        resetMocks();
+    expect(findUnique).not.toHaveBeenCalled();
 
-        const transactionConflictError = {
-          code:
-            'P2034',
+    expect(findFirst).not.toHaveBeenCalled();
+  });
 
-          message:
-            'Transaction failed due to a write conflict or a deadlock',
-        };
+  it('never performs a read after a uniqueness conflict', async () => {
+    resetMocks();
 
-        upsert.mockRejectedValue(
-          transactionConflictError,
-        );
+    const uniqueConstraintError = {
+      code: 'P2002',
 
-        await expect(
-          repository.save(
-            createCourseVersion(
-              'course-version-001',
-              2,
-            ),
-          ),
-        ).rejects.toMatchObject({
-          name:
-            'PrismaRepositoryError',
+      message: 'Unique constraint failed',
+    };
 
-          code:
-            PrismaRepositoryErrorCode.PERSISTENCE_FAILURE,
+    upsert.mockRejectedValue(uniqueConstraintError);
 
-          prismaCode:
-            'P2034',
+    await expect(
+      repository.save(createCourseVersion('course-version-001', 2)),
+    ).rejects.toBeInstanceOf(PrismaRepositoryError);
 
-          cause:
-            transactionConflictError,
-        });
+    expect(findUnique).not.toHaveBeenCalled();
 
-        expect(
-          upsert,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-      },
-    );
+    expect(findFirst).not.toHaveBeenCalled();
 
-    it(
-      'allows concurrent saves with different aggregate identities and versions',
-      async () => {
-        resetMocks();
-
-        upsert.mockImplementation(
-          async () =>
-            undefined,
-        );
-
-        const firstVersion =
-          createCourseVersion(
-            'course-version-001',
-            2,
-          );
-
-        const secondVersion =
-          createCourseVersion(
-            'course-version-002',
-            3,
-          );
-
-        await expect(
-          Promise.all([
-            repository.save(
-              firstVersion,
-            ),
-
-            repository.save(
-              secondVersion,
-            ),
-          ]),
-        ).resolves.toEqual([
-          undefined,
-          undefined,
-        ]);
-
-        expect(
-          upsert,
-        ).toHaveBeenCalledTimes(
-          2,
-        );
-
-        expect(
-          upsert.mock.calls.map(
-            (
-              call,
-            ) =>
-              call[0]?.where,
-          ),
-        ).toEqual([
-          {
-            id:
-              'course-version-001',
-          },
-
-          {
-            id:
-              'course-version-002',
-          },
-        ]);
-
-        expect(
-          findUnique,
-        ).not.toHaveBeenCalled();
-
-        expect(
-          findFirst,
-        ).not.toHaveBeenCalled();
-      },
-    );
-
-    it(
-      'never performs a read after a uniqueness conflict',
-      async () => {
-        resetMocks();
-
-        const uniqueConstraintError = {
-          code:
-            'P2002',
-
-          message:
-            'Unique constraint failed',
-        };
-
-        upsert.mockRejectedValue(
-          uniqueConstraintError,
-        );
-
-        await expect(
-          repository.save(
-            createCourseVersion(
-              'course-version-001',
-              2,
-            ),
-          ),
-        ).rejects.toBeInstanceOf(
-          PrismaRepositoryError,
-        );
-
-        expect(
-          findUnique,
-        ).not.toHaveBeenCalled();
-
-        expect(
-          findFirst,
-        ).not.toHaveBeenCalled();
-
-        expect(
-          upsert,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-      },
-    );
-  },
-);
+    expect(upsert).toHaveBeenCalledTimes(1);
+  });
+});

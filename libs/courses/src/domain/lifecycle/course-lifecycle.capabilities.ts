@@ -4,9 +4,7 @@ import {
   isTerminalCourseLifecycleStatus,
 } from './course-lifecycle.policy.js';
 
-import {
-  type CourseStatus as CourseStatusValue,
-} from '../enums/course-status.js';
+import { type CourseStatus as CourseStatusValue } from '../enums/course-status.js';
 
 /**
  * Immutable read-side representation of the capabilities of a Course
@@ -35,9 +33,7 @@ export interface CourseLifecycleCapabilities {
   readonly currentStatus: CourseStatusValue;
   readonly allowedNextStatuses: readonly CourseStatusValue[];
   readonly isTerminal: boolean;
-  readonly canTransitionTo: (
-    nextStatus: CourseStatusValue,
-  ) => boolean;
+  readonly canTransitionTo: (nextStatus: CourseStatusValue) => boolean;
 }
 
 /**

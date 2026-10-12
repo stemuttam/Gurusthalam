@@ -27,9 +27,7 @@ import {
 
 import { SectionProgressAccessDeniedError } from '../errors/section-progress-application.error.js';
 
-export class DefaultSectionProgressApplicationService
-  implements SectionProgressApplicationService
-{
+export class DefaultSectionProgressApplicationService implements SectionProgressApplicationService {
   constructor(
     private readonly sectionProgressRepository: SectionProgressRepository,
     private readonly entitlementApplicationService: EntitlementApplicationService,
@@ -221,15 +219,12 @@ export class DefaultSectionProgressApplicationService
     }
 
     const reason =
-      decision.reason === 'ALLOWED'
-        ? 'ENROLLMENT_NOT_ACTIVE'
-        : decision.reason;
+      decision.reason === 'ALLOWED' ? 'ENROLLMENT_NOT_ACTIVE' : decision.reason;
 
     throw new SectionProgressAccessDeniedError(reason, [
       {
         field: 'enrollmentId',
-        message:
-          `Learning access was denied because the access decision was ${reason}.`,
+        message: `Learning access was denied because the access decision was ${reason}.`,
       },
     ]);
   }

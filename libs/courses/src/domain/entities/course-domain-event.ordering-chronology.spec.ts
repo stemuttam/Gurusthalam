@@ -85,9 +85,7 @@ describe('Course domain-event ordering and chronology', () => {
     it('does not insert METADATA_UPDATED before the mutation', () => {
       const course = createCourse();
 
-      expect(getEventNames(course)).toEqual([
-        CourseDomainEventName.CREATED,
-      ]);
+      expect(getEventNames(course)).toEqual([CourseDomainEventName.CREATED]);
 
       course.updateMetadata({
         title: 'Advanced TypeScript',
@@ -187,9 +185,7 @@ describe('Course domain-event ordering and chronology', () => {
 
       expect.assert(lastEvent);
 
-      expect(lastEvent.eventName).toBe(
-        CourseDomainEventName.PUBLISHED,
-      );
+      expect(lastEvent.eventName).toBe(CourseDomainEventName.PUBLISHED);
     });
 
     it('does not create PUBLISHED before submission', () => {
@@ -277,17 +273,11 @@ describe('Course domain-event ordering and chronology', () => {
         CourseDomainEventName.SUBMITTED_FOR_REVIEW,
       );
 
-      expect(published.eventName).toBe(
-        CourseDomainEventName.PUBLISHED,
-      );
+      expect(published.eventName).toBe(CourseDomainEventName.PUBLISHED);
 
-      expect(unpublished.eventName).toBe(
-        CourseDomainEventName.UNPUBLISHED,
-      );
+      expect(unpublished.eventName).toBe(CourseDomainEventName.UNPUBLISHED);
 
-      expect(archived.eventName).toBe(
-        CourseDomainEventName.ARCHIVED,
-      );
+      expect(archived.eventName).toBe(CourseDomainEventName.ARCHIVED);
     });
   });
 
@@ -315,9 +305,7 @@ describe('Course domain-event ordering and chronology', () => {
         expect.assert(previousTimestamp !== undefined);
         expect.assert(currentTimestamp !== undefined);
 
-        expect(currentTimestamp).toBeGreaterThanOrEqual(
-          previousTimestamp,
-        );
+        expect(currentTimestamp).toBeGreaterThanOrEqual(previousTimestamp);
       }
     });
 
@@ -348,30 +336,22 @@ describe('Course domain-event ordering and chronology', () => {
       course.submitForReview();
       const submitted = getEventAt(course, 1);
 
-      expect(submitted.occurredAt.getTime()).toBe(
-        course.updatedAt.getTime(),
-      );
+      expect(submitted.occurredAt.getTime()).toBe(course.updatedAt.getTime());
 
       course.publish();
       const published = getEventAt(course, 2);
 
-      expect(published.occurredAt.getTime()).toBe(
-        course.updatedAt.getTime(),
-      );
+      expect(published.occurredAt.getTime()).toBe(course.updatedAt.getTime());
 
       course.unpublish();
       const unpublished = getEventAt(course, 3);
 
-      expect(unpublished.occurredAt.getTime()).toBe(
-        course.updatedAt.getTime(),
-      );
+      expect(unpublished.occurredAt.getTime()).toBe(course.updatedAt.getTime());
 
       course.archive();
       const archived = getEventAt(course, 4);
 
-      expect(archived.occurredAt.getTime()).toBe(
-        course.updatedAt.getTime(),
-      );
+      expect(archived.occurredAt.getTime()).toBe(course.updatedAt.getTime());
     });
   });
 

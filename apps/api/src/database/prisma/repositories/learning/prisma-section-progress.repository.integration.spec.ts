@@ -217,7 +217,10 @@ describe('PrismaSectionProgressRepository - PostgreSQL integration - Phase 5.6-F
 
       sectionProgress.start(startedAt);
 
-      sectionProgress.updatePercentage(40, new Date('2026-10-07T08:20:00.000Z'));
+      sectionProgress.updatePercentage(
+        40,
+        new Date('2026-10-07T08:20:00.000Z'),
+      );
 
       createdSectionProgressIds.add(sectionProgress.id);
 

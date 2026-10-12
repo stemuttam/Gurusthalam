@@ -319,7 +319,9 @@ describe('PrismaSectionProgressRepository', () => {
     mocks.upsert.mockResolvedValue(createPersistenceRecord() as never);
 
     const repository = new PrismaSectionProgressRepository(prisma);
-    const sectionProgress = SectionProgress.rehydrate(createPersistenceRecord());
+    const sectionProgress = SectionProgress.rehydrate(
+      createPersistenceRecord(),
+    );
     expect(sectionProgress.getDomainEvents()).toHaveLength(0);
 
     await repository.save(sectionProgress);

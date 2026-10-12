@@ -72,10 +72,7 @@ function expectCommonEventContract(
   expect(Number.isNaN(event.occurredAt.getTime())).toBe(false);
 }
 
-function expectCreatedPayload(
-  event: CourseDomainEvent,
-  course: Course,
-): void {
+function expectCreatedPayload(event: CourseDomainEvent, course: Course): void {
   expect(event.eventName).toBe(CourseDomainEventName.CREATED);
 
   if (event.eventName !== CourseDomainEventName.CREATED) {
@@ -92,10 +89,7 @@ function expectCreatedPayload(
   expect(event.payload.instructorId).toBe(course.instructorId);
 }
 
-function expectMetadataPayload(
-  event: CourseDomainEvent,
-  course: Course,
-): void {
+function expectMetadataPayload(event: CourseDomainEvent, course: Course): void {
   expect(event.eventName).toBe(CourseDomainEventName.METADATA_UPDATED);
 
   if (event.eventName !== CourseDomainEventName.METADATA_UPDATED) {
@@ -123,12 +117,8 @@ function expectStatusChangedPayload(
     case CourseDomainEventName.PUBLISHED:
     case CourseDomainEventName.UNPUBLISHED:
     case CourseDomainEventName.ARCHIVED:
-      expect(event.payload.previousStatus).toBe(
-        expectedPreviousStatus,
-      );
-      expect(event.payload.currentStatus).toBe(
-        expectedCurrentStatus,
-      );
+      expect(event.payload.previousStatus).toBe(expectedPreviousStatus);
+      expect(event.payload.currentStatus).toBe(expectedCurrentStatus);
       return;
 
     default:
@@ -150,10 +140,7 @@ describe('Course domain-event cross-lifecycle regression', () => {
 
       expect(events).toHaveLength(6);
 
-      expectEventName(
-        getEventAt(events, 0),
-        CourseDomainEventName.CREATED,
-      );
+      expectEventName(getEventAt(events, 0), CourseDomainEventName.CREATED);
 
       expectEventName(
         getEventAt(events, 1),
@@ -165,20 +152,11 @@ describe('Course domain-event cross-lifecycle regression', () => {
         CourseDomainEventName.SUBMITTED_FOR_REVIEW,
       );
 
-      expectEventName(
-        getEventAt(events, 3),
-        CourseDomainEventName.PUBLISHED,
-      );
+      expectEventName(getEventAt(events, 3), CourseDomainEventName.PUBLISHED);
 
-      expectEventName(
-        getEventAt(events, 4),
-        CourseDomainEventName.UNPUBLISHED,
-      );
+      expectEventName(getEventAt(events, 4), CourseDomainEventName.UNPUBLISHED);
 
-      expectEventName(
-        getEventAt(events, 5),
-        CourseDomainEventName.ARCHIVED,
-      );
+      expectEventName(getEventAt(events, 5), CourseDomainEventName.ARCHIVED);
     });
 
     it('preserves lifecycle event ordering exactly', () => {
@@ -243,9 +221,7 @@ describe('Course domain-event cross-lifecycle regression', () => {
 
       const events = course.getDomainEvents();
 
-      expect(events[0]?.eventName).toBe(
-        CourseDomainEventName.CREATED,
-      );
+      expect(events[0]?.eventName).toBe(CourseDomainEventName.CREATED);
     });
   });
 
@@ -268,32 +244,23 @@ describe('Course domain-event cross-lifecycle regression', () => {
       const createdEvent = getEventAt(events, 0);
       const metadataEvent = getEventAt(events, 1);
 
-      expect(createdEvent.eventName).toBe(
-        CourseDomainEventName.CREATED,
-      );
+      expect(createdEvent.eventName).toBe(CourseDomainEventName.CREATED);
 
       if (createdEvent.eventName !== CourseDomainEventName.CREATED) {
         return;
       }
 
-      expect(createdEvent.payload.title).toBe(
-        'Cross Lifecycle Course',
-      );
+      expect(createdEvent.payload.title).toBe('Cross Lifecycle Course');
       expect(createdEvent.payload.description).toBe(
         'Cross lifecycle regression description',
       );
-      expect(createdEvent.payload.visibility).toBe(
-        CourseVisibility.PRIVATE,
-      );
+      expect(createdEvent.payload.visibility).toBe(CourseVisibility.PRIVATE);
 
       expect(metadataEvent.eventName).toBe(
         CourseDomainEventName.METADATA_UPDATED,
       );
 
-      if (
-        metadataEvent.eventName !==
-        CourseDomainEventName.METADATA_UPDATED
-      ) {
+      if (metadataEvent.eventName !== CourseDomainEventName.METADATA_UPDATED) {
         return;
       }
 
@@ -303,9 +270,7 @@ describe('Course domain-event cross-lifecycle regression', () => {
       expect(metadataEvent.payload.description).toBe(
         'Cross lifecycle updated description',
       );
-      expect(metadataEvent.payload.visibility).toBe(
-        CourseVisibility.PUBLIC,
-      );
+      expect(metadataEvent.payload.visibility).toBe(CourseVisibility.PUBLIC);
     });
 
     it('does not generate metadata events after a rejected lifecycle mutation', () => {
@@ -320,9 +285,7 @@ describe('Course domain-event cross-lifecycle regression', () => {
       const events = course.getDomainEvents();
 
       expect(events).toHaveLength(4);
-      expect(events.at(-1)?.eventName).toBe(
-        CourseDomainEventName.PUBLISHED,
-      );
+      expect(events.at(-1)?.eventName).toBe(CourseDomainEventName.PUBLISHED);
     });
   });
 
@@ -337,9 +300,7 @@ describe('Course domain-event cross-lifecycle regression', () => {
 
       expectCommonEventContract(event, course);
 
-      expect(event.eventName).toBe(
-        CourseDomainEventName.SUBMITTED_FOR_REVIEW,
-      );
+      expect(event.eventName).toBe(CourseDomainEventName.SUBMITTED_FOR_REVIEW);
 
       expectStatusChangedPayload(
         event,
@@ -372,9 +333,7 @@ describe('Course domain-event cross-lifecycle regression', () => {
 
       expectCommonEventContract(event, course);
 
-      expect(event.eventName).toBe(
-        CourseDomainEventName.PUBLISHED,
-      );
+      expect(event.eventName).toBe(CourseDomainEventName.PUBLISHED);
 
       expectStatusChangedPayload(
         event,
@@ -392,9 +351,7 @@ describe('Course domain-event cross-lifecycle regression', () => {
       const events = course.getDomainEvents();
 
       expect(events).toHaveLength(1);
-      expect(events[0]?.eventName).toBe(
-        CourseDomainEventName.CREATED,
-      );
+      expect(events[0]?.eventName).toBe(CourseDomainEventName.CREATED);
     });
   });
 
@@ -409,9 +366,7 @@ describe('Course domain-event cross-lifecycle regression', () => {
 
       expectCommonEventContract(event, course);
 
-      expect(event.eventName).toBe(
-        CourseDomainEventName.UNPUBLISHED,
-      );
+      expect(event.eventName).toBe(CourseDomainEventName.UNPUBLISHED);
 
       expectStatusChangedPayload(
         event,
@@ -445,9 +400,7 @@ describe('Course domain-event cross-lifecycle regression', () => {
 
       expectCommonEventContract(event, course);
 
-      expect(event.eventName).toBe(
-        CourseDomainEventName.ARCHIVED,
-      );
+      expect(event.eventName).toBe(CourseDomainEventName.ARCHIVED);
 
       expectStatusChangedPayload(
         event,
@@ -468,9 +421,7 @@ describe('Course domain-event cross-lifecycle regression', () => {
 
       expectCommonEventContract(event, course);
 
-      expect(event.eventName).toBe(
-        CourseDomainEventName.ARCHIVED,
-      );
+      expect(event.eventName).toBe(CourseDomainEventName.ARCHIVED);
 
       expectStatusChangedPayload(
         event,
@@ -599,9 +550,7 @@ describe('Course domain-event cross-lifecycle regression', () => {
       const secondBatch = course.pullDomainEvents();
 
       expect(secondBatch).toHaveLength(1);
-      expect(secondBatch[0]?.eventName).toBe(
-        CourseDomainEventName.PUBLISHED,
-      );
+      expect(secondBatch[0]?.eventName).toBe(CourseDomainEventName.PUBLISHED);
     });
 
     it('keeps separate drain batches independent', () => {
@@ -618,22 +567,16 @@ describe('Course domain-event cross-lifecycle regression', () => {
 
       expect(secondBatch).toHaveLength(2);
 
-      expect(secondBatch[0]?.eventName).toBe(
-        CourseDomainEventName.UNPUBLISHED,
-      );
+      expect(secondBatch[0]?.eventName).toBe(CourseDomainEventName.UNPUBLISHED);
 
-      expect(secondBatch[1]?.eventName).toBe(
-        CourseDomainEventName.ARCHIVED,
-      );
+      expect(secondBatch[1]?.eventName).toBe(CourseDomainEventName.ARCHIVED);
     });
 
     it('does not re-emit drained events during later lifecycle operations', () => {
       const course = createPublishedCourse();
 
       const firstBatch = course.pullDomainEvents();
-      const firstBatchIds = new Set(
-        firstBatch.map((event) => event.eventId),
-      );
+      const firstBatchIds = new Set(firstBatch.map((event) => event.eventId));
 
       course.unpublish();
       course.archive();

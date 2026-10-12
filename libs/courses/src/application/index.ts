@@ -72,9 +72,7 @@ export type {
 
 export { courseVersionRollbackInputSchema } from './contracts/index.js';
 
-export type {
-  CourseVersionRollbackInputSchema,
-} from './contracts/index.js';
+export type { CourseVersionRollbackInputSchema } from './contracts/index.js';
 
 /**
  * Application services.
@@ -101,9 +99,7 @@ export { COURSE_SEARCH_SORT_FIELDS } from './contracts/index.js';
 
 export { courseSearchInputSchema } from './contracts/index.js';
 
-export type {
-  CourseSearchInputSchema,
-} from './contracts/index.js';
+export type { CourseSearchInputSchema } from './contracts/index.js';
 
 export type {
   CourseQuery,
@@ -150,6 +146,4 @@ export type {
   CourseProjectionPersistence,
 } from './read-models/index.js';
 
-export type {
-  CourseCatalogProjectionQuery,
-} from './read-models/index.js';
+export type { CourseCatalogProjectionQuery } from './read-models/index.js';

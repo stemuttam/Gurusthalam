@@ -17,12 +17,11 @@ export const CourseVisibility = {
 export type CourseVisibility =
   (typeof CourseVisibility)[keyof typeof CourseVisibility];
 
-export const COURSE_VISIBILITIES =
-  Object.values(CourseVisibility) as readonly CourseVisibility[];
+export const COURSE_VISIBILITIES = Object.values(
+  CourseVisibility,
+) as readonly CourseVisibility[];
 
-export function isCourseVisibility(
-  value: unknown,
-): value is CourseVisibility {
+export function isCourseVisibility(value: unknown): value is CourseVisibility {
   return (
     typeof value === 'string' &&
     COURSE_VISIBILITIES.includes(value as CourseVisibility)

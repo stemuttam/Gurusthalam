@@ -71,9 +71,7 @@ export type {
 
 export { courseSearchInputSchema } from './course-search.validation.js';
 
-export type {
-  CourseSearchInputSchema,
-} from './course-search.validation.js';
+export type { CourseSearchInputSchema } from './course-search.validation.js';
 
 export {
   createCourseVersionInputSchema,
@@ -87,9 +85,7 @@ export type {
 
 export { courseVersionRollbackInputSchema } from './course-version-rollback.validation.js';
 
-export type {
-  CourseVersionRollbackInputSchema,
-} from './course-version-rollback.validation.js';
+export type { CourseVersionRollbackInputSchema } from './course-version-rollback.validation.js';
 
 export type {
   CourseQuery,

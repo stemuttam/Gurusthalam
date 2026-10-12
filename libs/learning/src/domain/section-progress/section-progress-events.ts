@@ -41,7 +41,8 @@ export interface SectionProgressCompletedPayload {
 }
 
 export interface SectionProgressDomainEvent<
-  TEventName extends SectionProgressDomainEventName = SectionProgressDomainEventName,
+  TEventName extends SectionProgressDomainEventName =
+    SectionProgressDomainEventName,
   TPayload = unknown,
 > {
   readonly eventId: string;
@@ -72,7 +73,10 @@ export type SectionProgressEvent =
   | SectionProgressUpdatedEvent
   | SectionProgressCompletedEvent;
 
-function createEvent<TEventName extends SectionProgressDomainEventName, TPayload>(
+function createEvent<
+  TEventName extends SectionProgressDomainEventName,
+  TPayload,
+>(
   eventName: TEventName,
   aggregateId: string,
   payload: TPayload,

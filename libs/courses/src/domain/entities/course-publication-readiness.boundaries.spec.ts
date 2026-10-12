@@ -14,10 +14,12 @@ import {
 
 import { CourseDomainEventName } from '../events/course.events.js';
 
-const createCourse = (overrides: Partial<{
-  title: string;
-  description: string | null;
-}> = {}) =>
+const createCourse = (
+  overrides: Partial<{
+    title: string;
+    description: string | null;
+  }> = {},
+) =>
   Course.create({
     title: overrides.title ?? 'TypeScript Fundamentals',
     description:
@@ -122,9 +124,7 @@ describe('Course publication readiness boundaries', () => {
 
       expect(course.status).toBe(CourseStatus.DRAFT);
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.status).toBe(CourseStatus.DRAFT);
     });
@@ -146,9 +146,7 @@ describe('Course publication readiness boundaries', () => {
 
       expect(course.status).toBe(CourseStatus.DRAFT);
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.status).toBe(CourseStatus.DRAFT);
     });
@@ -158,9 +156,7 @@ describe('Course publication readiness boundaries', () => {
 
       const eventsBefore = course.getDomainEvents();
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       const eventsAfter = course.getDomainEvents();
 
@@ -265,9 +261,7 @@ describe('Course publication readiness boundaries', () => {
 
       const publishedEvents = course
         .getDomainEvents()
-        .filter(
-          (event) => event.eventName === CourseDomainEventName.PUBLISHED,
-        );
+        .filter((event) => event.eventName === CourseDomainEventName.PUBLISHED);
 
       expect(publishedEvents).toHaveLength(1);
     });
@@ -295,9 +289,7 @@ describe('Course publication readiness boundaries', () => {
 
       const publishedEvent = course
         .getDomainEvents()
-        .find(
-          (event) => event.eventName === CourseDomainEventName.PUBLISHED,
-        );
+        .find((event) => event.eventName === CourseDomainEventName.PUBLISHED);
 
       expect(publishedEvent?.aggregateId).toBe(course.id.toString());
     });
@@ -310,9 +302,7 @@ describe('Course publication readiness boundaries', () => {
 
       const publishedEvent = course
         .getDomainEvents()
-        .find(
-          (event) => event.eventName === CourseDomainEventName.PUBLISHED,
-        );
+        .find((event) => event.eventName === CourseDomainEventName.PUBLISHED);
 
       expect(publishedEvent?.payload).toMatchObject({
         courseId: course.id.toString(),
@@ -365,9 +355,7 @@ describe('Course publication readiness boundaries', () => {
 
       const eventsBefore = course.getDomainEvents();
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.status).toBe(CourseStatus.PUBLISHED);
       expect(course.getDomainEvents()).toEqual(eventsBefore);

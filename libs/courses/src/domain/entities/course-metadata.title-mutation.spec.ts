@@ -121,9 +121,7 @@ describe('Course title mutation boundary', () => {
         title: 'Node.js & TypeScript: Advanced APIs!',
       });
 
-      expect(course.title).toBe(
-        'Node.js & TypeScript: Advanced APIs!',
-      );
+      expect(course.title).toBe('Node.js & TypeScript: Advanced APIs!');
     });
 
     it('accepts a title exactly 200 characters long', () => {
@@ -342,9 +340,7 @@ describe('Course title mutation boundary', () => {
       const event = events.at(-1);
 
       expect(event).toBeDefined();
-      expect(event?.eventName).toBe(
-        'courses.course.metadata_updated',
-      );
+      expect(event?.eventName).toBe('courses.course.metadata_updated');
     });
 
     it('does not create an additional event when a title mutation fails', () => {

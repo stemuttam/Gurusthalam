@@ -64,20 +64,13 @@ describe('Course application validation adapter', () => {
         },
       );
 
-      throw new Error(
-        'Expected CourseValidationError.',
-      );
+      throw new Error('Expected CourseValidationError.');
     } catch (error) {
-      expect(error).toBeInstanceOf(
-        CourseValidationError,
-      );
+      expect(error).toBeInstanceOf(CourseValidationError);
 
-      const validationError =
-        error as CourseValidationError;
+      const validationError = error as CourseValidationError;
 
-      expect(validationError.code).toBe(
-        CourseDomainErrorCode.VALIDATION_ERROR,
-      );
+      expect(validationError.code).toBe(CourseDomainErrorCode.VALIDATION_ERROR);
     }
   });
 
@@ -105,16 +98,11 @@ describe('Course application validation adapter', () => {
         },
       );
 
-      throw new Error(
-        'Expected CourseValidationError.',
-      );
+      throw new Error('Expected CourseValidationError.');
     } catch (error) {
-      expect(error).toBeInstanceOf(
-        CourseValidationError,
-      );
+      expect(error).toBeInstanceOf(CourseValidationError);
 
-      const validationError =
-        error as CourseValidationError;
+      const validationError = error as CourseValidationError;
 
       expect(validationError.issues).toEqual([
         {
@@ -130,12 +118,9 @@ describe('Course application validation adapter', () => {
       .object({
         title: z.string(),
       })
-      .refine(
-        (input) => input.title === 'valid',
-        {
-          message: 'Course input is semantically invalid.',
-        },
-      );
+      .refine((input) => input.title === 'valid', {
+        message: 'Course input is semantically invalid.',
+      });
 
     try {
       parseCourseApplicationInput(
@@ -149,21 +134,14 @@ describe('Course application validation adapter', () => {
         },
       );
 
-      throw new Error(
-        'Expected CourseValidationError.',
-      );
+      throw new Error('Expected CourseValidationError.');
     } catch (error) {
-      expect(error).toBeInstanceOf(
-        CourseValidationError,
-      );
+      expect(error).toBeInstanceOf(CourseValidationError);
 
-      expect(
-        (error as CourseValidationError).issues,
-      ).toEqual([
+      expect((error as CourseValidationError).issues).toEqual([
         {
           field: 'course',
-          message:
-            'Course input is semantically invalid.',
+          message: 'Course input is semantically invalid.',
         },
       ]);
     }
@@ -185,20 +163,13 @@ describe('Course application validation adapter', () => {
         },
       );
 
-      throw new Error(
-        'Expected CourseValidationError.',
-      );
+      throw new Error('Expected CourseValidationError.');
     } catch (error) {
-      expect(error).toBeInstanceOf(
-        CourseValidationError,
-      );
+      expect(error).toBeInstanceOf(CourseValidationError);
 
-      const validationError =
-        error as CourseValidationError;
+      const validationError = error as CourseValidationError;
 
-      expect(validationError.cause).toBeInstanceOf(
-        z.ZodError,
-      );
+      expect(validationError.cause).toBeInstanceOf(z.ZodError);
     }
   });
 
@@ -218,24 +189,15 @@ describe('Course application validation adapter', () => {
         },
       );
 
-      throw new Error(
-        'Expected CourseValidationError.',
-      );
+      throw new Error('Expected CourseValidationError.');
     } catch (error) {
-      expect(error).toBeInstanceOf(
-        CourseValidationError,
-      );
+      expect(error).toBeInstanceOf(CourseValidationError);
 
-      const validationError =
-        error as CourseValidationError;
+      const validationError = error as CourseValidationError;
 
-      expect(
-        Object.isFrozen(validationError.issues),
-      ).toBe(true);
+      expect(Object.isFrozen(validationError.issues)).toBe(true);
 
-      expect(
-        Object.isFrozen(validationError.issues[0]),
-      ).toBe(true);
+      expect(Object.isFrozen(validationError.issues[0])).toBe(true);
     }
   });
 });

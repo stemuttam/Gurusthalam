@@ -181,8 +181,7 @@ describe('Course publication readiness', () => {
     });
 
     it('publishes a Course with a description containing punctuation', () => {
-      const description =
-        'Learn TypeScript safely, clearly, and consistently!';
+      const description = 'Learn TypeScript safely, clearly, and consistently!';
 
       const course = createCourse({
         description,

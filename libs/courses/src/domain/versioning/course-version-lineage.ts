@@ -45,9 +45,7 @@ export class CourseVersionLineage {
     Object.freeze(this);
   }
 
-  static create(
-    input: CreateCourseVersionLineageProps,
-  ): CourseVersionLineage {
+  static create(input: CreateCourseVersionLineageProps): CourseVersionLineage {
     if (input.source.courseId !== input.target.courseId) {
       throw new TypeError(
         'CourseVersion lineage requires source and target versions to belong to the same Course.',
@@ -65,9 +63,7 @@ export class CourseVersionLineage {
     });
   }
 
-  static rehydrate(
-    props: CourseVersionLineageProps,
-  ): CourseVersionLineage {
+  static rehydrate(props: CourseVersionLineageProps): CourseVersionLineage {
     return new CourseVersionLineage(props);
   }
 
@@ -111,9 +107,7 @@ export class CourseVersionLineage {
     };
   }
 
-  private validateProps(
-    props: CourseVersionLineageProps,
-  ): void {
+  private validateProps(props: CourseVersionLineageProps): void {
     const issues: Array<{
       field: string;
       message: string;
@@ -125,24 +119,21 @@ export class CourseVersionLineage {
     ) {
       issues.push({
         field: 'courseId',
-        message:
-          'Course identifier must be a non-empty string.',
+        message: 'Course identifier must be a non-empty string.',
       });
     }
 
     if (!(props.sourceVersionId instanceof CourseVersionId)) {
       issues.push({
         field: 'sourceVersionId',
-        message:
-          'Source CourseVersion identifier is required.',
+        message: 'Source CourseVersion identifier is required.',
       });
     }
 
     if (!(props.targetVersionId instanceof CourseVersionId)) {
       issues.push({
         field: 'targetVersionId',
-        message:
-          'Target CourseVersion identifier is required.',
+        message: 'Target CourseVersion identifier is required.',
       });
     }
 
@@ -153,30 +144,21 @@ export class CourseVersionLineage {
     ) {
       issues.push({
         field: 'targetVersionId',
-        message:
-          'A CourseVersion cannot derive lineage from itself.',
+        message: 'A CourseVersion cannot derive lineage from itself.',
       });
     }
 
-    if (
-      !Number.isInteger(props.sourceVersion) ||
-      props.sourceVersion < 1
-    ) {
+    if (!Number.isInteger(props.sourceVersion) || props.sourceVersion < 1) {
       issues.push({
         field: 'sourceVersion',
-        message:
-          'Source version must be a positive integer.',
+        message: 'Source version must be a positive integer.',
       });
     }
 
-    if (
-      !Number.isInteger(props.targetVersion) ||
-      props.targetVersion < 1
-    ) {
+    if (!Number.isInteger(props.targetVersion) || props.targetVersion < 1) {
       issues.push({
         field: 'targetVersion',
-        message:
-          'Target version must be a positive integer.',
+        message: 'Target version must be a positive integer.',
       });
     }
 
@@ -187,47 +169,35 @@ export class CourseVersionLineage {
     ) {
       issues.push({
         field: 'targetVersion',
-        message:
-          'Target version must be greater than the source version.',
+        message: 'Target version must be greater than the source version.',
       });
     }
 
-    if (
-      props.relation !== COURSE_VERSION_LINEAGE_RELATION
-    ) {
+    if (props.relation !== COURSE_VERSION_LINEAGE_RELATION) {
       issues.push({
         field: 'relation',
-        message:
-          `Unsupported CourseVersion lineage relation: ${String(
-            props.relation,
-          )}.`,
+        message: `Unsupported CourseVersion lineage relation: ${String(
+          props.relation,
+        )}.`,
       });
     }
 
-    if (
-      typeof props.reason !== 'string' ||
-      props.reason.trim().length === 0
-    ) {
+    if (typeof props.reason !== 'string' || props.reason.trim().length === 0) {
       issues.push({
         field: 'reason',
-        message:
-          'Lineage reason must be a non-empty string.',
+        message: 'Lineage reason must be a non-empty string.',
       });
     } else if (props.reason.trim().length > 500) {
       issues.push({
         field: 'reason',
-        message:
-          'Lineage reason must not exceed 500 characters.',
+        message: 'Lineage reason must not exceed 500 characters.',
       });
     }
 
     if (issues.length > 0) {
       throw new TypeError(
         `Invalid CourseVersion lineage: ${issues
-          .map(
-            ({ field, message }) =>
-              `${field}: ${message}`,
-          )
+          .map(({ field, message }) => `${field}: ${message}`)
           .join('; ')}`,
       );
     }

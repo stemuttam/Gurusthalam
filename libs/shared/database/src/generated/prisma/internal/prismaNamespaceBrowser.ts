@@ -71,7 +71,12 @@ export const ModelName = {
   NotificationDelivery: 'NotificationDelivery',
   OutboxEvent: 'OutboxEvent',
   NotificationAggregation: 'NotificationAggregation',
-  NotificationAggregationItem: 'NotificationAggregationItem'
+  NotificationAggregationItem: 'NotificationAggregationItem',
+  CourseStructureSection: 'CourseStructureSection',
+  CourseStructureLearningUnit: 'CourseStructureLearningUnit',
+  CourseStructureContentItemReference: 'CourseStructureContentItemReference',
+  CourseStructureAssessmentReference: 'CourseStructureAssessmentReference',
+  CourseProgressReadModel: 'CourseProgressReadModel'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -449,6 +454,68 @@ export const NotificationAggregationItemScalarFieldEnum = {
 } as const
 
 export type NotificationAggregationItemScalarFieldEnum = (typeof NotificationAggregationItemScalarFieldEnum)[keyof typeof NotificationAggregationItemScalarFieldEnum]
+
+
+export const CourseStructureSectionScalarFieldEnum = {
+  id: 'id',
+  courseVersionId: 'courseVersionId',
+  title: 'title',
+  description: 'description',
+  position: 'position',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CourseStructureSectionScalarFieldEnum = (typeof CourseStructureSectionScalarFieldEnum)[keyof typeof CourseStructureSectionScalarFieldEnum]
+
+
+export const CourseStructureLearningUnitScalarFieldEnum = {
+  id: 'id',
+  sectionId: 'sectionId',
+  title: 'title',
+  description: 'description',
+  position: 'position',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CourseStructureLearningUnitScalarFieldEnum = (typeof CourseStructureLearningUnitScalarFieldEnum)[keyof typeof CourseStructureLearningUnitScalarFieldEnum]
+
+
+export const CourseStructureContentItemReferenceScalarFieldEnum = {
+  id: 'id',
+  learningUnitId: 'learningUnitId',
+  contentItemTargetId: 'contentItemTargetId',
+  position: 'position'
+} as const
+
+export type CourseStructureContentItemReferenceScalarFieldEnum = (typeof CourseStructureContentItemReferenceScalarFieldEnum)[keyof typeof CourseStructureContentItemReferenceScalarFieldEnum]
+
+
+export const CourseStructureAssessmentReferenceScalarFieldEnum = {
+  id: 'id',
+  learningUnitId: 'learningUnitId',
+  assessmentTargetId: 'assessmentTargetId',
+  position: 'position'
+} as const
+
+export type CourseStructureAssessmentReferenceScalarFieldEnum = (typeof CourseStructureAssessmentReferenceScalarFieldEnum)[keyof typeof CourseStructureAssessmentReferenceScalarFieldEnum]
+
+
+export const CourseProgressReadModelScalarFieldEnum = {
+  enrollmentId: 'enrollmentId',
+  courseVersionId: 'courseVersionId',
+  totalLearningUnits: 'totalLearningUnits',
+  startedLearningUnits: 'startedLearningUnits',
+  completedLearningUnits: 'completedLearningUnits',
+  percentage: 'percentage',
+  hasLearningUnits: 'hasLearningUnits',
+  calculatedAt: 'calculatedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CourseProgressReadModelScalarFieldEnum = (typeof CourseProgressReadModelScalarFieldEnum)[keyof typeof CourseProgressReadModelScalarFieldEnum]
 
 
 export const SortOrder = {

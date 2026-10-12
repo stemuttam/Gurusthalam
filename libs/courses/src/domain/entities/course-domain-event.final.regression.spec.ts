@@ -99,9 +99,7 @@ function getCreatedEvent(
   expect(event.eventName).toBe(CourseDomainEventName.CREATED);
 
   if (event.eventName !== CourseDomainEventName.CREATED) {
-    throw new Error(
-      `Expected a created event but received ${event.eventName}`,
-    );
+    throw new Error(`Expected a created event but received ${event.eventName}`);
   }
 
   return event;
@@ -173,10 +171,7 @@ function expectCommonEventContract(
   expect(Number.isNaN(event.occurredAt.getTime())).toBe(false);
 }
 
-function expectCreatedPayload(
-  event: CourseCreatedEvent,
-  course: Course,
-): void {
+function expectCreatedPayload(event: CourseCreatedEvent, course: Course): void {
   expect(event.payload.courseId).toBe(course.id.value);
   expect(event.payload.title).toBe(course.title);
   expect(event.payload.description).toBe(course.description);
@@ -288,9 +283,7 @@ describe('Course domain-event final regression', () => {
       const events = course.getDomainEvents();
 
       expect(events[0]?.eventName).toBe(CourseDomainEventName.CREATED);
-      expect(events[1]?.eventName).toBe(
-        CourseDomainEventName.METADATA_UPDATED,
-      );
+      expect(events[1]?.eventName).toBe(CourseDomainEventName.METADATA_UPDATED);
       expect(events[2]?.eventName).toBe(
         CourseDomainEventName.SUBMITTED_FOR_REVIEW,
       );
@@ -312,9 +305,7 @@ describe('Course domain-event final regression', () => {
       expect(createdEvent.payload.description).toBe(
         'Final domain-event regression description',
       );
-      expect(createdEvent.payload.visibility).toBe(
-        CourseVisibility.PRIVATE,
-      );
+      expect(createdEvent.payload.visibility).toBe(CourseVisibility.PRIVATE);
     });
   });
 
@@ -329,9 +320,7 @@ describe('Course domain-event final regression', () => {
       const events = course.getDomainEvents();
 
       expect(events).toHaveLength(2);
-      expect(events[1]?.eventName).toBe(
-        CourseDomainEventName.METADATA_UPDATED,
-      );
+      expect(events[1]?.eventName).toBe(CourseDomainEventName.METADATA_UPDATED);
     });
 
     it('records the complete updated metadata snapshot', () => {
@@ -349,9 +338,7 @@ describe('Course domain-event final regression', () => {
       const events = course.getDomainEvents();
 
       expect(events[0]?.eventName).toBe(CourseDomainEventName.CREATED);
-      expect(events[1]?.eventName).toBe(
-        CourseDomainEventName.METADATA_UPDATED,
-      );
+      expect(events[1]?.eventName).toBe(CourseDomainEventName.METADATA_UPDATED);
     });
 
     it('records multiple successful metadata changes independently', () => {
@@ -369,12 +356,8 @@ describe('Course domain-event final regression', () => {
 
       expect(events).toHaveLength(3);
       expect(events[0]?.eventName).toBe(CourseDomainEventName.CREATED);
-      expect(events[1]?.eventName).toBe(
-        CourseDomainEventName.METADATA_UPDATED,
-      );
-      expect(events[2]?.eventName).toBe(
-        CourseDomainEventName.METADATA_UPDATED,
-      );
+      expect(events[1]?.eventName).toBe(CourseDomainEventName.METADATA_UPDATED);
+      expect(events[2]?.eventName).toBe(CourseDomainEventName.METADATA_UPDATED);
     });
 
     it('preserves each metadata event snapshot independently', () => {
@@ -424,9 +407,7 @@ describe('Course domain-event final regression', () => {
       const events = course.getDomainEvents();
       const event = getStatusChangedEvent(events, 2);
 
-      expect(event.eventName).toBe(
-        CourseDomainEventName.SUBMITTED_FOR_REVIEW,
-      );
+      expect(event.eventName).toBe(CourseDomainEventName.SUBMITTED_FOR_REVIEW);
 
       expectStatusPayload(
         event,
@@ -607,11 +588,7 @@ describe('Course domain-event final regression', () => {
 
       const originalTitle = createdEvent.payload.title;
 
-      Reflect.set(
-        createdEvent.payload,
-        'title',
-        'Mutated External Title',
-      );
+      Reflect.set(createdEvent.payload, 'title', 'Mutated External Title');
 
       expect(createdEvent.payload.title).toBe('Mutated External Title');
       expect(originalTitle).toBe('Final Regression Course');
@@ -619,9 +596,7 @@ describe('Course domain-event final regression', () => {
       const freshEvents = course.getDomainEvents();
       const freshCreatedEvent = getCreatedEvent(freshEvents);
 
-      expect(freshCreatedEvent.payload.title).toBe(
-        'Final Regression Course',
-      );
+      expect(freshCreatedEvent.payload.title).toBe('Final Regression Course');
     });
 
     it('does not allow occurredAt mutation to affect stored event state', () => {
@@ -636,9 +611,7 @@ describe('Course domain-event final regression', () => {
       const freshEvents = course.getDomainEvents();
       const freshCreatedEvent = getCreatedEvent(freshEvents);
 
-      expect(freshCreatedEvent.occurredAt.getTime()).toBe(
-        originalTimestamp,
-      );
+      expect(freshCreatedEvent.occurredAt.getTime()).toBe(originalTimestamp);
     });
   });
 
@@ -698,9 +671,7 @@ describe('Course domain-event final regression', () => {
       expect(firstBatch).toHaveLength(1);
       expect(secondBatch).toHaveLength(1);
 
-      expect(firstBatch[0]?.eventName).toBe(
-        CourseDomainEventName.CREATED,
-      );
+      expect(firstBatch[0]?.eventName).toBe(CourseDomainEventName.CREATED);
       expect(secondBatch[0]?.eventName).toBe(
         CourseDomainEventName.METADATA_UPDATED,
       );
@@ -752,9 +723,7 @@ describe('Course domain-event final regression', () => {
       const events = rehydrated.getDomainEvents();
 
       expect(events).toHaveLength(1);
-      expect(events[0]?.eventName).toBe(
-        CourseDomainEventName.UNPUBLISHED,
-      );
+      expect(events[0]?.eventName).toBe(CourseDomainEventName.UNPUBLISHED);
     });
 
     it('associates post-rehydration events with the original aggregate', () => {
@@ -910,9 +879,7 @@ describe('Course domain-event final regression', () => {
       const events = course.getDomainEvents();
       const finalEvent = events.at(-1);
 
-      expect(finalEvent?.eventName).toBe(
-        CourseDomainEventName.ARCHIVED,
-      );
+      expect(finalEvent?.eventName).toBe(CourseDomainEventName.ARCHIVED);
     });
 
     it('keeps the final archived payload transition correct', () => {
@@ -974,9 +941,7 @@ describe('Course domain-event final regression', () => {
       const secondBatch = rehydrated.pullDomainEvents();
 
       expect(secondBatch).toHaveLength(1);
-      expect(secondBatch[0]?.eventName).toBe(
-        CourseDomainEventName.UNPUBLISHED,
-      );
+      expect(secondBatch[0]?.eventName).toBe(CourseDomainEventName.UNPUBLISHED);
       expect(secondBatch[0]?.aggregateId).toBe(original.id.value);
     });
   });

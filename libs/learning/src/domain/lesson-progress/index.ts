@@ -35,3 +35,5 @@ export {
 } from './lesson-progress-status.js';
 
 export type { LessonProgressRepository } from './lesson-progress-repository.js';
+
+export type { LessonProgressBatchQueryRepository } from './lesson-progress-batch-query.repository.js';

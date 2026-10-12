@@ -4,17 +4,11 @@ import {
   type CourseVersionId,
 } from '@gurusthalam/courses';
 
-import {
-  type PrismaClient,
-} from '@gurusthalam/database';
+import { type PrismaClient } from '@gurusthalam/database';
 
-import {
-  CourseVersionAuditPrismaMapper,
-} from '../../mappers/courses/course-version-audit-prisma.mapper.js';
+import { CourseVersionAuditPrismaMapper } from '../../mappers/courses/course-version-audit-prisma.mapper.js';
 
-import {
-  withPrismaRepositoryErrorBoundary,
-} from '../prisma-repository-error.mapper.js';
+import { withPrismaRepositoryErrorBoundary } from '../prisma-repository-error.mapper.js';
 
 /**
  * Prisma-backed persistence adapter for immutable CourseVersion audit facts.
@@ -27,59 +21,38 @@ import {
  *
  * No update or delete operation is exposed.
  */
-export class PrismaCourseVersionAuditRepository
-  implements CourseVersionAuditRepository
-{
-  constructor(
-    private readonly prisma: PrismaClient,
-  ) {}
+export class PrismaCourseVersionAuditRepository implements CourseVersionAuditRepository {
+  constructor(private readonly prisma: PrismaClient) {}
 
-  async append(
-    audit: CourseVersionAudit,
-  ): Promise<void> {
+  async append(audit: CourseVersionAudit): Promise<void> {
     await withPrismaRepositoryErrorBoundary(
       'CourseVersionAuditRepository.append',
       async () => {
-        const persistence =
-          CourseVersionAuditPrismaMapper.toPersistence(
-            audit,
-          );
+        const persistence = CourseVersionAuditPrismaMapper.toPersistence(audit);
 
-        await this.prisma.courseVersionAudit.create(
-          {
-            data: {
-              id:
-                persistence.id,
+        await this.prisma.courseVersionAudit.create({
+          data: {
+            id: persistence.id,
 
-              courseId:
-                persistence.courseId,
+            courseId: persistence.courseId,
 
-              courseVersionId:
-                persistence.courseVersionId,
+            courseVersionId: persistence.courseVersionId,
 
-              version:
-                persistence.version,
+            version: persistence.version,
 
-              eventType:
-                persistence.eventType,
+            eventType: persistence.eventType,
 
-              occurredAt:
-                persistence.occurredAt,
+            occurredAt: persistence.occurredAt,
 
-              actorType:
-                persistence.actorType,
+            actorType: persistence.actorType,
 
-              actorId:
-                persistence.actorId,
+            actorId: persistence.actorId,
 
-              reason:
-                persistence.reason,
+            reason: persistence.reason,
 
-              metadata:
-                persistence.metadata,
-            },
+            metadata: persistence.metadata,
           },
-        );
+        });
       },
     );
   }
@@ -90,32 +63,23 @@ export class PrismaCourseVersionAuditRepository
     return withPrismaRepositoryErrorBoundary(
       'CourseVersionAuditRepository.findByCourseVersionId',
       async () => {
-        const records =
-          await this.prisma.courseVersionAudit.findMany(
+        const records = await this.prisma.courseVersionAudit.findMany({
+          where: {
+            courseVersionId: courseVersionId.value,
+          },
+
+          orderBy: [
             {
-              where: {
-                courseVersionId:
-                  courseVersionId.value,
-              },
-
-              orderBy: [
-                {
-                  occurredAt:
-                    'asc',
-                },
-                {
-                  id:
-                    'asc',
-                },
-              ],
+              occurredAt: 'asc',
             },
-          );
+            {
+              id: 'asc',
+            },
+          ],
+        });
 
-        return records.map(
-          (record) =>
-            CourseVersionAuditPrismaMapper.toDomain(
-              record,
-            ),
+        return records.map((record) =>
+          CourseVersionAuditPrismaMapper.toDomain(record),
         );
       },
     );
@@ -127,35 +91,26 @@ export class PrismaCourseVersionAuditRepository
     return withPrismaRepositoryErrorBoundary(
       'CourseVersionAuditRepository.findByCourseId',
       async () => {
-        const records =
-          await this.prisma.courseVersionAudit.findMany(
+        const records = await this.prisma.courseVersionAudit.findMany({
+          where: {
+            courseId,
+          },
+
+          orderBy: [
             {
-              where: {
-                courseId,
-              },
-
-              orderBy: [
-                {
-                  occurredAt:
-                    'asc',
-                },
-                {
-                  version:
-                    'asc',
-                },
-                {
-                  id:
-                    'asc',
-                },
-              ],
+              occurredAt: 'asc',
             },
-          );
+            {
+              version: 'asc',
+            },
+            {
+              id: 'asc',
+            },
+          ],
+        });
 
-        return records.map(
-          (record) =>
-            CourseVersionAuditPrismaMapper.toDomain(
-              record,
-            ),
+        return records.map((record) =>
+          CourseVersionAuditPrismaMapper.toDomain(record),
         );
       },
     );

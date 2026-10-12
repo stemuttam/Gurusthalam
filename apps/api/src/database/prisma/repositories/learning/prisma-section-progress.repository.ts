@@ -10,9 +10,7 @@ import type { Prisma, PrismaClient } from '@gurusthalam/database';
 
 import { withPrismaRepositoryErrorBoundary } from '../prisma-repository-error.mapper.js';
 
-export class PrismaSectionProgressRepository
-  implements SectionProgressRepository
-{
+export class PrismaSectionProgressRepository implements SectionProgressRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
   async findById(id: string): Promise<SectionProgress | null> {
@@ -100,10 +98,8 @@ export class PrismaSectionProgressRepository
                 eventType: event.eventName,
                 aggregateType: 'SectionProgress',
                 aggregateId: event.aggregateId,
-                dedupeKey:
-                  PrismaSectionProgressRepository.toDedupeKey(event),
-                payload:
-                  PrismaSectionProgressRepository.toOutboxPayload(event),
+                dedupeKey: PrismaSectionProgressRepository.toDedupeKey(event),
+                payload: PrismaSectionProgressRepository.toOutboxPayload(event),
                 status: 'PENDING',
                 attempts: 0,
                 availableAt: new Date(),
@@ -124,17 +120,14 @@ export class PrismaSectionProgressRepository
     );
   }
 
-  private toDomain(
-    record: SectionProgressPersistenceRecord,
-  ): SectionProgress {
+  private toDomain(record: SectionProgressPersistenceRecord): SectionProgress {
     return SectionProgress.rehydrate({
       id: record.id,
       enrollmentId: record.enrollmentId,
       sectionId: record.sectionId,
       status: record.status,
       percentage: record.percentage,
-      startedAt:
-        record.startedAt === null ? null : new Date(record.startedAt),
+      startedAt: record.startedAt === null ? null : new Date(record.startedAt),
       completedAt:
         record.completedAt === null ? null : new Date(record.completedAt),
       createdAt: new Date(record.createdAt),

@@ -24,8 +24,9 @@ const createCourse = () =>
     instructorId: 'instructor-123',
   });
 
-const getEvents = (course: Course): CourseDomainEvent[] =>
-  [...course.getDomainEvents()];
+const getEvents = (course: Course): CourseDomainEvent[] => [
+  ...course.getDomainEvents(),
+];
 
 describe('Course core domain contract', () => {
   describe('aggregate identity', () => {
@@ -138,9 +139,7 @@ describe('Course core domain contract', () => {
 
       expect(course.status).toBe(CourseStatus.IN_REVIEW);
       expect(course.title).toBe('TypeScript Fundamentals');
-      expect(course.description).toBe(
-        'Learn TypeScript from the ground up.',
-      );
+      expect(course.description).toBe('Learn TypeScript from the ground up.');
       expect(course.level).toBe(CourseLevel.BEGINNER);
       expect(course.type).toBe(CourseType.SELF_PACED);
       expect(course.visibility).toBe(CourseVisibility.PRIVATE);
@@ -219,12 +218,8 @@ describe('Course core domain contract', () => {
       const events = getEvents(course);
 
       expect(events).toHaveLength(1);
-      expect(events[0]?.eventName).toBe(
-        CourseDomainEventName.CREATED,
-      );
-      expect(events[0]?.aggregateId).toBe(
-        course.id.toString(),
-      );
+      expect(events[0]?.eventName).toBe(CourseDomainEventName.CREATED);
+      expect(events[0]?.aggregateId).toBe(course.id.toString());
     });
 
     it('records lifecycle events only after successful transitions', () => {
@@ -237,9 +232,7 @@ describe('Course core domain contract', () => {
       course.unpublish();
       course.archive();
 
-      expect(
-        course.getDomainEvents().map((event) => event.eventName),
-      ).toEqual([
+      expect(course.getDomainEvents().map((event) => event.eventName)).toEqual([
         CourseDomainEventName.SUBMITTED_FOR_REVIEW,
         CourseDomainEventName.PUBLISHED,
         CourseDomainEventName.UNPUBLISHED,
@@ -279,9 +272,7 @@ describe('Course core domain contract', () => {
       course.unpublish();
       course.archive();
 
-      expect(
-        course.getDomainEvents().map((event) => event.eventName),
-      ).toEqual([
+      expect(course.getDomainEvents().map((event) => event.eventName)).toEqual([
         CourseDomainEventName.CREATED,
         CourseDomainEventName.METADATA_UPDATED,
         CourseDomainEventName.SUBMITTED_FOR_REVIEW,
@@ -294,9 +285,7 @@ describe('Course core domain contract', () => {
     it('does not generate domain events during rehydration', () => {
       const source = createCourse();
 
-      const rehydrated = Course.rehydrate(
-        source.toPrimitives(),
-      );
+      const rehydrated = Course.rehydrate(source.toPrimitives());
 
       expect(rehydrated.getDomainEvents()).toHaveLength(0);
     });
@@ -313,9 +302,7 @@ describe('Course core domain contract', () => {
 
       mutableCopy.pop();
 
-      expect(course.getDomainEvents()).toHaveLength(
-        originalLength,
-      );
+      expect(course.getDomainEvents()).toHaveLength(originalLength);
     });
 
     it('pulls pending events exactly once', () => {
@@ -340,9 +327,7 @@ describe('Course core domain contract', () => {
       const events = course.pullDomainEvents();
 
       expect(events).toHaveLength(1);
-      expect(events[0]?.eventName).toBe(
-        CourseDomainEventName.METADATA_UPDATED,
-      );
+      expect(events[0]?.eventName).toBe(CourseDomainEventName.METADATA_UPDATED);
     });
   });
 });

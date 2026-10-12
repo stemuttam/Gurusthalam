@@ -121,3 +121,44 @@ export type {
 } from './contracts/index.js';
 
 export { LearningActivityEventIdentityConflictError } from './contracts/index.js';
+
+export type {
+  LearningHistoryCursor,
+  LearningHistoryEntry,
+  LearningHistoryQueryRepository,
+  ListLearningHistoryInput,
+  ListLearningHistoryResult,
+  ListQualifyingLearningActivityDaysInput,
+} from './contracts/index.js';
+
+export {
+  listLearningHistoryInputSchema,
+  listQualifyingLearningActivityDaysInputSchema,
+  type ListLearningHistoryInputValue,
+  type ValidatedListLearningHistoryInput,
+  type ListQualifyingLearningActivityDaysInputValue,
+  type ValidatedListQualifyingLearningActivityDaysInput,
+} from './contracts/index.js';
+
+export type {
+  CourseProgressReadModelRepository,
+  CourseProgressReadModelSaveOutcome,
+  CourseProgressReadModelSaveResult,
+} from './contracts/index.js';
+
+export {
+  CourseProgressReadModelTimestampConflictError,
+  CourseProgressReadModelVersionConflictError,
+} from './contracts/index.js';
+
+export type {
+  CourseProgressApplicationService,
+  GetCourseProgressInput,
+  RefreshCourseProgressInput,
+  RefreshCourseProgressResult,
+} from './contracts/index.js';
+
+export {
+  DefaultCourseProgressApplicationService,
+  CourseProgressApplicationError,
+} from './services/course-progress-application.service.js';

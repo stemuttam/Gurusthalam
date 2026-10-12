@@ -128,9 +128,7 @@ describe('Course metadata invariants', () => {
         }),
       ).toThrow(CourseValidationError);
 
-      expect(course.description).toBe(
-        'Learn TypeScript from the ground up.',
-      );
+      expect(course.description).toBe('Learn TypeScript from the ground up.');
     });
 
     it('rejects a whitespace-only description during metadata update', () => {
@@ -142,9 +140,7 @@ describe('Course metadata invariants', () => {
         }),
       ).toThrow(CourseValidationError);
 
-      expect(course.description).toBe(
-        'Learn TypeScript from the ground up.',
-      );
+      expect(course.description).toBe('Learn TypeScript from the ground up.');
     });
 
     it('rejects a description longer than 10000 characters', () => {
@@ -156,9 +152,7 @@ describe('Course metadata invariants', () => {
         }),
       ).toThrow(CourseValidationError);
 
-      expect(course.description).toBe(
-        'Learn TypeScript from the ground up.',
-      );
+      expect(course.description).toBe('Learn TypeScript from the ground up.');
     });
 
     it('accepts a description of exactly 10000 characters', () => {
@@ -191,9 +185,7 @@ describe('Course metadata invariants', () => {
       });
 
       expect(course.title).toBe('Updated Title');
-      expect(course.description).toBe(
-        'Learn TypeScript from the ground up.',
-      );
+      expect(course.description).toBe('Learn TypeScript from the ground up.');
       expect(course.level).toBe(CourseLevel.BEGINNER);
       expect(course.type).toBe(CourseType.SELF_PACED);
       expect(course.visibility).toBe(CourseVisibility.PRIVATE);
@@ -230,9 +222,7 @@ describe('Course metadata invariants', () => {
       ).toThrow(CourseValidationError);
 
       expect(course.title).toBe('TypeScript Fundamentals');
-      expect(course.description).toBe(
-        'Learn TypeScript from the ground up.',
-      );
+      expect(course.description).toBe('Learn TypeScript from the ground up.');
       expect(course.level).toBe(CourseLevel.BEGINNER);
       expect(course.type).toBe(CourseType.SELF_PACED);
       expect(course.visibility).toBe(CourseVisibility.PRIVATE);

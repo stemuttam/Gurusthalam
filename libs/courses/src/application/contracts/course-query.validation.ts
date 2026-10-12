@@ -26,9 +26,7 @@ export const courseQueryInputSchema = courseSearchInputSchema;
  * is valid input for the HTTP/application validation boundary because
  * paginationSchema uses z.coerce.number().
  */
-export type CourseQueryInputSchema = z.input<
-  typeof courseQueryInputSchema
->;
+export type CourseQueryInputSchema = z.input<typeof courseQueryInputSchema>;
 
 /**
  * Normalized output produced by the Course query validation schema.

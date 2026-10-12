@@ -75,12 +75,17 @@ function createCompletedProgress(): SectionProgress {
 
 describe('DefaultSectionProgressApplicationService', () => {
   it('starts and persists a new SectionProgress when business identity does not exist', async () => {
-    const { repository, findByEnrollmentAndSection, save } = createRepositoryMock();
-    const { service: entitlementService, checkAccess } = createEntitlementServiceMock();
+    const { repository, findByEnrollmentAndSection, save } =
+      createRepositoryMock();
+    const { service: entitlementService, checkAccess } =
+      createEntitlementServiceMock();
     allowAccess(checkAccess);
     findByEnrollmentAndSection.mockResolvedValue(null);
 
-    const service = new DefaultSectionProgressApplicationService(repository, entitlementService);
+    const service = new DefaultSectionProgressApplicationService(
+      repository,
+      entitlementService,
+    );
     const result = await service.startSectionProgress({
       enrollmentId: 'enrollment-1',
       sectionId: 'section-1',
@@ -96,14 +101,19 @@ describe('DefaultSectionProgressApplicationService', () => {
       enrollmentId: 'enrollment-1',
       now: STARTED_AT.toISOString(),
     });
-    expect(findByEnrollmentAndSection).toHaveBeenCalledWith('enrollment-1', 'section-1');
+    expect(findByEnrollmentAndSection).toHaveBeenCalledWith(
+      'enrollment-1',
+      'section-1',
+    );
     expect(save).toHaveBeenCalledTimes(1);
     expect(save).toHaveBeenCalledWith(result);
   });
 
   it('starts and persists an existing NOT_STARTED aggregate', async () => {
-    const { repository, findByEnrollmentAndSection, save } = createRepositoryMock();
-    const { service: entitlementService, checkAccess } = createEntitlementServiceMock();
+    const { repository, findByEnrollmentAndSection, save } =
+      createRepositoryMock();
+    const { service: entitlementService, checkAccess } =
+      createEntitlementServiceMock();
     allowAccess(checkAccess);
     const progress = SectionProgress.create({
       enrollmentId: 'enrollment-1',
@@ -112,7 +122,10 @@ describe('DefaultSectionProgressApplicationService', () => {
     });
     findByEnrollmentAndSection.mockResolvedValue(progress);
 
-    const service = new DefaultSectionProgressApplicationService(repository, entitlementService);
+    const service = new DefaultSectionProgressApplicationService(
+      repository,
+      entitlementService,
+    );
     const result = await service.startSectionProgress({
       enrollmentId: 'enrollment-1',
       sectionId: 'section-1',
@@ -125,41 +138,66 @@ describe('DefaultSectionProgressApplicationService', () => {
   });
 
   it('rejects starting an already IN_PROGRESS aggregate without saving', async () => {
-    const { repository, findByEnrollmentAndSection, save } = createRepositoryMock();
-    const { service: entitlementService, checkAccess } = createEntitlementServiceMock();
+    const { repository, findByEnrollmentAndSection, save } =
+      createRepositoryMock();
+    const { service: entitlementService, checkAccess } =
+      createEntitlementServiceMock();
     allowAccess(checkAccess);
     findByEnrollmentAndSection.mockResolvedValue(createStartedProgress());
-    const service = new DefaultSectionProgressApplicationService(repository, entitlementService);
+    const service = new DefaultSectionProgressApplicationService(
+      repository,
+      entitlementService,
+    );
 
-    await expect(service.startSectionProgress({
-      enrollmentId: 'enrollment-1', sectionId: 'section-1', now: UPDATED_AT.toISOString(),
-    })).rejects.toBeInstanceOf(SectionProgressDomainError);
+    await expect(
+      service.startSectionProgress({
+        enrollmentId: 'enrollment-1',
+        sectionId: 'section-1',
+        now: UPDATED_AT.toISOString(),
+      }),
+    ).rejects.toBeInstanceOf(SectionProgressDomainError);
     expect(save).not.toHaveBeenCalled();
   });
 
   it('rejects starting a COMPLETED aggregate without saving', async () => {
-    const { repository, findByEnrollmentAndSection, save } = createRepositoryMock();
-    const { service: entitlementService, checkAccess } = createEntitlementServiceMock();
+    const { repository, findByEnrollmentAndSection, save } =
+      createRepositoryMock();
+    const { service: entitlementService, checkAccess } =
+      createEntitlementServiceMock();
     allowAccess(checkAccess);
     findByEnrollmentAndSection.mockResolvedValue(createCompletedProgress());
-    const service = new DefaultSectionProgressApplicationService(repository, entitlementService);
+    const service = new DefaultSectionProgressApplicationService(
+      repository,
+      entitlementService,
+    );
 
-    await expect(service.startSectionProgress({
-      enrollmentId: 'enrollment-1', sectionId: 'section-1', now: COMPLETED_AT.toISOString(),
-    })).rejects.toBeInstanceOf(SectionProgressDomainError);
+    await expect(
+      service.startSectionProgress({
+        enrollmentId: 'enrollment-1',
+        sectionId: 'section-1',
+        now: COMPLETED_AT.toISOString(),
+      }),
+    ).rejects.toBeInstanceOf(SectionProgressDomainError);
     expect(save).not.toHaveBeenCalled();
   });
 
   it('updates percentage through the domain aggregate and persists it', async () => {
-    const { repository, findByEnrollmentAndSection, save } = createRepositoryMock();
-    const { service: entitlementService, checkAccess } = createEntitlementServiceMock();
+    const { repository, findByEnrollmentAndSection, save } =
+      createRepositoryMock();
+    const { service: entitlementService, checkAccess } =
+      createEntitlementServiceMock();
     allowAccess(checkAccess);
     const progress = createStartedProgress();
     findByEnrollmentAndSection.mockResolvedValue(progress);
-    const service = new DefaultSectionProgressApplicationService(repository, entitlementService);
+    const service = new DefaultSectionProgressApplicationService(
+      repository,
+      entitlementService,
+    );
 
     const result = await service.updateSectionProgress({
-      enrollmentId: 'enrollment-1', sectionId: 'section-1', percentage: 60,
+      enrollmentId: 'enrollment-1',
+      sectionId: 'section-1',
+      percentage: 60,
       now: UPDATED_AT.toISOString(),
     });
 
@@ -170,15 +208,22 @@ describe('DefaultSectionProgressApplicationService', () => {
   });
 
   it('does not implicitly complete when percentage is updated to 100', async () => {
-    const { repository, findByEnrollmentAndSection, save } = createRepositoryMock();
-    const { service: entitlementService, checkAccess } = createEntitlementServiceMock();
+    const { repository, findByEnrollmentAndSection, save } =
+      createRepositoryMock();
+    const { service: entitlementService, checkAccess } =
+      createEntitlementServiceMock();
     allowAccess(checkAccess);
     const progress = createStartedProgress();
     findByEnrollmentAndSection.mockResolvedValue(progress);
-    const service = new DefaultSectionProgressApplicationService(repository, entitlementService);
+    const service = new DefaultSectionProgressApplicationService(
+      repository,
+      entitlementService,
+    );
 
     const result = await service.updateSectionProgress({
-      enrollmentId: 'enrollment-1', sectionId: 'section-1', percentage: 100,
+      enrollmentId: 'enrollment-1',
+      sectionId: 'section-1',
+      percentage: 100,
       now: UPDATED_AT.toISOString(),
     });
 
@@ -189,16 +234,23 @@ describe('DefaultSectionProgressApplicationService', () => {
   });
 
   it('completes and persists only after the aggregate reaches 100%', async () => {
-    const { repository, findByEnrollmentAndSection, save } = createRepositoryMock();
-    const { service: entitlementService, checkAccess } = createEntitlementServiceMock();
+    const { repository, findByEnrollmentAndSection, save } =
+      createRepositoryMock();
+    const { service: entitlementService, checkAccess } =
+      createEntitlementServiceMock();
     allowAccess(checkAccess);
     const progress = createStartedProgress();
     progress.updatePercentage(100, UPDATED_AT);
     findByEnrollmentAndSection.mockResolvedValue(progress);
-    const service = new DefaultSectionProgressApplicationService(repository, entitlementService);
+    const service = new DefaultSectionProgressApplicationService(
+      repository,
+      entitlementService,
+    );
 
     const result = await service.completeSectionProgress({
-      enrollmentId: 'enrollment-1', sectionId: 'section-1', now: COMPLETED_AT.toISOString(),
+      enrollmentId: 'enrollment-1',
+      sectionId: 'section-1',
+      now: COMPLETED_AT.toISOString(),
     });
 
     expect(result.status).toBe('COMPLETED');
@@ -208,148 +260,263 @@ describe('DefaultSectionProgressApplicationService', () => {
   });
 
   it('rejects completion below 100% without saving', async () => {
-    const { repository, findByEnrollmentAndSection, save } = createRepositoryMock();
-    const { service: entitlementService, checkAccess } = createEntitlementServiceMock();
+    const { repository, findByEnrollmentAndSection, save } =
+      createRepositoryMock();
+    const { service: entitlementService, checkAccess } =
+      createEntitlementServiceMock();
     allowAccess(checkAccess);
     findByEnrollmentAndSection.mockResolvedValue(createStartedProgress());
-    const service = new DefaultSectionProgressApplicationService(repository, entitlementService);
+    const service = new DefaultSectionProgressApplicationService(
+      repository,
+      entitlementService,
+    );
 
-    await expect(service.completeSectionProgress({
-      enrollmentId: 'enrollment-1', sectionId: 'section-1', now: COMPLETED_AT.toISOString(),
-    })).rejects.toBeInstanceOf(SectionProgressDomainError);
+    await expect(
+      service.completeSectionProgress({
+        enrollmentId: 'enrollment-1',
+        sectionId: 'section-1',
+        now: COMPLETED_AT.toISOString(),
+      }),
+    ).rejects.toBeInstanceOf(SectionProgressDomainError);
     expect(save).not.toHaveBeenCalled();
   });
 
   it('rejects update when the business identity does not exist', async () => {
-    const { repository, findByEnrollmentAndSection, save } = createRepositoryMock();
-    const { service: entitlementService, checkAccess } = createEntitlementServiceMock();
+    const { repository, findByEnrollmentAndSection, save } =
+      createRepositoryMock();
+    const { service: entitlementService, checkAccess } =
+      createEntitlementServiceMock();
     allowAccess(checkAccess);
     findByEnrollmentAndSection.mockResolvedValue(null);
-    const service = new DefaultSectionProgressApplicationService(repository, entitlementService);
+    const service = new DefaultSectionProgressApplicationService(
+      repository,
+      entitlementService,
+    );
 
-    await expect(service.updateSectionProgress({
-      enrollmentId: 'enrollment-1', sectionId: 'section-1', percentage: 50,
-      now: UPDATED_AT.toISOString(),
-    })).rejects.toBeInstanceOf(SectionProgressDomainError);
+    await expect(
+      service.updateSectionProgress({
+        enrollmentId: 'enrollment-1',
+        sectionId: 'section-1',
+        percentage: 50,
+        now: UPDATED_AT.toISOString(),
+      }),
+    ).rejects.toBeInstanceOf(SectionProgressDomainError);
     expect(save).not.toHaveBeenCalled();
   });
 
   it('rejects completion when the business identity does not exist', async () => {
-    const { repository, findByEnrollmentAndSection, save } = createRepositoryMock();
-    const { service: entitlementService, checkAccess } = createEntitlementServiceMock();
+    const { repository, findByEnrollmentAndSection, save } =
+      createRepositoryMock();
+    const { service: entitlementService, checkAccess } =
+      createEntitlementServiceMock();
     allowAccess(checkAccess);
     findByEnrollmentAndSection.mockResolvedValue(null);
-    const service = new DefaultSectionProgressApplicationService(repository, entitlementService);
+    const service = new DefaultSectionProgressApplicationService(
+      repository,
+      entitlementService,
+    );
 
-    await expect(service.completeSectionProgress({
-      enrollmentId: 'enrollment-1', sectionId: 'section-1', now: COMPLETED_AT.toISOString(),
-    })).rejects.toBeInstanceOf(SectionProgressDomainError);
+    await expect(
+      service.completeSectionProgress({
+        enrollmentId: 'enrollment-1',
+        sectionId: 'section-1',
+        now: COMPLETED_AT.toISOString(),
+      }),
+    ).rejects.toBeInstanceOf(SectionProgressDomainError);
     expect(save).not.toHaveBeenCalled();
   });
 
   it('denies all state-changing commands when entitlement access is denied', async () => {
-    const { repository, findByEnrollmentAndSection, save } = createRepositoryMock();
-    const { service: entitlementService, checkAccess } = createEntitlementServiceMock();
+    const { repository, findByEnrollmentAndSection, save } =
+      createRepositoryMock();
+    const { service: entitlementService, checkAccess } =
+      createEntitlementServiceMock();
     checkAccess.mockResolvedValue({
       allowed: false,
       reason: 'ENTITLEMENT_NOT_ACTIVE',
       evaluatedAt: UPDATED_AT,
     });
-    const service = new DefaultSectionProgressApplicationService(repository, entitlementService);
+    const service = new DefaultSectionProgressApplicationService(
+      repository,
+      entitlementService,
+    );
 
-    await expect(service.startSectionProgress({
-      enrollmentId: 'enrollment-1', sectionId: 'section-1', now: UPDATED_AT.toISOString(),
-    })).rejects.toBeInstanceOf(SectionProgressAccessDeniedError);
-    await expect(service.updateSectionProgress({
-      enrollmentId: 'enrollment-1', sectionId: 'section-1', percentage: 50,
-      now: UPDATED_AT.toISOString(),
-    })).rejects.toBeInstanceOf(SectionProgressAccessDeniedError);
-    await expect(service.completeSectionProgress({
-      enrollmentId: 'enrollment-1', sectionId: 'section-1', now: UPDATED_AT.toISOString(),
-    })).rejects.toBeInstanceOf(SectionProgressAccessDeniedError);
+    await expect(
+      service.startSectionProgress({
+        enrollmentId: 'enrollment-1',
+        sectionId: 'section-1',
+        now: UPDATED_AT.toISOString(),
+      }),
+    ).rejects.toBeInstanceOf(SectionProgressAccessDeniedError);
+    await expect(
+      service.updateSectionProgress({
+        enrollmentId: 'enrollment-1',
+        sectionId: 'section-1',
+        percentage: 50,
+        now: UPDATED_AT.toISOString(),
+      }),
+    ).rejects.toBeInstanceOf(SectionProgressAccessDeniedError);
+    await expect(
+      service.completeSectionProgress({
+        enrollmentId: 'enrollment-1',
+        sectionId: 'section-1',
+        now: UPDATED_AT.toISOString(),
+      }),
+    ).rejects.toBeInstanceOf(SectionProgressAccessDeniedError);
 
     expect(findByEnrollmentAndSection).not.toHaveBeenCalled();
     expect(save).not.toHaveBeenCalled();
   });
 
   it('maps an ALLOWED-but-denied decision to ENROLLMENT_NOT_ACTIVE', async () => {
-    const { repository, findByEnrollmentAndSection, save } = createRepositoryMock();
-    const { service: entitlementService, checkAccess } = createEntitlementServiceMock();
-    checkAccess.mockResolvedValue({ allowed: false, reason: 'ALLOWED', evaluatedAt: UPDATED_AT });
-    const service = new DefaultSectionProgressApplicationService(repository, entitlementService);
+    const { repository, findByEnrollmentAndSection, save } =
+      createRepositoryMock();
+    const { service: entitlementService, checkAccess } =
+      createEntitlementServiceMock();
+    checkAccess.mockResolvedValue({
+      allowed: false,
+      reason: 'ALLOWED',
+      evaluatedAt: UPDATED_AT,
+    });
+    const service = new DefaultSectionProgressApplicationService(
+      repository,
+      entitlementService,
+    );
 
-    await expect(service.startSectionProgress({
-      enrollmentId: 'enrollment-1', sectionId: 'section-1', now: UPDATED_AT.toISOString(),
-    })).rejects.toMatchObject({ reason: 'ENROLLMENT_NOT_ACTIVE' });
+    await expect(
+      service.startSectionProgress({
+        enrollmentId: 'enrollment-1',
+        sectionId: 'section-1',
+        now: UPDATED_AT.toISOString(),
+      }),
+    ).rejects.toMatchObject({ reason: 'ENROLLMENT_NOT_ACTIVE' });
     expect(findByEnrollmentAndSection).not.toHaveBeenCalled();
     expect(save).not.toHaveBeenCalled();
   });
 
   it('reads by technical identity without checking entitlement access', async () => {
     const { repository, findById } = createRepositoryMock();
-    const { service: entitlementService, checkAccess } = createEntitlementServiceMock();
+    const { service: entitlementService, checkAccess } =
+      createEntitlementServiceMock();
     const progress = createStartedProgress();
     findById.mockResolvedValue(progress);
-    const service = new DefaultSectionProgressApplicationService(repository, entitlementService);
+    const service = new DefaultSectionProgressApplicationService(
+      repository,
+      entitlementService,
+    );
 
-    await expect(service.getSectionProgress({ sectionProgressId: progress.id })).resolves.toBe(progress);
+    await expect(
+      service.getSectionProgress({ sectionProgressId: progress.id }),
+    ).resolves.toBe(progress);
     expect(findById).toHaveBeenCalledWith(progress.id);
     expect(checkAccess).not.toHaveBeenCalled();
   });
 
   it('reads by business identity without checking entitlement access', async () => {
     const { repository, findByEnrollmentAndSection } = createRepositoryMock();
-    const { service: entitlementService, checkAccess } = createEntitlementServiceMock();
+    const { service: entitlementService, checkAccess } =
+      createEntitlementServiceMock();
     const progress = createStartedProgress();
     findByEnrollmentAndSection.mockResolvedValue(progress);
-    const service = new DefaultSectionProgressApplicationService(repository, entitlementService);
+    const service = new DefaultSectionProgressApplicationService(
+      repository,
+      entitlementService,
+    );
 
-    await expect(service.getSectionProgressByEnrollmentAndSection({
-      enrollmentId: 'enrollment-1', sectionId: 'section-1',
-    })).resolves.toBe(progress);
-    expect(findByEnrollmentAndSection).toHaveBeenCalledWith('enrollment-1', 'section-1');
+    await expect(
+      service.getSectionProgressByEnrollmentAndSection({
+        enrollmentId: 'enrollment-1',
+        sectionId: 'section-1',
+      }),
+    ).resolves.toBe(progress);
+    expect(findByEnrollmentAndSection).toHaveBeenCalledWith(
+      'enrollment-1',
+      'section-1',
+    );
     expect(checkAccess).not.toHaveBeenCalled();
   });
 
   it('returns null when a read query finds no aggregate', async () => {
-    const { repository, findById, findByEnrollmentAndSection } = createRepositoryMock();
+    const { repository, findById, findByEnrollmentAndSection } =
+      createRepositoryMock();
     const { service: entitlementService } = createEntitlementServiceMock();
     findById.mockResolvedValue(null);
     findByEnrollmentAndSection.mockResolvedValue(null);
-    const service = new DefaultSectionProgressApplicationService(repository, entitlementService);
+    const service = new DefaultSectionProgressApplicationService(
+      repository,
+      entitlementService,
+    );
 
-    await expect(service.getSectionProgress({ sectionProgressId: 'missing-id' })).resolves.toBeNull();
-    await expect(service.getSectionProgressByEnrollmentAndSection({
-      enrollmentId: 'enrollment-1', sectionId: 'section-1',
-    })).resolves.toBeNull();
+    await expect(
+      service.getSectionProgress({ sectionProgressId: 'missing-id' }),
+    ).resolves.toBeNull();
+    await expect(
+      service.getSectionProgressByEnrollmentAndSection({
+        enrollmentId: 'enrollment-1',
+        sectionId: 'section-1',
+      }),
+    ).resolves.toBeNull();
   });
 
   it('rejects malformed command and query input before invoking dependencies', async () => {
-    const { repository, findById, findByEnrollmentAndSection, save } = createRepositoryMock();
-    const { service: entitlementService, checkAccess } = createEntitlementServiceMock();
-    const service = new DefaultSectionProgressApplicationService(repository, entitlementService);
+    const { repository, findById, findByEnrollmentAndSection, save } =
+      createRepositoryMock();
+    const { service: entitlementService, checkAccess } =
+      createEntitlementServiceMock();
+    const service = new DefaultSectionProgressApplicationService(
+      repository,
+      entitlementService,
+    );
 
-    await expect(service.startSectionProgress({ enrollmentId: ' ', sectionId: 'section-1' }))
-      .rejects.toBeInstanceOf(SectionProgressValidationError);
-    await expect(service.startSectionProgress({ enrollmentId: 'enrollment-1', sectionId: '' }))
-      .rejects.toBeInstanceOf(SectionProgressValidationError);
-    await expect(service.startSectionProgress({
-      enrollmentId: 'enrollment-1', sectionId: 'section-1', now: 'not-a-date',
-    })).rejects.toBeInstanceOf(SectionProgressValidationError);
-    await expect(service.getSectionProgress({ sectionProgressId: ' ' }))
-      .rejects.toBeInstanceOf(SectionProgressValidationError);
-    await expect(service.getSectionProgressByEnrollmentAndSection({
-      enrollmentId: 'enrollment-1', sectionId: ' ',
-    })).rejects.toBeInstanceOf(SectionProgressValidationError);
-    await expect(service.updateSectionProgress({
-      enrollmentId: 'enrollment-1', sectionId: 'section-1', percentage: 100.5,
-    })).rejects.toBeInstanceOf(SectionProgressValidationError);
-    await expect(service.updateSectionProgress({
-      enrollmentId: 'enrollment-1', sectionId: 'section-1', percentage: 101,
-    })).rejects.toBeInstanceOf(SectionProgressValidationError);
-    await expect(service.completeSectionProgress({
-      enrollmentId: 'enrollment-1', sectionId: 'section-1', now: 'yesterday',
-    })).rejects.toBeInstanceOf(SectionProgressValidationError);
+    await expect(
+      service.startSectionProgress({
+        enrollmentId: ' ',
+        sectionId: 'section-1',
+      }),
+    ).rejects.toBeInstanceOf(SectionProgressValidationError);
+    await expect(
+      service.startSectionProgress({
+        enrollmentId: 'enrollment-1',
+        sectionId: '',
+      }),
+    ).rejects.toBeInstanceOf(SectionProgressValidationError);
+    await expect(
+      service.startSectionProgress({
+        enrollmentId: 'enrollment-1',
+        sectionId: 'section-1',
+        now: 'not-a-date',
+      }),
+    ).rejects.toBeInstanceOf(SectionProgressValidationError);
+    await expect(
+      service.getSectionProgress({ sectionProgressId: ' ' }),
+    ).rejects.toBeInstanceOf(SectionProgressValidationError);
+    await expect(
+      service.getSectionProgressByEnrollmentAndSection({
+        enrollmentId: 'enrollment-1',
+        sectionId: ' ',
+      }),
+    ).rejects.toBeInstanceOf(SectionProgressValidationError);
+    await expect(
+      service.updateSectionProgress({
+        enrollmentId: 'enrollment-1',
+        sectionId: 'section-1',
+        percentage: 100.5,
+      }),
+    ).rejects.toBeInstanceOf(SectionProgressValidationError);
+    await expect(
+      service.updateSectionProgress({
+        enrollmentId: 'enrollment-1',
+        sectionId: 'section-1',
+        percentage: 101,
+      }),
+    ).rejects.toBeInstanceOf(SectionProgressValidationError);
+    await expect(
+      service.completeSectionProgress({
+        enrollmentId: 'enrollment-1',
+        sectionId: 'section-1',
+        now: 'yesterday',
+      }),
+    ).rejects.toBeInstanceOf(SectionProgressValidationError);
 
     expect(checkAccess).not.toHaveBeenCalled();
     expect(findById).not.toHaveBeenCalled();
@@ -358,31 +525,49 @@ describe('DefaultSectionProgressApplicationService', () => {
   });
 
   it('does not persist if entitlement evaluation itself fails', async () => {
-    const { repository, findByEnrollmentAndSection, save } = createRepositoryMock();
-    const { service: entitlementService, checkAccess } = createEntitlementServiceMock();
+    const { repository, findByEnrollmentAndSection, save } =
+      createRepositoryMock();
+    const { service: entitlementService, checkAccess } =
+      createEntitlementServiceMock();
     const dependencyError = new Error('entitlement backend unavailable');
     checkAccess.mockRejectedValue(dependencyError);
-    const service = new DefaultSectionProgressApplicationService(repository, entitlementService);
+    const service = new DefaultSectionProgressApplicationService(
+      repository,
+      entitlementService,
+    );
 
-    await expect(service.startSectionProgress({
-      enrollmentId: 'enrollment-1', sectionId: 'section-1', now: STARTED_AT.toISOString(),
-    })).rejects.toBe(dependencyError);
+    await expect(
+      service.startSectionProgress({
+        enrollmentId: 'enrollment-1',
+        sectionId: 'section-1',
+        now: STARTED_AT.toISOString(),
+      }),
+    ).rejects.toBe(dependencyError);
     expect(findByEnrollmentAndSection).not.toHaveBeenCalled();
     expect(save).not.toHaveBeenCalled();
   });
 
   it('propagates repository persistence failures without reporting success', async () => {
-    const { repository, findByEnrollmentAndSection, save } = createRepositoryMock();
-    const { service: entitlementService, checkAccess } = createEntitlementServiceMock();
+    const { repository, findByEnrollmentAndSection, save } =
+      createRepositoryMock();
+    const { service: entitlementService, checkAccess } =
+      createEntitlementServiceMock();
     allowAccess(checkAccess);
     findByEnrollmentAndSection.mockResolvedValue(null);
     const persistenceError = new Error('repository save failed');
     save.mockRejectedValue(persistenceError);
-    const service = new DefaultSectionProgressApplicationService(repository, entitlementService);
+    const service = new DefaultSectionProgressApplicationService(
+      repository,
+      entitlementService,
+    );
 
-    await expect(service.startSectionProgress({
-      enrollmentId: 'enrollment-1', sectionId: 'section-1', now: STARTED_AT.toISOString(),
-    })).rejects.toBe(persistenceError);
+    await expect(
+      service.startSectionProgress({
+        enrollmentId: 'enrollment-1',
+        sectionId: 'section-1',
+        now: STARTED_AT.toISOString(),
+      }),
+    ).rejects.toBe(persistenceError);
     expect(save).toHaveBeenCalledTimes(1);
   });
 });

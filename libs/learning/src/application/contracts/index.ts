@@ -81,3 +81,44 @@ export type {
 } from './learning-activity-event-persistence.contracts.js';
 
 export { LearningActivityEventIdentityConflictError } from './learning-activity-event-persistence.contracts.js';
+
+export type {
+  LearningHistoryCursor,
+  LearningHistoryEntry,
+  LearningHistoryQueryRepository,
+  ListLearningHistoryInput,
+  ListLearningHistoryResult,
+  ListQualifyingLearningActivityDaysInput,
+} from './learning-history-query.contracts.js';
+
+export {
+  listLearningHistoryInputSchema,
+  listQualifyingLearningActivityDaysInputSchema,
+  type ListLearningHistoryInputValue,
+  type ValidatedListLearningHistoryInput,
+  type ListQualifyingLearningActivityDaysInputValue,
+  type ValidatedListQualifyingLearningActivityDaysInput,
+} from './learning-history-query.validation.js';
+
+export type {
+  CourseProgressReadModelRepository,
+  CourseProgressReadModelSaveOutcome,
+  CourseProgressReadModelSaveResult,
+} from './course-progress-read-model-persistence.contracts.js';
+
+export {
+  CourseProgressReadModelVersionConflictError,
+  CourseProgressReadModelTimestampConflictError,
+} from './course-progress-read-model-persistence.contracts.js';
+
+export type {
+  CourseProgressApplicationService,
+  GetCourseProgressInput,
+  RefreshCourseProgressInput,
+  RefreshCourseProgressResult,
+} from './course-progress-application.contracts.js';
+
+export {
+  getCourseProgressInputSchema,
+  refreshCourseProgressInputSchema,
+} from './course-progress-application.validation.js';

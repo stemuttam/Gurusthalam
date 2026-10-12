@@ -13,22 +13,17 @@ import type {
   CourseModel,
   CourseOwnershipAssignmentModel,
   CourseLevel as PrismaCourseLevel,
-   CourseStatus as PrismaCourseStatus,
+  CourseStatus as PrismaCourseStatus,
   CourseType as PrismaCourseType,
   CourseVisibility as PrismaCourseVisibility,
 } from '@gurusthalam/database';
 
-import {
-  CourseOwnershipPrismaMapper,
-} from './course-ownership-prisma.mapper.js';
+import { CourseOwnershipPrismaMapper } from './course-ownership-prisma.mapper.js';
 
-export type PrismaCourseRecord =
-  CourseModel;
+export type PrismaCourseRecord = CourseModel;
 
-export interface PrismaCourseRecordWithOwnership
-  extends PrismaCourseRecord {
-  readonly ownershipAssignments:
-    readonly CourseOwnershipAssignmentModel[];
+export interface PrismaCourseRecordWithOwnership extends PrismaCourseRecord {
+  readonly ownershipAssignments: readonly CourseOwnershipAssignmentModel[];
 }
 
 export interface PrismaCoursePersistence {
@@ -51,83 +46,45 @@ export class CoursePrismaMapper {
 
   static toDomain(
     record: PrismaCourseRecord,
-    ownershipAssignments:
-      readonly CourseOwnershipAssignmentModel[] = [],
+    ownershipAssignments: readonly CourseOwnershipAssignmentModel[] = [],
   ): Course {
     return Course.rehydrate(
       {
         id: CourseId.from(record.id),
         title: record.title,
         description: record.description,
-        level:
-          CoursePrismaMapper.toDomainLevel(
-            record.level,
-          ),
-        type:
-          CoursePrismaMapper.toDomainType(
-            record.type,
-          ),
-        visibility:
-          CoursePrismaMapper.toDomainVisibility(
-            record.visibility,
-          ),
-        status:
-          CoursePrismaMapper.toDomainStatus(
-            record.status,
-          ),
+        level: CoursePrismaMapper.toDomainLevel(record.level),
+        type: CoursePrismaMapper.toDomainType(record.type),
+        visibility: CoursePrismaMapper.toDomainVisibility(record.visibility),
+        status: CoursePrismaMapper.toDomainStatus(record.status),
         instructorId: record.instructorId,
-        createdAt:
-          new Date(record.createdAt),
-        updatedAt:
-          new Date(record.updatedAt),
+        createdAt: new Date(record.createdAt),
+        updatedAt: new Date(record.updatedAt),
       },
       CourseOwnership.rehydrate(
-        CourseOwnershipPrismaMapper.toDomainMany(
-          ownershipAssignments,
-        ),
+        CourseOwnershipPrismaMapper.toDomainMany(ownershipAssignments),
       ),
     );
   }
 
-  static toPersistence(
-    course: Course,
-  ): PrismaCoursePersistence {
-    const props =
-      course.toPrimitives();
+  static toPersistence(course: Course): PrismaCoursePersistence {
+    const props = course.toPrimitives();
 
     return {
       id: props.id.value,
       title: props.title,
-      description:
-        props.description,
-      level:
-        CoursePrismaMapper.toPrismaLevel(
-          props.level,
-        ),
-      type:
-        CoursePrismaMapper.toPrismaType(
-          props.type,
-        ),
-      visibility:
-        CoursePrismaMapper.toPrismaVisibility(
-          props.visibility,
-        ),
-      status:
-        CoursePrismaMapper.toPrismaStatus(
-          props.status,
-        ),
-      instructorId:
-        props.instructorId,
-      createdAt:
-        new Date(props.createdAt),
-      updatedAt:
-        new Date(props.updatedAt),
+      description: props.description,
+      level: CoursePrismaMapper.toPrismaLevel(props.level),
+      type: CoursePrismaMapper.toPrismaType(props.type),
+      visibility: CoursePrismaMapper.toPrismaVisibility(props.visibility),
+      status: CoursePrismaMapper.toPrismaStatus(props.status),
+      instructorId: props.instructorId,
+      createdAt: new Date(props.createdAt),
+      updatedAt: new Date(props.updatedAt),
     };
   }
 
-  private static toDomainLevel(
-    value: PrismaCourseLevel,
-  ): CourseProps['level'] {
+  private static toDomainLevel(value: PrismaCourseLevel): CourseProps['level'] {
     switch (value) {
       case 'BEGINNER':
         return CourseLevel.BEGINNER;
@@ -142,15 +99,11 @@ export class CoursePrismaMapper {
         return CourseLevel.ALL_LEVELS;
 
       default:
-        throw new TypeError(
-          `Unsupported Prisma CourseLevel: ${String(value)}`,
-        );
+        throw new TypeError(`Unsupported Prisma CourseLevel: ${String(value)}`);
     }
   }
 
-  private static toPrismaLevel(
-    value: CourseProps['level'],
-  ): PrismaCourseLevel {
+  private static toPrismaLevel(value: CourseProps['level']): PrismaCourseLevel {
     switch (value) {
       case CourseLevel.BEGINNER:
         return 'BEGINNER';
@@ -165,15 +118,11 @@ export class CoursePrismaMapper {
         return 'ALL_LEVELS';
 
       default:
-        throw new TypeError(
-          `Unsupported domain CourseLevel: ${String(value)}`,
-        );
+        throw new TypeError(`Unsupported domain CourseLevel: ${String(value)}`);
     }
   }
 
-  private static toDomainType(
-    value: PrismaCourseType,
-  ): CourseProps['type'] {
+  private static toDomainType(value: PrismaCourseType): CourseProps['type'] {
     switch (value) {
       case 'SELF_PACED':
         return CourseType.SELF_PACED;
@@ -185,15 +134,11 @@ export class CoursePrismaMapper {
         return CourseType.BLENDED;
 
       default:
-        throw new TypeError(
-          `Unsupported Prisma CourseType: ${String(value)}`,
-        );
+        throw new TypeError(`Unsupported Prisma CourseType: ${String(value)}`);
     }
   }
 
-  private static toPrismaType(
-    value: CourseProps['type'],
-  ): PrismaCourseType {
+  private static toPrismaType(value: CourseProps['type']): PrismaCourseType {
     switch (value) {
       case CourseType.SELF_PACED:
         return 'SELF_PACED';
@@ -205,9 +150,7 @@ export class CoursePrismaMapper {
         return 'BLENDED';
 
       default:
-        throw new TypeError(
-          `Unsupported domain CourseType: ${String(value)}`,
-        );
+        throw new TypeError(`Unsupported domain CourseType: ${String(value)}`);
     }
   }
 

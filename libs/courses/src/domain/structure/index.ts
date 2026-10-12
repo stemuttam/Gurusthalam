@@ -1,7 +1,4 @@
-export {
-  LearningUnit,
-  Section,
-} from './entities/index.js';
+export { LearningUnit, Section } from './entities/index.js';
 
 export type {
   CreateLearningUnitProps,

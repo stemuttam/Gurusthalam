@@ -196,9 +196,7 @@ describe('Course timestamp invariants', () => {
       const course = createCourse();
       const originalUpdatedAt = course.updatedAt.getTime();
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.updatedAt.getTime()).toBe(originalUpdatedAt);
     });
@@ -218,9 +216,7 @@ describe('Course timestamp invariants', () => {
       const course = createCourse();
       const originalUpdatedAt = course.updatedAt.getTime();
 
-      expect(() => course.archive()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.archive()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.updatedAt.getTime()).toBe(originalUpdatedAt);
     });
@@ -331,12 +327,8 @@ describe('Course timestamp invariants', () => {
 
       const primitives = course.toPrimitives();
 
-      expect(primitives.createdAt.getTime()).toBe(
-        course.createdAt.getTime(),
-      );
-      expect(primitives.updatedAt.getTime()).toBe(
-        course.updatedAt.getTime(),
-      );
+      expect(primitives.createdAt.getTime()).toBe(course.createdAt.getTime());
+      expect(primitives.updatedAt.getTime()).toBe(course.updatedAt.getTime());
     });
 
     it('preserves timestamps during rehydration', () => {
@@ -349,12 +341,8 @@ describe('Course timestamp invariants', () => {
       const primitives = course.toPrimitives();
       const rehydrated = Course.rehydrate(primitives);
 
-      expect(rehydrated.createdAt.getTime()).toBe(
-        course.createdAt.getTime(),
-      );
-      expect(rehydrated.updatedAt.getTime()).toBe(
-        course.updatedAt.getTime(),
-      );
+      expect(rehydrated.createdAt.getTime()).toBe(course.createdAt.getTime());
+      expect(rehydrated.updatedAt.getTime()).toBe(course.updatedAt.getTime());
     });
 
     it('does not generate a new timestamp pair during rehydration', () => {

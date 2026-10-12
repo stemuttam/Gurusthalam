@@ -14,9 +14,7 @@ export interface CourseVersionLineageRepository {
   /**
    * Append one immutable lineage relationship.
    */
-  append(
-    lineage: CourseVersionLineage,
-  ): Promise<void>;
+  append(lineage: CourseVersionLineage): Promise<void>;
 
   /**
    * Find all lineage relationships originating from a source version.
@@ -44,7 +42,5 @@ export interface CourseVersionLineageRepository {
    * Results must be deterministic:
    * targetVersion ASC, sourceVersion ASC, targetVersionId ASC.
    */
-  findByCourseId(
-    courseId: string,
-  ): Promise<readonly CourseVersionLineage[]>;
+  findByCourseId(courseId: string): Promise<readonly CourseVersionLineage[]>;
 }

@@ -220,9 +220,7 @@ describe('Course lifecycle final regression', () => {
       course.unpublish();
       course.archive();
 
-      const eventIds = course
-        .getDomainEvents()
-        .map((event) => event.eventId);
+      const eventIds = course.getDomainEvents().map((event) => event.eventId);
 
       expect(eventIds).toHaveLength(4);
       expect(new Set(eventIds).size).toBe(4);
@@ -253,15 +251,11 @@ describe('Course lifecycle final regression', () => {
       const course = createCourse();
       course.pullDomainEvents();
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
       expect(() => course.unpublish()).toThrow(
         InvalidCourseStateTransitionError,
       );
-      expect(() => course.archive()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.archive()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.status).toBe(CourseStatus.DRAFT);
       expect(course.getDomainEvents()).toHaveLength(0);
@@ -289,9 +283,7 @@ describe('Course lifecycle final regression', () => {
       expect(() => course.submitForReview()).toThrow(
         InvalidCourseStateTransitionError,
       );
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.status).toBe(CourseStatus.PUBLISHED);
       expect(course.getDomainEvents()).toHaveLength(0);
@@ -303,9 +295,7 @@ describe('Course lifecycle final regression', () => {
       moveToUnpublished(course);
       course.pullDomainEvents();
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
       expect(() => course.submitForReview()).toThrow(
         InvalidCourseStateTransitionError,
       );
@@ -326,15 +316,11 @@ describe('Course lifecycle final regression', () => {
       expect(() => course.submitForReview()).toThrow(
         InvalidCourseStateTransitionError,
       );
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
       expect(() => course.unpublish()).toThrow(
         InvalidCourseStateTransitionError,
       );
-      expect(() => course.archive()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.archive()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.status).toBe(CourseStatus.ARCHIVED);
       expect(course.getDomainEvents()).toHaveLength(0);
@@ -359,9 +345,7 @@ describe('Course lifecycle final regression', () => {
         updatedAt: course.updatedAt,
       };
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect({
         id: course.id,
@@ -385,15 +369,11 @@ describe('Course lifecycle final regression', () => {
 
       const updatedAt = course.updatedAt.getTime();
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
       expect(() => course.unpublish()).toThrow(
         InvalidCourseStateTransitionError,
       );
-      expect(() => course.archive()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.archive()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.updatedAt.getTime()).toBe(updatedAt);
     });
@@ -406,9 +386,7 @@ describe('Course lifecycle final regression', () => {
       const initialEvents = course.pullDomainEvents();
 
       expect(initialEvents).toHaveLength(1);
-      expect(initialEvents[0]?.eventName).toBe(
-        CourseDomainEventName.CREATED,
-      );
+      expect(initialEvents[0]?.eventName).toBe(CourseDomainEventName.CREATED);
 
       expect(course.getDomainEvents()).toHaveLength(0);
 
@@ -444,9 +422,7 @@ describe('Course lifecycle final regression', () => {
       const finalEvents = course.pullDomainEvents();
 
       expect(finalEvents).toHaveLength(1);
-      expect(finalEvents[0]?.eventName).toBe(
-        CourseDomainEventName.ARCHIVED,
-      );
+      expect(finalEvents[0]?.eventName).toBe(CourseDomainEventName.ARCHIVED);
 
       expect(course.getDomainEvents()).toHaveLength(0);
       expect(course.status).toBe(CourseStatus.ARCHIVED);
@@ -467,15 +443,11 @@ describe('Course lifecycle final regression', () => {
       expect(() => course.submitForReview()).toThrow(
         InvalidCourseStateTransitionError,
       );
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
       expect(() => course.unpublish()).toThrow(
         InvalidCourseStateTransitionError,
       );
-      expect(() => course.archive()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.archive()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.status).toBe(CourseStatus.ARCHIVED);
       expect(course.id).toBe(id);

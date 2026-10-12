@@ -5,3 +5,6 @@ export * from './progress/index.js';
 export * from './lesson-progress/index.js';
 export * from './section-progress/index.js';
 export * from './learning-activity-event/index.js';
+export * from './learning-streak/index.js';
+export * from './course-progress/index.js';
+export * from './course-progress/index.js';

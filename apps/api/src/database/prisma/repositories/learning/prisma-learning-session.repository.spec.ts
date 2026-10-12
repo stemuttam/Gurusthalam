@@ -420,9 +420,9 @@ describe('PrismaLearningSessionRepository', () => {
 
     const repository = new PrismaLearningSessionRepository(prisma);
 
-    await expect(
-      repository.findById('missing-session'),
-    ).rejects.toBeInstanceOf(PrismaRepositoryError);
+    await expect(repository.findById('missing-session')).rejects.toBeInstanceOf(
+      PrismaRepositoryError,
+    );
 
     await expect(repository.findById('missing-session')).rejects.toMatchObject({
       code: PrismaRepositoryErrorCode.RECORD_NOT_FOUND,

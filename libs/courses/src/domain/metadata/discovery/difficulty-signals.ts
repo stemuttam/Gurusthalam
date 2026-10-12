@@ -6,10 +6,7 @@
  * intelligence bounded contexts.
  */
 export type DifficultyDimension =
-  | 'conceptual'
-  | 'pace'
-  | 'workload'
-  | 'prerequisite';
+  'conceptual' | 'pace' | 'workload' | 'prerequisite';
 
 export type DifficultySignalStrength = 'low' | 'moderate' | 'high';
 

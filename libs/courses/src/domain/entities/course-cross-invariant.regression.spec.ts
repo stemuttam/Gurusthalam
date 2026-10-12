@@ -56,9 +56,7 @@ describe('Course cross-invariant regression', () => {
       expect(course.id.toString()).toBeTruthy();
       expect(course.status).toBe(CourseStatus.DRAFT);
       expect(course.title).toBe('TypeScript Fundamentals');
-      expect(course.description).toBe(
-        'Learn TypeScript from the ground up.',
-      );
+      expect(course.description).toBe('Learn TypeScript from the ground up.');
       expect(course.level).toBe(CourseLevel.BEGINNER);
       expect(course.type).toBe(CourseType.SELF_PACED);
       expect(course.visibility).toBe(CourseVisibility.PRIVATE);
@@ -72,8 +70,8 @@ describe('Course cross-invariant regression', () => {
       expect(event.aggregateId).toBe(course.id.toString());
       expect(event.eventVersion).toBe(1);
       expect(event.occurredAt.getTime()).toBeGreaterThanOrEqual(
-  course.createdAt.getTime(),
-);
+        course.createdAt.getTime(),
+      );
     });
 
     it('keeps the aggregate identity stable after creation event consumption', () => {
@@ -108,9 +106,7 @@ describe('Course cross-invariant regression', () => {
       expect(course.createdAt.getTime()).toBe(originalCreatedAt);
 
       expect(course.title).toBe('Advanced TypeScript Fundamentals');
-      expect(course.description).toBe(
-        'An advanced TypeScript course.',
-      );
+      expect(course.description).toBe('An advanced TypeScript course.');
       expect(course.level).toBe(CourseLevel.ADVANCED);
       expect(course.type).toBe(CourseType.BLENDED);
       expect(course.visibility).toBe(CourseVisibility.UNLISTED);
@@ -119,9 +115,7 @@ describe('Course cross-invariant regression', () => {
 
       const event = getSingleEvent(course);
 
-      expect(event.eventName).toBe(
-        'courses.course.metadata_updated',
-      );
+      expect(event.eventName).toBe('courses.course.metadata_updated');
       expect(event.aggregateId).toBe(originalId);
       expect(event.eventVersion).toBe(1);
     });
@@ -166,9 +160,7 @@ describe('Course cross-invariant regression', () => {
 
       const reviewEvent = getSingleEvent(course);
 
-      expect(reviewEvent.eventName).toBe(
-        'courses.course.submitted_for_review',
-      );
+      expect(reviewEvent.eventName).toBe('courses.course.submitted_for_review');
       expect(reviewEvent.aggregateId).toBe(originalId);
 
       course.publish();
@@ -180,9 +172,7 @@ describe('Course cross-invariant regression', () => {
 
       const publishedEvent = getSingleEvent(course);
 
-      expect(publishedEvent.eventName).toBe(
-        'courses.course.published',
-      );
+      expect(publishedEvent.eventName).toBe('courses.course.published');
       expect(publishedEvent.aggregateId).toBe(originalId);
 
       course.unpublish();
@@ -194,9 +184,7 @@ describe('Course cross-invariant regression', () => {
 
       const unpublishedEvent = getSingleEvent(course);
 
-      expect(unpublishedEvent.eventName).toBe(
-        'courses.course.unpublished',
-      );
+      expect(unpublishedEvent.eventName).toBe('courses.course.unpublished');
       expect(unpublishedEvent.aggregateId).toBe(originalId);
 
       course.archive();
@@ -208,9 +196,7 @@ describe('Course cross-invariant regression', () => {
 
       const archivedEvent = getSingleEvent(course);
 
-      expect(archivedEvent.eventName).toBe(
-        'courses.course.archived',
-      );
+      expect(archivedEvent.eventName).toBe('courses.course.archived');
       expect(archivedEvent.aggregateId).toBe(originalId);
 
       expect(course.getDomainEvents()).toHaveLength(0);
@@ -256,18 +242,13 @@ describe('Course cross-invariant regression', () => {
         const previousTimestamp = timestamps[index - 1];
         const currentTimestamp = timestamps[index];
 
-        if (
-          previousTimestamp === undefined ||
-          currentTimestamp === undefined
-        ) {
+        if (previousTimestamp === undefined || currentTimestamp === undefined) {
           throw new Error(
             'Expected every lifecycle event timestamp to be defined.',
           );
         }
 
-        expect(currentTimestamp).toBeGreaterThanOrEqual(
-          previousTimestamp,
-        );
+        expect(currentTimestamp).toBeGreaterThanOrEqual(previousTimestamp);
       }
     });
 
@@ -324,9 +305,7 @@ describe('Course cross-invariant regression', () => {
 
       const before = course.toPrimitives();
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       const after = course.toPrimitives();
 
@@ -358,9 +337,7 @@ describe('Course cross-invariant regression', () => {
 
       const before = course.toPrimitives();
 
-      expect(() => course.archive()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.archive()).toThrow(InvalidCourseStateTransitionError);
 
       const after = course.toPrimitives();
 
@@ -445,12 +422,8 @@ describe('Course cross-invariant regression', () => {
       expect(rehydrated.toPrimitives()).toEqual(original);
       expect(rehydrated.id.toString()).toBe(course.id.toString());
       expect(rehydrated.status).toBe(CourseStatus.PUBLISHED);
-      expect(rehydrated.createdAt.getTime()).toBe(
-        course.createdAt.getTime(),
-      );
-      expect(rehydrated.updatedAt.getTime()).toBe(
-        course.updatedAt.getTime(),
-      );
+      expect(rehydrated.createdAt.getTime()).toBe(course.createdAt.getTime());
+      expect(rehydrated.updatedAt.getTime()).toBe(course.updatedAt.getTime());
 
       expect(rehydrated.getDomainEvents()).toHaveLength(0);
     });
@@ -502,9 +475,7 @@ describe('Course cross-invariant regression', () => {
 
       const event = getSingleEvent(rehydrated);
 
-      expect(event.eventName).toBe(
-        'courses.course.submitted_for_review',
-      );
+      expect(event.eventName).toBe('courses.course.submitted_for_review');
       expect(event.aggregateId).toBe(originalId);
       expect(event.eventVersion).toBe(1);
     });
@@ -575,9 +546,7 @@ describe('Course cross-invariant regression', () => {
       expectTimestampInvariant(course);
 
       expect(archivedEvent.aggregateId).toBe(originalId);
-      expect(archivedEvent.eventName).toBe(
-        'courses.course.archived',
-      );
+      expect(archivedEvent.eventName).toBe('courses.course.archived');
 
       expect(course.getDomainEvents()).toHaveLength(0);
     });
@@ -601,12 +570,8 @@ describe('Course cross-invariant regression', () => {
 
       expect(rehydrated.status).toBe(CourseStatus.ARCHIVED);
       expect(rehydrated.id.toString()).toBe(original.id.toString());
-      expect(rehydrated.createdAt.getTime()).toBe(
-        original.createdAt.getTime(),
-      );
-      expect(rehydrated.updatedAt.getTime()).toBe(
-        original.updatedAt.getTime(),
-      );
+      expect(rehydrated.createdAt.getTime()).toBe(original.createdAt.getTime());
+      expect(rehydrated.updatedAt.getTime()).toBe(original.updatedAt.getTime());
       expect(rehydrated.getDomainEvents()).toHaveLength(0);
     });
   });

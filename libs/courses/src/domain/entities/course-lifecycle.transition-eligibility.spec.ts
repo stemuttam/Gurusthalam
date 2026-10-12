@@ -51,9 +51,7 @@ describe('Course lifecycle transition eligibility', () => {
     it('rejects DRAFT → PUBLISHED', () => {
       const course = createCourse();
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.status).toBe(CourseStatus.DRAFT);
     });
@@ -71,9 +69,7 @@ describe('Course lifecycle transition eligibility', () => {
     it('rejects DRAFT → ARCHIVED', () => {
       const course = createCourse();
 
-      expect(() => course.archive()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.archive()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.status).toBe(CourseStatus.DRAFT);
     });
@@ -118,9 +114,7 @@ describe('Course lifecycle transition eligibility', () => {
 
       moveToReview(course);
 
-      expect(() => course.archive()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.archive()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.status).toBe(CourseStatus.IN_REVIEW);
     });
@@ -174,9 +168,7 @@ describe('Course lifecycle transition eligibility', () => {
 
       moveToPublished(course);
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.status).toBe(CourseStatus.PUBLISHED);
     });
@@ -197,9 +189,7 @@ describe('Course lifecycle transition eligibility', () => {
 
       moveToUnpublished(course);
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.status).toBe(CourseStatus.UNPUBLISHED);
     });
@@ -247,9 +237,7 @@ describe('Course lifecycle transition eligibility', () => {
 
       moveToArchived(course);
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.status).toBe(CourseStatus.ARCHIVED);
     });
@@ -271,9 +259,7 @@ describe('Course lifecycle transition eligibility', () => {
 
       moveToArchived(course);
 
-      expect(() => course.archive()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.archive()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.status).toBe(CourseStatus.ARCHIVED);
     });
@@ -285,9 +271,7 @@ describe('Course lifecycle transition eligibility', () => {
 
       const previousStatus = course.status;
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.status).toBe(previousStatus);
     });
@@ -297,9 +281,7 @@ describe('Course lifecycle transition eligibility', () => {
 
       const previousUpdatedAt = course.updatedAt.getTime();
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.updatedAt.getTime()).toBe(previousUpdatedAt);
     });
@@ -309,9 +291,7 @@ describe('Course lifecycle transition eligibility', () => {
 
       course.pullDomainEvents();
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.getDomainEvents()).toHaveLength(0);
     });
@@ -321,9 +301,7 @@ describe('Course lifecycle transition eligibility', () => {
 
       const originalId = course.id;
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.id).toBe(originalId);
     });
@@ -333,9 +311,7 @@ describe('Course lifecycle transition eligibility', () => {
 
       const originalInstructorId = course.instructorId;
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.instructorId).toBe(originalInstructorId);
     });
@@ -351,9 +327,7 @@ describe('Course lifecycle transition eligibility', () => {
         visibility: course.visibility,
       };
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.title).toBe(original.title);
       expect(course.description).toBe(original.description);
@@ -373,15 +347,11 @@ describe('Course lifecycle transition eligibility', () => {
       expect(() => course.submitForReview()).toThrow(
         InvalidCourseStateTransitionError,
       );
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
       expect(() => course.unpublish()).toThrow(
         InvalidCourseStateTransitionError,
       );
-      expect(() => course.archive()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.archive()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.status).toBe(CourseStatus.ARCHIVED);
       expect(course.getDomainEvents()).toHaveLength(0);
@@ -397,15 +367,11 @@ describe('Course lifecycle transition eligibility', () => {
       expect(() => course.submitForReview()).toThrow(
         InvalidCourseStateTransitionError,
       );
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
       expect(() => course.unpublish()).toThrow(
         InvalidCourseStateTransitionError,
       );
-      expect(() => course.archive()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.archive()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.updatedAt.getTime()).toBe(archivedUpdatedAt);
     });
@@ -420,15 +386,11 @@ describe('Course lifecycle transition eligibility', () => {
       expect(() => course.submitForReview()).toThrow(
         InvalidCourseStateTransitionError,
       );
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
       expect(() => course.unpublish()).toThrow(
         InvalidCourseStateTransitionError,
       );
-      expect(() => course.archive()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.archive()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.id).toBe(archivedId);
     });

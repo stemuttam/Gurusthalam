@@ -165,3 +165,29 @@ export type NotificationAggregation = Prisma.NotificationAggregationModel
  * 
  */
 export type NotificationAggregationItem = Prisma.NotificationAggregationItemModel
+/**
+ * Model CourseStructureSection
+ * 
+ */
+export type CourseStructureSection = Prisma.CourseStructureSectionModel
+/**
+ * Model CourseStructureLearningUnit
+ * 
+ */
+export type CourseStructureLearningUnit = Prisma.CourseStructureLearningUnitModel
+/**
+ * Model CourseStructureContentItemReference
+ * 
+ */
+export type CourseStructureContentItemReference = Prisma.CourseStructureContentItemReferenceModel
+/**
+ * Model CourseStructureAssessmentReference
+ * 
+ */
+export type CourseStructureAssessmentReference = Prisma.CourseStructureAssessmentReferenceModel
+/**
+ * Model CourseProgressReadModel
+ * Derived, enrollment-scoped Course Progress projection.
+ * This model is not the authoritative Progress lifecycle aggregate.
+ */
+export type CourseProgressReadModel = Prisma.CourseProgressReadModelModel

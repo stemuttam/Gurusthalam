@@ -251,13 +251,9 @@ describe('Course rehydration invariants', () => {
 
       const rehydrated = Course.rehydrate(course.toPrimitives());
 
-      expect(rehydrated.createdAt.getTime()).toBe(
-        course.createdAt.getTime(),
-      );
+      expect(rehydrated.createdAt.getTime()).toBe(course.createdAt.getTime());
 
-      expect(rehydrated.updatedAt.getTime()).toBe(
-        course.updatedAt.getTime(),
-      );
+      expect(rehydrated.updatedAt.getTime()).toBe(course.updatedAt.getTime());
     });
 
     it('preserves timestamp ordering', () => {
@@ -317,9 +313,7 @@ describe('Course rehydration invariants', () => {
       const events = rehydrated.getDomainEvents();
 
       expect(events).toHaveLength(1);
-      expect(events[0]?.eventName).toBe(
-        'courses.course.metadata_updated',
-      );
+      expect(events[0]?.eventName).toBe('courses.course.metadata_updated');
     });
 
     it('uses the rehydrated aggregate identity for subsequent events', () => {

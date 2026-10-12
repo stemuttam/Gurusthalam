@@ -59,9 +59,7 @@ describe('Course publication invariants', () => {
     it('rejects publication from DRAFT', () => {
       const course = createCourse();
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.status).toBe(CourseStatus.DRAFT);
     });
@@ -71,9 +69,7 @@ describe('Course publication invariants', () => {
 
       moveToPublished(course);
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.status).toBe(CourseStatus.PUBLISHED);
     });
@@ -83,9 +79,7 @@ describe('Course publication invariants', () => {
 
       moveToUnpublished(course);
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.status).toBe(CourseStatus.UNPUBLISHED);
     });
@@ -95,9 +89,7 @@ describe('Course publication invariants', () => {
 
       moveToArchived(course);
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.status).toBe(CourseStatus.ARCHIVED);
     });
@@ -171,9 +163,7 @@ describe('Course publication invariants', () => {
 
       const previousUpdatedAt = course.updatedAt.getTime();
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.updatedAt.getTime()).toBe(previousUpdatedAt);
     });
@@ -229,9 +219,7 @@ describe('Course publication invariants', () => {
 
       course.pullDomainEvents();
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.getDomainEvents()).toHaveLength(0);
     });
@@ -244,9 +232,7 @@ describe('Course publication invariants', () => {
 
       course.publish();
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       const events = course.getDomainEvents();
 
@@ -281,9 +267,7 @@ describe('Course publication invariants', () => {
 
       moveToPublished(course);
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.status).toBe(CourseStatus.PUBLISHED);
     });
@@ -302,9 +286,7 @@ describe('Course publication invariants', () => {
         instructorId: course.instructorId,
       };
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.title).toBe(expected.title);
       expect(course.description).toBe(expected.description);
@@ -328,9 +310,7 @@ describe('Course publication invariants', () => {
     it('does not allow an invalid publication state to bypass lifecycle rules', () => {
       const course = createCourse();
 
-      expect(() => course.publish()).toThrow(
-        InvalidCourseStateTransitionError,
-      );
+      expect(() => course.publish()).toThrow(InvalidCourseStateTransitionError);
 
       expect(course.status).toBe(CourseStatus.DRAFT);
     });

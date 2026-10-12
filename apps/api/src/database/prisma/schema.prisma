@@ -374,6 +374,44 @@ model SectionProgress {
   @@index([sectionId, status])
 }
 
+
+/// Durable history of validated learner activity occurrences.
+///
+/// This model intentionally has no foreign keys to learner, session,
+/// lesson, section, or assessment records because the current activity
+/// contract does not establish all of those persistence relationships.
+///
+/// `eventId` is the idempotency identity supplied by the event producer.
+/// `payload` preserves the complete validated contract while the other
+/// fields support indexed history queries.
+model LearningActivityEvent {
+  id String @id @default(uuid())
+
+  eventId   String @unique
+  learnerId String
+  tenantId  String?
+  sessionId String?
+
+  eventType  String
+  entityType String
+  entityId   String
+
+  occurredAt DateTime
+
+  context  Json
+  metrics  Json?
+  metadata Json?
+  payload  Json
+
+  receivedAt DateTime @default(now())
+
+  @@index([learnerId, occurredAt, eventId])
+  @@index([tenantId, learnerId, occurredAt])
+  @@index([eventType, occurredAt, eventId])
+  @@index([entityType, entityId, occurredAt, eventId])
+  @@index([sessionId, occurredAt, eventId])
+}
+
 // =============================================================
 // Course Read Models / Projections
 // =============================================================

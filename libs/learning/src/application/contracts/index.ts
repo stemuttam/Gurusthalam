@@ -74,3 +74,10 @@ export {
   startSectionProgressInputSchema,
   updateSectionProgressInputSchema,
 } from './section-progress-application.validation.js';
+
+export type {
+  LearningActivityEventRepository,
+  LearningActivityEventPersistenceResult,
+} from './learning-activity-event-persistence.contracts.js';
+
+export { LearningActivityEventIdentityConflictError } from './learning-activity-event-persistence.contracts.js';

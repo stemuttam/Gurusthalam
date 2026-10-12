@@ -1,4 +1,3 @@
-
 import { Module } from '@nestjs/common';
 
 import { DatabaseModule } from '../../../database.module.js';
@@ -12,6 +11,7 @@ import {
   LESSON_PROGRESS_REPOSITORY,
   PROGRESS_REPOSITORY,
   SECTION_PROGRESS_REPOSITORY,
+  LEARNING_ACTIVITY_EVENT_REPOSITORY,
 } from './learning-repository.tokens.js';
 
 import { PrismaEntitlementRepository } from './prisma-entitlement.repository.js';
@@ -25,6 +25,8 @@ import { PrismaLessonProgressRepository } from './prisma-lesson-progress.reposit
 import { PrismaProgressRepository } from './prisma-progress.repository.js';
 
 import { PrismaSectionProgressRepository } from './prisma-section-progress.repository.js';
+
+import { PrismaLearningActivityEventRepository } from './prisma-learning-activity-event.repository.js';
 
 @Module({
   imports: [DatabaseModule],
@@ -83,6 +85,17 @@ import { PrismaSectionProgressRepository } from './prisma-section-progress.repos
       useFactory: (prisma: PrismaService): PrismaSectionProgressRepository =>
         new PrismaSectionProgressRepository(prisma),
     },
+
+    {
+      provide: LEARNING_ACTIVITY_EVENT_REPOSITORY,
+
+      inject: [PrismaService],
+
+      useFactory: (
+        prisma: PrismaService,
+      ): PrismaLearningActivityEventRepository =>
+        new PrismaLearningActivityEventRepository(prisma),
+    },
   ],
 
   exports: [
@@ -92,6 +105,7 @@ import { PrismaSectionProgressRepository } from './prisma-section-progress.repos
     PROGRESS_REPOSITORY,
     LESSON_PROGRESS_REPOSITORY,
     SECTION_PROGRESS_REPOSITORY,
+    LEARNING_ACTIVITY_EVENT_REPOSITORY,
   ],
 })
 export class LearningPersistenceModule {}

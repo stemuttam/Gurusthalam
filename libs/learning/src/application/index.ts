@@ -114,3 +114,10 @@ export {
   type SectionProgressAccessDeniedReason,
   type SectionProgressApplicationErrorIssue,
 } from './errors/section-progress-application.error.js';
+
+export type {
+  LearningActivityEventRepository,
+  LearningActivityEventPersistenceResult,
+} from './contracts/index.js';
+
+export { LearningActivityEventIdentityConflictError } from './contracts/index.js';

@@ -8,6 +8,7 @@ export {
   LEARNING_ACTIVITY_EVENT_REPOSITORY,
   LESSON_PROGRESS_BATCH_QUERY_REPOSITORY,
   COURSE_PROGRESS_READ_MODEL_REPOSITORY,
+  LEARNING_HISTORY_QUERY_REPOSITORY,
 } from './learning-repository.tokens.js';
 
 export { LearningPersistenceModule } from './learning-persistence.module.js';
@@ -29,3 +30,5 @@ export { PrismaSectionProgressRepository } from './prisma-section-progress.repos
 export { PrismaLearningActivityEventRepository } from './prisma-learning-activity-event.repository.js';
 
 export { PrismaCourseProgressReadModelRepository } from './prisma-course-progress-read-model.repository.js';
+
+export { PrismaLearningHistoryQueryRepository } from './prisma-learning-history-query.repository.js';

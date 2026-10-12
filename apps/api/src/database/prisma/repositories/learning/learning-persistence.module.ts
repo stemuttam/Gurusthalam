@@ -14,6 +14,7 @@ import {
   LEARNING_ACTIVITY_EVENT_REPOSITORY,
   LESSON_PROGRESS_BATCH_QUERY_REPOSITORY,
   COURSE_PROGRESS_READ_MODEL_REPOSITORY,
+  LEARNING_HISTORY_QUERY_REPOSITORY,
 } from './learning-repository.tokens.js';
 
 import { PrismaEntitlementRepository } from './prisma-entitlement.repository.js';
@@ -35,6 +36,8 @@ import { CoursesPersistenceModule } from '../courses/courses-persistence.module.
 import { PrismaLessonProgressBatchQueryRepository } from './prisma-lesson-progress-batch-query.repository.js';
 
 import { PrismaCourseProgressReadModelRepository } from './prisma-course-progress-read-model.repository.js';
+
+import { PrismaLearningHistoryQueryRepository } from './prisma-learning-history-query.repository.js';
 
 @Module({
   imports: [DatabaseModule, CoursesPersistenceModule],
@@ -121,6 +124,14 @@ import { PrismaCourseProgressReadModelRepository } from './prisma-course-progres
       ): PrismaCourseProgressReadModelRepository =>
         new PrismaCourseProgressReadModelRepository(prisma),
     },
+    {
+      provide: LEARNING_HISTORY_QUERY_REPOSITORY,
+      inject: [PrismaService],
+      useFactory: (
+        prisma: PrismaService,
+      ): PrismaLearningHistoryQueryRepository =>
+        new PrismaLearningHistoryQueryRepository(prisma),
+    },
   ],
 
   exports: [
@@ -133,6 +144,7 @@ import { PrismaCourseProgressReadModelRepository } from './prisma-course-progres
     LEARNING_ACTIVITY_EVENT_REPOSITORY,
     LESSON_PROGRESS_BATCH_QUERY_REPOSITORY,
     COURSE_PROGRESS_READ_MODEL_REPOSITORY,
+    LEARNING_HISTORY_QUERY_REPOSITORY,
   ],
 })
 export class LearningPersistenceModule {}

@@ -256,6 +256,8 @@ model Enrollment {
   course        Course        @relation(fields: [courseId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   courseVersion CourseVersion @relation(fields: [courseVersionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
+  courseProgressReadModelsByVersion CourseProgressReadModel[] @relation("CourseProgressReadModelEnrollmentVersion")
+
   entitlements            Entitlement[]
   learningSessions        LearningSession[]
   progress                Progress?
@@ -267,6 +269,7 @@ model Enrollment {
   @@index([courseId, status, createdAt])
   @@index([courseVersionId, status])
   @@index([status, expiresAt])
+  @@unique([id, courseVersionId])
 }
 
 model Entitlement {
@@ -898,6 +901,8 @@ model CourseProgressReadModel {
 
   enrollment    Enrollment    @relation(fields: [enrollmentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   courseVersion CourseVersion @relation(fields: [courseVersionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  enrollmentVersion Enrollment @relation("CourseProgressReadModelEnrollmentVersion", fields: [enrollmentId, courseVersionId], references: [id, courseVersionId], onDelete: Cascade, onUpdate: Cascade)
 
   @@index([courseVersionId, calculatedAt])
   @@index([calculatedAt])

@@ -8,6 +8,7 @@ import {
   DefaultLessonProgressApplicationService,
   DefaultProgressApplicationService,
   DefaultSectionProgressApplicationService,
+  DefaultLearningStreakApplicationService,
 } from '@gurusthalam/learning';
 
 import { PrismaService } from '../database/prisma/prisma.service.js';
@@ -88,6 +89,20 @@ describe('LearningApplicationModule', () => {
       );
 
       expect(service).toBeInstanceOf(DefaultSectionProgressApplicationService);
+    } finally {
+      await moduleRef.close();
+    }
+  });
+
+  it('resolves the Learning Streak application service', async () => {
+    const moduleRef = await createTestingModule();
+
+    try {
+      const service = moduleRef.get<DefaultLearningStreakApplicationService>(
+        DefaultLearningStreakApplicationService,
+      );
+
+      expect(service).toBeInstanceOf(DefaultLearningStreakApplicationService);
     } finally {
       await moduleRef.close();
     }

@@ -122,3 +122,14 @@ export {
   getCourseProgressInputSchema,
   refreshCourseProgressInputSchema,
 } from './course-progress-application.validation.js';
+
+export type {
+  GetLearningStreakInput,
+  LearningStreakApplicationService,
+} from './learning-streak-application.contracts.js';
+
+export {
+  getLearningStreakInputSchema,
+  type GetLearningStreakInputValue,
+  type ValidatedGetLearningStreakInput,
+} from './learning-streak-application.validation.js';

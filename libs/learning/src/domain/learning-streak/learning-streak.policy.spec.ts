@@ -3,10 +3,13 @@ import { describe, expect, it } from 'vitest';
 import {
   calculateLearningStreak,
   LearningStreakPolicyValidationError,
+  type CalculateLearningStreakInput,
   type LearningStreakActivity,
 } from './index.js';
 
 const QUALIFYING_EVENTS = ['lesson_opened', 'quiz_completed'] as const;
+
+const DEFAULT_AS_OF = new Date('2026-01-05T12:00:00.000Z');
 
 function activity(
   eventType: string,
@@ -22,15 +25,41 @@ function calculate(
     readonly asOf?: Date;
     readonly grace?: 0 | 1;
     readonly qualifyingEventTypes?: readonly string[];
+    readonly qualifyingActivityDays?: readonly string[];
   } = {},
 ) {
   return calculateLearningStreak({
     activities,
     qualifyingEventTypes: overrides.qualifyingEventTypes ?? QUALIFYING_EVENTS,
     timezone: overrides.timezone ?? 'UTC',
-    asOf: overrides.asOf ?? new Date('2026-01-05T12:00:00.000Z'),
+    asOf: overrides.asOf ?? DEFAULT_AS_OF,
     currentStreakGraceDays: overrides.grace ?? 0,
+    ...(overrides.qualifyingActivityDays === undefined
+      ? {}
+      : { qualifyingActivityDays: overrides.qualifyingActivityDays }),
   });
+}
+
+function calculateFromDays(
+  qualifyingActivityDays: readonly string[],
+  overrides: {
+    readonly timezone?: string;
+    readonly asOf?: Date;
+    readonly grace?: 0 | 1;
+    readonly qualifyingEventTypes?: readonly string[];
+    readonly activities?: readonly LearningStreakActivity[];
+  } = {},
+) {
+  const input: CalculateLearningStreakInput = {
+    activities: overrides.activities ?? [],
+    qualifyingActivityDays,
+    qualifyingEventTypes: overrides.qualifyingEventTypes ?? QUALIFYING_EVENTS,
+    timezone: overrides.timezone ?? 'UTC',
+    asOf: overrides.asOf ?? DEFAULT_AS_OF,
+    currentStreakGraceDays: overrides.grace ?? 0,
+  };
+
+  return calculateLearningStreak(input);
 }
 
 describe('calculateLearningStreak', () => {
@@ -192,6 +221,82 @@ describe('calculateLearningStreak', () => {
     });
   });
 
+  it('calculates streaks from already-localized repository day keys', () => {
+    const result = calculateFromDays(
+      ['2026-01-02', '2026-01-03', '2026-01-04'],
+      {
+        timezone: 'Asia/Kolkata',
+        asOf: new Date('2026-01-05T12:00:00.000Z'),
+        grace: 1,
+      },
+    );
+
+    expect(result).toMatchObject({
+      asOfDate: '2026-01-05',
+      lastActivityDate: '2026-01-04',
+      hasActivityToday: false,
+      isCurrentStreakActive: true,
+      currentStreakDays: 3,
+      longestStreakDays: 3,
+      qualifyingActivityDays: ['2026-01-02', '2026-01-03', '2026-01-04'],
+    });
+  });
+
+  it('deduplicates repository day keys and merges them with qualifying activity timestamps', () => {
+    const result = calculateFromDays(
+      ['2026-01-03', '2026-01-04', '2026-01-04'],
+      {
+        timezone: 'UTC',
+        asOf: new Date('2026-01-05T12:00:00.000Z'),
+        grace: 1,
+        activities: [
+          activity('quiz_completed', '2026-01-04T10:00:00.000Z'),
+          activity('course_viewed', '2026-01-05T10:00:00.000Z'),
+        ],
+      },
+    );
+
+    expect(result.qualifyingActivityDays).toEqual(['2026-01-03', '2026-01-04']);
+    expect(result.currentStreakDays).toBe(2);
+    expect(result.longestStreakDays).toBe(2);
+  });
+
+  it('ignores repository day keys later than the local as-of day', () => {
+    const result = calculateFromDays(
+      ['2026-01-04', '2026-01-05', '2026-01-06'],
+      {
+        timezone: 'UTC',
+        asOf: new Date('2026-01-05T12:00:00.000Z'),
+        grace: 1,
+      },
+    );
+
+    expect(result.qualifyingActivityDays).toEqual(['2026-01-04', '2026-01-05']);
+    expect(result.lastActivityDate).toBe('2026-01-05');
+    expect(result.hasActivityToday).toBe(true);
+  });
+
+  it('rejects impossible repository calendar-day keys', () => {
+    expect(() =>
+      calculateFromDays(['2026-02-31'], {
+        timezone: 'UTC',
+        asOf: new Date('2026-03-01T12:00:00.000Z'),
+        grace: 1,
+      }),
+    ).toThrow(LearningStreakPolicyValidationError);
+  });
+
+  it('rejects repository day keys that do not use YYYY-MM-DD format', () => {
+    for (const day of ['2026-2-03', '2026/02/03', '03-02-2026', '']) {
+      expect(() =>
+        calculateFromDays([day], {
+          timezone: 'UTC',
+          asOf: new Date('2026-03-01T12:00:00.000Z'),
+        }),
+      ).toThrow(LearningStreakPolicyValidationError);
+    }
+  });
+
   it('rejects an invalid timezone', () => {
     expect(() => calculate([], { timezone: 'Not/A_Real_Timezone' })).toThrow(
       LearningStreakPolicyValidationError,
@@ -210,10 +315,62 @@ describe('calculateLearningStreak', () => {
     );
   });
 
+  it('rejects a malformed qualifying-event allowlist', () => {
+    expect(() =>
+      calculate([], {
+        qualifyingEventTypes: ['quiz_completed', ' '],
+      }),
+    ).toThrow(LearningStreakPolicyValidationError);
+  });
+
+  it('rejects a non-array activity collection at runtime', () => {
+    expect(() =>
+      calculateLearningStreak({
+        activities: null as never,
+        qualifyingEventTypes: QUALIFYING_EVENTS,
+        timezone: 'UTC',
+        asOf: DEFAULT_AS_OF,
+        currentStreakGraceDays: 0,
+      }),
+    ).toThrow(LearningStreakPolicyValidationError);
+  });
+
+  it('rejects a non-array repository day collection at runtime', () => {
+    expect(() =>
+      calculateLearningStreak({
+        activities: [],
+        qualifyingActivityDays: null as never,
+        qualifyingEventTypes: QUALIFYING_EVENTS,
+        timezone: 'UTC',
+        asOf: DEFAULT_AS_OF,
+        currentStreakGraceDays: 0,
+      }),
+    ).toThrow(LearningStreakPolicyValidationError);
+  });
+
+  it('rejects a qualifying timestamp without an explicit timezone', () => {
+    expect(() =>
+      calculate([activity('quiz_completed', '2026-01-05T10:00:00')]),
+    ).toThrow(LearningStreakPolicyValidationError);
+  });
+
+  it('rejects an impossible date in a qualifying activity timestamp', () => {
+    expect(() =>
+      calculate([activity('quiz_completed', '2026-02-31T10:00:00.000Z')]),
+    ).toThrow(LearningStreakPolicyValidationError);
+  });
+
   it('rejects an invalid timestamp for a qualifying activity', () => {
     expect(() =>
       calculate([activity('lesson_opened', 'not-a-timestamp')]),
     ).toThrow(LearningStreakPolicyValidationError);
+  });
+
+  it('does not parse malformed timestamps for non-qualifying activities', () => {
+    const result = calculate([activity('course_viewed', 'not-a-timestamp')]);
+
+    expect(result.qualifyingActivityDays).toEqual([]);
+    expect(result.currentStreakDays).toBe(0);
   });
 
   it('does not mutate the supplied activities', () => {
@@ -226,5 +383,34 @@ describe('calculateLearningStreak', () => {
     calculate(activities);
 
     expect(activities).toEqual(before);
+  });
+
+  it('does not mutate the supplied repository day keys', () => {
+    const days = ['2026-01-04', '2026-01-02', '2026-01-03', '2026-01-03'];
+    const before = [...days];
+
+    calculateFromDays(days, { grace: 1 });
+
+    expect(days).toEqual(before);
+  });
+
+  it('returns a sorted, unique list of qualifying local days', () => {
+    const result = calculateFromDays(
+      ['2026-01-04', '2026-01-02', '2026-01-04'],
+      {
+        activities: [
+          activity('lesson_opened', '2026-01-03T10:00:00.000Z'),
+          activity('quiz_completed', '2026-01-02T11:00:00.000Z'),
+        ],
+        grace: 1,
+      },
+    );
+
+    expect(result.qualifyingActivityDays).toEqual([
+      '2026-01-02',
+      '2026-01-03',
+      '2026-01-04',
+    ]);
+    expect(result.longestStreakDays).toBe(3);
   });
 });

@@ -7,6 +7,8 @@ import {
   DefaultLessonProgressApplicationService,
   DefaultProgressApplicationService,
   DefaultSectionProgressApplicationService,
+  DefaultLearningStreakApplicationService,
+  type LearningHistoryQueryRepository,
   type CourseProgressReadModelRepository,
   type EnrollmentRepository,
   type EntitlementApplicationService,
@@ -38,6 +40,7 @@ import {
   LearningPersistenceModule,
   PROGRESS_REPOSITORY,
   SECTION_PROGRESS_REPOSITORY,
+  LEARNING_HISTORY_QUERY_REPOSITORY,
 } from '../database/prisma/repositories/learning/index.js';
 
 import { COURSE_STRUCTURE_REPOSITORY } from '../database/prisma/repositories/courses/courses-repository.tokens.js';
@@ -144,6 +147,17 @@ import { COURSE_STRUCTURE_REPOSITORY } from '../database/prisma/repositories/cou
           courseProgressReadModelRepository,
         ),
     },
+
+    {
+      provide: DefaultLearningStreakApplicationService,
+      inject: [LEARNING_HISTORY_QUERY_REPOSITORY],
+      useFactory: (
+        learningHistoryQueryRepository: LearningHistoryQueryRepository,
+      ): DefaultLearningStreakApplicationService =>
+        new DefaultLearningStreakApplicationService(
+          learningHistoryQueryRepository,
+        ),
+    },
   ],
 
   exports: [
@@ -153,6 +167,7 @@ import { COURSE_STRUCTURE_REPOSITORY } from '../database/prisma/repositories/cou
     DefaultProgressApplicationService,
     DefaultSectionProgressApplicationService,
     DefaultCourseProgressApplicationService,
+    DefaultLearningStreakApplicationService,
   ],
 })
 export class LearningApplicationModule {}

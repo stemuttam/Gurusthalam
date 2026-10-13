@@ -162,3 +162,24 @@ export {
   DefaultCourseProgressApplicationService,
   CourseProgressApplicationError,
 } from './services/course-progress-application.service.js';
+
+export {
+  DefaultLearningStreakApplicationService,
+  LearningStreakApplicationError,
+} from './services/learning-streak-application.service.js';
+
+export type {
+  GetLearningStreakInput,
+  LearningStreakApplicationService,
+} from './contracts/index.js';
+
+export {
+  getLearningStreakInputSchema,
+  type GetLearningStreakInputValue,
+  type ValidatedGetLearningStreakInput,
+} from './contracts/index.js';
+
+export {
+  LEARNING_STREAK_CURRENT_GRACE_DAYS,
+  LEARNING_STREAK_QUALIFYING_EVENT_TYPES,
+} from './policies/learning-streak-application.policy.js';

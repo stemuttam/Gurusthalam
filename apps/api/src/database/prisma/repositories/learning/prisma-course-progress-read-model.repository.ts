@@ -10,6 +10,10 @@ import {
 
 import { PrismaService } from '../../prisma.service.js';
 import { withPrismaRepositoryErrorBoundary } from '../prisma-repository-error.mapper.js';
+import {
+  PrismaRepositoryError,
+  PrismaRepositoryErrorCode,
+} from '../prisma-repository.error.js';
 
 interface LockedEnrollmentRow {
   readonly id: string;
@@ -42,6 +46,53 @@ type SaveTransactionResult =
       readonly kind: 'missing-enrollment';
       readonly enrollmentId: string;
     };
+
+/**
+ * The first attempt plus three bounded retries.
+ *
+ * P2034 represents a transaction write conflict or deadlock. The entire
+ * transaction must be retried so the next attempt can read the latest
+ * committed projection and reevaluate the incoming snapshot.
+ */
+const MAX_TRANSACTION_ATTEMPTS = 4;
+const INITIAL_RETRY_DELAY_MS = 10;
+const MAX_RETRY_DELAY_MS = 100;
+
+function isRetryableTransactionConflict(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null || !('code' in error)) {
+    return false;
+  }
+
+  return error.code === 'P2034';
+}
+
+function getRetryDelayMs(failedAttempt: number): number {
+  return Math.min(
+    INITIAL_RETRY_DELAY_MS * 2 ** (failedAttempt - 1),
+    MAX_RETRY_DELAY_MS,
+  );
+}
+
+async function withSerializableTransactionRetry<T>(
+  operation: () => Promise<T>,
+): Promise<T> {
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error: unknown) {
+      if (
+        !isRetryableTransactionConflict(error) ||
+        attempt >= MAX_TRANSACTION_ATTEMPTS
+      ) {
+        throw error;
+      }
+
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, getRetryDelayMs(attempt));
+      });
+    }
+  }
+}
 
 function toDomain(
   row: PersistedCourseProgressReadModel,
@@ -113,144 +164,144 @@ export class PrismaCourseProgressReadModelRepository implements CourseProgressRe
   ): Promise<CourseProgressReadModelSaveResult> {
     const transactionResult = await withPrismaRepositoryErrorBoundary(
       'CourseProgressReadModelRepository.save',
-      async (): Promise<SaveTransactionResult> => {
-        return this.prisma.$transaction(
-          async (tx): Promise<SaveTransactionResult> => {
-            /*
-             * Serialize projection writes for a given enrollment.
-             *
-             * Locking the authoritative Enrollment row works even when no
-             * projection row exists yet, avoiding a first-write race.
-             */
-            const enrollmentRows = await tx.$queryRaw<LockedEnrollmentRow[]>`
-              SELECT "id", "courseVersionId"
-              FROM "Enrollment"
-              WHERE "id" = ${readModel.enrollmentId}
-              FOR UPDATE
-            `;
+      async (): Promise<SaveTransactionResult> =>
+        withSerializableTransactionRetry(() =>
+          this.prisma.$transaction(
+            async (tx): Promise<SaveTransactionResult> => {
+              /*
+               * Lock the authoritative Enrollment row. This serializes
+               * projection writes for the same enrollment, including when
+               * the projection row does not exist yet.
+               */
+              const enrollmentRows = await tx.$queryRaw<LockedEnrollmentRow[]>`
+                SELECT "id", "courseVersionId"
+                FROM "Enrollment"
+                WHERE "id" = ${readModel.enrollmentId}
+                FOR UPDATE
+              `;
 
-            const enrollment = enrollmentRows[0];
+              const enrollment = enrollmentRows[0];
 
-            if (enrollment === undefined) {
-              return {
-                kind: 'missing-enrollment',
-                enrollmentId: readModel.enrollmentId,
-              };
-            }
-
-            if (enrollment.courseVersionId !== readModel.courseVersionId) {
-              return {
-                kind: 'conflict',
-                error: new CourseProgressReadModelVersionConflictError({
+              if (enrollment === undefined) {
+                return {
+                  kind: 'missing-enrollment',
                   enrollmentId: readModel.enrollmentId,
-                  existingCourseVersionId: enrollment.courseVersionId,
-                  incomingCourseVersionId: readModel.courseVersionId,
-                }),
-              };
-            }
+                };
+              }
 
-            const existing = await tx.courseProgressReadModel.findUnique({
-              where: { enrollmentId: readModel.enrollmentId },
-            });
+              if (enrollment.courseVersionId !== readModel.courseVersionId) {
+                return {
+                  kind: 'conflict',
+                  error: new CourseProgressReadModelVersionConflictError({
+                    enrollmentId: readModel.enrollmentId,
+                    existingCourseVersionId: enrollment.courseVersionId,
+                    incomingCourseVersionId: readModel.courseVersionId,
+                  }),
+                };
+              }
 
-            if (existing === null) {
-              const created = await tx.courseProgressReadModel.create({
-                data: toCreateData(readModel),
+              const existing = await tx.courseProgressReadModel.findUnique({
+                where: { enrollmentId: readModel.enrollmentId },
               });
 
-              return {
-                kind: 'saved',
-                result: {
-                  outcome: 'created',
-                  readModel: toDomain(created),
-                },
-              };
-            }
+              if (existing === null) {
+                const created = await tx.courseProgressReadModel.create({
+                  data: toCreateData(readModel),
+                });
 
-            if (existing.courseVersionId !== readModel.courseVersionId) {
-              return {
-                kind: 'conflict',
-                error: new CourseProgressReadModelVersionConflictError({
-                  enrollmentId: readModel.enrollmentId,
-                  existingCourseVersionId: existing.courseVersionId,
-                  incomingCourseVersionId: readModel.courseVersionId,
-                }),
-              };
-            }
-
-            const existingTime = existing.calculatedAt.getTime();
-            const incomingTime = readModel.calculatedAt.getTime();
-
-            if (incomingTime < existingTime) {
-              return {
-                kind: 'saved',
-                result: {
-                  outcome: 'stale',
-                  readModel: toDomain(existing),
-                },
-              };
-            }
-
-            if (incomingTime === existingTime) {
-              if (sameSnapshot(existing, readModel)) {
                 return {
                   kind: 'saved',
                   result: {
-                    outcome: 'unchanged',
+                    outcome: 'created',
+                    readModel: toDomain(created),
+                  },
+                };
+              }
+
+              if (existing.courseVersionId !== readModel.courseVersionId) {
+                return {
+                  kind: 'conflict',
+                  error: new CourseProgressReadModelVersionConflictError({
+                    enrollmentId: readModel.enrollmentId,
+                    existingCourseVersionId: existing.courseVersionId,
+                    incomingCourseVersionId: readModel.courseVersionId,
+                  }),
+                };
+              }
+
+              const existingTime = existing.calculatedAt.getTime();
+              const incomingTime = readModel.calculatedAt.getTime();
+
+              if (incomingTime < existingTime) {
+                return {
+                  kind: 'saved',
+                  result: {
+                    outcome: 'stale',
                     readModel: toDomain(existing),
                   },
                 };
               }
 
-              return {
-                kind: 'conflict',
-                error: new CourseProgressReadModelTimestampConflictError({
-                  enrollmentId: readModel.enrollmentId,
+              if (incomingTime === existingTime) {
+                if (sameSnapshot(existing, readModel)) {
+                  return {
+                    kind: 'saved',
+                    result: {
+                      outcome: 'unchanged',
+                      readModel: toDomain(existing),
+                    },
+                  };
+                }
+
+                return {
+                  kind: 'conflict',
+                  error: new CourseProgressReadModelTimestampConflictError({
+                    enrollmentId: readModel.enrollmentId,
+                    calculatedAt: readModel.calculatedAt,
+                  }),
+                };
+              }
+
+              const updated = await tx.courseProgressReadModel.update({
+                where: { enrollmentId: readModel.enrollmentId },
+                data: {
+                  courseVersionId: readModel.courseVersionId,
+                  totalLearningUnits: readModel.totalLearningUnits,
+                  startedLearningUnits: readModel.startedLearningUnits,
+                  completedLearningUnits: readModel.completedLearningUnits,
+                  percentage: readModel.percentage,
+                  hasLearningUnits: readModel.hasLearningUnits,
                   calculatedAt: readModel.calculatedAt,
-                }),
+                },
+              });
+
+              return {
+                kind: 'saved',
+                result: {
+                  outcome: 'updated',
+                  readModel: toDomain(updated),
+                },
               };
-            }
-
-            const updated = await tx.courseProgressReadModel.update({
-              where: { enrollmentId: readModel.enrollmentId },
-              data: {
-                courseVersionId: readModel.courseVersionId,
-                totalLearningUnits: readModel.totalLearningUnits,
-                startedLearningUnits: readModel.startedLearningUnits,
-                completedLearningUnits: readModel.completedLearningUnits,
-                percentage: readModel.percentage,
-                hasLearningUnits: readModel.hasLearningUnits,
-                calculatedAt: readModel.calculatedAt,
-              },
-            });
-
-            return {
-              kind: 'saved',
-              result: {
-                outcome: 'updated',
-                readModel: toDomain(updated),
-              },
-            };
-          },
-          {
-            isolationLevel: 'Serializable',
-          },
-        );
-      },
+            },
+            {
+              isolationLevel: 'Serializable',
+            },
+          ),
+        ),
     );
 
     /*
-     * Business errors are returned as values from the transaction callback
-     * and thrown only after the generic repository boundary has completed.
-     * This preserves their concrete error types for application callers.
+     * Keep domain and repository errors outside the generic Prisma boundary
+     * so callers receive the intended concrete error types.
      */
     if (transactionResult.kind === 'conflict') {
       throw transactionResult.error;
     }
 
     if (transactionResult.kind === 'missing-enrollment') {
-      throw new Error(
+      throw new PrismaRepositoryError(
         `Cannot persist Course Progress for missing enrollment "${transactionResult.enrollmentId}".`,
+        PrismaRepositoryErrorCode.RECORD_NOT_FOUND,
       );
     }
 

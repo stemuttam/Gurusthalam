@@ -9,6 +9,8 @@ import {
 import { PrismaService } from '../../prisma.service.js';
 import { PrismaCourseProgressReadModelRepository } from './prisma-course-progress-read-model.repository.js';
 
+import { PrismaRepositoryErrorCode } from '../prisma-repository.error.js';
+
 type Snapshot = CourseProgressReadModel;
 
 type PersistedSnapshot = Snapshot & {
@@ -225,13 +227,15 @@ describe('PrismaCourseProgressReadModelRepository', () => {
     expect(h.update).not.toHaveBeenCalled();
   });
 
-  it('does not create a projection for a missing enrollment', async () => {
+  it('returns a typed record-not-found error for a missing enrollment', async () => {
     const h = createHarness();
     h.enrollmentRows.mockResolvedValue([]);
 
-    await expect(h.repository.save(createSnapshot())).rejects.toThrow(
-      /missing enrollment/,
-    );
+    await expect(h.repository.save(createSnapshot())).rejects.toMatchObject({
+      name: 'PrismaRepositoryError',
+      code: PrismaRepositoryErrorCode.RECORD_NOT_FOUND,
+      prismaCode: null,
+    });
 
     expect(h.findUnique).not.toHaveBeenCalled();
     expect(h.create).not.toHaveBeenCalled();

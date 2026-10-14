@@ -17,14 +17,18 @@ describe('Course validation error cross-layer contract', () => {
   const createLogger = (): {
     readonly logger: GurusthalamLogger;
     readonly error: ReturnType<typeof vi.fn>;
+    readonly warn: ReturnType<typeof vi.fn>;
   } => {
     const error = vi.fn();
+    const warn = vi.fn();
 
     return {
       logger: {
         error,
+        warn,
       } as unknown as GurusthalamLogger,
       error,
+      warn,
     };
   };
 
@@ -77,7 +81,7 @@ describe('Course validation error cross-layer contract', () => {
 
     expect(caughtError).toBeInstanceOf(CourseValidationError);
 
-    const { logger, error: loggerError } = createLogger();
+    const { logger, error: loggerError, warn: loggerWarn } = createLogger();
 
     const { host, response } = createHttpHost();
 
@@ -101,7 +105,18 @@ describe('Course validation error cross-layer contract', () => {
       }),
     );
 
-    expect(loggerError).toHaveBeenCalledTimes(1);
+    // Expected client-side validation failures are logged at warning level.
+    expect(loggerError).not.toHaveBeenCalled();
+    expect(loggerWarn).toHaveBeenCalledTimes(1);
+
+    expect(loggerWarn).toHaveBeenCalledWith(
+      'HTTP request rejected',
+      expect.objectContaining({
+        requestId: 'validation-request-001',
+        operation: 'GET /courses?page=invalid',
+        statusCode: HttpStatus.BAD_REQUEST,
+      }),
+    );
 
     expect(courseQuery.search).not.toHaveBeenCalled();
   });
@@ -125,7 +140,7 @@ describe('Course validation error cross-layer contract', () => {
 
     expect(caughtError).toBeInstanceOf(CourseValidationError);
 
-    const { logger } = createLogger();
+    const { logger, warn: loggerWarn } = createLogger();
 
     const { host, response } = createHttpHost();
 
@@ -133,10 +148,13 @@ describe('Course validation error cross-layer contract', () => {
 
     filter.catch(caughtError, host as never);
 
-    const payload = response.json.mock.calls[0]?.[0] as Record<string, unknown>;
+    const payload = response.json.mock.calls[0]?.[0] as
+      Record<string, unknown> | undefined;
 
+    expect(payload).toBeDefined();
     expect(payload).not.toHaveProperty('cause');
-
     expect(payload).not.toHaveProperty('stack');
+
+    expect(loggerWarn).toHaveBeenCalledTimes(1);
   });
 });

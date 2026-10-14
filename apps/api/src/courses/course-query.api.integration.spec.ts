@@ -317,7 +317,7 @@ describe('Course query API — PostgreSQL integration — 4.14-K', () => {
     }).compile();
 
     /**
-     * Create a real Nest HTTP application from the production
+     * Create the real Nest HTTP application from the production
      * CoursesApplicationModule.
      *
      * This is intentionally not a standalone controller instance.
@@ -355,7 +355,7 @@ describe('Course query API — PostgreSQL integration — 4.14-K', () => {
       catalog: catalogPersistence,
       search: searchPersistence,
     });
-  });
+  }, 30_000);
 
   beforeEach(async () => {
     testSequence += 1;

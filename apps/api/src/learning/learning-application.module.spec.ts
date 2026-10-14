@@ -4,6 +4,7 @@ import { Test } from '@nestjs/testing';
 
 import {
   DefaultEnrollmentApplicationService,
+  DefaultEnrollmentCompletionApplicationService,
   DefaultEntitlementApplicationService,
   DefaultLessonProgressApplicationService,
   DefaultProgressApplicationService,
@@ -103,6 +104,23 @@ describe('LearningApplicationModule', () => {
       );
 
       expect(service).toBeInstanceOf(DefaultLearningStreakApplicationService);
+    } finally {
+      await moduleRef.close();
+    }
+  });
+
+  it('resolves the Enrollment Completion application service', async () => {
+    const moduleRef = await createTestingModule();
+
+    try {
+      const service =
+        moduleRef.get<DefaultEnrollmentCompletionApplicationService>(
+          DefaultEnrollmentCompletionApplicationService,
+        );
+
+      expect(service).toBeInstanceOf(
+        DefaultEnrollmentCompletionApplicationService,
+      );
     } finally {
       await moduleRef.close();
     }

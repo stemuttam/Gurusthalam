@@ -972,6 +972,84 @@ describe('5.1 Enrollment PostgreSQL integration', () => {
     });
   });
 
+  describe('Lifecycle transition concurrency', () => {
+    it('allows only one competing completion or cancellation transition', async () => {
+      const fixture = await createCourseFixture();
+
+      const created = await enrollmentService.enrollLearner({
+        learnerId: learnerId('lifecycle-concurrency'),
+        courseId: fixture.courseId,
+        source: EnrollmentSource.DIRECT,
+      });
+
+      createdEnrollmentIds.add(created.id);
+
+      // Independent aggregate instances loaded from the same persisted state.
+      const completionCandidate = await enrollmentRepository.findById(
+        created.id,
+      );
+      const cancellationCandidate = await enrollmentRepository.findById(
+        created.id,
+      );
+
+      expect(completionCandidate).not.toBeNull();
+      expect(cancellationCandidate).not.toBeNull();
+
+      if (completionCandidate === null || cancellationCandidate === null) {
+        throw new Error('Expected both Enrollment snapshots to exist.');
+      }
+
+      completionCandidate.complete();
+      cancellationCandidate.cancel();
+
+      const results = await Promise.allSettled([
+        enrollmentRepository.save(completionCandidate),
+        enrollmentRepository.save(cancellationCandidate),
+      ]);
+
+      const fulfilled = results.filter(
+        (result) => result.status === 'fulfilled',
+      );
+      const rejected = results.filter((result) => result.status === 'rejected');
+
+      expect(fulfilled).toHaveLength(1);
+      expect(rejected).toHaveLength(1);
+
+      const rejection = rejected[0];
+
+      if (rejection?.status !== 'rejected') {
+        throw new Error('Expected one lifecycle transition to lose the race.');
+      }
+
+      expect(rejection.reason).toBeInstanceOf(PrismaRepositoryError);
+      expect((rejection.reason as PrismaRepositoryError).code).toBe(
+        PrismaRepositoryErrorCode.CONCURRENT_MODIFICATION,
+      );
+
+      const persisted = await prisma.enrollment.findUnique({
+        where: { id: created.id },
+      });
+
+      expect(['COMPLETED', 'CANCELLED']).toContain(persisted?.status);
+
+      const lifecycleEvents = await prisma.outboxEvent.findMany({
+        where: {
+          aggregateType: 'Enrollment',
+          aggregateId: created.id,
+          eventType: {
+            in: [
+              EnrollmentDomainEventName.COMPLETED,
+              EnrollmentDomainEventName.CANCELLED,
+            ],
+          },
+        },
+      });
+
+      // Only the winning transition can persist its lifecycle event.
+      expect(lifecycleEvents).toHaveLength(1);
+    });
+  });
+
   describe('Transactional event envelope', () => {
     it('persists the complete EnrollmentCreated event envelope', async () => {
       const fixture = await createCourseFixture();

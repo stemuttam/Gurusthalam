@@ -1,4 +1,4 @@
-import { Enrollment } from '@gurusthalam/learning';
+import { Enrollment, EnrollmentDomainEventName } from '@gurusthalam/learning';
 
 import type {
   EnrollmentEvent,
@@ -8,22 +8,24 @@ import type {
 
 import type { Prisma, PrismaClient } from '@gurusthalam/database';
 
+import {
+  PrismaRepositoryError,
+  PrismaRepositoryErrorCode,
+} from '../prisma-repository.error.js';
+
 import { withPrismaRepositoryErrorBoundary } from '../prisma-repository-error.mapper.js';
 
 /**
  * Prisma-backed Enrollment repository.
  *
  * Transactional boundary:
+ *   Enrollment state + all pending domain events -> OutboxEvent
  *
- *   Enrollment state
- *          +
- *   Enrollment domain events
- *          ↓
- *       OutboxEvent
+ * Lifecycle updates use compare-and-set semantics: an update is
+ * accepted only when the persisted status matches the status from
+ * which the domain transition was made.
  *
- * are committed in one PostgreSQL transaction.
- *
- * Domain events are drained only after the transaction commits.
+ * Events are drained only after the transaction commits.
  */
 export class PrismaEnrollmentRepository implements EnrollmentRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -33,9 +35,7 @@ export class PrismaEnrollmentRepository implements EnrollmentRepository {
       'EnrollmentRepository.findById',
       async () => {
         const record = await this.prisma.enrollment.findUnique({
-          where: {
-            id,
-          },
+          where: { id },
         });
 
         return record === null ? null : this.toDomain(record);
@@ -46,9 +46,9 @@ export class PrismaEnrollmentRepository implements EnrollmentRepository {
   /**
    * Finds the learner's currently active Enrollment.
    *
-   * PENDING is included because PostgreSQL treats both PENDING
-   * and ACTIVE as mutually exclusive under the partial unique
-   * active Enrollment index.
+   * PENDING is included because PostgreSQL treats PENDING and ACTIVE
+   * as mutually exclusive under the partial unique active Enrollment
+   * index.
    */
   async findActiveByLearnerAndCourse(
     learnerId: string,
@@ -61,13 +61,9 @@ export class PrismaEnrollmentRepository implements EnrollmentRepository {
           where: {
             learnerId,
             courseId,
-            status: {
-              in: ['PENDING', 'ACTIVE'],
-            },
+            status: { in: ['PENDING', 'ACTIVE'] },
           },
-          orderBy: {
-            createdAt: 'desc',
-          },
+          orderBy: { createdAt: 'desc' },
         });
 
         return record === null ? null : this.toDomain(record);
@@ -76,106 +72,103 @@ export class PrismaEnrollmentRepository implements EnrollmentRepository {
   }
 
   /**
-   * Persists Enrollment state and all currently pending
-   * Enrollment domain events atomically.
+   * Persists Enrollment state and pending events atomically.
    *
-   * IMPORTANT:
+   * New aggregates are inserted using create, not upsert. Existing
+   * aggregates are updated with a conditional status predicate.
    *
-   * The aggregate's events are NOT pulled before the transaction.
-   *
-   * If anything fails:
-   *
-   * - Enrollment state rolls back;
-   * - Outbox rows roll back;
-   * - aggregate events remain available.
-   *
-   * Only a successful commit drains the aggregate events.
+   * A lifecycle transition that loses a race throws
+   * PRISMA_REPOSITORY_CONCURRENT_MODIFICATION. The failed transaction
+   * inserts no outbox rows and the aggregate retains its events.
    */
   async save(enrollment: Enrollment): Promise<void> {
     await withPrismaRepositoryErrorBoundary(
       'EnrollmentRepository.save',
       async () => {
         const persistence = this.toPersistence(enrollment);
-
         const pendingEvents = enrollment.getDomainEvents();
 
+        const isNewAggregate = pendingEvents.some(
+          (event) => event.eventName === EnrollmentDomainEventName.CREATED,
+        );
+
+        const lifecycleEvent = pendingEvents.find(
+          (event) => event.eventName !== EnrollmentDomainEventName.CREATED,
+        );
+
+        // The event records the state observed before the transition.
+        // For a no-event save, matching the current status permits an
+        // idempotent persistence refresh without allowing a lifecycle
+        // transition to bypass its domain event.
+        const expectedStatus =
+          lifecycleEvent === undefined
+            ? persistence.status
+            : lifecycleEvent.payload.previousStatus;
+
         await this.prisma.$transaction(async (transaction) => {
-          await transaction.enrollment.upsert({
-            where: {
-              id: persistence.id,
-            },
+          if (isNewAggregate) {
+            await transaction.enrollment.create({
+              data: {
+                id: persistence.id,
+                learnerId: persistence.learnerId,
+                courseId: persistence.courseId,
+                courseVersionId: persistence.courseVersionId,
+                status: persistence.status,
+                source: persistence.source,
+                startsAt: persistence.startsAt,
+                expiresAt: persistence.expiresAt,
+                completedAt: persistence.completedAt,
+                cancelledAt: persistence.cancelledAt,
+                createdAt: persistence.createdAt,
+                updatedAt: persistence.updatedAt,
+              },
+            });
+          } else {
+            const result = await transaction.enrollment.updateMany({
+              where: {
+                id: persistence.id,
+                status: expectedStatus,
+              },
+              data: {
+                learnerId: persistence.learnerId,
+                courseId: persistence.courseId,
+                courseVersionId: persistence.courseVersionId,
+                status: persistence.status,
+                source: persistence.source,
+                startsAt: persistence.startsAt,
+                expiresAt: persistence.expiresAt,
+                completedAt: persistence.completedAt,
+                cancelledAt: persistence.cancelledAt,
+                updatedAt: persistence.updatedAt,
+              },
+            });
 
-            create: {
-              id: persistence.id,
-              learnerId: persistence.learnerId,
-              courseId: persistence.courseId,
-              courseVersionId: persistence.courseVersionId,
-              status: persistence.status,
-              source: persistence.source,
-              startsAt: persistence.startsAt,
-              expiresAt: persistence.expiresAt,
-              completedAt: persistence.completedAt,
-              cancelledAt: persistence.cancelledAt,
-              createdAt: persistence.createdAt,
-              updatedAt: persistence.updatedAt,
-            },
+            if (result.count !== 1) {
+              throw new PrismaRepositoryError(
+                `Enrollment "${persistence.id}" was modified or removed before the requested transition could be persisted.`,
+                PrismaRepositoryErrorCode.CONCURRENT_MODIFICATION,
+              );
+            }
+          }
 
-            update: {
-              learnerId: persistence.learnerId,
-              courseId: persistence.courseId,
-              courseVersionId: persistence.courseVersionId,
-              status: persistence.status,
-              source: persistence.source,
-              startsAt: persistence.startsAt,
-              expiresAt: persistence.expiresAt,
-              completedAt: persistence.completedAt,
-              cancelledAt: persistence.cancelledAt,
-              updatedAt: persistence.updatedAt,
-            },
-          });
-
-          /*
-           * -------------------------------------------------------
-           * Domain event -> Outbox
-           * -------------------------------------------------------
-           *
-           * Persist the COMPLETE event envelope, not merely payload.
-           *
-           * This preserves:
-           *
-           * - eventId
-           * - eventName
-           * - eventVersion
-           * - aggregateId
-           * - occurredAt
-           * - payload
-           */
+          // State changes and their event envelopes share one transaction.
           for (const event of pendingEvents) {
             await transaction.outboxEvent.create({
               data: {
                 eventType: event.eventName,
-
                 aggregateType: 'Enrollment',
-
                 aggregateId: event.aggregateId,
-
                 dedupeKey: PrismaEnrollmentRepository.toDedupeKey(event),
-
                 payload: PrismaEnrollmentRepository.toOutboxPayload(event),
-
                 status: 'PENDING',
-
                 attempts: 0,
-
                 availableAt: new Date(),
               },
             });
           }
         });
 
-        /*
-         * Only after successful transaction commit.
-         */
+        // Never drain events before the database transaction commits.
         if (pendingEvents.length > 0) {
           enrollment.pullDomainEvents();
         }
@@ -216,15 +209,10 @@ export class PrismaEnrollmentRepository implements EnrollmentRepository {
     return JSON.parse(
       JSON.stringify({
         eventId: event.eventId,
-
         eventName: event.eventName,
-
         eventVersion: event.eventVersion,
-
         aggregateId: event.aggregateId,
-
         occurredAt: event.occurredAt,
-
         payload: event.payload,
       }),
     ) as Prisma.InputJsonValue;

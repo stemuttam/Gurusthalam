@@ -183,3 +183,13 @@ export {
   LEARNING_STREAK_CURRENT_GRACE_DAYS,
   LEARNING_STREAK_QUALIFYING_EVENT_TYPES,
 } from './policies/learning-streak-application.policy.js';
+
+export {
+  DefaultEnrollmentCompletionApplicationService,
+} from './services/enrollment-completion-application.service.js';
+
+export {
+  EnrollmentCompletionApplicationError,
+  EnrollmentCompletionErrorCode,
+  type EnrollmentCompletionErrorIssue,
+} from './errors/enrollment-completion-application.error.js';

@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import {
   DefaultCourseProgressApplicationService,
   DefaultEnrollmentApplicationService,
+  DefaultEnrollmentCompletionApplicationService,
   DefaultEntitlementApplicationService,
   DefaultLessonProgressApplicationService,
   DefaultProgressApplicationService,
@@ -158,6 +159,25 @@ import { COURSE_STRUCTURE_REPOSITORY } from '../database/prisma/repositories/cou
           learningHistoryQueryRepository,
         ),
     },
+
+    {
+      provide: DefaultEnrollmentCompletionApplicationService,
+      inject: [
+        ENROLLMENT_REPOSITORY,
+        COURSE_STRUCTURE_REPOSITORY,
+        LESSON_PROGRESS_BATCH_QUERY_REPOSITORY,
+      ],
+      useFactory: (
+        enrollmentRepository: EnrollmentRepository,
+        courseStructureRepository: CourseStructureRepository,
+        lessonProgressBatchQueryRepository: LessonProgressBatchQueryRepository,
+      ): DefaultEnrollmentCompletionApplicationService =>
+        new DefaultEnrollmentCompletionApplicationService(
+          enrollmentRepository,
+          courseStructureRepository,
+          lessonProgressBatchQueryRepository,
+        ),
+    },
   ],
 
   exports: [
@@ -168,6 +188,7 @@ import { COURSE_STRUCTURE_REPOSITORY } from '../database/prisma/repositories/cou
     DefaultSectionProgressApplicationService,
     DefaultCourseProgressApplicationService,
     DefaultLearningStreakApplicationService,
+    DefaultEnrollmentCompletionApplicationService,
   ],
 })
 export class LearningApplicationModule {}

@@ -133,3 +133,13 @@ export {
   type GetLearningStreakInputValue,
   type ValidatedGetLearningStreakInput,
 } from './learning-streak-application.validation.js';
+
+export type {
+  CompleteEnrollmentInput,
+  EnrollmentCompletionApplicationService,
+} from './enrollment-completion-application.contracts.js';
+
+export {
+  completeEnrollmentInputSchema,
+  type CompleteEnrollmentInputSchema,
+} from './enrollment-completion-application.validation.js';

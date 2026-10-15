@@ -163,6 +163,10 @@ describe('DefaultCourseProgressApplicationService', () => {
       courseStructureRepository.findByCourseVersionId,
     ).not.toHaveBeenCalled();
 
+    expect(
+      lessonProgressBatchQueryRepository.findManyByEnrollmentAndLearningUnitIds,
+    ).not.toHaveBeenCalled();
+
     expect(courseProgressReadModelRepository.save).not.toHaveBeenCalled();
   });
 
@@ -175,13 +179,118 @@ describe('DefaultCourseProgressApplicationService', () => {
       code: 'COURSE_STRUCTURE_NOT_FOUND',
     });
 
+    expect(
+      lessonProgressBatchQueryRepository.findManyByEnrollmentAndLearningUnitIds,
+    ).not.toHaveBeenCalled();
+
     expect(courseProgressReadModelRepository.save).not.toHaveBeenCalled();
   });
 
-  it('rejects invalid query input', async () => {
+  it('rejects invalid query input before accessing dependencies', async () => {
     await expect(
       service.getCourseProgress({ enrollmentId: '   ' }),
     ).rejects.toBeInstanceOf(CourseProgressApplicationError);
+
+    expect(enrollmentRepository.findById).not.toHaveBeenCalled();
+    expect(
+      courseProgressReadModelRepository.findByEnrollmentId,
+    ).not.toHaveBeenCalled();
+  });
+
+  it('rejects invalid refresh input before accessing dependencies', async () => {
+    await expect(
+      service.refreshCourseProgress({ enrollmentId: '   ' }),
+    ).rejects.toMatchObject({
+      name: 'CourseProgressApplicationError',
+      code: 'VALIDATION',
+    });
+
+    expect(enrollmentRepository.findById).not.toHaveBeenCalled();
+    expect(
+      courseStructureRepository.findByCourseVersionId,
+    ).not.toHaveBeenCalled();
+    expect(
+      lessonProgressBatchQueryRepository.findManyByEnrollmentAndLearningUnitIds,
+    ).not.toHaveBeenCalled();
+    expect(courseProgressReadModelRepository.save).not.toHaveBeenCalled();
+  });
+
+  it.each(['updated', 'unchanged', 'stale'] as const)(
+    'preserves the repository persistence outcome: %s',
+    async (outcome) => {
+      courseProgressReadModelRepository.save.mockResolvedValue({
+        outcome,
+        readModel: savedReadModel,
+      });
+
+      const result = await service.refreshCourseProgress({
+        enrollmentId: enrollment.id,
+        calculatedAt,
+      });
+
+      expect(result.outcome).toBe(outcome);
+      expect(result.readModel).toBe(savedReadModel);
+      expect(courseProgressReadModelRepository.save).toHaveBeenCalledOnce();
+    },
+  );
+
+  it('returns the exact persisted read model rather than the calculated candidate', async () => {
+    const persistedReadModel: CourseProgressReadModel = {
+      ...savedReadModel,
+      percentage: 67,
+      startedLearningUnits: 2,
+      completedLearningUnits: 2,
+      calculatedAt: new Date('2026-10-12T08:05:00.000Z'),
+    };
+
+    courseProgressReadModelRepository.save.mockResolvedValue({
+      outcome: 'updated',
+      readModel: persistedReadModel,
+    });
+
+    const result = await service.refreshCourseProgress({
+      enrollmentId: enrollment.id,
+      calculatedAt,
+    });
+
+    expect(result.outcome).toBe('updated');
+    expect(result.readModel).toBe(persistedReadModel);
+    expect(result.readModel.percentage).toBe(67);
+    expect(result.readModel.calculatedAt.toISOString()).toBe(
+      '2026-10-12T08:05:00.000Z',
+    );
+  });
+
+  it('propagates LessonProgress query failures without attempting persistence', async () => {
+    const queryError = new Error('LessonProgress query failed');
+
+    lessonProgressBatchQueryRepository.findManyByEnrollmentAndLearningUnitIds.mockRejectedValue(
+      queryError,
+    );
+
+    await expect(
+      service.refreshCourseProgress({
+        enrollmentId: enrollment.id,
+        calculatedAt,
+      }),
+    ).rejects.toBe(queryError);
+
+    expect(courseProgressReadModelRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('propagates persistence failures without swallowing the original error', async () => {
+    const persistenceError = new Error('Course Progress persistence failed');
+
+    courseProgressReadModelRepository.save.mockRejectedValue(persistenceError);
+
+    await expect(
+      service.refreshCourseProgress({
+        enrollmentId: enrollment.id,
+        calculatedAt,
+      }),
+    ).rejects.toBe(persistenceError);
+
+    expect(courseProgressReadModelRepository.save).toHaveBeenCalledOnce();
   });
 
   it('returns the persisted projection without recalculating it', async () => {
@@ -189,7 +298,7 @@ describe('DefaultCourseProgressApplicationService', () => {
       enrollmentId: enrollment.id,
     });
 
-    expect(result).toEqual(savedReadModel);
+    expect(result).toBe(savedReadModel);
 
     expect(
       courseProgressReadModelRepository.findByEnrollmentId,
@@ -199,7 +308,38 @@ describe('DefaultCourseProgressApplicationService', () => {
       courseStructureRepository.findByCourseVersionId,
     ).not.toHaveBeenCalled();
 
+    expect(
+      lessonProgressBatchQueryRepository.findManyByEnrollmentAndLearningUnitIds,
+    ).not.toHaveBeenCalled();
+
     expect(courseProgressReadModelRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('rejects a missing Enrollment when querying Course Progress', async () => {
+    enrollmentRepository.findById.mockResolvedValue(null);
+
+    await expect(
+      service.getCourseProgress({ enrollmentId: 'missing-enrollment' }),
+    ).rejects.toMatchObject({
+      name: 'CourseProgressApplicationError',
+      code: 'ENROLLMENT_NOT_FOUND',
+    });
+
+    expect(
+      courseProgressReadModelRepository.findByEnrollmentId,
+    ).not.toHaveBeenCalled();
+  });
+
+  it('propagates read-repository failures when querying Course Progress', async () => {
+    const readError = new Error('Course Progress read failed');
+
+    courseProgressReadModelRepository.findByEnrollmentId.mockRejectedValue(
+      readError,
+    );
+
+    await expect(
+      service.getCourseProgress({ enrollmentId: enrollment.id }),
+    ).rejects.toBe(readError);
   });
 
   it('does not modify the authoritative Enrollment or LessonProgress aggregates', async () => {

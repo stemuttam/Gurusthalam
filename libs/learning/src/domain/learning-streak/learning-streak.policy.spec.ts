@@ -124,7 +124,9 @@ describe('calculateLearningStreak', () => {
     expect(result.currentStreakDays).toBe(1);
   });
 
-  it('handles consecutive local dates across a daylight-saving transition', () => {
+  it('handles the spring-forward DST transition using local calendar dates', () => {
+    // New York moves from UTC-5 to UTC-4 on 2026-03-08.
+    // These instants are 3 hours apart but fall on different local dates.
     const result = calculate(
       [
         activity('lesson_opened', '2026-03-08T04:30:00.000Z'),
@@ -136,9 +138,16 @@ describe('calculateLearningStreak', () => {
       },
     );
 
-    expect(result.qualifyingActivityDays).toEqual(['2026-03-07', '2026-03-08']);
-    expect(result.currentStreakDays).toBe(2);
-    expect(result.longestStreakDays).toBe(2);
+    expect(result).toMatchObject({
+      timezone: 'America/New_York',
+      asOfDate: '2026-03-08',
+      qualifyingActivityDays: ['2026-03-07', '2026-03-08'],
+      lastActivityDate: '2026-03-08',
+      hasActivityToday: true,
+      isCurrentStreakActive: true,
+      currentStreakDays: 2,
+      longestStreakDays: 2,
+    });
   });
 
   it('requires activity today when grace is zero', () => {

@@ -7,12 +7,17 @@ import {
   DefaultEnrollmentCompletionApplicationService,
   DefaultEntitlementApplicationService,
   DefaultLessonProgressApplicationService,
+  DefaultLearningStreakApplicationService,
   DefaultProgressApplicationService,
   DefaultSectionProgressApplicationService,
-  DefaultLearningStreakApplicationService,
 } from '@gurusthalam/learning';
 
 import { PrismaService } from '../database/prisma/prisma.service.js';
+
+import {
+  LEARNING_HISTORY_QUERY_REPOSITORY,
+  PrismaLearningHistoryQueryRepository,
+} from '../database/prisma/repositories/learning/index.js';
 
 import { LearningApplicationModule } from './learning-application.module.js';
 
@@ -104,6 +109,51 @@ describe('LearningApplicationModule', () => {
       );
 
       expect(service).toBeInstanceOf(DefaultLearningStreakApplicationService);
+    } finally {
+      await moduleRef.close();
+    }
+  });
+
+  it('resolves the registered Learning History query repository', async () => {
+    const moduleRef = await createTestingModule();
+
+    try {
+      const repository = moduleRef.get<PrismaLearningHistoryQueryRepository>(
+        LEARNING_HISTORY_QUERY_REPOSITORY,
+      );
+
+      expect(repository).toBeInstanceOf(PrismaLearningHistoryQueryRepository);
+    } finally {
+      await moduleRef.close();
+    }
+  });
+
+  it('injects the registered history repository into the streak service', async () => {
+    const moduleRef = await createTestingModule();
+
+    try {
+      const repository = moduleRef.get<PrismaLearningHistoryQueryRepository>(
+        LEARNING_HISTORY_QUERY_REPOSITORY,
+      );
+
+      const service = moduleRef.get<DefaultLearningStreakApplicationService>(
+        DefaultLearningStreakApplicationService,
+      );
+
+      expect(repository).toBeInstanceOf(PrismaLearningHistoryQueryRepository);
+
+      expect(service).toBeInstanceOf(DefaultLearningStreakApplicationService);
+
+      // The service's factory receives the repository registered under this
+      // token. Verify the actual production provider graph, not a test-only
+      // diagnostic provider.
+      expect(
+        (
+          service as unknown as {
+            learningHistoryQueryRepository: PrismaLearningHistoryQueryRepository;
+          }
+        ).learningHistoryQueryRepository,
+      ).toBe(repository);
     } finally {
       await moduleRef.close();
     }

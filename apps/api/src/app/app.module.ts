@@ -5,174 +5,99 @@ import {
   RequestMethod,
 } from '@nestjs/common';
 
-import {
-  AppConfigModule,
-} from '../config/app-config.module.js';
+import { AppConfigModule } from '../config/app-config.module.js';
 
-import {
-  DatabaseModule,
-} from '../database/database.module.js';
+import { DatabaseModule } from '../database/database.module.js';
 
-import {
-  HealthModule,
-} from '../health/health.module.js';
+import { HealthModule } from '../health/health.module.js';
 
-import {
-  CoursesApplicationModule,
-} from '../courses/courses-application.module.js';
+import { CoursesApplicationModule } from '../courses/courses-application.module.js';
 
-import {
-  RequestIdMiddleware,
-} from '../middleware/request-id.middleware.js';
+import { LearningApplicationModule } from '../learning/learning-application.module.js';
 
-import {
-  RedisModule,
-} from '../queues/redis/redis.module.js';
+import { RequestIdMiddleware } from '../middleware/request-id.middleware.js';
 
-import {
-  BullMqModule,
-} from '../queues/bullmq/bullmq.module.js';
+import { RedisModule } from '../queues/redis/redis.module.js';
 
-import {
-  OutboxAdminController,
-} from '../queues/outbox/outbox-admin.controller.js';
+import { BullMqModule } from '../queues/bullmq/bullmq.module.js';
 
-import {
-  OutboxAdminService,
-} from '../queues/outbox/outbox-admin.service.js';
+import { OutboxAdminController } from '../queues/outbox/outbox-admin.controller.js';
 
-import {
-  NotificationMetricsController,
-} from '../queues/notifications/notification-metrics.controller.js';
+import { OutboxAdminService } from '../queues/outbox/outbox-admin.service.js';
 
-import {
-  NotificationMetricsService,
-} from '../queues/notifications/notification-metrics.service.js';
+import { NotificationMetricsController } from '../queues/notifications/notification-metrics.controller.js';
 
-import {
-  NotificationTroubleshootingController,
-} from '../queues/notifications/notification-troubleshooting.controller.js';
+import { NotificationMetricsService } from '../queues/notifications/notification-metrics.service.js';
 
-import {
-  NotificationTroubleshootingService,
-} from '../queues/notifications/notification-troubleshooting.service.js';
+import { NotificationTroubleshootingController } from '../queues/notifications/notification-troubleshooting.controller.js';
 
-import {
-  NotificationOperationalController,
-} from '../queues/notifications/notification-operational.controller.js';
+import { NotificationTroubleshootingService } from '../queues/notifications/notification-troubleshooting.service.js';
 
-import {
-  NotificationOperationalService,
-} from '../queues/notifications/notification-operational.service.js';
+import { NotificationOperationalController } from '../queues/notifications/notification-operational.controller.js';
 
-import {
-  NotificationOrchestrationService,
-} from '../queues/notifications/notification.orchestration.service.js';
+import { NotificationOperationalService } from '../queues/notifications/notification-operational.service.js';
+
+import { NotificationOrchestrationService } from '../queues/notifications/notification.orchestration.service.js';
 
 import {
   NotificationChannelPolicy,
   NOTIFICATION_CHANNEL_POLICY_CONFIG,
 } from '../queues/notifications/notification.channel-policy.js';
 
-import {
-  NotificationReconciliationController,
-} from '../queues/notifications/notification-reconciliation.controller.js';
+import { NotificationReconciliationController } from '../queues/notifications/notification-reconciliation.controller.js';
 
-import {
-  NotificationReconciliationService,
-} from '../queues/notifications/notification-reconciliation.service.js';
+import { NotificationReconciliationService } from '../queues/notifications/notification-reconciliation.service.js';
 
-import {
-  NotificationTemplateModule,
-} from '../queues/templates/notification-template.module.js';
+import { NotificationTemplateModule } from '../queues/templates/notification-template.module.js';
 
-import {
-  InternalApiKeyGuard,
-} from '../security/internal-api-key.guard.js';
+import { InternalApiKeyGuard } from '../security/internal-api-key.guard.js';
 
-import {
-  AppController,
-} from './app.controller.js';
+import { AppController } from './app.controller.js';
 
-import {
-  AppService,
-} from './app.service.js';
+import { AppService } from './app.service.js';
 
 @Module({
   imports: [
     AppConfigModule,
-
     DatabaseModule,
-
     CoursesApplicationModule,
-
+    LearningApplicationModule,
     RedisModule,
-
     NotificationTemplateModule,
-
     BullMqModule,
-
     HealthModule,
   ],
 
   controllers: [
     AppController,
-
     OutboxAdminController,
-
     NotificationMetricsController,
-
     NotificationTroubleshootingController,
-
     NotificationOperationalController,
-
     NotificationReconciliationController,
   ],
 
   providers: [
     AppService,
-
     OutboxAdminService,
-
     NotificationReconciliationService,
-
     NotificationMetricsService,
-
     NotificationTroubleshootingService,
-
     NotificationOperationalService,
-
     {
-      provide:
-        NOTIFICATION_CHANNEL_POLICY_CONFIG,
-
+      provide: NOTIFICATION_CHANNEL_POLICY_CONFIG,
       useValue: {},
     },
-
     NotificationChannelPolicy,
-
     NotificationOrchestrationService,
-
     InternalApiKeyGuard,
   ],
 })
-export class AppModule
-  implements NestModule {
-  configure(
-    consumer:
-      MiddlewareConsumer,
-  ):
-    void {
-    consumer
-      .apply(
-        RequestIdMiddleware,
-      )
-      .forRoutes({
-        path:
-          '{*splat}',
-
-        method:
-          RequestMethod.ALL,
-      });
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(RequestIdMiddleware).forRoutes({
+      path: '{*splat}',
+      method: RequestMethod.ALL,
+    });
   }
 }

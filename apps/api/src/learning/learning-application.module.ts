@@ -46,8 +46,18 @@ import {
 
 import { COURSE_STRUCTURE_REPOSITORY } from '../database/prisma/repositories/courses/courses-repository.tokens.js';
 
+import { CourseAuthorizationModule } from '../security/authorization/course-authorization.module.js';
+
+import { CourseProgressController } from './course-progress.controller.js';
+
 @Module({
-  imports: [CoursesPersistenceModule, LearningPersistenceModule],
+  imports: [
+    CoursesPersistenceModule,
+    LearningPersistenceModule,
+    CourseAuthorizationModule,
+  ],
+
+  controllers: [CourseProgressController],
 
   providers: [
     {

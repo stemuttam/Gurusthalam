@@ -167,3 +167,23 @@ export type CourseStructureAssessmentReference = Prisma.CourseStructureAssessmen
  * This model is not the authoritative Progress lifecycle aggregate.
  */
 export type CourseProgressReadModel = Prisma.CourseProgressReadModelModel
+/**
+ * Model AuthPrincipal
+ *
+ */
+export type AuthPrincipal = Prisma.AuthPrincipalModel
+/**
+ * Model ExternalIdentity
+ *
+ */
+export type ExternalIdentity = Prisma.ExternalIdentityModel
+/**
+ * Model Tenant
+ *
+ */
+export type Tenant = Prisma.TenantModel
+/**
+ * Model PrincipalTenantMembership
+ *
+ */
+export type PrincipalTenantMembership = Prisma.PrincipalTenantMembershipModel

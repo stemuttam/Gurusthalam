@@ -233,3 +233,27 @@ export const NotificationTemplateCategory = {
 } as const
 
 export type NotificationTemplateCategory = (typeof NotificationTemplateCategory)[keyof typeof NotificationTemplateCategory]
+
+
+export const AuthPrincipalStatus = {
+  ACTIVE: 'ACTIVE',
+  SUSPENDED: 'SUSPENDED'
+} as const
+
+export type AuthPrincipalStatus = (typeof AuthPrincipalStatus)[keyof typeof AuthPrincipalStatus]
+
+
+export const TenantStatus = {
+  ACTIVE: 'ACTIVE',
+  SUSPENDED: 'SUSPENDED'
+} as const
+
+export type TenantStatus = (typeof TenantStatus)[keyof typeof TenantStatus]
+
+
+export const PrincipalTenantMembershipStatus = {
+  ACTIVE: 'ACTIVE',
+  SUSPENDED: 'SUSPENDED'
+} as const
+
+export type PrincipalTenantMembershipStatus = (typeof PrincipalTenantMembershipStatus)[keyof typeof PrincipalTenantMembershipStatus]

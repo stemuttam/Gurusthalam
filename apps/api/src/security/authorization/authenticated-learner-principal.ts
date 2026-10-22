@@ -1,16 +1,13 @@
 import {
   createAuthenticatedPrincipal,
   isAuthenticatedPrincipal,
+  type AuthenticatedPrincipalContext,
   type AuthenticatedPrincipal,
 } from './authenticated-principal.js';
 
 /**
- * A trusted authenticated principal with an explicitly resolved learner
- * identity. `principalId` and `learnerId` are separate identifiers.
- *
- * Authentication infrastructure must establish this relationship before
- * placing this contract on request.user. Structural validation alone does
- * not authenticate a request.
+ * A trusted authenticated principal with an explicitly resolved internal
+ * learner identity. Auth0 subject and organization claims are not learner IDs.
  */
 export interface AuthenticatedLearnerPrincipal extends AuthenticatedPrincipal {
   readonly learnerId: string;
@@ -19,9 +16,8 @@ export interface AuthenticatedLearnerPrincipal extends AuthenticatedPrincipal {
 export function createAuthenticatedLearnerPrincipal(
   principalId: string,
   learnerId: string,
+  context?: AuthenticatedPrincipalContext,
 ): AuthenticatedLearnerPrincipal {
-  const principal = createAuthenticatedPrincipal(principalId);
-
   if (
     typeof learnerId !== 'string' ||
     learnerId.length === 0 ||
@@ -32,16 +28,15 @@ export function createAuthenticatedLearnerPrincipal(
     );
   }
 
+  const principal = createAuthenticatedPrincipal(principalId, context);
+
   return Object.freeze({
     ...principal,
     learnerId,
   });
 }
 
-/**
- * Performs structural validation only. The caller must obtain request.user
- * from trusted authentication infrastructure, never from client input.
- */
+/** Structural validation only; does not authenticate the supplied identity. */
 export function isAuthenticatedLearnerPrincipal(
   value: unknown,
 ): value is AuthenticatedLearnerPrincipal {
@@ -49,9 +44,7 @@ export function isAuthenticatedLearnerPrincipal(
     return false;
   }
 
-  const candidate = value as {
-    readonly learnerId?: unknown;
-  };
+  const candidate = value as { readonly learnerId?: unknown };
 
   return (
     typeof candidate.learnerId === 'string' &&

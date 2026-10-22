@@ -76,7 +76,11 @@ export const ModelName = {
   CourseStructureLearningUnit: 'CourseStructureLearningUnit',
   CourseStructureContentItemReference: 'CourseStructureContentItemReference',
   CourseStructureAssessmentReference: 'CourseStructureAssessmentReference',
-  CourseProgressReadModel: 'CourseProgressReadModel'
+  CourseProgressReadModel: 'CourseProgressReadModel',
+  AuthPrincipal: 'AuthPrincipal',
+  ExternalIdentity: 'ExternalIdentity',
+  Tenant: 'Tenant',
+  PrincipalTenantMembership: 'PrincipalTenantMembership'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -516,6 +520,55 @@ export const CourseProgressReadModelScalarFieldEnum = {
 } as const
 
 export type CourseProgressReadModelScalarFieldEnum = (typeof CourseProgressReadModelScalarFieldEnum)[keyof typeof CourseProgressReadModelScalarFieldEnum]
+
+
+export const AuthPrincipalScalarFieldEnum = {
+  id: 'id',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AuthPrincipalScalarFieldEnum = (typeof AuthPrincipalScalarFieldEnum)[keyof typeof AuthPrincipalScalarFieldEnum]
+
+
+export const ExternalIdentityScalarFieldEnum = {
+  id: 'id',
+  provider: 'provider',
+  issuer: 'issuer',
+  subject: 'subject',
+  principalId: 'principalId',
+  createdAt: 'createdAt'
+} as const
+
+export type ExternalIdentityScalarFieldEnum = (typeof ExternalIdentityScalarFieldEnum)[keyof typeof ExternalIdentityScalarFieldEnum]
+
+
+export const TenantScalarFieldEnum = {
+  id: 'id',
+  slug: 'slug',
+  name: 'name',
+  auth0OrganizationId: 'auth0OrganizationId',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TenantScalarFieldEnum = (typeof TenantScalarFieldEnum)[keyof typeof TenantScalarFieldEnum]
+
+
+export const PrincipalTenantMembershipScalarFieldEnum = {
+  principalId: 'principalId',
+  tenantId: 'tenantId',
+  learnerId: 'learnerId',
+  timezone: 'timezone',
+  roles: 'roles',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PrincipalTenantMembershipScalarFieldEnum = (typeof PrincipalTenantMembershipScalarFieldEnum)[keyof typeof PrincipalTenantMembershipScalarFieldEnum]
 
 
 export const SortOrder = {

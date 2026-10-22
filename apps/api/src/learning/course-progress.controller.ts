@@ -1,5 +1,6 @@
 import {
   Controller,
+  ForbiddenException,
   Get,
   NotFoundException,
   Param,
@@ -15,16 +16,8 @@ import {
 import { RequestLearnerPrincipalResolver } from '../security/authorization/request-learner-principal.resolver.js';
 
 /**
- * HTTP query boundary for learner-owned Course Progress.
- *
- * The controller:
- * - resolves identity only from trusted request.user;
- * - verifies enrollment ownership before returning progress;
- * - hides enrollment existence from non-owners;
- * - delegates read-model retrieval to the application service.
- *
- * It does not calculate progress, access Prisma directly, or mutate domain
- * aggregates.
+ * HTTP query boundary for the learner-owned Course Progress read model.
+ * The route is protected by Auth0AuthenticationMiddleware in AppModule.
  */
 @Controller('learning/enrollments')
 export class CourseProgressController {
@@ -34,10 +27,6 @@ export class CourseProgressController {
     private readonly learnerPrincipalResolver: RequestLearnerPrincipalResolver,
   ) {}
 
-  /**
-   * Retrieves the derived Course Progress projection for the authenticated
-   * owner of an Enrollment.
-   */
   @Get(':enrollmentId/course-progress')
   async getCourseProgress(
     @Param('enrollmentId') enrollmentId: string,
@@ -51,14 +40,17 @@ export class CourseProgressController {
       );
     }
 
+    if (principal.tenantId === undefined) {
+      throw new ForbiddenException(
+        'An active Gurusthalam tenant membership is required.',
+      );
+    }
+
     const enrollment = await this.enrollmentApplication.getEnrollment({
       enrollmentId,
     });
 
-    /*
-     * Return the same response for a missing enrollment and an enrollment
-     * owned by another learner to avoid leaking enrollment existence.
-     */
+    // Make missing and non-owned enrollments indistinguishable.
     if (enrollment === null || enrollment.learnerId !== principal.learnerId) {
       throw new NotFoundException('Enrollment was not found.');
     }

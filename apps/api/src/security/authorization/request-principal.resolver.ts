@@ -13,21 +13,8 @@ interface RequestWithOptionalUser {
 }
 
 /**
- * Resolves the canonical authenticated principal from request.user.
- *
- * Authentication infrastructure is expected to populate request.user with
- * the canonical AuthenticatedPrincipal contract.
- *
- * This class intentionally does not:
- * - inspect authorization headers;
- * - parse JWTs;
- * - validate API keys;
- * - query users;
- * - query instructor profiles;
- * - infer identity from arbitrary client-controlled headers.
- *
- * Until an authentication adapter populates request.user, resolution
- * correctly returns null.
+ * Resolves a canonical principal only from request.user populated by trusted
+ * server-side authentication infrastructure. It never parses credentials.
  */
 @Injectable()
 export class RequestPrincipalResolver implements PrincipalResolver {
@@ -42,6 +29,9 @@ export class RequestPrincipalResolver implements PrincipalResolver {
       return null;
     }
 
-    return createAuthenticatedPrincipal(candidate.user.principalId);
+    return createAuthenticatedPrincipal(
+      candidate.user.principalId,
+      candidate.user,
+    );
   }
 }

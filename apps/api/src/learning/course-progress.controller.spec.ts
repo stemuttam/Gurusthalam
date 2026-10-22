@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 
 import {
   DefaultCourseProgressApplicationService,
@@ -9,16 +13,11 @@ import {
 } from '@gurusthalam/learning';
 
 import { createAuthenticatedLearnerPrincipal } from '../security/authorization/authenticated-learner-principal.js';
-
 import { RequestLearnerPrincipalResolver } from '../security/authorization/request-learner-principal.resolver.js';
-
 import { CourseProgressController } from './course-progress.controller.js';
 
 describe('CourseProgressController', () => {
-  const enrollment = {
-    id: 'enrollment-001',
-    learnerId: 'learner-001',
-  };
+  const enrollment = { id: 'enrollment-001', learnerId: 'learner-001' };
 
   const readModel: CourseProgressReadModel = {
     enrollmentId: 'enrollment-001',
@@ -39,25 +38,25 @@ describe('CourseProgressController', () => {
     getCourseProgress: vi.fn(),
   } as unknown as DefaultCourseProgressApplicationService;
 
-  const resolver = new RequestLearnerPrincipalResolver();
-
   const controller = new CourseProgressController(
     enrollmentApplication,
     courseProgressApplication,
-    resolver,
+    new RequestLearnerPrincipalResolver(),
   );
 
   const ownedRequest = {
-    user: createAuthenticatedLearnerPrincipal('principal-001', 'learner-001'),
+    user: createAuthenticatedLearnerPrincipal('principal-001', 'learner-001', {
+      tenantId: 'tenant-001',
+      roles: ['learner'],
+      timezone: 'Asia/Kolkata',
+    }),
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
-
     vi.mocked(enrollmentApplication.getEnrollment).mockResolvedValue(
       enrollment as never,
     );
-
     vi.mocked(courseProgressApplication.getCourseProgress).mockResolvedValue(
       readModel,
     );
@@ -67,11 +66,9 @@ describe('CourseProgressController', () => {
     await expect(
       controller.getCourseProgress('enrollment-001', ownedRequest),
     ).resolves.toEqual(readModel);
-
     expect(enrollmentApplication.getEnrollment).toHaveBeenCalledWith({
       enrollmentId: 'enrollment-001',
     });
-
     expect(courseProgressApplication.getCourseProgress).toHaveBeenCalledWith({
       enrollmentId: 'enrollment-001',
     });
@@ -80,36 +77,47 @@ describe('CourseProgressController', () => {
   it('rejects requests without a trusted learner principal', async () => {
     await expect(
       controller.getCourseProgress('enrollment-001', {
-        headers: {
-          'x-learner-id': 'learner-001',
-        },
+        headers: { 'x-learner-id': 'learner-001' },
       }),
     ).rejects.toBeInstanceOf(UnauthorizedException);
-
     expect(enrollmentApplication.getEnrollment).not.toHaveBeenCalled();
+    expect(courseProgressApplication.getCourseProgress).not.toHaveBeenCalled();
+  });
 
+  it('rejects a learner principal without tenant membership before reading enrollment', async () => {
+    const requestWithoutTenant = {
+      user: createAuthenticatedLearnerPrincipal('principal-001', 'learner-001'),
+    };
+    await expect(
+      controller.getCourseProgress('enrollment-001', requestWithoutTenant),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(enrollmentApplication.getEnrollment).not.toHaveBeenCalled();
     expect(courseProgressApplication.getCourseProgress).not.toHaveBeenCalled();
   });
 
   it('does not expose an enrollment owned by another learner', async () => {
     const otherLearnerRequest = {
-      user: createAuthenticatedLearnerPrincipal('principal-002', 'learner-002'),
+      user: createAuthenticatedLearnerPrincipal(
+        'principal-002',
+        'learner-002',
+        {
+          tenantId: 'tenant-001',
+          roles: ['learner'],
+          timezone: 'Asia/Kolkata',
+        },
+      ),
     };
-
     await expect(
       controller.getCourseProgress('enrollment-001', otherLearnerRequest),
     ).rejects.toBeInstanceOf(NotFoundException);
-
     expect(courseProgressApplication.getCourseProgress).not.toHaveBeenCalled();
   });
 
   it('returns not found when the enrollment does not exist', async () => {
     vi.mocked(enrollmentApplication.getEnrollment).mockResolvedValue(null);
-
     await expect(
       controller.getCourseProgress('missing-enrollment', ownedRequest),
     ).rejects.toBeInstanceOf(NotFoundException);
-
     expect(courseProgressApplication.getCourseProgress).not.toHaveBeenCalled();
   });
 
@@ -117,7 +125,6 @@ describe('CourseProgressController', () => {
     vi.mocked(courseProgressApplication.getCourseProgress).mockResolvedValue(
       null,
     );
-
     await expect(
       controller.getCourseProgress('enrollment-001', ownedRequest),
     ).rejects.toBeInstanceOf(NotFoundException);

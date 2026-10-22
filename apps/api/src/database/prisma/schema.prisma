@@ -907,3 +907,83 @@ model CourseProgressReadModel {
   @@index([courseVersionId, calculatedAt])
   @@index([calculatedAt])
 }
+
+// -----------------------------------------------------------------------------
+// Auth0 identity, internal principal, and tenant membership.
+// These records are Gurusthalam-owned. Auth0 subject/organization claims are
+// external identifiers and must never become learner IDs by inference.
+// -----------------------------------------------------------------------------
+
+enum AuthPrincipalStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum PrincipalTenantMembershipStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+model AuthPrincipal {
+  id        String              @id @default(uuid())
+  status    AuthPrincipalStatus @default(ACTIVE)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  externalIdentities ExternalIdentity[]
+  memberships        PrincipalTenantMembership[]
+
+  @@index([status, createdAt])
+}
+
+model ExternalIdentity {
+  id          String   @id @default(uuid())
+  provider    String
+  issuer      String
+  subject     String
+  principalId String
+  createdAt   DateTime @default(now())
+
+  principal AuthPrincipal @relation(fields: [principalId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([provider, issuer, subject])
+  @@index([principalId])
+}
+
+model Tenant {
+  id                 String       @id @default(uuid())
+  slug               String       @unique
+  name               String
+  auth0OrganizationId String?      @unique
+  status             TenantStatus @default(ACTIVE)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  memberships PrincipalTenantMembership[]
+
+  @@index([status])
+}
+
+model PrincipalTenantMembership {
+  principalId String
+  tenantId    String
+  learnerId   String?
+  timezone    String                            @default("UTC")
+  roles       String[]                          @default([])
+  status      PrincipalTenantMembershipStatus   @default(ACTIVE)
+  createdAt   DateTime                          @default(now())
+  updatedAt   DateTime                          @updatedAt
+
+  principal AuthPrincipal @relation(fields: [principalId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  tenant    Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@id([principalId, tenantId])
+  @@unique([learnerId])
+  @@index([tenantId, status])
+  @@index([tenantId, learnerId, status])
+}

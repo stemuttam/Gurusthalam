@@ -1,38 +1,89 @@
 /**
- * Canonical authenticated principal used by the API authorization boundary.
+ * Canonical authenticated principal used by API authorization boundaries.
  *
- * This is deliberately provider-neutral.
- *
- * Authentication infrastructure is responsible for converting whatever
- * authentication mechanism is used by the platform into this contract.
- *
- * The authorization layer must never depend directly on:
- * - JWT claims
- * - Passport
- * - sessions
- * - OAuth providers
- * - API keys
- * - User database records
- * - Instructor Profile records
+ * principalId and tenantId are Gurusthalam-owned identifiers. They are never
+ * inferred from request headers, route parameters, or an unverified token.
+ * Provider-specific claims remain outside this provider-neutral contract.
  */
 export interface AuthenticatedPrincipal {
   readonly authenticated: true;
   readonly principalId: string;
+  readonly tenantId?: string;
+  readonly roles?: readonly string[];
+  readonly timezone?: string;
 }
 
-/**
- * Creates the canonical authenticated principal.
- *
- * The identifier is intentionally opaque. No UUID assumption is imposed.
- */
+export interface AuthenticatedPrincipalContext {
+  readonly tenantId?: string;
+  readonly roles?: readonly string[];
+  readonly timezone?: string;
+}
+
+function isNonEmptyIdentifier(value: unknown): value is string {
+  return (
+    typeof value === 'string' && value.length > 0 && value.trim() === value
+  );
+}
+
+export function isValidIanaTimeZone(value: unknown): value is string {
+  if (!isNonEmptyIdentifier(value)) {
+    return false;
+  }
+
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: value });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function normalizeContext(
+  context?: AuthenticatedPrincipalContext,
+): AuthenticatedPrincipalContext {
+  if (context === undefined) {
+    return {};
+  }
+
+  const tenantId = context.tenantId;
+  if (tenantId !== undefined && !isNonEmptyIdentifier(tenantId)) {
+    throw new TypeError(
+      'Authenticated tenant identifier must be a non-empty string without leading or trailing whitespace.',
+    );
+  }
+
+  const timezone = context.timezone;
+  if (timezone !== undefined && !isValidIanaTimeZone(timezone)) {
+    throw new TypeError(
+      'Authenticated learner timezone must be a valid IANA timezone.',
+    );
+  }
+
+  const roles = context.roles;
+  if (roles !== undefined) {
+    if (
+      !Array.isArray(roles) ||
+      roles.some((role) => !isNonEmptyIdentifier(role))
+    ) {
+      throw new TypeError(
+        'Authenticated principal roles must be non-empty strings without leading or trailing whitespace.',
+      );
+    }
+  }
+
+  return {
+    ...(tenantId === undefined ? {} : { tenantId }),
+    ...(roles === undefined ? {} : { roles: Object.freeze([...roles]) }),
+    ...(timezone === undefined ? {} : { timezone }),
+  };
+}
+
+/** Creates a defensive, immutable canonical principal. */
 export function createAuthenticatedPrincipal(
   principalId: string,
+  context?: AuthenticatedPrincipalContext,
 ): AuthenticatedPrincipal {
-  if (
-    typeof principalId !== 'string' ||
-    principalId.length === 0 ||
-    principalId.trim() !== principalId
-  ) {
+  if (!isNonEmptyIdentifier(principalId)) {
     throw new TypeError(
       'Authenticated principal identifier must be a non-empty string without leading or trailing whitespace.',
     );
@@ -41,15 +92,13 @@ export function createAuthenticatedPrincipal(
   return Object.freeze({
     authenticated: true as const,
     principalId,
+    ...normalizeContext(context),
   });
 }
 
 /**
- * Determines whether an unknown value already represents the canonical
- * authenticated-principal contract.
- *
- * This function performs structural validation only.
- * It does not authenticate the principal.
+ * Structural validation only. This function does not authenticate a request.
+ * The caller must ensure request.user was set by trusted server middleware.
  */
 export function isAuthenticatedPrincipal(
   value: unknown,
@@ -61,12 +110,39 @@ export function isAuthenticatedPrincipal(
   const candidate = value as {
     readonly authenticated?: unknown;
     readonly principalId?: unknown;
+    readonly tenantId?: unknown;
+    readonly roles?: unknown;
+    readonly timezone?: unknown;
   };
 
-  return (
-    candidate.authenticated === true &&
-    typeof candidate.principalId === 'string' &&
-    candidate.principalId.length > 0 &&
-    candidate.principalId.trim() === candidate.principalId
-  );
+  if (
+    candidate.authenticated !== true ||
+    !isNonEmptyIdentifier(candidate.principalId)
+  ) {
+    return false;
+  }
+
+  if (
+    candidate.tenantId !== undefined &&
+    !isNonEmptyIdentifier(candidate.tenantId)
+  ) {
+    return false;
+  }
+
+  if (
+    candidate.timezone !== undefined &&
+    !isValidIanaTimeZone(candidate.timezone)
+  ) {
+    return false;
+  }
+
+  if (
+    candidate.roles !== undefined &&
+    (!Array.isArray(candidate.roles) ||
+      candidate.roles.some((role) => !isNonEmptyIdentifier(role)))
+  ) {
+    return false;
+  }
+
+  return true;
 }

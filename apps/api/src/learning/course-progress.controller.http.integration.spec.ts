@@ -1,5 +1,4 @@
 import type { INestApplication } from '@nestjs/common';
-
 import type { NextFunction, Request, Response } from 'express';
 
 import { Test } from '@nestjs/testing';
@@ -19,57 +18,28 @@ import {
   DefaultEnrollmentApplicationService,
 } from '@gurusthalam/learning';
 
+import { PrismaService } from '../database/prisma/prisma.service.js';
+
 import { createAuthenticatedLearnerPrincipal } from '../security/authorization/authenticated-learner-principal.js';
-
 import { LearningApplicationModule } from './learning-application.module.js';
-
 import { CourseProgressController } from './course-progress.controller.js';
 
 /**
- * Phase 5.12 — Progress Query APIs
- *
- * HTTP integration coverage for the learner-owned course-progress endpoint.
- *
- * The real Nest LearningApplicationModule, controller, route registration,
- * learner-principal resolver and HTTP exception mapping are exercised.
- *
- * The application services are replaced with controlled fixtures so these
- * tests isolate HTTP authorization and transport behavior. PostgreSQL
- * behavior is covered by the existing application/repository integration
- * suites; this test does not claim to replace them.
- *
- * AUTHENTICATION LIMITATION:
- * The current repository checkpoint does not establish a production
- * authentication adapter that populates request.user.
- *
- * The middleware below is a TEST FIXTURE ONLY. It injects an identity from
- * test-controlled state, never from client headers or query parameters.
- * It must not be copied into production bootstrap or application modules.
+ * HTTP transport/authorization-boundary integration test. The test-only
+ * middleware sets identity from test-controlled state, never from HTTP input.
+ * The production Auth0 adapter is covered by its own middleware tests.
  */
 describe('Course progress HTTP API — authorization integration', () => {
   let app: INestApplication;
-
-  /**
-   * Controlled by the test, not derived from HTTP input.
-   * Null represents a request for which the authentication boundary supplied
-   * no trusted learner identity.
-   */
   let activeTestPrincipal: ReturnType<
     typeof createAuthenticatedLearnerPrincipal
   > | null = null;
 
-  const enrollmentApplication = {
-    getEnrollment: vi.fn(),
-  };
-
-  const courseProgressApplication = {
-    getCourseProgress: vi.fn(),
-  };
-
+  const enrollmentApplication = { getEnrollment: vi.fn() };
+  const courseProgressApplication = { getCourseProgress: vi.fn() };
   const enrollmentId = 'enrollment-http-001';
   const ownerLearnerId = 'learner-http-owner';
   const otherLearnerId = 'learner-http-other';
-
   const readModel = {
     enrollmentId,
     courseVersionId: 'course-version-http-001',
@@ -85,39 +55,28 @@ describe('Course progress HTTP API — authorization integration', () => {
     return createAuthenticatedLearnerPrincipal(
       `principal:${learnerId}`,
       learnerId,
+      {
+        tenantId: 'tenant-http-001',
+        roles: ['learner'],
+        timezone: 'Asia/Kolkata',
+      },
     );
   }
 
-  async function getCourseProgress(
-    headers: Record<string, string> = {},
-  ): Promise<{
-    readonly status: number;
-    readonly body: unknown;
-  }> {
-    const server = app.getHttpServer();
-    const address = server.address();
-
+  async function getCourseProgress(headers: Record<string, string> = {}) {
+    const address = app.getHttpServer().address();
     if (address === null || typeof address === 'string') {
       throw new Error(
         'Expected the course-progress test server to expose a TCP address.',
       );
     }
-
     const response = await fetch(
-      `http://127.0.0.1:${address.port}` +
-        `/learning/enrollments/${encodeURIComponent(enrollmentId)}` +
-        '/course-progress',
-      {
-        method: 'GET',
-        headers,
-      },
+      `http://127.0.0.1:${address.port}/learning/enrollments/${encodeURIComponent(enrollmentId)}/course-progress`,
+      { method: 'GET', headers },
     );
-
-    const body: unknown = await response.json();
-
     return {
       status: response.status,
-      body,
+      body: (await response.json()) as unknown,
     };
   }
 
@@ -125,51 +84,33 @@ describe('Course progress HTTP API — authorization integration', () => {
     const moduleRef = await Test.createTestingModule({
       imports: [LearningApplicationModule],
     })
+      .overrideProvider(PrismaService)
+      .useValue({})
       .overrideProvider(DefaultEnrollmentApplicationService)
       .useValue(enrollmentApplication)
       .overrideProvider(DefaultCourseProgressApplicationService)
       .useValue(courseProgressApplication)
       .compile();
-
     app = moduleRef.createNestApplication();
-
-    /**
-     * Test-only authentication seam.
-     *
-     * No request header, query parameter, or request body can choose the
-     * active identity. The test controls this value directly.
-     */
-
     app.use(
       (request: Request, _response: Response, next: NextFunction): void => {
-        const requestWithTestUser = request as Request & {
-          user?: unknown;
-        };
-
-        if (activeTestPrincipal === null) {
-          delete requestWithTestUser.user;
-        } else {
-          requestWithTestUser.user = activeTestPrincipal;
-        }
-
+        const target = request as Request & { user?: unknown };
+        if (activeTestPrincipal === null) delete target.user;
+        else target.user = activeTestPrincipal;
         next();
       },
     );
-
     await app.init();
     await app.listen(0, '127.0.0.1');
   }, 30_000);
 
   beforeEach(() => {
     activeTestPrincipal = null;
-
     vi.clearAllMocks();
-
     enrollmentApplication.getEnrollment.mockResolvedValue({
       id: enrollmentId,
       learnerId: ownerLearnerId,
     });
-
     courseProgressApplication.getCourseProgress.mockResolvedValue(readModel);
   });
 
@@ -185,16 +126,11 @@ describe('Course progress HTTP API — authorization integration', () => {
 
   it('returns the progress projection to the authenticated enrollment owner', async () => {
     activeTestPrincipal = createPrincipal(ownerLearnerId);
-
     const response = await getCourseProgress();
-
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual(readModel);
-
+    expect(response).toEqual({ status: 200, body: readModel });
     expect(enrollmentApplication.getEnrollment).toHaveBeenCalledWith({
       enrollmentId,
     });
-
     expect(courseProgressApplication.getCourseProgress).toHaveBeenCalledWith({
       enrollmentId,
     });
@@ -202,11 +138,8 @@ describe('Course progress HTTP API — authorization integration', () => {
 
   it('rejects a request without a trusted learner principal', async () => {
     const response = await getCourseProgress();
-
     expect(response.status).toBe(401);
-
     expect(enrollmentApplication.getEnrollment).not.toHaveBeenCalled();
-
     expect(courseProgressApplication.getCourseProgress).not.toHaveBeenCalled();
   });
 
@@ -216,62 +149,40 @@ describe('Course progress HTTP API — authorization integration', () => {
       'x-learner-id': ownerLearnerId,
       authorization: 'Bearer unverified-test-value',
     });
-
     expect(response.status).toBe(401);
-
     expect(enrollmentApplication.getEnrollment).not.toHaveBeenCalled();
-
     expect(courseProgressApplication.getCourseProgress).not.toHaveBeenCalled();
   });
 
   it('hides another learner enrollment behind a not-found response', async () => {
     activeTestPrincipal = createPrincipal(otherLearnerId);
-
     const response = await getCourseProgress();
-
     expect(response.status).toBe(404);
-
-    expect(enrollmentApplication.getEnrollment).toHaveBeenCalledWith({
-      enrollmentId,
-    });
-
     expect(courseProgressApplication.getCourseProgress).not.toHaveBeenCalled();
   });
 
   it('returns not found when the enrollment does not exist', async () => {
     activeTestPrincipal = createPrincipal(ownerLearnerId);
-
     enrollmentApplication.getEnrollment.mockResolvedValue(null);
-
     const response = await getCourseProgress();
-
     expect(response.status).toBe(404);
-
     expect(courseProgressApplication.getCourseProgress).not.toHaveBeenCalled();
   });
 
   it('returns not found when the enrollment has no course-progress projection', async () => {
     activeTestPrincipal = createPrincipal(ownerLearnerId);
-
     courseProgressApplication.getCourseProgress.mockResolvedValue(null);
-
     const response = await getCourseProgress();
-
     expect(response.status).toBe(404);
   });
 
-  it('does not query progress when enrollment ownership does not match', async () => {
-    activeTestPrincipal = createPrincipal(otherLearnerId);
-
-    enrollmentApplication.getEnrollment.mockResolvedValue({
-      id: enrollmentId,
-      learnerId: ownerLearnerId,
-    });
-
+  it('rejects a learner principal without tenant membership', async () => {
+    activeTestPrincipal = createAuthenticatedLearnerPrincipal(
+      'principal-without-tenant',
+      ownerLearnerId,
+    );
     const response = await getCourseProgress();
-
-    expect(response.status).toBe(404);
-
-    expect(courseProgressApplication.getCourseProgress).not.toHaveBeenCalled();
+    expect(response.status).toBe(403);
+    expect(enrollmentApplication.getEnrollment).not.toHaveBeenCalled();
   });
 });

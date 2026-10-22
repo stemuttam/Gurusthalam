@@ -678,6 +678,57 @@ export type BoolWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedBoolFilter<$PrismaModel>
 }
 
+export type EnumAuthPrincipalStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.AuthPrincipalStatus | Prisma.EnumAuthPrincipalStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.AuthPrincipalStatus[] | Prisma.ListEnumAuthPrincipalStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AuthPrincipalStatus[] | Prisma.ListEnumAuthPrincipalStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAuthPrincipalStatusFilter<$PrismaModel> | $Enums.AuthPrincipalStatus
+}
+
+export type EnumAuthPrincipalStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.AuthPrincipalStatus | Prisma.EnumAuthPrincipalStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.AuthPrincipalStatus[] | Prisma.ListEnumAuthPrincipalStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AuthPrincipalStatus[] | Prisma.ListEnumAuthPrincipalStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAuthPrincipalStatusWithAggregatesFilter<$PrismaModel> | $Enums.AuthPrincipalStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumAuthPrincipalStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumAuthPrincipalStatusFilter<$PrismaModel>
+}
+
+export type EnumTenantStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.TenantStatus | Prisma.EnumTenantStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.TenantStatus[] | Prisma.ListEnumTenantStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.TenantStatus[] | Prisma.ListEnumTenantStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumTenantStatusFilter<$PrismaModel> | $Enums.TenantStatus
+}
+
+export type EnumTenantStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.TenantStatus | Prisma.EnumTenantStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.TenantStatus[] | Prisma.ListEnumTenantStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.TenantStatus[] | Prisma.ListEnumTenantStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumTenantStatusWithAggregatesFilter<$PrismaModel> | $Enums.TenantStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumTenantStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumTenantStatusFilter<$PrismaModel>
+}
+
+export type EnumPrincipalTenantMembershipStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.PrincipalTenantMembershipStatus | Prisma.EnumPrincipalTenantMembershipStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.PrincipalTenantMembershipStatus[] | Prisma.ListEnumPrincipalTenantMembershipStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.PrincipalTenantMembershipStatus[] | Prisma.ListEnumPrincipalTenantMembershipStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumPrincipalTenantMembershipStatusFilter<$PrismaModel> | $Enums.PrincipalTenantMembershipStatus
+}
+
+export type EnumPrincipalTenantMembershipStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.PrincipalTenantMembershipStatus | Prisma.EnumPrincipalTenantMembershipStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.PrincipalTenantMembershipStatus[] | Prisma.ListEnumPrincipalTenantMembershipStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.PrincipalTenantMembershipStatus[] | Prisma.ListEnumPrincipalTenantMembershipStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumPrincipalTenantMembershipStatusWithAggregatesFilter<$PrismaModel> | $Enums.PrincipalTenantMembershipStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumPrincipalTenantMembershipStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumPrincipalTenantMembershipStatusFilter<$PrismaModel>
+}
+
 export type NestedStringFilter<$PrismaModel = never> = {
   equals?: string | Prisma.StringFieldRefInput<$PrismaModel>
   in?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
@@ -1299,6 +1350,57 @@ export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedBoolFilter<$PrismaModel>
   _max?: Prisma.NestedBoolFilter<$PrismaModel>
+}
+
+export type NestedEnumAuthPrincipalStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.AuthPrincipalStatus | Prisma.EnumAuthPrincipalStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.AuthPrincipalStatus[] | Prisma.ListEnumAuthPrincipalStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AuthPrincipalStatus[] | Prisma.ListEnumAuthPrincipalStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAuthPrincipalStatusFilter<$PrismaModel> | $Enums.AuthPrincipalStatus
+}
+
+export type NestedEnumAuthPrincipalStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.AuthPrincipalStatus | Prisma.EnumAuthPrincipalStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.AuthPrincipalStatus[] | Prisma.ListEnumAuthPrincipalStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AuthPrincipalStatus[] | Prisma.ListEnumAuthPrincipalStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAuthPrincipalStatusWithAggregatesFilter<$PrismaModel> | $Enums.AuthPrincipalStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumAuthPrincipalStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumAuthPrincipalStatusFilter<$PrismaModel>
+}
+
+export type NestedEnumTenantStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.TenantStatus | Prisma.EnumTenantStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.TenantStatus[] | Prisma.ListEnumTenantStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.TenantStatus[] | Prisma.ListEnumTenantStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumTenantStatusFilter<$PrismaModel> | $Enums.TenantStatus
+}
+
+export type NestedEnumTenantStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.TenantStatus | Prisma.EnumTenantStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.TenantStatus[] | Prisma.ListEnumTenantStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.TenantStatus[] | Prisma.ListEnumTenantStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumTenantStatusWithAggregatesFilter<$PrismaModel> | $Enums.TenantStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumTenantStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumTenantStatusFilter<$PrismaModel>
+}
+
+export type NestedEnumPrincipalTenantMembershipStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.PrincipalTenantMembershipStatus | Prisma.EnumPrincipalTenantMembershipStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.PrincipalTenantMembershipStatus[] | Prisma.ListEnumPrincipalTenantMembershipStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.PrincipalTenantMembershipStatus[] | Prisma.ListEnumPrincipalTenantMembershipStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumPrincipalTenantMembershipStatusFilter<$PrismaModel> | $Enums.PrincipalTenantMembershipStatus
+}
+
+export type NestedEnumPrincipalTenantMembershipStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.PrincipalTenantMembershipStatus | Prisma.EnumPrincipalTenantMembershipStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.PrincipalTenantMembershipStatus[] | Prisma.ListEnumPrincipalTenantMembershipStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.PrincipalTenantMembershipStatus[] | Prisma.ListEnumPrincipalTenantMembershipStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumPrincipalTenantMembershipStatusWithAggregatesFilter<$PrismaModel> | $Enums.PrincipalTenantMembershipStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumPrincipalTenantMembershipStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumPrincipalTenantMembershipStatusFilter<$PrismaModel>
 }
 
 

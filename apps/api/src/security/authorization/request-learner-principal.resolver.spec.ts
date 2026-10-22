@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import { createAuthenticatedLearnerPrincipal } from './authenticated-learner-principal.js';
-
 import { RequestLearnerPrincipalResolver } from './request-learner-principal.resolver.js';
 
 describe('RequestLearnerPrincipalResolver', () => {
@@ -19,7 +18,21 @@ describe('RequestLearnerPrincipalResolver', () => {
     });
   });
 
-  it('returns a defensive canonical copy', () => {
+  it('preserves the trusted tenant and roles in a defensive canonical copy', () => {
+    const source = createAuthenticatedLearnerPrincipal(
+      'principal-tenant-001',
+      'learner-tenant-001',
+      { tenantId: 'tenant-internal-001', roles: ['learner'] },
+    );
+
+    const resolved = resolver.resolve({ user: source });
+
+    expect(resolved).toEqual(source);
+    expect(resolved).not.toBe(source);
+    expect(resolved?.roles).not.toBe(source.roles);
+  });
+
+  it('returns a defensive canonical copy and drops unexpected properties', () => {
     const request = {
       user: {
         authenticated: true,
@@ -43,10 +56,7 @@ describe('RequestLearnerPrincipalResolver', () => {
   it('rejects a principal without a learner identity', () => {
     expect(
       resolver.resolve({
-        user: {
-          authenticated: true,
-          principalId: 'principal-003',
-        },
+        user: { authenticated: true, principalId: 'principal-003' },
       }),
     ).toBeNull();
   });

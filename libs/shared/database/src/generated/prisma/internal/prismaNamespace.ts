@@ -422,7 +422,11 @@ export const ModelName = {
   CourseStructureLearningUnit: 'CourseStructureLearningUnit',
   CourseStructureContentItemReference: 'CourseStructureContentItemReference',
   CourseStructureAssessmentReference: 'CourseStructureAssessmentReference',
-  CourseProgressReadModel: 'CourseProgressReadModel'
+  CourseProgressReadModel: 'CourseProgressReadModel',
+  AuthPrincipal: 'AuthPrincipal',
+  ExternalIdentity: 'ExternalIdentity',
+  Tenant: 'Tenant',
+  PrincipalTenantMembership: 'PrincipalTenantMembership'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -438,7 +442,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "course" | "courseOwnershipAssignment" | "courseVersion" | "courseVersionAudit" | "courseVersionLineage" | "enrollment" | "entitlement" | "learningSession" | "progress" | "lessonProgress" | "sectionProgress" | "learningActivityEvent" | "courseCatalogProjection" | "courseSearchProjection" | "notificationTemplate" | "notificationTemplateVersion" | "notification" | "notificationDelivery" | "outboxEvent" | "notificationAggregation" | "notificationAggregationItem" | "courseStructureSection" | "courseStructureLearningUnit" | "courseStructureContentItemReference" | "courseStructureAssessmentReference" | "courseProgressReadModel"
+    modelProps: "course" | "courseOwnershipAssignment" | "courseVersion" | "courseVersionAudit" | "courseVersionLineage" | "enrollment" | "entitlement" | "learningSession" | "progress" | "lessonProgress" | "sectionProgress" | "learningActivityEvent" | "courseCatalogProjection" | "courseSearchProjection" | "notificationTemplate" | "notificationTemplateVersion" | "notification" | "notificationDelivery" | "outboxEvent" | "notificationAggregation" | "notificationAggregationItem" | "courseStructureSection" | "courseStructureLearningUnit" | "courseStructureContentItemReference" | "courseStructureAssessmentReference" | "courseProgressReadModel" | "authPrincipal" | "externalIdentity" | "tenant" | "principalTenantMembership"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -2366,6 +2370,302 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    AuthPrincipal: {
+      payload: Prisma.$AuthPrincipalPayload<ExtArgs>
+      fields: Prisma.AuthPrincipalFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.AuthPrincipalFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthPrincipalPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.AuthPrincipalFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthPrincipalPayload>
+        }
+        findFirst: {
+          args: Prisma.AuthPrincipalFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthPrincipalPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.AuthPrincipalFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthPrincipalPayload>
+        }
+        findMany: {
+          args: Prisma.AuthPrincipalFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthPrincipalPayload>[]
+        }
+        create: {
+          args: Prisma.AuthPrincipalCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthPrincipalPayload>
+        }
+        createMany: {
+          args: Prisma.AuthPrincipalCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.AuthPrincipalCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthPrincipalPayload>[]
+        }
+        delete: {
+          args: Prisma.AuthPrincipalDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthPrincipalPayload>
+        }
+        update: {
+          args: Prisma.AuthPrincipalUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthPrincipalPayload>
+        }
+        deleteMany: {
+          args: Prisma.AuthPrincipalDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.AuthPrincipalUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.AuthPrincipalUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthPrincipalPayload>[]
+        }
+        upsert: {
+          args: Prisma.AuthPrincipalUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthPrincipalPayload>
+        }
+        aggregate: {
+          args: Prisma.AuthPrincipalAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAuthPrincipal>
+        }
+        groupBy: {
+          args: Prisma.AuthPrincipalGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AuthPrincipalGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.AuthPrincipalCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AuthPrincipalCountAggregateOutputType> | number
+        }
+      }
+    }
+    ExternalIdentity: {
+      payload: Prisma.$ExternalIdentityPayload<ExtArgs>
+      fields: Prisma.ExternalIdentityFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ExternalIdentityFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExternalIdentityPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ExternalIdentityFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExternalIdentityPayload>
+        }
+        findFirst: {
+          args: Prisma.ExternalIdentityFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExternalIdentityPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ExternalIdentityFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExternalIdentityPayload>
+        }
+        findMany: {
+          args: Prisma.ExternalIdentityFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExternalIdentityPayload>[]
+        }
+        create: {
+          args: Prisma.ExternalIdentityCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExternalIdentityPayload>
+        }
+        createMany: {
+          args: Prisma.ExternalIdentityCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ExternalIdentityCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExternalIdentityPayload>[]
+        }
+        delete: {
+          args: Prisma.ExternalIdentityDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExternalIdentityPayload>
+        }
+        update: {
+          args: Prisma.ExternalIdentityUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExternalIdentityPayload>
+        }
+        deleteMany: {
+          args: Prisma.ExternalIdentityDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ExternalIdentityUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ExternalIdentityUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExternalIdentityPayload>[]
+        }
+        upsert: {
+          args: Prisma.ExternalIdentityUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExternalIdentityPayload>
+        }
+        aggregate: {
+          args: Prisma.ExternalIdentityAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateExternalIdentity>
+        }
+        groupBy: {
+          args: Prisma.ExternalIdentityGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ExternalIdentityGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ExternalIdentityCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ExternalIdentityCountAggregateOutputType> | number
+        }
+      }
+    }
+    Tenant: {
+      payload: Prisma.$TenantPayload<ExtArgs>
+      fields: Prisma.TenantFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.TenantFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.TenantFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantPayload>
+        }
+        findFirst: {
+          args: Prisma.TenantFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.TenantFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantPayload>
+        }
+        findMany: {
+          args: Prisma.TenantFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantPayload>[]
+        }
+        create: {
+          args: Prisma.TenantCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantPayload>
+        }
+        createMany: {
+          args: Prisma.TenantCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.TenantCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantPayload>[]
+        }
+        delete: {
+          args: Prisma.TenantDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantPayload>
+        }
+        update: {
+          args: Prisma.TenantUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantPayload>
+        }
+        deleteMany: {
+          args: Prisma.TenantDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.TenantUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.TenantUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantPayload>[]
+        }
+        upsert: {
+          args: Prisma.TenantUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantPayload>
+        }
+        aggregate: {
+          args: Prisma.TenantAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateTenant>
+        }
+        groupBy: {
+          args: Prisma.TenantGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TenantGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.TenantCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TenantCountAggregateOutputType> | number
+        }
+      }
+    }
+    PrincipalTenantMembership: {
+      payload: Prisma.$PrincipalTenantMembershipPayload<ExtArgs>
+      fields: Prisma.PrincipalTenantMembershipFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PrincipalTenantMembershipFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PrincipalTenantMembershipPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PrincipalTenantMembershipFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PrincipalTenantMembershipPayload>
+        }
+        findFirst: {
+          args: Prisma.PrincipalTenantMembershipFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PrincipalTenantMembershipPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PrincipalTenantMembershipFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PrincipalTenantMembershipPayload>
+        }
+        findMany: {
+          args: Prisma.PrincipalTenantMembershipFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PrincipalTenantMembershipPayload>[]
+        }
+        create: {
+          args: Prisma.PrincipalTenantMembershipCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PrincipalTenantMembershipPayload>
+        }
+        createMany: {
+          args: Prisma.PrincipalTenantMembershipCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PrincipalTenantMembershipCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PrincipalTenantMembershipPayload>[]
+        }
+        delete: {
+          args: Prisma.PrincipalTenantMembershipDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PrincipalTenantMembershipPayload>
+        }
+        update: {
+          args: Prisma.PrincipalTenantMembershipUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PrincipalTenantMembershipPayload>
+        }
+        deleteMany: {
+          args: Prisma.PrincipalTenantMembershipDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PrincipalTenantMembershipUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PrincipalTenantMembershipUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PrincipalTenantMembershipPayload>[]
+        }
+        upsert: {
+          args: Prisma.PrincipalTenantMembershipUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PrincipalTenantMembershipPayload>
+        }
+        aggregate: {
+          args: Prisma.PrincipalTenantMembershipAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePrincipalTenantMembership>
+        }
+        groupBy: {
+          args: Prisma.PrincipalTenantMembershipGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PrincipalTenantMembershipGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PrincipalTenantMembershipCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PrincipalTenantMembershipCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -2828,6 +3128,55 @@ export const CourseProgressReadModelScalarFieldEnum = {
 export type CourseProgressReadModelScalarFieldEnum = (typeof CourseProgressReadModelScalarFieldEnum)[keyof typeof CourseProgressReadModelScalarFieldEnum]
 
 
+export const AuthPrincipalScalarFieldEnum = {
+  id: 'id',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AuthPrincipalScalarFieldEnum = (typeof AuthPrincipalScalarFieldEnum)[keyof typeof AuthPrincipalScalarFieldEnum]
+
+
+export const ExternalIdentityScalarFieldEnum = {
+  id: 'id',
+  provider: 'provider',
+  issuer: 'issuer',
+  subject: 'subject',
+  principalId: 'principalId',
+  createdAt: 'createdAt'
+} as const
+
+export type ExternalIdentityScalarFieldEnum = (typeof ExternalIdentityScalarFieldEnum)[keyof typeof ExternalIdentityScalarFieldEnum]
+
+
+export const TenantScalarFieldEnum = {
+  id: 'id',
+  slug: 'slug',
+  name: 'name',
+  auth0OrganizationId: 'auth0OrganizationId',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TenantScalarFieldEnum = (typeof TenantScalarFieldEnum)[keyof typeof TenantScalarFieldEnum]
+
+
+export const PrincipalTenantMembershipScalarFieldEnum = {
+  principalId: 'principalId',
+  tenantId: 'tenantId',
+  learnerId: 'learnerId',
+  timezone: 'timezone',
+  roles: 'roles',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PrincipalTenantMembershipScalarFieldEnum = (typeof PrincipalTenantMembershipScalarFieldEnum)[keyof typeof PrincipalTenantMembershipScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -3254,6 +3603,48 @@ export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
 
 
 /**
+ * Reference to a field of type 'AuthPrincipalStatus'
+ */
+export type EnumAuthPrincipalStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AuthPrincipalStatus'>
+
+
+
+/**
+ * Reference to a field of type 'AuthPrincipalStatus[]'
+ */
+export type ListEnumAuthPrincipalStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AuthPrincipalStatus[]'>
+
+
+
+/**
+ * Reference to a field of type 'TenantStatus'
+ */
+export type EnumTenantStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TenantStatus'>
+
+
+
+/**
+ * Reference to a field of type 'TenantStatus[]'
+ */
+export type ListEnumTenantStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TenantStatus[]'>
+
+
+
+/**
+ * Reference to a field of type 'PrincipalTenantMembershipStatus'
+ */
+export type EnumPrincipalTenantMembershipStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PrincipalTenantMembershipStatus'>
+
+
+
+/**
+ * Reference to a field of type 'PrincipalTenantMembershipStatus[]'
+ */
+export type ListEnumPrincipalTenantMembershipStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PrincipalTenantMembershipStatus[]'>
+
+
+
+/**
  * Reference to a field of type 'Float'
  */
 export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
@@ -3443,6 +3834,10 @@ export type GlobalOmitConfig = {
   courseStructureContentItemReference?: Prisma.CourseStructureContentItemReferenceOmit
   courseStructureAssessmentReference?: Prisma.CourseStructureAssessmentReferenceOmit
   courseProgressReadModel?: Prisma.CourseProgressReadModelOmit
+  authPrincipal?: Prisma.AuthPrincipalOmit
+  externalIdentity?: Prisma.ExternalIdentityOmit
+  tenant?: Prisma.TenantOmit
+  principalTenantMembership?: Prisma.PrincipalTenantMembershipOmit
 }
 
 /* Types for Logging */

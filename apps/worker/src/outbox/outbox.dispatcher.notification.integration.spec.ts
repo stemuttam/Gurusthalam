@@ -228,6 +228,8 @@ async function createOutboxRow(
 
       availableAt: new Date(),
 
+      createdAt: new Date('1999-01-01T00:00:00.000Z'),
+
       lockedAt: null,
 
       lockedBy: null,

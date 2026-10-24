@@ -134,15 +134,17 @@ describe('NotificationProcessor delivery idempotency - PostgreSQL integration', 
       'EMAIL',
     );
 
+    const seedOwnershipToken = 'notification-delivery-replay-seed';
+
     await deliveryPersistence.markProcessing(
       deliveryKey,
-
       1,
+      seedOwnershipToken,
     );
 
     await deliveryPersistence.markSent(
       deliveryKey,
-
+      seedOwnershipToken,
       providerMessageId,
     );
 

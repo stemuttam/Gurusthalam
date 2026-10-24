@@ -265,11 +265,11 @@ model Enrollment {
   sectionProgress         SectionProgress[]
   courseProgressReadModel CourseProgressReadModel?
 
+  @@unique([id, courseVersionId])
   @@index([learnerId, status, createdAt])
   @@index([courseId, status, createdAt])
   @@index([courseVersionId, status])
   @@index([status, expiresAt])
-  @@unique([id, courseVersionId])
 }
 
 model Entitlement {
@@ -679,7 +679,8 @@ model Notification {
 
   idempotencyKey String @unique
 
-  attempts Int @default(0)
+  attempts           Int     @default(0)
+  activeAttemptToken String?
 
   queuedAt      DateTime  @default(now())
   processingAt  DateTime?
@@ -709,7 +710,8 @@ model NotificationDelivery {
 
   status NotificationDeliveryStatus @default(PENDING)
 
-  attempts Int @default(0)
+  attempts           Int     @default(0)
+  activeAttemptToken String?
 
   providerMessageId String?
 
@@ -956,13 +958,13 @@ model ExternalIdentity {
 }
 
 model Tenant {
-  id                 String       @id @default(uuid())
-  slug               String       @unique
-  name               String
+  id                  String       @id @default(uuid())
+  slug                String       @unique
+  name                String
   auth0OrganizationId String?      @unique
-  status             TenantStatus @default(ACTIVE)
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
+  status              TenantStatus @default(ACTIVE)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
 
   memberships PrincipalTenantMembership[]
 
@@ -973,11 +975,11 @@ model PrincipalTenantMembership {
   principalId String
   tenantId    String
   learnerId   String?
-  timezone    String                            @default("UTC")
-  roles       String[]                          @default([])
-  status      PrincipalTenantMembershipStatus   @default(ACTIVE)
-  createdAt   DateTime                          @default(now())
-  updatedAt   DateTime                          @updatedAt
+  timezone    String                          @default("UTC")
+  roles       String[]                        @default([])
+  status      PrincipalTenantMembershipStatus @default(ACTIVE)
+  createdAt   DateTime                        @default(now())
+  updatedAt   DateTime                        @updatedAt
 
   principal AuthPrincipal @relation(fields: [principalId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   tenant    Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)

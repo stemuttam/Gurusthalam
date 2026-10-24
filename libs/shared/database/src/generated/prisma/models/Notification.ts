@@ -52,6 +52,7 @@ export type NotificationMinAggregateOutputType = {
   providerMessageId: string | null
   idempotencyKey: string | null
   attempts: number | null
+  activeAttemptToken: string | null
   queuedAt: Date | null
   processingAt: Date | null
   sentAt: Date | null
@@ -77,6 +78,7 @@ export type NotificationMaxAggregateOutputType = {
   providerMessageId: string | null
   idempotencyKey: string | null
   attempts: number | null
+  activeAttemptToken: string | null
   queuedAt: Date | null
   processingAt: Date | null
   sentAt: Date | null
@@ -104,6 +106,7 @@ export type NotificationCountAggregateOutputType = {
   providerMessageId: number
   idempotencyKey: number
   attempts: number
+  activeAttemptToken: number
   queuedAt: number
   processingAt: number
   sentAt: number
@@ -141,6 +144,7 @@ export type NotificationMinAggregateInputType = {
   providerMessageId?: true
   idempotencyKey?: true
   attempts?: true
+  activeAttemptToken?: true
   queuedAt?: true
   processingAt?: true
   sentAt?: true
@@ -166,6 +170,7 @@ export type NotificationMaxAggregateInputType = {
   providerMessageId?: true
   idempotencyKey?: true
   attempts?: true
+  activeAttemptToken?: true
   queuedAt?: true
   processingAt?: true
   sentAt?: true
@@ -193,6 +198,7 @@ export type NotificationCountAggregateInputType = {
   providerMessageId?: true
   idempotencyKey?: true
   attempts?: true
+  activeAttemptToken?: true
   queuedAt?: true
   processingAt?: true
   sentAt?: true
@@ -307,6 +313,7 @@ export type NotificationGroupByOutputType = {
   providerMessageId: string | null
   idempotencyKey: string
   attempts: number
+  activeAttemptToken: string | null
   queuedAt: Date
   processingAt: Date | null
   sentAt: Date | null
@@ -357,6 +364,7 @@ export type NotificationWhereInput = {
   providerMessageId?: Prisma.StringNullableFilter<"Notification"> | string | null
   idempotencyKey?: Prisma.StringFilter<"Notification"> | string
   attempts?: Prisma.IntFilter<"Notification"> | number
+  activeAttemptToken?: Prisma.StringNullableFilter<"Notification"> | string | null
   queuedAt?: Prisma.DateTimeFilter<"Notification"> | Date | string
   processingAt?: Prisma.DateTimeNullableFilter<"Notification"> | Date | string | null
   sentAt?: Prisma.DateTimeNullableFilter<"Notification"> | Date | string | null
@@ -385,6 +393,7 @@ export type NotificationOrderByWithRelationInput = {
   providerMessageId?: Prisma.SortOrderInput | Prisma.SortOrder
   idempotencyKey?: Prisma.SortOrder
   attempts?: Prisma.SortOrder
+  activeAttemptToken?: Prisma.SortOrderInput | Prisma.SortOrder
   queuedAt?: Prisma.SortOrder
   processingAt?: Prisma.SortOrderInput | Prisma.SortOrder
   sentAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -416,6 +425,7 @@ export type NotificationWhereUniqueInput = Prisma.AtLeast<{
   provider?: Prisma.StringNullableFilter<"Notification"> | string | null
   providerMessageId?: Prisma.StringNullableFilter<"Notification"> | string | null
   attempts?: Prisma.IntFilter<"Notification"> | number
+  activeAttemptToken?: Prisma.StringNullableFilter<"Notification"> | string | null
   queuedAt?: Prisma.DateTimeFilter<"Notification"> | Date | string
   processingAt?: Prisma.DateTimeNullableFilter<"Notification"> | Date | string | null
   sentAt?: Prisma.DateTimeNullableFilter<"Notification"> | Date | string | null
@@ -444,6 +454,7 @@ export type NotificationOrderByWithAggregationInput = {
   providerMessageId?: Prisma.SortOrderInput | Prisma.SortOrder
   idempotencyKey?: Prisma.SortOrder
   attempts?: Prisma.SortOrder
+  activeAttemptToken?: Prisma.SortOrderInput | Prisma.SortOrder
   queuedAt?: Prisma.SortOrder
   processingAt?: Prisma.SortOrderInput | Prisma.SortOrder
   sentAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -479,6 +490,7 @@ export type NotificationScalarWhereWithAggregatesInput = {
   providerMessageId?: Prisma.StringNullableWithAggregatesFilter<"Notification"> | string | null
   idempotencyKey?: Prisma.StringWithAggregatesFilter<"Notification"> | string
   attempts?: Prisma.IntWithAggregatesFilter<"Notification"> | number
+  activeAttemptToken?: Prisma.StringNullableWithAggregatesFilter<"Notification"> | string | null
   queuedAt?: Prisma.DateTimeWithAggregatesFilter<"Notification"> | Date | string
   processingAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Notification"> | Date | string | null
   sentAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Notification"> | Date | string | null
@@ -506,6 +518,7 @@ export type NotificationCreateInput = {
   providerMessageId?: string | null
   idempotencyKey: string
   attempts?: number
+  activeAttemptToken?: string | null
   queuedAt?: Date | string
   processingAt?: Date | string | null
   sentAt?: Date | string | null
@@ -534,6 +547,7 @@ export type NotificationUncheckedCreateInput = {
   providerMessageId?: string | null
   idempotencyKey: string
   attempts?: number
+  activeAttemptToken?: string | null
   queuedAt?: Date | string
   processingAt?: Date | string | null
   sentAt?: Date | string | null
@@ -562,6 +576,7 @@ export type NotificationUpdateInput = {
   providerMessageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
   attempts?: Prisma.IntFieldUpdateOperationsInput | number
+  activeAttemptToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   queuedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   processingAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -590,6 +605,7 @@ export type NotificationUncheckedUpdateInput = {
   providerMessageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
   attempts?: Prisma.IntFieldUpdateOperationsInput | number
+  activeAttemptToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   queuedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   processingAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -618,6 +634,7 @@ export type NotificationCreateManyInput = {
   providerMessageId?: string | null
   idempotencyKey: string
   attempts?: number
+  activeAttemptToken?: string | null
   queuedAt?: Date | string
   processingAt?: Date | string | null
   sentAt?: Date | string | null
@@ -645,6 +662,7 @@ export type NotificationUpdateManyMutationInput = {
   providerMessageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
   attempts?: Prisma.IntFieldUpdateOperationsInput | number
+  activeAttemptToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   queuedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   processingAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -672,6 +690,7 @@ export type NotificationUncheckedUpdateManyInput = {
   providerMessageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
   attempts?: Prisma.IntFieldUpdateOperationsInput | number
+  activeAttemptToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   queuedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   processingAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -699,6 +718,7 @@ export type NotificationCountOrderByAggregateInput = {
   providerMessageId?: Prisma.SortOrder
   idempotencyKey?: Prisma.SortOrder
   attempts?: Prisma.SortOrder
+  activeAttemptToken?: Prisma.SortOrder
   queuedAt?: Prisma.SortOrder
   processingAt?: Prisma.SortOrder
   sentAt?: Prisma.SortOrder
@@ -729,6 +749,7 @@ export type NotificationMaxOrderByAggregateInput = {
   providerMessageId?: Prisma.SortOrder
   idempotencyKey?: Prisma.SortOrder
   attempts?: Prisma.SortOrder
+  activeAttemptToken?: Prisma.SortOrder
   queuedAt?: Prisma.SortOrder
   processingAt?: Prisma.SortOrder
   sentAt?: Prisma.SortOrder
@@ -754,6 +775,7 @@ export type NotificationMinOrderByAggregateInput = {
   providerMessageId?: Prisma.SortOrder
   idempotencyKey?: Prisma.SortOrder
   attempts?: Prisma.SortOrder
+  activeAttemptToken?: Prisma.SortOrder
   queuedAt?: Prisma.SortOrder
   processingAt?: Prisma.SortOrder
   sentAt?: Prisma.SortOrder
@@ -821,6 +843,7 @@ export type NotificationCreateWithoutDeliveriesInput = {
   providerMessageId?: string | null
   idempotencyKey: string
   attempts?: number
+  activeAttemptToken?: string | null
   queuedAt?: Date | string
   processingAt?: Date | string | null
   sentAt?: Date | string | null
@@ -848,6 +871,7 @@ export type NotificationUncheckedCreateWithoutDeliveriesInput = {
   providerMessageId?: string | null
   idempotencyKey: string
   attempts?: number
+  activeAttemptToken?: string | null
   queuedAt?: Date | string
   processingAt?: Date | string | null
   sentAt?: Date | string | null
@@ -891,6 +915,7 @@ export type NotificationUpdateWithoutDeliveriesInput = {
   providerMessageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
   attempts?: Prisma.IntFieldUpdateOperationsInput | number
+  activeAttemptToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   queuedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   processingAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -918,6 +943,7 @@ export type NotificationUncheckedUpdateWithoutDeliveriesInput = {
   providerMessageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
   attempts?: Prisma.IntFieldUpdateOperationsInput | number
+  activeAttemptToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   queuedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   processingAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -976,6 +1002,7 @@ export type NotificationSelect<ExtArgs extends runtime.Types.Extensions.Internal
   providerMessageId?: boolean
   idempotencyKey?: boolean
   attempts?: boolean
+  activeAttemptToken?: boolean
   queuedAt?: boolean
   processingAt?: boolean
   sentAt?: boolean
@@ -1005,6 +1032,7 @@ export type NotificationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
   providerMessageId?: boolean
   idempotencyKey?: boolean
   attempts?: boolean
+  activeAttemptToken?: boolean
   queuedAt?: boolean
   processingAt?: boolean
   sentAt?: boolean
@@ -1032,6 +1060,7 @@ export type NotificationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
   providerMessageId?: boolean
   idempotencyKey?: boolean
   attempts?: boolean
+  activeAttemptToken?: boolean
   queuedAt?: boolean
   processingAt?: boolean
   sentAt?: boolean
@@ -1059,6 +1088,7 @@ export type NotificationSelectScalar = {
   providerMessageId?: boolean
   idempotencyKey?: boolean
   attempts?: boolean
+  activeAttemptToken?: boolean
   queuedAt?: boolean
   processingAt?: boolean
   sentAt?: boolean
@@ -1068,7 +1098,7 @@ export type NotificationSelectScalar = {
   updatedAt?: boolean
 }
 
-export type NotificationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "notificationId" | "userId" | "channel" | "status" | "subject" | "title" | "body" | "template" | "templateVersion" | "templateLocale" | "templateData" | "templateSnapshot" | "provider" | "providerMessageId" | "idempotencyKey" | "attempts" | "queuedAt" | "processingAt" | "sentAt" | "failedAt" | "failureReason" | "createdAt" | "updatedAt", ExtArgs["result"]["notification"]>
+export type NotificationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "notificationId" | "userId" | "channel" | "status" | "subject" | "title" | "body" | "template" | "templateVersion" | "templateLocale" | "templateData" | "templateSnapshot" | "provider" | "providerMessageId" | "idempotencyKey" | "attempts" | "activeAttemptToken" | "queuedAt" | "processingAt" | "sentAt" | "failedAt" | "failureReason" | "createdAt" | "updatedAt", ExtArgs["result"]["notification"]>
 export type NotificationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   deliveries?: boolean | Prisma.Notification$deliveriesArgs<ExtArgs>
   _count?: boolean | Prisma.NotificationCountOutputTypeDefaultArgs<ExtArgs>
@@ -1099,6 +1129,7 @@ export type $NotificationPayload<ExtArgs extends runtime.Types.Extensions.Intern
     providerMessageId: string | null
     idempotencyKey: string
     attempts: number
+    activeAttemptToken: string | null
     queuedAt: Date
     processingAt: Date | null
     sentAt: Date | null
@@ -1547,6 +1578,7 @@ export interface NotificationFieldRefs {
   readonly providerMessageId: Prisma.FieldRef<"Notification", 'String'>
   readonly idempotencyKey: Prisma.FieldRef<"Notification", 'String'>
   readonly attempts: Prisma.FieldRef<"Notification", 'Int'>
+  readonly activeAttemptToken: Prisma.FieldRef<"Notification", 'String'>
   readonly queuedAt: Prisma.FieldRef<"Notification", 'DateTime'>
   readonly processingAt: Prisma.FieldRef<"Notification", 'DateTime'>
   readonly sentAt: Prisma.FieldRef<"Notification", 'DateTime'>

@@ -1,749 +1,553 @@
-import type {
-  Job,
-} from 'bullmq';
+import type { Job } from 'bullmq';
 
-import {
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { NotificationAttemptOwnershipLostError } from '../notifications/notification-attempt-ownership.error.js';
 
 import {
   NotificationProcessor,
   type NotificationJobData,
 } from './notification.processor.js';
 
-describe(
-  'NotificationProcessor delivery idempotency',
-  () => {
-    const providerSend =
-      vi.fn();
+describe('NotificationProcessor delivery idempotency', () => {
+  const providerSend = vi.fn();
 
-    const providerName =
-      'development-email';
+  const providerName = 'development-email';
 
-    const providerRegistry = {
-      get:
-        vi.fn(
-          () => ({
-            send:
-              providerSend,
-          }),
-        ),
-    };
+  const providerRegistry = {
+    get: vi.fn(() => ({
+      send: providerSend,
+    })),
+  };
 
-    const persistence = {
-      markProcessing:
-        vi.fn(),
+  const persistence = {
+    markProcessing: vi.fn(),
 
-      markSent:
-        vi.fn(),
+    claimPrimaryAttempt: vi.fn(),
 
-      markRetrying:
-        vi.fn(),
+    reconcileSentFromDelivery: vi.fn(),
 
-      markFailed:
-        vi.fn(),
-    };
+    markSent: vi.fn(),
 
-    const deliveryPersistence = {
-      createIfMissing:
-        vi.fn(),
+    markRetrying: vi.fn(),
 
-      getByDeliveryKey:
-        vi.fn(),
+    markFailed: vi.fn(),
+  };
 
-      markProcessing:
-        vi.fn(),
+  const deliveryPersistence = {
+    createIfMissing: vi.fn(),
 
-      markSent:
-        vi.fn(),
+    getByDeliveryKey: vi.fn(),
 
-      markRetrying:
-        vi.fn(),
+    markProcessing: vi.fn(),
 
-      markFailed:
-        vi.fn(),
-    };
+    markSent: vi.fn(),
 
-    const metrics = {
-      incrementProcessing:
-        vi.fn(),
+    markRetrying: vi.fn(),
 
-      incrementIdempotentHits:
-        vi.fn(),
+    markFailed: vi.fn(),
+  };
 
-      incrementProviderIdempotentHits:
-        vi.fn(),
+  const metrics = {
+    incrementProcessing: vi.fn(),
 
-      incrementSent:
-        vi.fn(),
+    incrementIdempotentHits: vi.fn(),
 
-      incrementProviderSent:
-        vi.fn(),
+    incrementProviderIdempotentHits: vi.fn(),
 
-      incrementRetrying:
-        vi.fn(),
+    incrementSent: vi.fn(),
 
-      incrementProviderRetrying:
-        vi.fn(),
+    incrementProviderSent: vi.fn(),
 
-      incrementFailed:
-        vi.fn(),
+    incrementRetrying: vi.fn(),
 
-      incrementProviderFailed:
-        vi.fn(),
+    incrementProviderRetrying: vi.fn(),
 
-      incrementProviderErrorsFor:
-        vi.fn(),
+    incrementFailed: vi.fn(),
 
-      recordLatency:
-        vi.fn(),
+    incrementProviderFailed: vi.fn(),
 
-      recordProviderLatency:
-        vi.fn(),
-    };
+    incrementProviderErrorsFor: vi.fn(),
 
-    const logger = {
-      info:
-        vi.fn(),
+    recordLatency: vi.fn(),
 
-      error:
-        vi.fn(),
+    recordProviderLatency: vi.fn(),
+  };
 
-      warn:
-        vi.fn(),
-    };
+  const logger = {
+    info: vi.fn(),
 
-    const processor =
-      new NotificationProcessor(
-        logger as never,
+    error: vi.fn(),
 
-        providerRegistry as never,
+    warn: vi.fn(),
+  };
 
-        persistence as never,
+  const processor = new NotificationProcessor(
+    logger as never,
 
-        deliveryPersistence as never,
+    providerRegistry as never,
 
-        metrics as never,
-      );
+    persistence as never,
 
-    const notification:
-      NotificationJobData = {
-      notificationId:
-        'phase-3-2-8-delivery-001',
+    deliveryPersistence as never,
 
-      channel:
-        'email',
+    metrics as never,
+  );
 
-      recipient: {
-        userId:
-          'user-phase-3-2-8',
+  const notification: NotificationJobData = {
+    notificationId: 'phase-3-2-8-delivery-001',
 
-        email:
-          'phase-3-2-8@gurusthalam.local',
+    channel: 'email',
+
+    recipient: {
+      userId: 'user-phase-3-2-8',
+
+      email: 'phase-3-2-8@gurusthalam.local',
+    },
+
+    subject: 'Delivery idempotency test',
+
+    title: 'Delivery idempotency test',
+
+    body: 'Delivery idempotency verification.',
+
+    idempotencyKey: 'phase-3-2-8-delivery-001',
+  };
+
+  const createJob = (
+    attemptsMade = 0,
+
+    deliveryKey?: string,
+  ): Job<NotificationJobData> =>
+    ({
+      id: 'job-phase-3-2-8-001',
+
+      attemptsMade,
+
+      data: {
+        ...notification,
+
+        ...(deliveryKey !== undefined
+          ? {
+              deliveryKey,
+            }
+          : {}),
       },
+    }) as unknown as Job<NotificationJobData>;
 
-      subject:
-        'Delivery idempotency test',
+  function resetMocks(): void {
+    providerSend.mockReset();
 
-      title:
-        'Delivery idempotency test',
+    providerRegistry.get.mockClear();
 
-      body:
-        'Delivery idempotency verification.',
+    persistence.markProcessing.mockReset();
 
-      idempotencyKey:
-        'phase-3-2-8-delivery-001',
-    };
+    persistence.claimPrimaryAttempt.mockReset();
 
-    const createJob =
-      (
-        attemptsMade =
+    persistence.reconcileSentFromDelivery.mockReset();
+
+    persistence.markSent.mockReset();
+
+    persistence.markRetrying.mockReset();
+
+    persistence.markFailed.mockReset();
+
+    deliveryPersistence.createIfMissing.mockReset();
+
+    deliveryPersistence.getByDeliveryKey.mockReset();
+
+    deliveryPersistence.markProcessing.mockReset();
+
+    deliveryPersistence.markSent.mockReset();
+
+    deliveryPersistence.markRetrying.mockReset();
+
+    deliveryPersistence.markFailed.mockReset();
+
+    metrics.incrementProcessing.mockReset();
+
+    metrics.incrementIdempotentHits.mockReset();
+
+    metrics.incrementProviderIdempotentHits.mockReset();
+
+    metrics.incrementSent.mockReset();
+
+    metrics.incrementProviderSent.mockReset();
+
+    metrics.incrementRetrying.mockReset();
+
+    metrics.incrementProviderRetrying.mockReset();
+
+    metrics.incrementFailed.mockReset();
+
+    metrics.incrementProviderFailed.mockReset();
+
+    metrics.incrementProviderErrorsFor.mockReset();
+
+    metrics.recordLatency.mockReset();
+
+    metrics.recordProviderLatency.mockReset();
+
+    logger.info.mockReset();
+
+    logger.error.mockReset();
+
+    logger.warn.mockReset();
+  }
+
+  it('invokes the provider for the first delivery', async () => {
+    resetMocks();
+
+    deliveryPersistence.createIfMissing.mockResolvedValue({
+      status: 'PENDING',
+
+      providerMessageId: null,
+    });
+
+    deliveryPersistence.getByDeliveryKey.mockResolvedValue({
+      status: 'PENDING',
+
+      providerMessageId: null,
+    });
+
+    providerSend.mockResolvedValue({
+      accepted: true,
+
+      classification: 'SUCCESS',
+
+      provider: providerName,
+
+      messageId: 'provider-message-001',
+    });
+
+    const result = await processor.process(createJob());
+
+    expect(providerSend).toHaveBeenCalledTimes(1);
+    expect(
+      persistence.claimPrimaryAttempt.mock.invocationCallOrder[0],
+    ).toBeLessThan(
+      providerSend.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY,
+    );
+
+    expect(providerSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        notificationId: notification.notificationId,
+      }),
+
+      expect.objectContaining({
+        deliveryKey: expect.any(String),
+      }),
+    );
+
+    expect(deliveryPersistence.markSent).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.any(String),
+      'provider-message-001',
+    );
+
+    expect(persistence.claimPrimaryAttempt).toHaveBeenCalledTimes(1);
+    expect(persistence.claimPrimaryAttempt).toHaveBeenCalledWith(
+      notification,
+      expect.any(String),
+      1,
+      expect.any(String),
+      expect.any(String),
+    );
+
+    expect(persistence.markSent).toHaveBeenCalledWith(
+      notification.notificationId,
+      expect.any(String),
+      providerName,
+      'provider-message-001',
+    );
+
+    expect(result).toEqual({
+      processed: true,
+
+      notificationId: notification.notificationId,
+
+      channel: 'email',
+
+      provider: providerName,
+
+      messageId: 'provider-message-001',
+    });
+  });
+
+  it('skips the provider when the delivery is already SENT', async () => {
+    resetMocks();
+
+    deliveryPersistence.createIfMissing.mockResolvedValue({
+      status: 'SENT',
+
+      provider: providerName,
+
+      providerMessageId: 'provider-message-existing',
+    });
+
+    deliveryPersistence.getByDeliveryKey.mockResolvedValue({
+      status: 'SENT',
+
+      provider: providerName,
+
+      providerMessageId: 'provider-message-existing',
+    });
+
+    const result = await processor.process(createJob());
+
+    expect(providerSend).not.toHaveBeenCalled();
+
+    expect(persistence.reconcileSentFromDelivery).toHaveBeenCalledWith(
+      notification.notificationId,
+      providerName,
+      'provider-message-existing',
+    );
+
+    expect(metrics.incrementIdempotentHits).toHaveBeenCalledTimes(1);
+
+    expect(metrics.incrementProviderIdempotentHits).toHaveBeenCalledWith(
+      providerName,
+    );
+
+    expect(persistence.markProcessing).not.toHaveBeenCalled();
+
+    expect(persistence.claimPrimaryAttempt).not.toHaveBeenCalled();
+
+    expect(persistence.markSent).not.toHaveBeenCalled();
+
+    expect(result).toEqual({
+      processed: true,
+
+      notificationId: notification.notificationId,
+
+      channel: 'email',
+
+      provider: providerName,
+
+      messageId: 'provider-message-existing',
+    });
+  });
+
+  it('returns the persisted provider message ID during an idempotent replay', async () => {
+    resetMocks();
+
+    deliveryPersistence.createIfMissing.mockResolvedValue({
+      status: 'SENT',
+
+      provider: providerName,
+
+      providerMessageId: 'provider-message-777',
+    });
+
+    deliveryPersistence.getByDeliveryKey.mockResolvedValue({
+      status: 'SENT',
+
+      provider: providerName,
+
+      providerMessageId: 'provider-message-777',
+    });
+
+    const result = await processor.process(createJob(1));
+
+    expect(result.messageId).toBe('provider-message-777');
+
+    expect(providerSend).not.toHaveBeenCalled();
+
+    expect(persistence.markProcessing).not.toHaveBeenCalled();
+
+    expect(persistence.claimPrimaryAttempt).not.toHaveBeenCalled();
+
+    expect(persistence.markSent).not.toHaveBeenCalled();
+  });
+
+  it('uses the supplied deliveryKey for replay processing', async () => {
+    resetMocks();
+
+    const replayDeliveryKey = 'replay-delivery-key-001';
+
+    deliveryPersistence.createIfMissing.mockResolvedValue({
+      status: 'PENDING',
+
+      providerMessageId: null,
+    });
+
+    deliveryPersistence.getByDeliveryKey.mockResolvedValue({
+      status: 'PENDING',
+
+      providerMessageId: null,
+    });
+
+    providerSend.mockResolvedValue({
+      accepted: true,
+
+      classification: 'SUCCESS',
+
+      provider: providerName,
+
+      messageId: 'provider-replay-001',
+    });
+
+    await processor.process(
+      createJob(
+        0,
+
+        replayDeliveryKey,
+      ),
+    );
+
+    expect(deliveryPersistence.createIfMissing).toHaveBeenCalledWith(
+      notification.notificationId,
+
+      replayDeliveryKey,
+
+      providerName,
+
+      'EMAIL',
+    );
+
+    expect(providerSend).toHaveBeenCalledWith(
+      expect.any(Object),
+
+      {
+        deliveryKey: replayDeliveryKey,
+      },
+    );
+
+    expect(persistence.markProcessing).not.toHaveBeenCalled();
+
+    expect(persistence.claimPrimaryAttempt).not.toHaveBeenCalled();
+
+    expect(persistence.markSent).not.toHaveBeenCalled();
+
+    expect(deliveryPersistence.markProcessing).toHaveBeenCalledWith(
+      replayDeliveryKey,
+      1,
+      expect.any(String),
+    );
+
+    expect(deliveryPersistence.markSent).toHaveBeenCalledWith(
+      replayDeliveryKey,
+      expect.any(String),
+      'provider-replay-001',
+    );
+  });
+
+  it('does not mutate the parent Notification lifecycle for a replay', async () => {
+    resetMocks();
+
+    const replayDeliveryKey = 'replay-parent-isolation-001';
+
+    deliveryPersistence.createIfMissing.mockResolvedValue({
+      status: 'PENDING',
+
+      providerMessageId: null,
+    });
+
+    deliveryPersistence.getByDeliveryKey.mockResolvedValue({
+      status: 'PENDING',
+
+      providerMessageId: null,
+    });
+
+    providerSend.mockResolvedValue({
+      accepted: true,
+
+      classification: 'SUCCESS',
+
+      provider: providerName,
+
+      messageId: 'provider-replay-isolation-001',
+    });
+
+    await processor.process(
+      createJob(
+        0,
+
+        replayDeliveryKey,
+      ),
+    );
+
+    expect(persistence.markProcessing).not.toHaveBeenCalled();
+
+    expect(persistence.markSent).not.toHaveBeenCalled();
+
+    expect(deliveryPersistence.markProcessing).toHaveBeenCalledWith(
+      replayDeliveryKey,
+      1,
+      expect.any(String),
+    );
+
+    expect(deliveryPersistence.markSent).toHaveBeenCalledWith(
+      replayDeliveryKey,
+      expect.any(String),
+      'provider-replay-isolation-001',
+    );
+  });
+
+  it('does not mutate the parent Notification lifecycle when a replay delivery fails', async () => {
+    resetMocks();
+
+    const replayDeliveryKey = 'replay-failure-isolation-001';
+
+    deliveryPersistence.createIfMissing.mockResolvedValue({
+      status: 'PENDING',
+
+      providerMessageId: null,
+    });
+
+    deliveryPersistence.getByDeliveryKey.mockResolvedValue({
+      status: 'PENDING',
+
+      providerMessageId: null,
+    });
+
+    providerSend.mockRejectedValue(
+      new Error('Simulated replay provider failure.'),
+    );
+
+    await expect(
+      processor.process(
+        createJob(
           0,
 
-        deliveryKey?:
-          string,
-      ):
-        Job<NotificationJobData> =>
-        ({
-          id:
-            'job-phase-3-2-8-001',
+          replayDeliveryKey,
+        ),
+      ),
+    ).rejects.toThrow('Simulated replay provider failure.');
 
-          attemptsMade,
-
-          data: {
-            ...notification,
-
-            ...(deliveryKey !==
-            undefined
-              ? {
-                  deliveryKey,
-                }
-              : {}),
-          },
-        }) as unknown as Job<
-          NotificationJobData
-        >;
-
-    function resetMocks(): void {
-      providerSend.mockReset();
-
-      providerRegistry.get
-        .mockClear();
-
-      persistence.markProcessing
-        .mockReset();
-
-      persistence.markSent
-        .mockReset();
-
-      persistence.markRetrying
-        .mockReset();
-
-      persistence.markFailed
-        .mockReset();
-
-      deliveryPersistence.createIfMissing
-        .mockReset();
-
-      deliveryPersistence.getByDeliveryKey
-        .mockReset();
-
-      deliveryPersistence.markProcessing
-        .mockReset();
-
-      deliveryPersistence.markSent
-        .mockReset();
-
-      deliveryPersistence.markRetrying
-        .mockReset();
-
-      deliveryPersistence.markFailed
-        .mockReset();
-
-      metrics.incrementProcessing
-        .mockReset();
-
-      metrics.incrementIdempotentHits
-        .mockReset();
-
-      metrics.incrementProviderIdempotentHits
-        .mockReset();
-
-      metrics.incrementSent
-        .mockReset();
-
-      metrics.incrementProviderSent
-        .mockReset();
-
-      metrics.incrementRetrying
-        .mockReset();
-
-      metrics.incrementProviderRetrying
-        .mockReset();
-
-      metrics.incrementFailed
-        .mockReset();
-
-      metrics.incrementProviderFailed
-        .mockReset();
-
-      metrics.incrementProviderErrorsFor
-        .mockReset();
-
-      metrics.recordLatency
-        .mockReset();
-
-      metrics.recordProviderLatency
-        .mockReset();
-
-      logger.info
-        .mockReset();
-
-      logger.error
-        .mockReset();
-
-      logger.warn
-        .mockReset();
-    }
-
-    it(
-      'invokes the provider for the first delivery',
-      async () => {
-        resetMocks();
-
-        deliveryPersistence.createIfMissing
-          .mockResolvedValue({
-            status:
-              'PENDING',
-
-            providerMessageId:
-              null,
-          });
-
-        deliveryPersistence.getByDeliveryKey
-          .mockResolvedValue({
-            status:
-              'PENDING',
-
-            providerMessageId:
-              null,
-          });
-
-        providerSend.mockResolvedValue({
-          accepted:
-            true,
-
-          classification:
-            'SUCCESS',
-
-          provider:
-            providerName,
-
-          messageId:
-            'provider-message-001',
-        });
-
-        const result =
-          await processor.process(
-            createJob(),
-          );
-
-        expect(
-          providerSend,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-
-        expect(
-          providerSend,
-        ).toHaveBeenCalledWith(
-          expect.objectContaining({
-            notificationId:
-              notification.notificationId,
-          }),
-
-          expect.objectContaining({
-            deliveryKey:
-              expect.any(
-                String,
-              ),
-          }),
-        );
-
-        expect(
-          deliveryPersistence.markSent,
-        ).toHaveBeenCalledWith(
-          expect.any(
-            String,
-          ),
-
-          'provider-message-001',
-        );
-
-        expect(
-          persistence.markProcessing,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-
-        expect(
-          persistence.markSent,
-        ).toHaveBeenCalledWith(
-          notification.notificationId,
-
-          providerName,
-
-          'provider-message-001',
-        );
-
-        expect(
-          result,
-        ).toEqual({
-          processed:
-            true,
-
-          notificationId:
-            notification.notificationId,
-
-          channel:
-            'email',
-
-          provider:
-            providerName,
-
-          messageId:
-            'provider-message-001',
-        });
-      },
+    expect(deliveryPersistence.markFailed).toHaveBeenCalledWith(
+      replayDeliveryKey,
+      expect.any(String),
+      'Simulated replay provider failure.',
     );
 
-    it(
-      'skips the provider when the delivery is already SENT',
-      async () => {
-        resetMocks();
+    expect(persistence.markProcessing).not.toHaveBeenCalled();
 
-        deliveryPersistence.createIfMissing
-          .mockResolvedValue({
-            status:
-              'SENT',
+    expect(persistence.markRetrying).not.toHaveBeenCalled();
 
-            providerMessageId:
-              'provider-message-existing',
-          });
+    expect(persistence.markFailed).not.toHaveBeenCalled();
+  });
 
-        deliveryPersistence.getByDeliveryKey
-          .mockResolvedValue({
-            status:
-              'SENT',
-
-            providerMessageId:
-              'provider-message-existing',
-          });
-
-        const result =
-          await processor.process(
-            createJob(),
-          );
-
-        expect(
-          providerSend,
-        ).not.toHaveBeenCalled();
-
-        expect(
-          metrics.incrementIdempotentHits,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-
-        expect(
-          metrics.incrementProviderIdempotentHits,
-        ).toHaveBeenCalledWith(
-          providerName,
-        );
-
-        expect(
-          persistence.markSent,
-        ).toHaveBeenCalledWith(
-          notification.notificationId,
-
-          providerName,
-
-          'provider-message-existing',
-        );
-
-        expect(
-          result,
-        ).toEqual({
-          processed:
-            true,
-
-          notificationId:
-            notification.notificationId,
-
-          channel:
-            'email',
-
-          provider:
-            providerName,
-
-          messageId:
-            'provider-message-existing',
-        });
-      },
+  it('propagates primary ownership loss without calling the provider or persisting failure', async () => {
+    resetMocks();
+    deliveryPersistence.createIfMissing.mockResolvedValue({
+      status: 'PENDING',
+    });
+    deliveryPersistence.getByDeliveryKey.mockResolvedValue({
+      status: 'PENDING',
+    });
+    const ownershipError = new NotificationAttemptOwnershipLostError(
+      'notification',
+      notification.notificationId,
     );
-
-    it(
-      'returns the persisted provider message ID during an idempotent replay',
-      async () => {
-        resetMocks();
-
-        deliveryPersistence.createIfMissing
-          .mockResolvedValue({
-            status:
-              'SENT',
-
-            providerMessageId:
-              'provider-message-777',
-          });
-
-        deliveryPersistence.getByDeliveryKey
-          .mockResolvedValue({
-            status:
-              'SENT',
-
-            providerMessageId:
-              'provider-message-777',
-          });
-
-        const result =
-          await processor.process(
-            createJob(
-              1,
-            ),
-          );
-
-        expect(
-          result.messageId,
-        ).toBe(
-          'provider-message-777',
-        );
-
-        expect(
-          providerSend,
-        ).not.toHaveBeenCalled();
-
-        expect(
-          persistence.markSent,
-        ).toHaveBeenCalledWith(
-          notification.notificationId,
-
-          providerName,
-
-          'provider-message-777',
-        );
-      },
-    );
-
-    it(
-      'uses the supplied deliveryKey for replay processing',
-      async () => {
-        resetMocks();
-
-        const replayDeliveryKey =
-          'replay-delivery-key-001';
-
-        deliveryPersistence.createIfMissing
-          .mockResolvedValue({
-            status:
-              'PENDING',
-
-            providerMessageId:
-              null,
-          });
-
-        deliveryPersistence.getByDeliveryKey
-          .mockResolvedValue({
-            status:
-              'PENDING',
-
-            providerMessageId:
-              null,
-          });
-
-        providerSend.mockResolvedValue({
-          accepted:
-            true,
-
-          classification:
-            'SUCCESS',
-
-          provider:
-            providerName,
-
-          messageId:
-            'provider-replay-001',
-        });
-
-        await processor.process(
-          createJob(
-            0,
-
-            replayDeliveryKey,
-          ),
-        );
-
-        expect(
-          deliveryPersistence.createIfMissing,
-        ).toHaveBeenCalledWith(
-          notification.notificationId,
-
-          replayDeliveryKey,
-
-          providerName,
-
-          'EMAIL',
-        );
-
-        expect(
-          providerSend,
-        ).toHaveBeenCalledWith(
-          expect.any(
-            Object,
-          ),
-
-          {
-            deliveryKey:
-              replayDeliveryKey,
-          },
-        );
-
-        expect(
-          persistence.markProcessing,
-        ).not.toHaveBeenCalled();
-
-        expect(
-          persistence.markSent,
-        ).not.toHaveBeenCalled();
-
-        expect(
-          deliveryPersistence.markProcessing,
-        ).toHaveBeenCalledWith(
-          replayDeliveryKey,
-
-          1,
-        );
-
-        expect(
-          deliveryPersistence.markSent,
-        ).toHaveBeenCalledWith(
-          replayDeliveryKey,
-
-          'provider-replay-001',
-        );
-      },
-    );
-
-    it(
-      'does not mutate the parent Notification lifecycle for a replay',
-      async () => {
-        resetMocks();
-
-        const replayDeliveryKey =
-          'replay-parent-isolation-001';
-
-        deliveryPersistence.createIfMissing
-          .mockResolvedValue({
-            status:
-              'PENDING',
-
-            providerMessageId:
-              null,
-          });
-
-        deliveryPersistence.getByDeliveryKey
-          .mockResolvedValue({
-            status:
-              'PENDING',
-
-            providerMessageId:
-              null,
-          });
-
-        providerSend.mockResolvedValue({
-          accepted:
-            true,
-
-          classification:
-            'SUCCESS',
-
-          provider:
-            providerName,
-
-          messageId:
-            'provider-replay-isolation-001',
-        });
-
-        await processor.process(
-          createJob(
-            0,
-
-            replayDeliveryKey,
-          ),
-        );
-
-        expect(
-          persistence.markProcessing,
-        ).not.toHaveBeenCalled();
-
-        expect(
-          persistence.markSent,
-        ).not.toHaveBeenCalled();
-
-        expect(
-          deliveryPersistence.markProcessing,
-        ).toHaveBeenCalledWith(
-          replayDeliveryKey,
-
-          1,
-        );
-
-        expect(
-          deliveryPersistence.markSent,
-        ).toHaveBeenCalledWith(
-          replayDeliveryKey,
-
-          'provider-replay-isolation-001',
-        );
-      },
-    );
-
-    it(
-      'does not mutate the parent Notification lifecycle when a replay delivery fails',
-      async () => {
-        resetMocks();
-
-        const replayDeliveryKey =
-          'replay-failure-isolation-001';
-
-        deliveryPersistence.createIfMissing
-          .mockResolvedValue({
-            status:
-              'PENDING',
-
-            providerMessageId:
-              null,
-          });
-
-        deliveryPersistence.getByDeliveryKey
-          .mockResolvedValue({
-            status:
-              'PENDING',
-
-            providerMessageId:
-              null,
-          });
-
-        providerSend.mockRejectedValue(
-          new Error(
-            'Simulated replay provider failure.',
-          ),
-        );
-
-        await expect(
-          processor.process(
-            createJob(
-              0,
-
-              replayDeliveryKey,
-            ),
-          ),
-        ).rejects.toThrow(
-          'Simulated replay provider failure.',
-        );
-
-        expect(
-          deliveryPersistence.markFailed,
-        ).toHaveBeenCalledWith(
-          replayDeliveryKey,
-
-          'Simulated replay provider failure.',
-        );
-
-        expect(
-          persistence.markProcessing,
-        ).not.toHaveBeenCalled();
-
-        expect(
-          persistence.markRetrying,
-        ).not.toHaveBeenCalled();
-
-        expect(
-          persistence.markFailed,
-        ).not.toHaveBeenCalled();
-      },
-    );
-  },
-);
+    persistence.claimPrimaryAttempt.mockRejectedValue(ownershipError);
+
+    await expect(processor.process(createJob())).rejects.toBe(ownershipError);
+
+    expect(providerSend).not.toHaveBeenCalled();
+    expect(deliveryPersistence.markProcessing).not.toHaveBeenCalled();
+    expect(deliveryPersistence.markFailed).not.toHaveBeenCalled();
+    expect(persistence.markFailed).not.toHaveBeenCalled();
+    expect(persistence.markRetrying).not.toHaveBeenCalled();
+    expect(metrics.incrementProviderFailed).not.toHaveBeenCalled();
+  });
+});

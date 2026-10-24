@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { GurusthalamLogger } from '@gurusthalam/logger';
 
 import { NotificationProviderRegistry } from '../providers/notification/notification-provider.registry.js';
@@ -9,6 +10,8 @@ import { NotificationDeliveryPersistenceService } from './notification-delivery-
 import { createNotificationDeliveryKey } from './notification-delivery-key.js';
 
 import { NotificationMetricsService } from './notification-metrics.service.js';
+
+import { NotificationAttemptOwnershipLostError } from './notification-attempt-ownership.error.js';
 
 import type {
   NotificationJobData,
@@ -133,7 +136,6 @@ export class NotificationFallbackExecutor {
       `Fallback lifecycle exhausted for notification "${notification.notificationId}" using orchestration "${fallbackMetadata.orchestrationId}", plan "${fallbackMetadata.planId}" after attempting positions "${nextPosition}" through "${fallbackMetadata.sequence.length - 1}".`,
       {
         operation: FALLBACK_OPERATIONS.EXHAUSTED,
-
         service: notification.channel,
       },
     );
@@ -198,10 +200,12 @@ export class NotificationFallbackExecutor {
       };
     }
 
+    const deliveryOwnershipToken = randomUUID();
+
     await this.deliveryPersistence.markProcessing(
       deliveryKey,
-
       attempt,
+      deliveryOwnershipToken,
     );
 
     const fallbackNotification: NotificationJobData = {
@@ -229,7 +233,7 @@ export class NotificationFallbackExecutor {
 
         await this.deliveryPersistence.markFailed(
           deliveryKey,
-
+          deliveryOwnershipToken,
           reason,
         );
 
@@ -255,7 +259,7 @@ export class NotificationFallbackExecutor {
 
         await this.deliveryPersistence.markFailed(
           deliveryKey,
-
+          deliveryOwnershipToken,
           reason,
         );
 
@@ -275,7 +279,7 @@ export class NotificationFallbackExecutor {
 
       await this.deliveryPersistence.markSent(
         deliveryKey,
-
+        deliveryOwnershipToken,
         messageId,
       );
 
@@ -287,11 +291,15 @@ export class NotificationFallbackExecutor {
         messageId,
       };
     } catch (error: unknown) {
+      if (error instanceof NotificationAttemptOwnershipLostError) {
+        throw error;
+      }
+
       const message = error instanceof Error ? error.message : String(error);
 
       await this.deliveryPersistence.markFailed(
         deliveryKey,
-
+        deliveryOwnershipToken,
         message,
       );
 

@@ -291,23 +291,22 @@ describeRedis(
     beforeAll(async () => {
       const redis = getRedisConfig();
 
-      observerQueue = new Queue<CourseOutboxQueueJobData>(
-        QUEUE_NAMES.COURSE_EVENTS,
-        {
-          connection: {
-            url: redis.url,
-          },
+      // Give this suite its own queue and prefix. Other integration suites
+      // use the production Course Events queue, so sharing it can let their
+      // workers consume these retry/failure-injection jobs.
+      const testQueueSuffix = randomUUID();
+      const testQueueName = `${QUEUE_NAMES.COURSE_EVENTS}-failure-retry-${testQueueSuffix}`;
+      const testQueuePrefix = `${QUEUE_PREFIX}-failure-retry-${testQueueSuffix}`;
+      const connection = { url: redis.url };
 
-          prefix: QUEUE_PREFIX,
-        },
-      );
+      observerQueue = new Queue<CourseOutboxQueueJobData>(testQueueName, {
+        connection,
+        prefix: testQueuePrefix,
+      });
 
-      queueEvents = new QueueEvents(QUEUE_NAMES.COURSE_EVENTS, {
-        connection: {
-          url: redis.url,
-        },
-
-        prefix: QUEUE_PREFIX,
+      queueEvents = new QueueEvents(testQueueName, {
+        connection,
+        prefix: testQueuePrefix,
       });
 
       projectionPersistence = new InMemoryCourseProjectionPersistence();
@@ -317,8 +316,7 @@ describeRedis(
       );
 
       courseWorker = new Worker<CourseOutboxQueueJobData>(
-        QUEUE_NAMES.COURSE_EVENTS,
-
+        testQueueName,
         async (job: Job<CourseOutboxQueueJobData>) => {
           const event = deserializeCourseDomainEvent(job.data.event);
 
@@ -328,14 +326,9 @@ describeRedis(
             projected: true,
           };
         },
-
         {
-          connection: {
-            url: redis.url,
-          },
-
-          prefix: QUEUE_PREFIX,
-
+          connection,
+          prefix: testQueuePrefix,
           concurrency: 1,
         },
       );
@@ -352,7 +345,13 @@ describeRedis(
         void error;
       });
 
-      handler = BullMqCourseOutboxDispatchHandler.fromRedisConfig();
+      // Inject a queue using the same isolated name/prefix as the worker
+      // and observer. Production fromRedisConfig() remains unchanged.
+      const dispatchQueue = new Queue<CourseOutboxQueueJobData>(testQueueName, {
+        connection,
+        prefix: testQueuePrefix,
+      });
+      handler = new BullMqCourseOutboxDispatchHandler(dispatchQueue);
 
       await observerQueue.waitUntilReady();
 
@@ -512,7 +511,7 @@ describeRedis(
       });
     }, 25_000);
 
-    it('exhausts the real BullMQ Course retry policy when projection persistence remains unavailable', async () => {
+    it('exhausts the real BullMQ Course retry policy when projection persistence remains unavailable',async () => {
       const courseId = `phase-4-17-d-course-${randomUUID()}`;
 
       const event = createCourseCreatedEvent(courseId, new Date());

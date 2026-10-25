@@ -13,6 +13,8 @@ import { NotificationMetricsService } from './notification-metrics.service.js';
 
 import { NotificationAttemptOwnershipLostError } from './notification-attempt-ownership.error.js';
 
+import { NotificationDeliveryAcceptanceUncertainError } from './notification-delivery-acceptance-uncertain.error.js';
+
 import type {
   NotificationJobData,
   NotificationFallbackMetadata,
@@ -214,7 +216,15 @@ export class NotificationFallbackExecutor {
       channel,
     };
 
+    let providerOutcomeUncertain = false;
+
     try {
+      await this.deliveryPersistence.markProviderSubmissionStarted(
+        deliveryKey,
+        deliveryOwnershipToken,
+      );
+      providerOutcomeUncertain = true;
+
       const delivery = await provider.send(
         fallbackNotification,
 
@@ -227,6 +237,8 @@ export class NotificationFallbackExecutor {
         delivery.classification !== NotificationFailureClassification.SUCCESS ||
         delivery.accepted !== true
       ) {
+        // Explicit provider rejection is a known outcome, so fallback is safe.
+        providerOutcomeUncertain = false;
         const reason =
           delivery.errorMessage ??
           `Fallback provider returned ${delivery.classification}.`;
@@ -254,27 +266,10 @@ export class NotificationFallbackExecutor {
       const messageId = delivery.messageId;
 
       if (typeof messageId !== 'string' || messageId.trim().length === 0) {
-        const reason =
-          'Fallback provider returned SUCCESS without a valid messageId.';
-
-        await this.deliveryPersistence.markFailed(
+        throw new NotificationDeliveryAcceptanceUncertainError(
           deliveryKey,
-          deliveryOwnershipToken,
-          reason,
+          'Fallback provider reported success without a valid messageId.',
         );
-
-        this.metrics.incrementFallbackAttemptFailures();
-
-        this.logger.warn(
-          `Fallback attempt failed for notification "${notification.notificationId}" using orchestration "${fallbackMetadata.orchestrationId}", plan "${fallbackMetadata.planId}", channel "${channel}", position "${position}" because the provider returned no valid messageId.`,
-          {
-            operation: FALLBACK_OPERATIONS.ATTEMPT_FAILED,
-
-            service: providerName,
-          },
-        );
-
-        return null;
       }
 
       await this.deliveryPersistence.markSent(
@@ -282,6 +277,7 @@ export class NotificationFallbackExecutor {
         deliveryOwnershipToken,
         messageId,
       );
+      providerOutcomeUncertain = false;
 
       return {
         channel,
@@ -296,6 +292,35 @@ export class NotificationFallbackExecutor {
       }
 
       const message = error instanceof Error ? error.message : String(error);
+
+      if (
+        providerOutcomeUncertain ||
+        error instanceof NotificationDeliveryAcceptanceUncertainError
+      ) {
+        try {
+          await this.deliveryPersistence.markAcceptanceUnknown(
+            deliveryKey,
+            deliveryOwnershipToken,
+            message,
+          );
+        } catch (stateError: unknown) {
+          this.logger.error(
+            `Could not persist acceptance-unknown state for fallback delivery "${deliveryKey}"; automatic retry remains blocked by the provider-submission marker.`,
+            stateError,
+            {
+              operation:
+                'notification.fallback.acceptance_unknown_persist_failed',
+              service: providerName,
+            },
+          );
+        }
+
+        throw new NotificationDeliveryAcceptanceUncertainError(
+          deliveryKey,
+          `Fallback provider outcome is unknown for delivery "${deliveryKey}"; later fallback channels must not be attempted.`,
+          { cause: error },
+        );
+      }
 
       await this.deliveryPersistence.markFailed(
         deliveryKey,

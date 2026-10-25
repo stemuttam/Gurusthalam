@@ -2996,6 +2996,7 @@ export const NotificationDeliveryScalarFieldEnum = {
   deliveryKey: 'deliveryKey',
   provider: 'provider',
   channel: 'channel',
+  providerSubmissionStartedAt: 'providerSubmissionStartedAt',
   status: 'status',
   attempts: 'attempts',
   activeAttemptToken: 'activeAttemptToken',

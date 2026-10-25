@@ -40,6 +40,10 @@ describe('NotificationProcessor delivery idempotency', () => {
 
     markProcessing: vi.fn(),
 
+    markProviderSubmissionStarted: vi.fn(),
+
+    markAcceptanceUnknown: vi.fn(),
+
     markSent: vi.fn(),
 
     markRetrying: vi.fn(),
@@ -157,6 +161,10 @@ describe('NotificationProcessor delivery idempotency', () => {
 
     deliveryPersistence.markProcessing.mockReset();
 
+    deliveryPersistence.markProviderSubmissionStarted.mockReset();
+
+    deliveryPersistence.markAcceptanceUnknown.mockReset();
+
     deliveryPersistence.markSent.mockReset();
 
     deliveryPersistence.markRetrying.mockReset();
@@ -196,6 +204,10 @@ describe('NotificationProcessor delivery idempotency', () => {
 
   it('invokes the provider for the first delivery', async () => {
     resetMocks();
+    deliveryPersistence.markProviderSubmissionStarted.mockResolvedValue(
+      undefined,
+    );
+    deliveryPersistence.markAcceptanceUnknown.mockResolvedValue(undefined);
 
     deliveryPersistence.createIfMissing.mockResolvedValue({
       status: 'PENDING',
@@ -504,21 +516,32 @@ describe('NotificationProcessor delivery idempotency', () => {
       new Error('Simulated replay provider failure.'),
     );
 
-    await expect(
-      processor.process(
-        createJob(
-          0,
+    const result = await processor.process(
+      createJob(
+        0,
 
-          replayDeliveryKey,
-        ),
+        replayDeliveryKey,
       ),
-    ).rejects.toThrow('Simulated replay provider failure.');
+    );
 
-    expect(deliveryPersistence.markFailed).toHaveBeenCalledWith(
+    // A transport exception after the durable submission marker means the
+    // provider may have accepted the message. The processor must not trigger
+    // a BullMQ retry or mark the delivery as definitely failed.
+    expect(result).toEqual({
+      processed: true,
+      notificationId: notification.notificationId,
+      channel: 'email',
+      provider: providerName,
+      messageId: `acceptance-unknown:${replayDeliveryKey}`,
+    });
+
+    expect(deliveryPersistence.markAcceptanceUnknown).toHaveBeenCalledWith(
       replayDeliveryKey,
       expect.any(String),
       'Simulated replay provider failure.',
     );
+
+    expect(deliveryPersistence.markFailed).not.toHaveBeenCalled();
 
     expect(persistence.markProcessing).not.toHaveBeenCalled();
 

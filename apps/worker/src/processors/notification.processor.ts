@@ -13,6 +13,8 @@ import { NotificationDeliveryPersistenceService } from '../notifications/notific
 
 import { NotificationAttemptOwnershipLostError } from '../notifications/notification-attempt-ownership.error.js';
 
+import { NotificationDeliveryAcceptanceUncertainError } from '../notifications/notification-delivery-acceptance-uncertain.error.js';
+
 import { createNotificationDeliveryKey } from '../notifications/notification-delivery-key.js';
 
 import { NotificationFallbackExecutor } from '../notifications/notification-fallback.executor.js';
@@ -214,6 +216,8 @@ export class NotificationProcessor {
       this.toPrismaChannel(notification.channel),
     );
 
+    let providerOutcomeUncertain = false;
+
     try {
       const deliveryRecord =
         await this.deliveryPersistence.getByDeliveryKey(deliveryKey);
@@ -316,6 +320,15 @@ export class NotificationProcessor {
       let delivery;
 
       try {
+        // This durable marker must commit before provider I/O. If the worker
+        // crashes after this point, the delivery cannot be lease-reclaimed
+        // automatically because the provider may have accepted it.
+        await this.deliveryPersistence.markProviderSubmissionStarted(
+          deliveryKey,
+          deliveryOwnershipToken,
+        );
+        providerOutcomeUncertain = true;
+
         delivery = await provider.send(
           notification,
 
@@ -368,6 +381,7 @@ export class NotificationProcessor {
             deliveryOwnershipToken,
             messageId,
           );
+          providerOutcomeUncertain = false;
 
           if (!isReplay) {
             await this.persistence.markSent(
@@ -414,6 +428,9 @@ export class NotificationProcessor {
 
         case NotificationFailureClassification.RETRYABLE:
         case NotificationFailureClassification.RATE_LIMITED: {
+          // A structured rejection is a definite provider outcome; normal
+          // retry policy is safe and markFailed clears the submission marker.
+          providerOutcomeUncertain = false;
           const reason =
             delivery.errorMessage ??
             `Notification provider returned ${delivery.classification}.`;
@@ -433,6 +450,7 @@ export class NotificationProcessor {
 
         case NotificationFailureClassification.NON_RETRYABLE:
         case NotificationFailureClassification.PERMANENT: {
+          providerOutcomeUncertain = false;
           const reason =
             delivery.errorMessage ??
             `Notification provider returned ${delivery.classification}.`;
@@ -461,6 +479,51 @@ export class NotificationProcessor {
       }
 
       const message = error instanceof Error ? error.message : String(error);
+
+      if (providerOutcomeUncertain) {
+        // Do not mark failed/retrying and do not invoke fallback: the provider
+        // may have accepted the message. Persist ACCEPTANCE_UNKNOWN where
+        // possible. Even if that write fails, providerSubmissionStartedAt
+        // remains durable and blocks automatic lease reclamation.
+        try {
+          await this.deliveryPersistence.markAcceptanceUnknown(
+            deliveryKey,
+            deliveryOwnershipToken,
+            message,
+          );
+        } catch (stateError: unknown) {
+          this.logger.error(
+            `Could not persist acceptance-unknown state for delivery "${deliveryKey}"; automatic retry remains blocked by the provider-submission marker.`,
+            stateError,
+            {
+              operation:
+                'notification.delivery.acceptance_unknown_persist_failed',
+              service: providerName,
+            },
+          );
+        }
+
+        this.metrics.incrementProviderErrorsFor(providerName);
+        this.metrics.recordLatency(Date.now() - startedAt);
+        this.logger.error(
+          `Notification delivery outcome is unknown and automatic resend is blocked: ${notification.notificationId}; deliveryKey: ${deliveryKey}`,
+          error,
+          {
+            operation: 'notification.delivery.acceptance_unknown',
+            service: providerName,
+          },
+        );
+
+        // Complete the queue job to prevent BullMQ retry from resubmitting it.
+        // This synthetic identifier is explicitly NOT a provider message ID.
+        return {
+          processed: true,
+          notificationId: notification.notificationId,
+          channel: notification.channel,
+          provider: providerName,
+          messageId: `acceptance-unknown:${deliveryKey}`,
+        };
+      }
 
       if (error instanceof ClassifiedNotificationError) {
         const decision = decideNotificationRetry(
@@ -523,13 +586,67 @@ export class NotificationProcessor {
          * the existing retry policy has been exhausted.
          */
         if (!isReplay && notification.fallbackMetadata !== undefined) {
-          const fallbackResult = await this.fallbackExecutor.execute(
-            notification,
+          let fallbackResult;
 
-            notification.fallbackMetadata,
+          try {
+            fallbackResult = await this.fallbackExecutor.execute(
+              notification,
 
-            attempt,
-          );
+              notification.fallbackMetadata,
+
+              attempt,
+            );
+          } catch (fallbackError: unknown) {
+            if (
+              fallbackError instanceof
+              NotificationDeliveryAcceptanceUncertainError
+            ) {
+              /*
+               * A fallback submission may already have been accepted. Complete
+               * this BullMQ job instead of throwing and replaying the primary.
+               * Persist the parent lifecycle as uncertain where possible.
+               */
+              try {
+                await this.persistence.markAcceptanceUnknown(
+                  notification.notificationId,
+                  parentOwnershipToken,
+                  fallbackError.message,
+                  attempt,
+                );
+              } catch (stateError: unknown) {
+                this.logger.error(
+                  `Could not persist acceptance-unknown parent state for notification "${notification.notificationId}"; the job will still complete to prevent an automatic resend.`,
+                  stateError,
+                  {
+                    operation:
+                      'notification.fallback.parent_acceptance_unknown_persist_failed',
+                    service: notification.channel,
+                  },
+                );
+              }
+
+              this.metrics.incrementProviderErrorsFor(providerName);
+              this.metrics.recordLatency(Date.now() - startedAt);
+              this.logger.error(
+                `Notification fallback outcome is unknown; automatic resend is blocked: ${notification.notificationId}; deliveryKey: ${fallbackError.deliveryKey}`,
+                fallbackError,
+                {
+                  operation: 'notification.fallback.acceptance_unknown',
+                  service: notification.channel,
+                },
+              );
+
+              return {
+                processed: true,
+                notificationId: notification.notificationId,
+                channel: notification.channel,
+                provider: providerName,
+                messageId: `acceptance-unknown:${fallbackError.deliveryKey}`,
+              };
+            }
+
+            throw fallbackError;
+          }
 
           if (fallbackResult !== null) {
             await this.persistence.markSent(

@@ -132,6 +132,8 @@ function createProcessor(
     markRetrying: vi.fn().mockResolvedValue(undefined),
 
     markFailed: vi.fn().mockResolvedValue(undefined),
+
+    markAcceptanceUnknown: vi.fn().mockResolvedValue(undefined),
   };
 
   const deliveryPersistence = {
@@ -144,6 +146,10 @@ function createProcessor(
     markSent: vi.fn().mockResolvedValue(undefined),
 
     markFailed: vi.fn().mockResolvedValue(undefined),
+
+    markProviderSubmissionStarted: vi.fn().mockResolvedValue(undefined),
+
+    markAcceptanceUnknown: vi.fn().mockResolvedValue(undefined),
   };
 
   const metrics = {
@@ -636,5 +642,72 @@ describe('NotificationProcessor - provider retry policy', () => {
     );
 
     expect(persistence.markSent).not.toHaveBeenCalled();
+  });
+
+  it('completes the job and preserves ACCEPTANCE_UNKNOWN when fallback acceptance is uncertain', async () => {
+    const {
+      processor,
+      primaryProvider,
+      fallbackProviders,
+      persistence,
+      deliveryPersistence,
+    } = createProcessor(
+      {
+        accepted: false,
+        provider: 'development-email',
+        channel: 'email',
+        notificationId: 'notification-policy-001',
+        classification: NotificationFailureClassification.PERMANENT,
+        errorMessage: 'Primary provider permanently rejected message.',
+      },
+      {
+        push: {
+          accepted: true,
+          provider: 'development-push',
+          channel: 'push',
+          notificationId: 'notification-policy-001',
+          classification: NotificationFailureClassification.SUCCESS,
+          // Missing messageId means the provider may have accepted the fallback,
+          // but the worker cannot safely record a confirmed delivery.
+        },
+      },
+    );
+
+    const result = await processor.process(
+      createJob(
+        createNotificationData({
+          fallbackMetadata: createFallbackMetadata(),
+        }),
+      ),
+    );
+
+    expect(result).toEqual({
+      processed: true,
+      notificationId: 'notification-policy-001',
+      channel: 'email',
+      provider: 'development-email',
+      messageId: expect.stringMatching(/^acceptance-unknown:/),
+    });
+
+    // Returning a result rather than throwing prevents BullMQ from replaying
+    // the primary provider submission.
+    expect(primaryProvider.send).toHaveBeenCalledTimes(1);
+    expect(
+      getTestProvider(fallbackProviders, 'push').send,
+    ).toHaveBeenCalledTimes(1);
+    expect(
+      getTestProvider(fallbackProviders, 'in-app').send,
+    ).not.toHaveBeenCalled();
+
+    expect(persistence.markAcceptanceUnknown).toHaveBeenCalledWith(
+      'notification-policy-001',
+      expect.any(String),
+      expect.stringContaining('Fallback provider outcome is unknown'),
+      1,
+    );
+    expect(persistence.markSent).not.toHaveBeenCalled();
+    expect(persistence.markFailed).not.toHaveBeenCalled();
+    expect(persistence.markRetrying).not.toHaveBeenCalled();
+    expect(deliveryPersistence.markAcceptanceUnknown).toHaveBeenCalledTimes(1);
   });
 });

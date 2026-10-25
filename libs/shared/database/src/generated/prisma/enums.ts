@@ -160,6 +160,7 @@ export type NotificationChannel = (typeof NotificationChannel)[keyof typeof Noti
 export const NotificationStatus = {
   QUEUED: 'QUEUED',
   PROCESSING: 'PROCESSING',
+  ACCEPTANCE_UNKNOWN: 'ACCEPTANCE_UNKNOWN',
   SENT: 'SENT',
   RETRYING: 'RETRYING',
   FAILED: 'FAILED'
@@ -171,6 +172,7 @@ export type NotificationStatus = (typeof NotificationStatus)[keyof typeof Notifi
 export const NotificationDeliveryStatus = {
   PENDING: 'PENDING',
   PROCESSING: 'PROCESSING',
+  ACCEPTANCE_UNKNOWN: 'ACCEPTANCE_UNKNOWN',
   SENT: 'SENT',
   FAILED: 'FAILED'
 } as const

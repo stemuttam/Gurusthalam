@@ -153,7 +153,24 @@ describe('notification attempt ownership guards', () => {
       expect.objectContaining({
         where: expect.objectContaining({
           deliveryKey: 'already-sent',
-          status: { not: 'SENT' },
+          providerSubmissionStartedAt: null,
+          status: {
+            notIn: ['SENT', 'ACCEPTANCE_UNKNOWN'],
+          },
+          OR: expect.arrayContaining([
+            expect.objectContaining({
+              activeAttemptToken: null,
+            }),
+            expect.objectContaining({
+              activeAttemptToken: {
+                not: null,
+              },
+              lastAttemptAt: expect.objectContaining({
+                lte: expect.any(Date),
+              }),
+              status: 'PROCESSING',
+            }),
+          ]),
         }),
         data: expect.objectContaining({
           activeAttemptToken: 'new-token',
@@ -180,7 +197,9 @@ describe('notification attempt ownership guards', () => {
       expect.objectContaining({
         where: expect.objectContaining({
           notificationId: 'notification-1',
-          status: { not: 'SENT' },
+          status: {
+            notIn: ['SENT', 'ACCEPTANCE_UNKNOWN'],
+          },
         }),
         data: expect.objectContaining({
           activeAttemptToken: 'new-token',
@@ -189,6 +208,7 @@ describe('notification attempt ownership guards', () => {
       }),
     );
   });
+
   it('rolls back a primary claim when delivery ownership cannot be acquired', async () => {
     const parentUpdateMany = vi.fn().mockResolvedValue({ count: 1 });
     const deliveryUpdateMany = vi.fn().mockResolvedValue({ count: 0 });
@@ -232,7 +252,9 @@ describe('notification attempt ownership guards', () => {
       expect.objectContaining({
         where: expect.objectContaining({
           notificationId: 'notification-live-owner',
-          status: { not: 'SENT' },
+          status: {
+            notIn: ['SENT', 'ACCEPTANCE_UNKNOWN'],
+          },
           OR: expect.arrayContaining([
             { activeAttemptToken: null },
             expect.objectContaining({

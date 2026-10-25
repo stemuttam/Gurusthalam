@@ -25,7 +25,7 @@ export class NotificationPersistenceService {
       const parent = await tx.notification.updateMany({
         where: {
           notificationId: notification.notificationId,
-          status: { not: 'SENT' },
+          status: { notIn: ['SENT', 'ACCEPTANCE_UNKNOWN'] },
           OR: [
             { activeAttemptToken: null },
             {
@@ -54,7 +54,7 @@ export class NotificationPersistenceService {
       const delivery = await tx.notificationDelivery.updateMany({
         where: {
           deliveryKey,
-          status: { not: 'SENT' },
+          status: { notIn: ['SENT', 'ACCEPTANCE_UNKNOWN'] },
           OR: [
             { activeAttemptToken: null },
             {
@@ -97,7 +97,7 @@ export class NotificationPersistenceService {
     await this.prisma.notification.updateMany({
       where: {
         notificationId,
-        status: { not: 'SENT' },
+        status: { notIn: ['SENT', 'ACCEPTANCE_UNKNOWN'] },
         OR: [
           { activeAttemptToken: null },
           {
@@ -130,7 +130,7 @@ export class NotificationPersistenceService {
     const result = await this.prisma.notification.updateMany({
       where: {
         notificationId: notification.notificationId,
-        status: { not: 'SENT' },
+        status: { notIn: ['SENT', 'ACCEPTANCE_UNKNOWN'] },
         OR: [
           { activeAttemptToken: null },
           {
@@ -199,6 +199,33 @@ export class NotificationPersistenceService {
       },
       data: {
         status: 'RETRYING',
+        attempts: attempt,
+        failureReason: reason,
+        failedAt: null,
+        activeAttemptToken: null,
+      },
+    });
+    if (result.count !== 1)
+      throw new NotificationAttemptOwnershipLostError(
+        'notification',
+        notificationId,
+      );
+  }
+
+  async markAcceptanceUnknown(
+    notificationId: string,
+    ownershipToken: string,
+    reason: string,
+    attempt: number,
+  ): Promise<void> {
+    const result = await this.prisma.notification.updateMany({
+      where: {
+        notificationId,
+        activeAttemptToken: ownershipToken,
+        status: 'PROCESSING',
+      },
+      data: {
+        status: 'ACCEPTANCE_UNKNOWN',
         attempts: attempt,
         failureReason: reason,
         failedAt: null,

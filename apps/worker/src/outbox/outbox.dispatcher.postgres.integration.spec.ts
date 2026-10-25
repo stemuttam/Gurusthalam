@@ -27,6 +27,15 @@ const DATABASE_URL = process.env.DATABASE_URL;
 
 const describePostgres = DATABASE_URL ? describe : describe.skip;
 
+/**
+ * Unique namespace for this test file's PostgreSQL fixtures.
+ *
+ * Vitest may run integration spec files concurrently against the same
+ * database. Cleanup must only delete rows created by this suite; a broad
+ * shared prefix can otherwise erase another suite's active fixtures.
+ */
+const TEST_FIXTURE_PREFIX = `d3-outbox-pg-${randomUUID()}`;
+
 interface LoggerMock {
   readonly info: ReturnType<typeof vi.fn>;
   readonly warn: ReturnType<typeof vi.fn>;
@@ -115,7 +124,7 @@ function createCoursePayload(
 function createOutboxFixture(
   overrides: Partial<OutboxFixture> = {},
 ): OutboxFixture {
-  const id = overrides.id ?? `d3-outbox-${randomUUID()}`;
+  const id = overrides.id ?? `${TEST_FIXTURE_PREFIX}-${randomUUID()}`;
 
   const aggregateId = overrides.aggregateId ?? `d3-course-${randomUUID()}`;
 
@@ -165,7 +174,7 @@ function createOutboxFixture(
      * This changes test data only; production behavior is
      * completely untouched.
      */
-    createdAt: overrides.createdAt ?? new Date('2000-01-01T00:00:00.000Z'),
+    createdAt: overrides.createdAt ?? new Date('0001-01-01T00:00:00.000Z'),
   };
 }
 
@@ -173,7 +182,7 @@ async function deleteTestRows(prisma: PrismaClient): Promise<void> {
   await prisma.outboxEvent.deleteMany({
     where: {
       id: {
-        startsWith: 'd3-outbox-',
+        startsWith: TEST_FIXTURE_PREFIX,
       },
     },
   });
@@ -265,7 +274,25 @@ describePostgres(
       );
 
       try {
-        const events = await getInternals(dispatcher).claimPendingEvents();
+        /*
+         * Other PostgreSQL integration suites share this database and may
+         * have enough older eligible rows to fill the production batch.
+         * Keep claiming batches until this suite's eligible fixture appears.
+         * Each successful claim moves rows out of PENDING atomically.
+         */
+        const events: unknown[] = [];
+
+        for (let round = 0; round < 100; round += 1) {
+          const batch = await getInternals(dispatcher).claimPendingEvents();
+
+          events.push(...batch);
+
+          if (
+            events.some((event) => (event as { id: string }).id === fixture.id)
+          ) {
+            break;
+          }
+        }
 
         const claimed = events.find(
           (event) => (event as { id: string }).id === fixture.id,
@@ -316,7 +343,7 @@ describePostgres(
     it('allows two dispatcher instances to compete without claiming the same event twice', async () => {
       const fixtures = Array.from({ length: 8 }, (_, index) =>
         createOutboxFixture({
-          id: `d3-outbox-concurrent-${index + 1}-${randomUUID()}`,
+          id: `${TEST_FIXTURE_PREFIX}-concurrent-${index + 1}-${randomUUID()}`,
           aggregateId: `d3-course-concurrent-${index + 1}`,
           dedupeKey: `d3-course-domain-event-concurrent-${index + 1}-${randomUUID()}`,
           createdAt: new Date('0001-01-01T00:00:00.000Z'),
@@ -340,15 +367,33 @@ describePostgres(
       );
 
       try {
-        const [firstClaim, secondClaim] = await Promise.all([
-          getInternals(dispatcherOne).claimPendingEvents(),
-          getInternals(dispatcherTwo).claimPendingEvents(),
-        ]);
+        const claimedIds: string[] = [];
 
-        const claimedIds = [
-          ...firstClaim.map((event) => (event as { id: string }).id),
-          ...secondClaim.map((event) => (event as { id: string }).id),
-        ];
+        /*
+         * Each dispatcher call respects the production batch limit. Other
+         * suites can have eligible rows ahead of these fixtures, so repeat
+         * concurrent claim rounds until all eight fixtures have been claimed
+         * or the bounded guard proves they were not claimable.
+         */
+        for (let round = 0; round < 100; round += 1) {
+          const [firstClaim, secondClaim] = await Promise.all([
+            getInternals(dispatcherOne).claimPendingEvents(),
+            getInternals(dispatcherTwo).claimPendingEvents(),
+          ]);
+
+          claimedIds.push(
+            ...firstClaim.map((event) => (event as { id: string }).id),
+            ...secondClaim.map((event) => (event as { id: string }).id),
+          );
+
+          const claimedFixtureIds = claimedIds.filter((id) =>
+            fixtureIds.has(id),
+          );
+
+          if (new Set(claimedFixtureIds).size === fixtureIds.size) {
+            break;
+          }
+        }
 
         // The production dispatcher may claim unrelated eligible rows.
         // Restrict the fixture assertions to the eight rows owned by this test.

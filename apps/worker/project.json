@@ -4,34 +4,28 @@
   "root": "apps/worker",
   "sourceRoot": "apps/worker/src",
   "projectType": "application",
-  "tags": [
-    "scope:worker",
-    "type:application"
-  ],
+  "tags": ["scope:worker", "type:application"],
   "targets": {
     "build": {
       "executor": "@nx/js:tsc",
-      "outputs": [
-        "{options.outputPath}"
-      ],
+      "outputs": ["{options.outputPath}"],
       "options": {
         "main": "apps/worker/src/main.ts",
         "outputPath": "apps/worker/dist",
         "tsConfig": "apps/worker/tsconfig.app.json",
-        "assets": [
-          "apps/worker/src/assets"
-        ]
+        "assets": ["apps/worker/src/assets"]
       }
     },
 
-  "test": {
-  "executor": "nx:run-commands",
-  "options": {
-    "command": "pnpm exec vitest run --config apps/worker/vitest.config.mts",
-    "cwd": "."
-  },
-  "cache": true
- },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec vitest run --config apps/worker/vitest.config.mts --no-file-parallelism",
+        "cwd": "."
+      },
+      "cache": true
+    },
+
     "serve": {
       "executor": "@nx/js:node",
       "continuous": true,
@@ -39,9 +33,7 @@
         "buildTarget": "@org/worker:build",
         "watch": true,
         "runBuildTargetDependencies": false,
-        "runtimeArgs": [
-          "--env-file=apps/worker/.env"
-        ]
+        "runtimeArgs": ["--env-file=apps/worker/.env"]
       }
     }
   }

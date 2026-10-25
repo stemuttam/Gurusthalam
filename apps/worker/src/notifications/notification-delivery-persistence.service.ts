@@ -16,6 +16,7 @@ export interface NotificationDeliveryRecord {
   readonly failedAt: Date | null;
   readonly failureReason: string | null;
   readonly activeAttemptToken: string | null;
+  readonly providerSubmissionStartedAt: Date | null;
   readonly createdAt: Date;
   readonly updatedAt: Date;
 }
@@ -64,7 +65,10 @@ export class NotificationDeliveryPersistenceService {
     const result = await this.prisma.notificationDelivery.updateMany({
       where: {
         deliveryKey,
-        status: { not: 'SENT' },
+        status: { notIn: ['SENT', 'ACCEPTANCE_UNKNOWN'] },
+        // A started external submission may already have been accepted.
+        // Never reclaim it automatically based only on an expired lease.
+        providerSubmissionStartedAt: null,
         OR: [
           { activeAttemptToken: null },
           {
@@ -87,6 +91,51 @@ export class NotificationDeliveryPersistenceService {
       throw new NotificationAttemptOwnershipLostError('delivery', deliveryKey);
   }
 
+  /** Persist the external side-effect boundary before calling a provider. */
+  async markProviderSubmissionStarted(
+    deliveryKey: string,
+    ownershipToken: string,
+  ): Promise<void> {
+    const result = await this.prisma.notificationDelivery.updateMany({
+      where: {
+        deliveryKey,
+        activeAttemptToken: ownershipToken,
+        status: 'PROCESSING',
+        providerSubmissionStartedAt: null,
+      },
+      data: { providerSubmissionStartedAt: new Date() },
+    });
+
+    if (result.count !== 1) {
+      throw new NotificationAttemptOwnershipLostError('delivery', deliveryKey);
+    }
+  }
+
+  /** Keep the submission marker so an indeterminate delivery is never auto-retried. */
+  async markAcceptanceUnknown(
+    deliveryKey: string,
+    ownershipToken: string,
+    reason: string,
+  ): Promise<void> {
+    const result = await this.prisma.notificationDelivery.updateMany({
+      where: {
+        deliveryKey,
+        activeAttemptToken: ownershipToken,
+        status: 'PROCESSING',
+        providerSubmissionStartedAt: { not: null },
+      },
+      data: {
+        status: 'ACCEPTANCE_UNKNOWN',
+        failureReason: reason,
+        activeAttemptToken: null,
+      },
+    });
+
+    if (result.count !== 1) {
+      throw new NotificationAttemptOwnershipLostError('delivery', deliveryKey);
+    }
+  }
+
   async markSent(
     deliveryKey: string,
     ownershipToken: string,
@@ -105,6 +154,7 @@ export class NotificationDeliveryPersistenceService {
         failedAt: null,
         failureReason: null,
         activeAttemptToken: null,
+        providerSubmissionStartedAt: null,
       },
     });
     if (result.count !== 1)
@@ -127,6 +177,7 @@ export class NotificationDeliveryPersistenceService {
         failedAt: new Date(),
         failureReason: reason,
         activeAttemptToken: null,
+        providerSubmissionStartedAt: null,
       },
     });
     if (result.count !== 1)
@@ -147,6 +198,7 @@ export class NotificationDeliveryPersistenceService {
     readonly failedAt: Date | null;
     readonly failureReason: string | null;
     readonly activeAttemptToken: string | null;
+    readonly providerSubmissionStartedAt: Date | null;
     readonly createdAt: Date;
     readonly updatedAt: Date;
   }): NotificationDeliveryRecord {
@@ -164,6 +216,7 @@ export class NotificationDeliveryPersistenceService {
       failedAt: delivery.failedAt,
       failureReason: delivery.failureReason,
       activeAttemptToken: delivery.activeAttemptToken,
+      providerSubmissionStartedAt: delivery.providerSubmissionStartedAt,
       createdAt: delivery.createdAt,
       updatedAt: delivery.updatedAt,
     };

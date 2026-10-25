@@ -134,6 +134,10 @@ function createExecutor(providerResults: Record<string, unknown>) {
 
     markProcessing: vi.fn().mockResolvedValue(undefined),
 
+    markProviderSubmissionStarted: vi.fn().mockResolvedValue(undefined),
+
+    markAcceptanceUnknown: vi.fn().mockResolvedValue(undefined),
+
     markSent: vi.fn().mockResolvedValue(undefined),
 
     markFailed: vi.fn().mockResolvedValue(undefined),

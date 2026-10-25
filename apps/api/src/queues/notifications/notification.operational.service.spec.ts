@@ -1,415 +1,277 @@
-import {
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 
-import {
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import {
-  NotificationOperationalService,
-} from './notification-operational.service.js';
+import { NotificationOperationalService } from './notification-operational.service.js';
 
 type NotificationStatus =
-  | 'QUEUED'
-  | 'PROCESSING'
-  | 'SENT'
-  | 'RETRYING'
-  | 'FAILED';
+  'QUEUED' | 'PROCESSING' | 'SENT' | 'RETRYING' | 'FAILED';
 
 type MockNotification = {
   id: string;
   notificationId: string;
   userId: string;
-  channel:
-    | 'EMAIL'
-    | 'IN_APP'
-    | 'PUSH';
-  status:
-    NotificationStatus;
-  subject:
-    string | null;
-  title:
-    string | null;
-  body:
-    string;
-  template:
-    string | null;
-  templateData:
-    unknown;
-  idempotencyKey:
-    string;
-  failedAt:
-    Date | null;
-  failureReason:
-    string | null;
+  channel: 'EMAIL' | 'IN_APP' | 'PUSH';
+  status: NotificationStatus;
+  subject: string | null;
+  title: string | null;
+  body: string;
+  template: string | null;
+  templateData: unknown;
+  idempotencyKey: string;
+  failedAt: Date | null;
+  failureReason: string | null;
 };
 
 type MockOutboxEventStatus =
-  | 'PENDING'
-  | 'PROCESSING'
-  | 'PUBLISHED'
-  | 'FAILED'
-  | 'DEAD_LETTER';
+  'PENDING' | 'PROCESSING' | 'PUBLISHED' | 'FAILED' | 'DEAD_LETTER';
 
 type MockOutboxEvent = {
-  id:
-    string;
-  aggregateType:
-    string;
-  aggregateId:
-    string;
-  eventType:
-    string;
-  dedupeKey:
-    string;
-  payload:
-    unknown;
-  status:
-    MockOutboxEventStatus;
-  attempts:
-    number;
+  id: string;
+  aggregateType: string;
+  aggregateId: string;
+  eventType: string;
+  dedupeKey: string;
+  payload: unknown;
+  status: MockOutboxEventStatus;
+  attempts: number;
 };
 
 function createNotification(
-  overrides:
-    Partial<MockNotification> = {},
+  overrides: Partial<MockNotification> = {},
 ): MockNotification {
   return {
-    id:
-      'notification-db-001',
+    id: 'notification-db-001',
 
-    notificationId:
-      'notification-001',
+    notificationId: 'notification-001',
 
-    userId:
-      'user-001',
+    userId: 'user-001',
 
-    channel:
-      'EMAIL',
+    channel: 'EMAIL',
 
-    status:
-      'FAILED',
+    status: 'FAILED',
 
-    subject:
-      'Subject',
+    subject: 'Subject',
 
-    title:
-      'Title',
+    title: 'Title',
 
-    body:
-      'Body',
+    body: 'Body',
 
-    template:
-      null,
+    template: null,
 
-    templateData:
-      null,
+    templateData: null,
 
-    idempotencyKey:
-      'idempotency-001',
+    idempotencyKey: 'idempotency-001',
 
-    failedAt:
-      new Date(),
+    failedAt: new Date(),
 
-    failureReason:
-      'Provider failure',
+    failureReason: 'Provider failure',
 
     ...overrides,
   };
 }
 
 function createOutboxEvent(
-  overrides:
-    Partial<MockOutboxEvent> = {},
+  overrides: Partial<MockOutboxEvent> = {},
 ): MockOutboxEvent {
   return {
-    id:
-      'outbox-001',
+    id: 'outbox-001',
 
-    aggregateType:
-      'Notification',
+    aggregateType: 'Notification',
 
-    aggregateId:
-      'notification-db-001',
+    aggregateId: 'notification-db-001',
 
-    eventType:
-      'notification.enqueue',
+    eventType: 'notification.enqueue',
 
-    dedupeKey:
-      'notification-retry:notification-001:retry-001',
+    dedupeKey: 'notification-retry:notification-001:retry-001',
 
     payload: {
-      notificationId:
-        'notification-001',
+      notificationId: 'notification-001',
 
-      channel:
-        'email',
+      channel: 'email',
 
       recipient: {
-        userId:
-          'user-001',
+        userId: 'user-001',
       },
 
-      body:
-        'Body',
+      body: 'Body',
 
-      idempotencyKey:
-        'idempotency-001',
+      idempotencyKey: 'idempotency-001',
     },
 
-    status:
-      'PENDING',
+    status: 'PENDING',
 
-    attempts:
-      0,
+    attempts: 0,
 
     ...overrides,
   };
 }
 
 function createHarness(
-  initialNotification:
-    MockNotification | null,
+  initialNotification: MockNotification | null,
 
-  initialEvents:
-    MockOutboxEvent[] = [],
+  initialEvents: MockOutboxEvent[] = [],
 ) {
-  let notification =
-    initialNotification;
+  let notification = initialNotification;
 
-  const events =
-    [...initialEvents];
+  const events = [...initialEvents];
 
-  let onOutboxCreated:
-    (() => void) | undefined;
+  let onOutboxCreated: (() => void) | undefined;
 
-  const notificationFindUnique =
-    vi.fn(
-      async () =>
-        notification,
+  const notificationFindUnique = vi.fn(async () => notification);
+
+  const outboxFindFirst = vi.fn(async () => {
+    const currentNotification = notification;
+
+    if (currentNotification === null) {
+      return null;
+    }
+
+    return (
+      events.find(
+        (event) =>
+          event.aggregateType === 'Notification' &&
+          event.aggregateId === currentNotification.id &&
+          event.eventType === 'notification.enqueue' &&
+          (event.status === 'PENDING' || event.status === 'PROCESSING'),
+      ) ?? null
     );
+  });
 
-  const outboxFindFirst =
-    vi.fn(
-      async () => {
-        const currentNotification =
-          notification;
+  const notificationUpdateMany = vi.fn(
+    async ({
+      where,
+      data,
+    }: {
+      where: {
+        id: string;
 
-        if (
-          currentNotification ===
-          null
-        ) {
-          return null;
-        }
+        status: NotificationStatus;
+      };
 
-        return (
-          events.find(
-            (
-              event,
-            ) =>
-              event.aggregateType ===
-                'Notification' &&
-              event.aggregateId ===
-                currentNotification.id &&
-              event.eventType ===
-                'notification.enqueue' &&
-              (
-                event.status ===
-                  'PENDING' ||
-                event.status ===
-                  'PROCESSING'
-              ),
-          ) ?? null
-        );
-      },
-    );
+      data: {
+        status: NotificationStatus;
 
-  const notificationUpdateMany =
-    vi.fn(
-      async ({
-        where,
-        data,
-      }: {
-        where: {
-          id:
-            string;
+        failedAt: Date | null;
 
-          status:
-            NotificationStatus;
-        };
+        failureReason: string | null;
+      };
+    }) => {
+      const currentNotification = notification;
 
-        data: {
-          status:
-            NotificationStatus;
-
-          failedAt:
-            Date | null;
-
-          failureReason:
-            string | null;
-        };
-      }) => {
-        const currentNotification =
-          notification;
-
-        if (
-          currentNotification ===
-            null ||
-          currentNotification.id !==
-            where.id ||
-          currentNotification.status !==
-            where.status
-        ) {
-          return {
-            count:
-              0,
-          };
-        }
-
-        notification = {
-          ...currentNotification,
-
-          status:
-            data.status,
-
-          failedAt:
-            data.failedAt,
-
-          failureReason:
-            data.failureReason,
-        };
-
+      if (
+        currentNotification === null ||
+        currentNotification.id !== where.id ||
+        currentNotification.status !== where.status
+      ) {
         return {
-          count:
-            1,
+          count: 0,
         };
-      },
-    );
+      }
 
-  const outboxCreate =
-    vi.fn(
-      async ({
-        data,
-      }: {
-        data: {
-          eventType:
-            string;
+      notification = {
+        ...currentNotification,
 
-          aggregateType:
-            string;
+        status: data.status,
 
-          aggregateId:
-            string;
+        failedAt: data.failedAt,
 
-          dedupeKey:
-            string;
+        failureReason: data.failureReason,
+      };
 
-          payload:
-            unknown;
+      return {
+        count: 1,
+      };
+    },
+  );
 
-          status:
-            MockOutboxEventStatus;
+  const outboxCreate = vi.fn(
+    async ({
+      data,
+    }: {
+      data: {
+        eventType: string;
 
-          attempts:
-            number;
+        aggregateType: string;
+
+        aggregateId: string;
+
+        dedupeKey: string;
+
+        payload: unknown;
+
+        status: MockOutboxEventStatus;
+
+        attempts: number;
+      };
+    }) => {
+      const event = createOutboxEvent({
+        id: `outbox-${events.length + 1}`,
+
+        aggregateType: data.aggregateType,
+
+        aggregateId: data.aggregateId,
+
+        eventType: data.eventType,
+
+        dedupeKey: data.dedupeKey,
+
+        payload: data.payload,
+
+        status: data.status,
+
+        attempts: data.attempts,
+      });
+
+      events.push(event);
+
+      onOutboxCreated?.();
+
+      return event;
+    },
+  );
+
+  const transaction = vi.fn(
+    async (
+      callback: (tx: {
+        notification: {
+          updateMany: typeof notificationUpdateMany;
         };
-      }) => {
-        const event =
-          createOutboxEvent({
-            id:
-              `outbox-${events.length + 1}`,
 
-            aggregateType:
-              data.aggregateType,
+        outboxEvent: {
+          findFirst: typeof outboxFindFirst;
 
-            aggregateId:
-              data.aggregateId,
+          create: typeof outboxCreate;
+        };
+      }) => Promise<unknown>,
+    ) =>
+      callback({
+        notification: {
+          updateMany: notificationUpdateMany,
+        },
 
-            eventType:
-              data.eventType,
+        outboxEvent: {
+          findFirst: outboxFindFirst,
 
-            dedupeKey:
-              data.dedupeKey,
-
-            payload:
-              data.payload,
-
-            status:
-              data.status,
-
-            attempts:
-              data.attempts,
-          });
-
-        events.push(
-          event,
-        );
-
-        onOutboxCreated?.();
-
-        return event;
-      },
-    );
-
-  const transaction =
-    vi.fn(
-      async (
-        callback: (
-          tx: {
-            notification: {
-              updateMany:
-                typeof notificationUpdateMany;
-            };
-
-            outboxEvent: {
-              findFirst:
-                typeof outboxFindFirst;
-
-              create:
-                typeof outboxCreate;
-            };
-          },
-        ) => Promise<unknown>,
-      ) =>
-        callback({
-          notification: {
-            updateMany:
-              notificationUpdateMany,
-          },
-
-          outboxEvent: {
-            findFirst:
-              outboxFindFirst,
-
-            create:
-              outboxCreate,
-          },
-        }),
-    );
+          create: outboxCreate,
+        },
+      }),
+  );
 
   const prisma = {
     notification: {
-      findUnique:
-        notificationFindUnique,
+      findUnique: notificationFindUnique,
     },
 
     outboxEvent: {
-      findFirst:
-        outboxFindFirst,
+      findFirst: outboxFindFirst,
     },
 
-    $transaction:
-      transaction,
+    $transaction: transaction,
   };
 
   return {
-    prisma:
-      prisma as never,
+    prisma: prisma as never,
 
     notificationFindUnique,
 
@@ -421,719 +283,351 @@ function createHarness(
 
     transaction,
 
-    getNotification:
-      () =>
-        notification,
+    getNotification: () => notification,
 
-    getEvents:
-      () =>
-        [...events],
+    getEvents: () => [...events],
 
-    setNotification:
-      (
-        nextNotification:
-          MockNotification,
-      ) => {
-        notification =
-          nextNotification;
-      },
+    setNotification: (nextNotification: MockNotification) => {
+      notification = nextNotification;
+    },
 
-    setOutboxStatus:
-      (
-        outboxId:
-          string,
+    setOutboxStatus: (
+      outboxId: string,
 
-        status:
-          MockOutboxEventStatus,
-      ) => {
-        const event =
-          events.find(
-            (
-              item,
-            ) =>
-              item.id ===
-              outboxId,
-          );
+      status: MockOutboxEventStatus,
+    ) => {
+      const event = events.find((item) => item.id === outboxId);
 
-        if (
-          !event
-        ) {
-          throw new Error(
-            `Outbox event ${outboxId} was not found.`,
-          );
-        }
+      if (!event) {
+        throw new Error(`Outbox event ${outboxId} was not found.`);
+      }
 
-        event.status =
-          status;
-      },
+      event.status = status;
+    },
 
-    setOnOutboxCreated:
-      (
-        callback:
-          () => void,
-      ) => {
-        onOutboxCreated =
-          callback;
-      },
+    setOnOutboxCreated: (callback: () => void) => {
+      onOutboxCreated = callback;
+    },
   };
 }
 
-describe(
-  'NotificationOperationalService',
-  () => {
-    it(
-      'returns 404 for an unknown notification',
-      async () => {
-        const harness =
-          createHarness(
-            null,
-          );
+describe('NotificationOperationalService', () => {
+  it('returns 404 for an unknown notification', async () => {
+    const harness = createHarness(null);
 
-        const service =
-          new NotificationOperationalService(
-            harness.prisma,
-          );
+    const service = new NotificationOperationalService(harness.prisma);
 
-        await expect(
-          service.retry(
-            'missing-notification',
-          ),
-        ).rejects.toBeInstanceOf(
-          NotFoundException,
-        );
-
-        expect(
-          harness.notificationUpdateMany,
-        ).not.toHaveBeenCalled();
-
-        expect(
-          harness.outboxCreate,
-        ).not.toHaveBeenCalled();
-      },
+    await expect(service.retry('missing-notification')).rejects.toBeInstanceOf(
+      NotFoundException,
     );
 
-    it(
-      'rejects retry for SENT notifications',
-      async () => {
-        const harness =
-          createHarness(
-            createNotification({
-              status:
-                'SENT',
+    expect(harness.notificationUpdateMany).not.toHaveBeenCalled();
 
-              failedAt:
-                null,
+    expect(harness.outboxCreate).not.toHaveBeenCalled();
+  });
 
-              failureReason:
-                null,
-            }),
-          );
+  it('rejects retry for SENT notifications', async () => {
+    const harness = createHarness(
+      createNotification({
+        status: 'SENT',
 
-        const service =
-          new NotificationOperationalService(
-            harness.prisma,
-          );
+        failedAt: null,
 
-        await expect(
-          service.retry(
-            'notification-001',
-          ),
-        ).rejects.toBeInstanceOf(
-          BadRequestException,
-        );
-
-        expect(
-          harness.notificationUpdateMany,
-        ).not.toHaveBeenCalled();
-
-        expect(
-          harness.outboxCreate,
-        ).not.toHaveBeenCalled();
-      },
+        failureReason: null,
+      }),
     );
 
-    it(
-      'rejects retry for PROCESSING notifications',
-      async () => {
-        const harness =
-          createHarness(
-            createNotification({
-              status:
-                'PROCESSING',
+    const service = new NotificationOperationalService(harness.prisma);
 
-              failedAt:
-                null,
-
-              failureReason:
-                null,
-            }),
-          );
-
-        const service =
-          new NotificationOperationalService(
-            harness.prisma,
-          );
-
-        await expect(
-          service.retry(
-            'notification-001',
-          ),
-        ).rejects.toBeInstanceOf(
-          BadRequestException,
-        );
-
-        expect(
-          harness.outboxCreate,
-        ).not.toHaveBeenCalled();
-      },
+    await expect(service.retry('notification-001')).rejects.toBeInstanceOf(
+      BadRequestException,
     );
 
-    it(
-      'rejects retry for QUEUED notifications',
-      async () => {
-        const harness =
-          createHarness(
-            createNotification({
-              status:
-                'QUEUED',
+    expect(harness.notificationUpdateMany).not.toHaveBeenCalled();
 
-              failedAt:
-                null,
+    expect(harness.outboxCreate).not.toHaveBeenCalled();
+  });
 
-              failureReason:
-                null,
-            }),
-          );
+  it('rejects retry for PROCESSING notifications', async () => {
+    const harness = createHarness(
+      createNotification({
+        status: 'PROCESSING',
 
-        const service =
-          new NotificationOperationalService(
-            harness.prisma,
-          );
+        failedAt: null,
 
-        await expect(
-          service.retry(
-            'notification-001',
-          ),
-        ).rejects.toBeInstanceOf(
-          BadRequestException,
-        );
-
-        expect(
-          harness.outboxCreate,
-        ).not.toHaveBeenCalled();
-      },
+        failureReason: null,
+      }),
     );
 
-    it(
-      'schedules exactly one retry from FAILED',
-      async () => {
-        const harness =
-          createHarness(
-            createNotification(),
-          );
+    const service = new NotificationOperationalService(harness.prisma);
 
-        const service =
-          new NotificationOperationalService(
-            harness.prisma,
-          );
-
-        const result =
-          await service.retry(
-            'notification-001',
-          );
-
-        expect(
-          result.accepted,
-        ).toBe(
-          true,
-        );
-
-        expect(
-          result.action,
-        ).toBe(
-          'retry-scheduled',
-        );
-
-        expect(
-          harness.notificationUpdateMany,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-
-        expect(
-          harness.getNotification()
-            ?.status,
-        ).toBe(
-          'RETRYING',
-        );
-
-        expect(
-          harness.outboxCreate,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-
-        expect(
-          harness.getEvents(),
-        ).toHaveLength(
-          1,
-        );
-
-        expect(
-          harness.getEvents()[0]
-            ?.status,
-        ).toBe(
-          'PENDING',
-        );
-      },
+    await expect(service.retry('notification-001')).rejects.toBeInstanceOf(
+      BadRequestException,
     );
 
-    it(
-      'returns the existing retry when status is RETRYING and an active retry exists',
-      async () => {
-        const existing =
-          createOutboxEvent();
+    expect(harness.outboxCreate).not.toHaveBeenCalled();
+  });
 
-        const harness =
-          createHarness(
-            createNotification({
-              status:
-                'RETRYING',
+  it('rejects retry for QUEUED notifications', async () => {
+    const harness = createHarness(
+      createNotification({
+        status: 'QUEUED',
 
-              failedAt:
-                null,
+        failedAt: null,
 
-              failureReason:
-                null,
-            }),
-
-            [
-              existing,
-            ],
-          );
-
-        const service =
-          new NotificationOperationalService(
-            harness.prisma,
-          );
-
-        const result =
-          await service.retry(
-            'notification-001',
-          );
-
-        expect(
-          result.accepted,
-        ).toBe(
-          true,
-        );
-
-        expect(
-          result.action,
-        ).toBe(
-          'retry-already-scheduled',
-        );
-
-        expect(
-          result.outboxEventId,
-        ).toBe(
-          existing.id,
-        );
-
-        expect(
-          harness.outboxCreate,
-        ).not.toHaveBeenCalled();
-      },
+        failureReason: null,
+      }),
     );
 
-    it(
-      'rejects an inconsistent RETRYING state without an active retry',
-      async () => {
-        const harness =
-          createHarness(
-            createNotification({
-              status:
-                'RETRYING',
+    const service = new NotificationOperationalService(harness.prisma);
 
-              failedAt:
-                null,
-
-              failureReason:
-                null,
-            }),
-          );
-
-        const service =
-          new NotificationOperationalService(
-            harness.prisma,
-          );
-
-        await expect(
-          service.retry(
-            'notification-001',
-          ),
-        ).rejects.toThrow(
-          'marked RETRYING but has no pending retry operation.',
-        );
-
-        expect(
-          harness.outboxCreate,
-        ).not.toHaveBeenCalled();
-      },
+    await expect(service.retry('notification-001')).rejects.toBeInstanceOf(
+      BadRequestException,
     );
 
-    it(
-      'allows a later retry after the previous retry reaches a terminal outbox state',
-      async () => {
-        const harness =
-          createHarness(
-            createNotification(),
-          );
+    expect(harness.outboxCreate).not.toHaveBeenCalled();
+  });
 
-        const service =
-          new NotificationOperationalService(
-            harness.prisma,
-          );
+  it('schedules exactly one retry from FAILED', async () => {
+    const harness = createHarness(createNotification());
 
-        const first =
-          await service.retry(
-            'notification-001',
-          );
+    const service = new NotificationOperationalService(harness.prisma);
 
-        expect(
-          first.accepted,
-        ).toBe(
-          true,
-        );
+    const result = await service.retry('notification-001');
 
-        expect(
-          first.action,
-        ).toBe(
-          'retry-scheduled',
-        );
+    expect(result.accepted).toBe(true);
 
-        expect(
-          harness.outboxCreate,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
+    expect(result.action).toBe('retry-scheduled');
 
-        const firstEvent =
-          harness.getEvents()[0];
+    expect(harness.notificationUpdateMany).toHaveBeenCalledTimes(1);
 
-        expect(
-          firstEvent,
-        ).toBeDefined();
+    expect(harness.getNotification()?.status).toBe('RETRYING');
 
-        if (
-          !firstEvent
-        ) {
-          throw new Error(
-            'Expected first retry outbox event to exist.',
-          );
+    expect(harness.outboxCreate).toHaveBeenCalledTimes(1);
+
+    expect(harness.getEvents()).toHaveLength(1);
+
+    expect(harness.getEvents()[0]?.status).toBe('PENDING');
+  });
+
+  it('returns the existing retry when status is RETRYING and an active retry exists', async () => {
+    const existing = createOutboxEvent();
+
+    const harness = createHarness(
+      createNotification({
+        status: 'RETRYING',
+
+        failedAt: null,
+
+        failureReason: null,
+      }),
+
+      [existing],
+    );
+
+    const service = new NotificationOperationalService(harness.prisma);
+
+    const result = await service.retry('notification-001');
+
+    expect(result.accepted).toBe(true);
+
+    expect(result.action).toBe('retry-already-scheduled');
+
+    expect(result.outboxEventId).toBe(existing.id);
+
+    expect(harness.outboxCreate).not.toHaveBeenCalled();
+  });
+
+  it('rejects an inconsistent RETRYING state without an active retry', async () => {
+    const harness = createHarness(
+      createNotification({
+        status: 'RETRYING',
+
+        failedAt: null,
+
+        failureReason: null,
+      }),
+    );
+
+    const service = new NotificationOperationalService(harness.prisma);
+
+    await expect(service.retry('notification-001')).rejects.toThrow(
+      'marked RETRYING but has no pending retry operation.',
+    );
+
+    expect(harness.outboxCreate).not.toHaveBeenCalled();
+  });
+
+  it('allows a later retry after the previous retry reaches a terminal outbox state', async () => {
+    const harness = createHarness(createNotification());
+
+    const service = new NotificationOperationalService(harness.prisma);
+
+    const first = await service.retry('notification-001');
+
+    expect(first.accepted).toBe(true);
+
+    expect(first.action).toBe('retry-scheduled');
+
+    expect(harness.outboxCreate).toHaveBeenCalledTimes(1);
+
+    const firstEvent = harness.getEvents()[0];
+
+    expect(firstEvent).toBeDefined();
+
+    if (!firstEvent) {
+      throw new Error('Expected first retry outbox event to exist.');
+    }
+
+    harness.setOutboxStatus(firstEvent.id, 'PUBLISHED');
+
+    harness.setNotification(
+      createNotification({
+        status: 'FAILED',
+
+        failedAt: new Date(),
+
+        failureReason: 'Second provider failure',
+      }),
+    );
+
+    const second = await service.retry('notification-001');
+
+    expect(second.accepted).toBe(true);
+
+    expect(second.action).toBe('retry-scheduled');
+
+    expect(harness.outboxCreate).toHaveBeenCalledTimes(2);
+
+    const finalEvents = harness.getEvents();
+
+    expect(finalEvents).toHaveLength(2);
+
+    expect(finalEvents[0]?.status).toBe('PUBLISHED');
+
+    expect(finalEvents[1]?.status).toBe('PENDING');
+
+    expect(finalEvents[0]?.dedupeKey).not.toBe(finalEvents[1]?.dedupeKey);
+
+    expect(finalEvents[1]?.dedupeKey).toMatch(
+      /^notification-retry:notification-001:/,
+    );
+  });
+
+  it('preserves the original idempotency key in the retry payload', async () => {
+    const harness = createHarness(createNotification());
+
+    const service = new NotificationOperationalService(harness.prisma);
+
+    await service.retry('notification-001');
+
+    const event = harness.getEvents()[0];
+
+    expect(event).toBeDefined();
+
+    expect(event?.payload).toMatchObject({
+      notificationId: 'notification-001',
+
+      idempotencyKey: 'idempotency-001',
+
+      body: 'Body',
+
+      channel: 'email',
+
+      recipient: {
+        userId: 'user-001',
+      },
+    });
+  });
+
+  it('collapses concurrent retry requests into one retry operation', async () => {
+    const harness = createHarness(createNotification());
+
+    const service = new NotificationOperationalService(harness.prisma);
+
+    let releaseFirstUpdate: (() => void) | undefined;
+
+    const firstUpdateReached = new Promise<void>((resolve) => {
+      releaseFirstUpdate = resolve;
+    });
+
+    let resolveFirstOutbox: (() => void) | undefined;
+
+    const firstOutboxCreated = new Promise<void>((resolve) => {
+      resolveFirstOutbox = resolve;
+    });
+
+    harness.setOnOutboxCreated(() => {
+      resolveFirstOutbox?.();
+    });
+
+    let updateCalls = 0;
+
+    harness.notificationUpdateMany.mockImplementation(async ({ data }) => {
+      updateCalls += 1;
+
+      /*
+       * First transaction wins the atomic
+       * FAILED -> RETRYING state transition.
+       */
+      if (updateCalls === 1) {
+        await firstUpdateReached;
+
+        const current = harness.getNotification();
+
+        if (current) {
+          harness.setNotification({
+            ...current,
+
+            status: data.status,
+
+            failedAt: data.failedAt,
+
+            failureReason: data.failureReason,
+          });
         }
 
-        harness.setOutboxStatus(
-          firstEvent.id,
-          'PUBLISHED',
-        );
+        return {
+          count: 1,
+        };
+      }
 
-        harness.setNotification(
-          createNotification({
-            status:
-              'FAILED',
+      /*
+       * The second transaction must wait until the
+       * first retry has actually created its outbox
+       * event. It then loses the compare-and-set.
+       */
+      await firstOutboxCreated;
 
-            failedAt:
-              new Date(),
+      return {
+        count: 0,
+      };
+    });
 
-            failureReason:
-              'Second provider failure',
-          }),
-        );
+    const firstRetry = service.retry('notification-001');
 
-        const second =
-          await service.retry(
-            'notification-001',
-          );
+    const secondRetry = service.retry('notification-001');
 
-        expect(
-          second.accepted,
-        ).toBe(
-          true,
-        );
+    releaseFirstUpdate?.();
 
-        expect(
-          second.action,
-        ).toBe(
-          'retry-scheduled',
-        );
+    const results = await Promise.allSettled([firstRetry, secondRetry]);
 
-        expect(
-          harness.outboxCreate,
-        ).toHaveBeenCalledTimes(
-          2,
-        );
+    expect(harness.outboxCreate).toHaveBeenCalledTimes(1);
 
-        const finalEvents =
-          harness.getEvents();
+    expect(harness.getEvents()).toHaveLength(1);
 
-        expect(
-          finalEvents,
-        ).toHaveLength(
-          2,
-        );
-
-        expect(
-          finalEvents[0]?.status,
-        ).toBe(
-          'PUBLISHED',
-        );
-
-        expect(
-          finalEvents[1]?.status,
-        ).toBe(
-          'PENDING',
-        );
-
-        expect(
-          finalEvents[0]?.dedupeKey,
-        ).not.toBe(
-          finalEvents[1]?.dedupeKey,
-        );
-
-        expect(
-          finalEvents[1]?.dedupeKey,
-        ).toMatch(
-          /^notification-retry:notification-001:/,
-        );
-      },
+    const successful = results.filter(
+      (result) => result.status === 'fulfilled',
     );
 
-    it(
-      'preserves the original idempotency key in the retry payload',
-      async () => {
-        const harness =
-          createHarness(
-            createNotification(),
-          );
+    expect(successful).toHaveLength(2);
 
-        const service =
-          new NotificationOperationalService(
-            harness.prisma,
-          );
-
-        await service.retry(
-          'notification-001',
-        );
-
-        const event =
-          harness.getEvents()[0];
-
-        expect(
-          event,
-        ).toBeDefined();
-
-        expect(
-          event?.payload,
-        ).toMatchObject({
-          notificationId:
-            'notification-001',
-
-          idempotencyKey:
-            'idempotency-001',
-
-          body:
-            'Body',
-
-          channel:
-            'email',
-
-          recipient: {
-            userId:
-              'user-001',
-          },
-        });
-      },
+    const outboxIds = successful.map((result) =>
+      result.status === 'fulfilled' ? result.value.outboxEventId : undefined,
     );
 
-    it(
-      'collapses concurrent retry requests into one retry operation',
-      async () => {
-        const harness =
-          createHarness(
-            createNotification(),
-          );
+    expect(new Set(outboxIds).size).toBe(1);
 
-        const service =
-          new NotificationOperationalService(
-            harness.prisma,
-          );
-
-        let releaseFirstUpdate:
-          (() => void) | undefined;
-
-        const firstUpdateReached =
-          new Promise<void>(
-            (
-              resolve,
-            ) => {
-              releaseFirstUpdate =
-                resolve;
-            },
-          );
-
-        let resolveFirstOutbox:
-          (() => void) | undefined;
-
-        const firstOutboxCreated =
-          new Promise<void>(
-            (
-              resolve,
-            ) => {
-              resolveFirstOutbox =
-                resolve;
-            },
-          );
-
-        harness.setOnOutboxCreated(
-          () => {
-            resolveFirstOutbox?.();
-          },
-        );
-
-        let updateCalls =
-          0;
-
-        harness.notificationUpdateMany
-          .mockImplementation(
-            async ({
-              data,
-            }) => {
-              updateCalls +=
-                1;
-
-              /*
-               * First transaction wins the atomic
-               * FAILED -> RETRYING state transition.
-               */
-              if (
-                updateCalls ===
-                1
-              ) {
-                await firstUpdateReached;
-
-                const current =
-                  harness.getNotification();
-
-                if (
-                  current
-                ) {
-                  harness.setNotification({
-                    ...current,
-
-                    status:
-                      data.status,
-
-                    failedAt:
-                      data.failedAt,
-
-                    failureReason:
-                      data.failureReason,
-                  });
-                }
-
-                return {
-                  count:
-                    1,
-                };
-              }
-
-              /*
-               * The second transaction must wait until the
-               * first retry has actually created its outbox
-               * event. It then loses the compare-and-set.
-               */
-              await firstOutboxCreated;
-
-              return {
-                count:
-                  0,
-              };
-            },
-          );
-
-        const firstRetry =
-          service.retry(
-            'notification-001',
-          );
-
-        const secondRetry =
-          service.retry(
-            'notification-001',
-          );
-
-        releaseFirstUpdate?.();
-
-        const results =
-          await Promise.allSettled([
-            firstRetry,
-            secondRetry,
-          ]);
-
-        expect(
-          harness.outboxCreate,
-        ).toHaveBeenCalledTimes(
-          1,
-        );
-
-        expect(
-          harness.getEvents(),
-        ).toHaveLength(
-          1,
-        );
-
-        const successful =
-          results.filter(
-            (
-              result,
-            ) =>
-              result.status ===
-              'fulfilled',
-          );
-
-        expect(
-          successful,
-        ).toHaveLength(
-          2,
-        );
-
-        const outboxIds =
-          successful.map(
-            (
-              result,
-            ) =>
-              result.status ===
-              'fulfilled'
-                ? result.value
-                    .outboxEventId
-                : undefined,
-          );
-
-        expect(
-          new Set(
-            outboxIds,
-          ).size,
-        ).toBe(
-          1,
-        );
-
-        expect(
-          outboxIds[0],
-        ).toBe(
-          harness.getEvents()[0]
-            ?.id,
-        );
-      },
-    );
-  },
-);
+    expect(outboxIds[0]).toBe(harness.getEvents()[0]?.id);
+  });
+});

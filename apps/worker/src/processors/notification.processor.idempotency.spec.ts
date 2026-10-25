@@ -550,6 +550,70 @@ describe('NotificationProcessor delivery idempotency', () => {
     expect(persistence.markFailed).not.toHaveBeenCalled();
   });
 
+  it('preserves acceptance uncertainty when ACCEPTANCE_UNKNOWN persistence fails', async () => {
+    resetMocks();
+
+    const deliveryKey = 'acceptance-unknown-persistence-failure-001';
+    const providerError = new Error('Provider timed out after submission.');
+    const persistenceError = new Error(
+      'PostgreSQL unavailable while persisting uncertainty.',
+    );
+
+    deliveryPersistence.createIfMissing.mockResolvedValue({
+      status: 'PENDING',
+      providerMessageId: null,
+    });
+    deliveryPersistence.getByDeliveryKey.mockResolvedValue({
+      status: 'PENDING',
+      providerMessageId: null,
+    });
+    deliveryPersistence.markProcessing.mockResolvedValue(undefined);
+    deliveryPersistence.markProviderSubmissionStarted.mockResolvedValue(
+      undefined,
+    );
+    deliveryPersistence.markAcceptanceUnknown.mockRejectedValue(
+      persistenceError,
+    );
+    providerSend.mockRejectedValue(providerError);
+
+    const result = await processor.process(createJob(0, deliveryKey));
+
+    expect(result).toEqual({
+      processed: true,
+      notificationId: notification.notificationId,
+      channel: 'email',
+      provider: providerName,
+      messageId: `acceptance-unknown:${deliveryKey}`,
+    });
+
+    expect(
+      deliveryPersistence.markProviderSubmissionStarted,
+    ).toHaveBeenCalledWith(deliveryKey, expect.any(String));
+    expect(
+      deliveryPersistence.markProviderSubmissionStarted.mock
+        .invocationCallOrder[0],
+    ).toBeLessThan(
+      providerSend.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY,
+    );
+    expect(deliveryPersistence.markAcceptanceUnknown).toHaveBeenCalledWith(
+      deliveryKey,
+      expect.any(String),
+      providerError.message,
+    );
+    expect(deliveryPersistence.markFailed).not.toHaveBeenCalled();
+    expect(deliveryPersistence.markRetrying).not.toHaveBeenCalled();
+    expect(persistence.markFailed).not.toHaveBeenCalled();
+    expect(persistence.markRetrying).not.toHaveBeenCalled();
+    expect(metrics.incrementProviderFailed).not.toHaveBeenCalled();
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.stringContaining('Could not persist acceptance-unknown state'),
+      persistenceError,
+      expect.objectContaining({
+        operation: 'notification.delivery.acceptance_unknown_persist_failed',
+      }),
+    );
+  });
+
   it('propagates primary ownership loss without calling the provider or persisting failure', async () => {
     resetMocks();
     deliveryPersistence.createIfMissing.mockResolvedValue({

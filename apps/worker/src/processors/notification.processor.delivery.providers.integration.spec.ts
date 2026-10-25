@@ -127,7 +127,8 @@ describe('NotificationProcessor - production provider delivery integration', () 
 
       provider: 'development-in-app',
 
-      expectedMessageId: (notificationId) => `dev-in-app-${notificationId}`,
+      expectedMessageId: (_notificationId, deliveryKey) =>
+        `dev-in-app-${deliveryKey}`,
 
       recipient: {
         userId: `4-13-d-in-app-user-${randomUUID()}`,
@@ -141,7 +142,8 @@ describe('NotificationProcessor - production provider delivery integration', () 
 
       provider: 'development-push',
 
-      expectedMessageId: (notificationId) => `dev-push-${notificationId}`,
+      expectedMessageId: (_notificationId, deliveryKey) =>
+        `dev-push-${deliveryKey}`,
 
       recipient: {
         userId: `4-13-d-push-user-${randomUUID()}`,
@@ -168,9 +170,15 @@ describe('NotificationProcessor - production provider delivery integration', () 
       notificationIdempotency,
     );
 
-    const inAppProvider = new InAppNotificationProvider(logger as never);
+    const inAppProvider = new InAppNotificationProvider(
+      logger as never,
+      notificationIdempotency,
+    );
 
-    const pushProvider = new PushNotificationProvider(logger as never);
+    const pushProvider = new PushNotificationProvider(
+      logger as never,
+      notificationIdempotency,
+    );
 
     /*
      * The integration test deliberately disables

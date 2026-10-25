@@ -4,6 +4,16 @@ import { Redis } from 'ioredis';
 
 import { getRedisConfig } from '@gurusthalam/config';
 
+export const NOTIFICATION_IDEMPOTENCY_ACCEPTED_TTL_ENV =
+  'NOTIFICATION_IDEMPOTENCY_ACCEPTED_TTL_SECONDS';
+
+export const DEFAULT_NOTIFICATION_IDEMPOTENCY_ACCEPTED_TTL_SECONDS =
+  7 * 24 * 60 * 60;
+
+export const MIN_NOTIFICATION_IDEMPOTENCY_ACCEPTED_TTL_SECONDS = 24 * 60 * 60;
+
+export const NOTIFICATION_IDEMPOTENCY_CLAIM_TTL_SECONDS = 5 * 60;
+
 export type NotificationIdempotencyClaim =
   | {
       readonly status: 'claimed';
@@ -19,27 +29,71 @@ export type NotificationIdempotencyClaim =
       readonly deliveryKey: string;
     };
 
+/**
+ * Resolves the accepted-state retention policy.
+ *
+ * Redis is a bounded deduplication layer, not permanent delivery history.
+ * PostgreSQL NotificationDelivery remains the durable delivery record.
+ *
+ * A configured TTL may extend retention, but may not shorten the existing
+ * 24-hour window.
+ */
+export function resolveAcceptedTtlSeconds(
+  rawValue: string | undefined = process.env[
+    NOTIFICATION_IDEMPOTENCY_ACCEPTED_TTL_ENV
+  ],
+): number {
+  if (rawValue === undefined) {
+    return DEFAULT_NOTIFICATION_IDEMPOTENCY_ACCEPTED_TTL_SECONDS;
+  }
+
+  const normalizedValue = rawValue.trim();
+
+  if (!/^\d+$/.test(normalizedValue)) {
+    throw new Error(
+      `${NOTIFICATION_IDEMPOTENCY_ACCEPTED_TTL_ENV} must be an integer of at least ${MIN_NOTIFICATION_IDEMPOTENCY_ACCEPTED_TTL_SECONDS} seconds.`,
+    );
+  }
+
+  const seconds = Number(normalizedValue);
+
+  if (
+    !Number.isSafeInteger(seconds) ||
+    seconds < MIN_NOTIFICATION_IDEMPOTENCY_ACCEPTED_TTL_SECONDS
+  ) {
+    throw new Error(
+      `${NOTIFICATION_IDEMPOTENCY_ACCEPTED_TTL_ENV} must be an integer of at least ${MIN_NOTIFICATION_IDEMPOTENCY_ACCEPTED_TTL_SECONDS} seconds.`,
+    );
+  }
+
+  return seconds;
+}
+
 export class NotificationIdempotencyService {
   private readonly redis: Redis;
 
   private readonly prefix = 'gurusthalam:notification:idempotency';
 
   /**
-   * Retention for a successfully accepted delivery.
+   * Retention for successfully accepted deliveries.
    *
    * This is a Redis deduplication window, not permanent delivery history.
+   * The default is seven days, and configuration cannot reduce it below
+   * the existing 24-hour retention contract.
    */
-  private readonly acceptedTtlSeconds = 60 * 60 * 24;
+  private readonly acceptedTtlSeconds: number;
 
   /**
    * Bounds abandoned claims after a worker exits unexpectedly.
    *
-   * This is not a substitute for a renewable lease when a real provider
-   * call can take longer than this interval.
+   * This is not a renewable lease. Provider submission uncertainty is
+   * governed by the durable NotificationDelivery lifecycle.
    */
-  private readonly claimTtlSeconds = 60 * 5;
+  private readonly claimTtlSeconds = NOTIFICATION_IDEMPOTENCY_CLAIM_TTL_SECONDS;
 
   constructor() {
+    this.acceptedTtlSeconds = resolveAcceptedTtlSeconds();
+
     const config = getRedisConfig();
 
     this.redis = new Redis(config.url);
@@ -49,8 +103,8 @@ export class NotificationIdempotencyService {
    * Atomically claims a delivery key.
    *
    * Only the worker that successfully creates the claim may finalise it.
-   * A competing worker must distinguish an accepted delivery from an
-   * attempt that is still in progress.
+   * A competing worker must distinguish accepted delivery from an attempt
+   * that is still in progress.
    */
   async claim(deliveryKey: string): Promise<NotificationIdempotencyClaim> {
     this.validateDeliveryKey(deliveryKey);
@@ -134,6 +188,7 @@ export class NotificationIdempotencyService {
    * Records acceptance only when the caller still owns the claim.
    *
    * Redis executes the ownership check and state transition atomically.
+   * The accepted-state TTL is applied at this transition, not at claim time.
    */
   async markAccepted(
     deliveryKey: string,

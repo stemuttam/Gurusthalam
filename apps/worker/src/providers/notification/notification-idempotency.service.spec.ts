@@ -17,7 +17,47 @@ vi.mock('@gurusthalam/config', () => ({
   getRedisConfig: vi.fn(() => ({ url: 'redis://127.0.0.1:6379' })),
 }));
 
-import { NotificationIdempotencyService } from './notification-idempotency.service.js';
+import {
+  DEFAULT_NOTIFICATION_IDEMPOTENCY_ACCEPTED_TTL_SECONDS,
+  MIN_NOTIFICATION_IDEMPOTENCY_ACCEPTED_TTL_SECONDS,
+  NOTIFICATION_IDEMPOTENCY_ACCEPTED_TTL_ENV,
+  NOTIFICATION_IDEMPOTENCY_CLAIM_TTL_SECONDS,
+  NotificationIdempotencyService,
+  resolveAcceptedTtlSeconds,
+} from './notification-idempotency.service.js';
+
+describe('NotificationIdempotencyService retention policy', () => {
+  it('defaults accepted-state retention to seven days', () => {
+    expect(resolveAcceptedTtlSeconds(undefined)).toBe(7 * 24 * 60 * 60);
+
+    expect(DEFAULT_NOTIFICATION_IDEMPOTENCY_ACCEPTED_TTL_SECONDS).toBe(604800);
+  });
+
+  it('allows an explicit retention of at least the existing 24-hour window', () => {
+    expect(
+      resolveAcceptedTtlSeconds(
+        String(MIN_NOTIFICATION_IDEMPOTENCY_ACCEPTED_TTL_SECONDS),
+      ),
+    ).toBe(86400);
+
+    expect(resolveAcceptedTtlSeconds('1209600')).toBe(1209600);
+  });
+
+  it.each(['0', '86399', '-1', '1.5', '1e5', '', 'not-a-number'])(
+    'rejects unsafe accepted-state retention configuration %j',
+    (value) => {
+      expect(() => resolveAcceptedTtlSeconds(value)).toThrow(
+        `${NOTIFICATION_IDEMPOTENCY_ACCEPTED_TTL_ENV} must be an integer of at least ${MIN_NOTIFICATION_IDEMPOTENCY_ACCEPTED_TTL_SECONDS} seconds.`,
+      );
+    },
+  );
+
+  it('rejects values outside JavaScript safe integer range', () => {
+    expect(() => resolveAcceptedTtlSeconds('9007199254740992')).toThrow(
+      `${NOTIFICATION_IDEMPOTENCY_ACCEPTED_TTL_ENV} must be an integer of at least ${MIN_NOTIFICATION_IDEMPOTENCY_ACCEPTED_TTL_SECONDS} seconds.`,
+    );
+  });
+});
 
 describe('NotificationIdempotencyService', () => {
   let service: NotificationIdempotencyService;
@@ -40,13 +80,15 @@ describe('NotificationIdempotencyService', () => {
     if (result.status !== 'claimed') {
       throw new Error('Expected a claimed result');
     }
+
     expect(result.deliveryKey).toBe('delivery-1');
     expect(result.claimToken).toEqual(expect.any(String));
+
     expect(redisMocks.set).toHaveBeenCalledWith(
       'gurusthalam:notification:idempotency:delivery-1',
       `processing:${result.claimToken}`,
       'EX',
-      300,
+      NOTIFICATION_IDEMPOTENCY_CLAIM_TTL_SECONDS,
       'NX',
     );
   });
@@ -81,7 +123,7 @@ describe('NotificationIdempotencyService', () => {
     expect(redisMocks.get).toHaveBeenCalledTimes(1);
   });
 
-  it('uses the claim token in the atomic acceptance script and returns true only for owner success', async () => {
+  it('uses the configured accepted-state TTL in the atomic owner-token finalisation', async () => {
     redisMocks.eval.mockResolvedValueOnce(1);
 
     await expect(
@@ -93,7 +135,11 @@ describe('NotificationIdempotencyService', () => {
       1,
       'gurusthalam:notification:idempotency:delivery-1',
       'processing:owner-token',
-      '86400',
+      String(resolveAcceptedTtlSeconds()),
+    );
+
+    expect(resolveAcceptedTtlSeconds()).toBe(
+      DEFAULT_NOTIFICATION_IDEMPOTENCY_ACCEPTED_TTL_SECONDS,
     );
   });
 
@@ -132,12 +178,15 @@ describe('NotificationIdempotencyService', () => {
     await expect(service.claim('   ')).rejects.toThrow(
       'Notification delivery key must not be empty.',
     );
+
     await expect(service.markAccepted('delivery-1', '  ')).rejects.toThrow(
       'Notification claim token must not be empty.',
     );
+
     await expect(service.releaseClaim('delivery-1', '')).rejects.toThrow(
       'Notification claim token must not be empty.',
     );
+
     expect(redisMocks.set).not.toHaveBeenCalled();
     expect(redisMocks.eval).not.toHaveBeenCalled();
   });
@@ -146,6 +195,7 @@ describe('NotificationIdempotencyService', () => {
     redisMocks.get.mockResolvedValueOnce('accepted');
 
     await expect(service.isAccepted('delivery-1')).resolves.toBe(true);
+
     expect(redisMocks.get).toHaveBeenCalledWith(
       'gurusthalam:notification:idempotency:delivery-1',
     );

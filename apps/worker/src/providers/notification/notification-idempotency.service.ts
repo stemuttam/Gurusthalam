@@ -150,8 +150,20 @@ export class NotificationIdempotencyService {
     }
 
     /*
-     * The key may have expired or been released between commands.
-     * Do not guess that the delivery was accepted. The caller may retry.
+     * Retry only when the key is absent. An unexpected non-empty value
+     * is not proof that the key is available, so fail closed rather than
+     * attempting to claim it.
+     */
+    if (existingValue !== null) {
+      return {
+        status: 'in_progress',
+        deliveryKey,
+      };
+    }
+
+    /*
+     * The key disappeared between SET NX and GET. Retry once atomically.
+     * SET NX determines ownership; the preceding GET does not grant it.
      */
     const retryResult = await this.redis.set(
       key,
@@ -169,6 +181,11 @@ export class NotificationIdempotencyService {
       };
     }
 
+    /*
+     * Another worker may have claimed or accepted the delivery after
+     * the retry lost. Only an explicitly accepted value proves that
+     * Redis currently records acceptance.
+     */
     const latestValue = await this.redis.get(key);
 
     if (latestValue === 'accepted') {
@@ -178,6 +195,10 @@ export class NotificationIdempotencyService {
       };
     }
 
+    /*
+     * A competing claim, missing key, or unexpected value is not
+     * evidence of acceptance or ownership. Fail closed.
+     */
     return {
       status: 'in_progress',
       deliveryKey,

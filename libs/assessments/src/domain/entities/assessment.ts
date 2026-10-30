@@ -12,6 +12,11 @@ import { canTransitionAssessmentLifecycle } from '../lifecycle/assessment-lifecy
 
 import { AssessmentId } from '../identifiers/assessment-id.js';
 
+import {
+  assertValidAssessmentSnapshot,
+  type AssessmentSnapshot,
+} from '../contracts/assessment-snapshot.js';
+
 /**
  * Complete immutable external representation of Assessment state.
  *
@@ -25,10 +30,11 @@ export interface AssessmentProps {
 }
 
 /**
- * Persistence-neutral primitive snapshot of Assessment state.
+ * Backward-compatible domain representation.
  *
- * AssessmentId remains a domain value object. Persistence adapters are
- * responsible for converting it into their own identifier representation.
+ * This type intentionally retains its existing AssessmentId and Date
+ * fields. New serialization and persistence boundaries should use
+ * AssessmentSnapshot instead.
  */
 export type AssessmentPrimitives = AssessmentProps;
 
@@ -47,11 +53,13 @@ type MutableAssessmentProps = {
  *
  * Creation and rehydration are intentionally separate operations:
  * - create() generates a new identity and initializes DRAFT state;
- * - rehydrate() preserves persisted identity and lifecycle state.
+ * - rehydrate() preserves an existing domain representation;
+ * - rehydrateFromSnapshot() reconstructs state from a validated,
+ *   serialization-safe snapshot.
  *
- * Authentication, authorization, tenant resolution, specialized assessment
- * behavior, persistence, transport, and infrastructure remain outside
- * this aggregate.
+ * Authentication, authorization, tenant resolution, specialized
+ * assessment behavior, persistence, transport, and infrastructure
+ * remain outside this aggregate.
  */
 export class Assessment {
   private readonly props: MutableAssessmentProps;
@@ -82,13 +90,43 @@ export class Assessment {
   }
 
   /**
-   * Rehydrates an existing Assessment from a validated state snapshot.
+   * Rehydrates an existing Assessment from its domain representation.
+   *
+   * This method is retained for backward compatibility.
    *
    * Rehydration does not generate a new identity, reset lifecycle state,
    * or perform a domain lifecycle transition.
    */
   static rehydrate(props: AssessmentProps): Assessment {
     return new Assessment(props);
+  }
+
+  /**
+   * Rehydrates an existing Assessment from its canonical snapshot.
+   *
+   * The snapshot is validated before any domain value objects or
+   * aggregate state are constructed.
+   *
+   * This operation:
+   * - preserves the existing Assessment identity;
+   * - preserves the existing lifecycle status;
+   * - preserves creation and update timestamps exactly;
+   * - does not generate a new identity;
+   * - does not perform a lifecycle transition;
+   * - does not generate or dispatch domain events.
+   *
+   * Persistence adapters are responsible for mapping their stored
+   * representation into AssessmentSnapshot before calling this method.
+   */
+  static rehydrateFromSnapshot(snapshot: AssessmentSnapshot): Assessment {
+    assertValidAssessmentSnapshot(snapshot);
+
+    return new Assessment({
+      id: AssessmentId.from(snapshot.id),
+      status: snapshot.status,
+      createdAt: new Date(snapshot.createdAt),
+      updatedAt: new Date(snapshot.updatedAt),
+    });
   }
 
   get id(): AssessmentId {
@@ -110,8 +148,8 @@ export class Assessment {
   /**
    * Publishes a DRAFT Assessment.
    *
-   * This generic transition does not assert readiness of Quiz, Assignment,
-   * Exam, Question Bank, or other specialized assessment content.
+   * This generic transition does not assert readiness of Quiz,
+   * Assignment, Exam, Question Bank, or other specialized content.
    */
   publish(): void {
     this.transitionStatus(AssessmentStatus.PUBLISHED);
@@ -128,10 +166,11 @@ export class Assessment {
   }
 
   /**
-   * Returns a persistence-neutral defensive snapshot of aggregate state.
+   * Returns the existing domain representation.
    *
-   * The AssessmentId is an immutable value object. Date instances are
-   * defensively copied so callers cannot mutate aggregate timestamps.
+   * This method is retained for backward compatibility.
+   *
+   * New serialization and persistence boundaries should use toSnapshot().
    */
   toPrimitives(): AssessmentPrimitives {
     return {
@@ -140,6 +179,23 @@ export class Assessment {
       createdAt: new Date(this.props.createdAt),
       updatedAt: new Date(this.props.updatedAt),
     };
+  }
+
+  /**
+   * Returns a canonical, serialization-safe snapshot of aggregate state.
+   *
+   * The result contains only primitive values and can be serialized
+   * without exposing AssessmentId or JavaScript Date instances.
+   *
+   * Every call creates a new snapshot object.
+   */
+  toSnapshot(): AssessmentSnapshot {
+    return Object.freeze({
+      id: this.props.id.toString(),
+      status: this.props.status,
+      createdAt: this.props.createdAt.toISOString(),
+      updatedAt: this.props.updatedAt.toISOString(),
+    });
   }
 
   /**

@@ -46,6 +46,9 @@
     },
     {
       "path": "./libs/learning"
+    },
+    {
+      "path": "./libs/assessments"
     }
   ]
 }

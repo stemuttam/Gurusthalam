@@ -39,4 +39,70 @@ describe('Question Bank public API contract', () => {
       expect(first.equals(second)).toBe(true);
     });
   });
+
+  describe('Question type public API', () => {
+    it('exports the complete question type taxonomy', () => {
+      expect(QuestionBankPublicApi.QUESTION_TYPES).toHaveLength(9);
+      expect(QuestionBankPublicApi.QuestionType).toBeDefined();
+    });
+
+    it('exports the question type runtime guard', () => {
+      expect(
+        QuestionBankPublicApi.isQuestionType(
+          QuestionBankPublicApi.QuestionType.SINGLE_CHOICE,
+        ),
+      ).toBe(true);
+
+      expect(QuestionBankPublicApi.isQuestionType('UNSUPPORTED')).toBe(false);
+    });
+  });
+
+  describe('Answer format public API', () => {
+    it('exports the complete answer format taxonomy', () => {
+      expect(QuestionBankPublicApi.ANSWER_FORMATS).toHaveLength(9);
+      expect(QuestionBankPublicApi.AnswerFormat).toBeDefined();
+    });
+
+    it('exports the answer format runtime guard', () => {
+      expect(
+        QuestionBankPublicApi.isAnswerFormat(
+          QuestionBankPublicApi.AnswerFormat.SELECTED_OPTION,
+        ),
+      ).toBe(true);
+
+      expect(QuestionBankPublicApi.isAnswerFormat('UNSUPPORTED')).toBe(false);
+    });
+  });
+
+  describe('Question-answer compatibility public API', () => {
+    it('exports the compatibility contract', () => {
+      expect(QuestionBankPublicApi.QUESTION_ANSWER_COMPATIBILITY).toBeDefined();
+    });
+
+    it('exposes supported formats through the public entry point', () => {
+      expect(
+        QuestionBankPublicApi.getSupportedAnswerFormats(
+          QuestionBankPublicApi.QuestionType.SINGLE_CHOICE,
+        ),
+      ).toEqual([QuestionBankPublicApi.AnswerFormat.SELECTED_OPTION]);
+    });
+
+    it('validates compatible question and answer combinations', () => {
+      expect(
+        QuestionBankPublicApi.isSupportedAnswerFormat(
+          QuestionBankPublicApi.QuestionType.MULTIPLE_CHOICE,
+          QuestionBankPublicApi.AnswerFormat.SELECTED_OPTIONS,
+        ),
+      ).toBe(true);
+    });
+
+    it('rejects incompatible question and answer combinations', () => {
+      expect(
+        QuestionBankPublicApi.isSupportedAnswerFormat(
+          QuestionBankPublicApi.QuestionType.SINGLE_CHOICE,
+          QuestionBankPublicApi.AnswerFormat.SELECTED_OPTIONS,
+        ),
+      ).toBe(false);
+    });
+  });
 });

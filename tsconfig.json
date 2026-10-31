@@ -49,6 +49,9 @@
     },
     {
       "path": "./libs/assessments"
+    },
+    {
+      "path": "./libs/question-bank"
     }
   ]
 }

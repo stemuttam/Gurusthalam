@@ -111,6 +111,28 @@ describe('QuestionVersionLineage', () => {
     ).toThrow(TypeError);
   });
 
+  it('rejects an explicitly supplied undefined predecessor', () => {
+    const current = createReference(QuestionId.generate(), 2);
+
+    expect(() =>
+      QuestionVersionLineage.create(
+        current,
+        undefined as unknown as QuestionVersionReference,
+      ),
+    ).toThrow(TypeError);
+  });
+
+  it('rejects a non-reference predecessor object', () => {
+    const current = createReference(QuestionId.generate(), 2);
+
+    expect(() =>
+      QuestionVersionLineage.create(
+        current,
+        {} as unknown as QuestionVersionReference,
+      ),
+    ).toThrow(TypeError);
+  });
+
   it('rejects an invalid restoration source reference', () => {
     const questionId = QuestionId.generate();
     const previous = createReference(questionId, 1);
@@ -123,6 +145,45 @@ describe('QuestionVersionLineage', () => {
         undefined as unknown as QuestionVersionReference,
       ),
     ).toThrow(TypeError);
+  });
+
+  it('rejects a non-reference restoration source object', () => {
+    const questionId = QuestionId.generate();
+    const previous = createReference(questionId, 1);
+    const current = createReference(questionId, 2);
+
+    expect(() =>
+      QuestionVersionLineage.create(
+        current,
+        previous,
+        {} as unknown as QuestionVersionReference,
+      ),
+    ).toThrow(TypeError);
+  });
+
+  it('accepts explicit null relationships for an initial version', () => {
+    const current = createReference(QuestionId.generate(), 1);
+
+    const lineage = QuestionVersionLineage.create(current, null, null);
+
+    expect(lineage.currentVersion).toBe(current);
+    expect(lineage.previousVersion).toBeNull();
+    expect(lineage.restoredFromVersion).toBeNull();
+    expect(lineage.isInitialVersion).toBe(true);
+    expect(lineage.isRestoration).toBe(false);
+  });
+
+  it('accepts an explicit null restoration source for an ordinary revision', () => {
+    const questionId = QuestionId.generate();
+    const previous = createReference(questionId, 1);
+    const current = createReference(questionId, 2);
+
+    const lineage = QuestionVersionLineage.create(current, previous, null);
+
+    expect(lineage.previousVersion).toBe(previous);
+    expect(lineage.restoredFromVersion).toBeNull();
+    expect(lineage.isInitialVersion).toBe(false);
+    expect(lineage.isRestoration).toBe(false);
   });
 
   it('rejects an initial version with a predecessor', () => {

@@ -91,6 +91,25 @@ describe('Question-answer compatibility contract', () => {
         );
       },
     );
+
+    it.each([
+      ['undefined', undefined],
+      ['null', null],
+      ['empty string', ''],
+      ['whitespace string', '   '],
+      ['unsupported string', 'ESSAY'],
+      ['number', 42],
+      ['boolean', true],
+      ['object', {}],
+      ['array', []],
+      ['symbol', Symbol('question-type')],
+    ])('throws TypeError for an unsupported question type: %s', (_, value) => {
+      expect(() => getSupportedAnswerFormats(value)).toThrowError(TypeError);
+
+      expect(() => getSupportedAnswerFormats(value)).toThrowError(
+        'Cannot retrieve supported answer formats for an unsupported question type.',
+      );
+    });
   });
 
   describe('isSupportedAnswerFormat', () => {
@@ -147,6 +166,78 @@ describe('Question-answer compatibility contract', () => {
           AnswerFormat.BLANK_RESPONSES,
         ),
       ).toBe(false);
+    });
+
+    it.each([
+      ['undefined', undefined],
+      ['null', null],
+      ['empty string', ''],
+      ['whitespace string', '   '],
+      ['unsupported string', 'ESSAY'],
+      ['number', 42],
+      ['boolean', true],
+      ['object', {}],
+      ['array', []],
+      ['symbol', Symbol('question-type')],
+    ])(
+      'returns false for an unsupported question type: %s',
+      (_, questionType) => {
+        expect(
+          isSupportedAnswerFormat(questionType, AnswerFormat.SELECTED_OPTION),
+        ).toBe(false);
+      },
+    );
+
+    it.each([
+      ['undefined', undefined],
+      ['null', null],
+      ['empty string', ''],
+      ['whitespace string', '   '],
+      ['unsupported string', 'RICH_MEDIA'],
+      ['number', 42],
+      ['boolean', true],
+      ['object', {}],
+      ['array', []],
+      ['symbol', Symbol('answer-format')],
+    ])(
+      'returns false for an unsupported answer format: %s',
+      (_, answerFormat) => {
+        expect(
+          isSupportedAnswerFormat(QuestionType.SINGLE_CHOICE, answerFormat),
+        ).toBe(false);
+      },
+    );
+
+    it('returns false when both question type and answer format are invalid', () => {
+      expect(isSupportedAnswerFormat(undefined, undefined)).toBe(false);
+      expect(isSupportedAnswerFormat(null, null)).toBe(false);
+      expect(isSupportedAnswerFormat({}, [])).toBe(false);
+    });
+
+    it('does not throw for malformed runtime values', () => {
+      const malformedValues: unknown[] = [
+        undefined,
+        null,
+        '',
+        'INVALID',
+        0,
+        42,
+        true,
+        false,
+        {},
+        [],
+        Symbol('invalid'),
+      ];
+
+      for (const value of malformedValues) {
+        expect(() =>
+          isSupportedAnswerFormat(value, AnswerFormat.SELECTED_OPTION),
+        ).not.toThrow();
+
+        expect(() =>
+          isSupportedAnswerFormat(QuestionType.SINGLE_CHOICE, value),
+        ).not.toThrow();
+      }
     });
   });
 });

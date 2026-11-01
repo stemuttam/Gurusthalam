@@ -1,9 +1,11 @@
 import {
   AnswerFormat,
+  isAnswerFormat,
   type AnswerFormat as AnswerFormatType,
 } from '../answer-formats/answer-format.js';
 
 import {
+  isQuestionType,
   type QuestionType,
   QuestionType as QuestionTypeValue,
 } from '../question-types/question-type.js';
@@ -49,20 +51,35 @@ export const QUESTION_ANSWER_COMPATIBILITY = Object.freeze({
  * Returns the supported answer formats for a question type.
  *
  * The returned collection is readonly and frozen at runtime.
+ *
+ * @throws TypeError when the supplied value is not a supported question type.
  */
 export function getSupportedAnswerFormats(
-  questionType: QuestionType,
+  questionType: unknown,
 ): readonly AnswerFormatType[] {
+  if (!isQuestionType(questionType)) {
+    throw new TypeError(
+      'Cannot retrieve supported answer formats for an unsupported question type.',
+    );
+  }
+
   return QUESTION_ANSWER_COMPATIBILITY[questionType];
 }
 
 /**
  * Determines whether an answer format is supported by a question type.
+ *
+ * This predicate is deliberately safe for untrusted runtime input:
+ * unsupported question types and answer formats return false.
  */
 export function isSupportedAnswerFormat(
-  questionType: QuestionType,
-  answerFormat: AnswerFormatType,
+  questionType: unknown,
+  answerFormat: unknown,
 ): boolean {
+  if (!isQuestionType(questionType) || !isAnswerFormat(answerFormat)) {
+    return false;
+  }
+
   return QUESTION_ANSWER_COMPATIBILITY[questionType].some(
     (supportedFormat) => supportedFormat === answerFormat,
   );

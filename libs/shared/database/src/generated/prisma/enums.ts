@@ -259,3 +259,49 @@ export const PrincipalTenantMembershipStatus = {
 } as const
 
 export type PrincipalTenantMembershipStatus = (typeof PrincipalTenantMembershipStatus)[keyof typeof PrincipalTenantMembershipStatus]
+
+
+export const QuestionBankType = {
+  SINGLE_CHOICE: 'SINGLE_CHOICE',
+  MULTIPLE_CHOICE: 'MULTIPLE_CHOICE',
+  TRUE_FALSE: 'TRUE_FALSE',
+  SHORT_ANSWER: 'SHORT_ANSWER',
+  LONG_ANSWER: 'LONG_ANSWER',
+  NUMERIC: 'NUMERIC',
+  MATCHING: 'MATCHING',
+  ORDERING: 'ORDERING',
+  FILL_IN_THE_BLANK: 'FILL_IN_THE_BLANK'
+} as const
+
+export type QuestionBankType = (typeof QuestionBankType)[keyof typeof QuestionBankType]
+
+
+export const QuestionBankAnswerFormat = {
+  SELECTED_OPTION: 'SELECTED_OPTION',
+  SELECTED_OPTIONS: 'SELECTED_OPTIONS',
+  BOOLEAN: 'BOOLEAN',
+  SHORT_TEXT: 'SHORT_TEXT',
+  LONG_TEXT: 'LONG_TEXT',
+  NUMBER: 'NUMBER',
+  MATCHING_PAIRS: 'MATCHING_PAIRS',
+  ORDERED_ITEMS: 'ORDERED_ITEMS',
+  BLANK_RESPONSES: 'BLANK_RESPONSES'
+} as const
+
+export type QuestionBankAnswerFormat = (typeof QuestionBankAnswerFormat)[keyof typeof QuestionBankAnswerFormat]
+
+
+export const QuestionBankFillBlankSegmentKind = {
+  TEXT: 'TEXT',
+  BLANK: 'BLANK'
+} as const
+
+export type QuestionBankFillBlankSegmentKind = (typeof QuestionBankFillBlankSegmentKind)[keyof typeof QuestionBankFillBlankSegmentKind]
+
+
+export const QuestionBankMatchingMode = {
+  ONE_TO_ONE: 'ONE_TO_ONE',
+  MANY_TO_ONE: 'MANY_TO_ONE'
+} as const
+
+export type QuestionBankMatchingMode = (typeof QuestionBankMatchingMode)[keyof typeof QuestionBankMatchingMode]

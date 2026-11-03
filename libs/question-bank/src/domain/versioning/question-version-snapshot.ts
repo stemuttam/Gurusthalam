@@ -207,6 +207,17 @@ function cloneContent(
     case QuestionType.MATCHING:
       return Object.freeze({
         questionType,
+        matchingMode: (() => {
+          if (
+            value.matchingMode !== 'ONE_TO_ONE' &&
+            value.matchingMode !== 'MANY_TO_ONE'
+          ) {
+            throw new TypeError(
+              'content.matchingMode must be ONE_TO_ONE or MANY_TO_ONE.',
+            );
+          }
+          return value.matchingMode;
+        })(),
         prompt: clonePrompt(value.prompt, 'content.prompt'),
         leftItems: cloneItems(value.leftItems, 'content.leftItems'),
         rightItems: cloneItems(value.rightItems, 'content.rightItems'),
@@ -474,6 +485,12 @@ function assertAnswerKeyReferences(
         leftItemId: string;
         rightItemId: string;
       }[];
+      const matchingMode = (
+        content as Extract<
+          QuestionVersionContent,
+          { questionType: typeof QuestionType.MATCHING }
+        >
+      ).matchingMode;
 
       assertReferencesExist(
         pairs.map((pair) => pair.leftItemId),
@@ -486,6 +503,23 @@ function assertAnswerKeyReferences(
         rightItems.map((item) => item.id),
         'answerKey.correctPairs.rightItemId',
       );
+
+      if (
+        pairs.length !== leftItems.length ||
+        new Set(pairs.map((pair) => pair.leftItemId)).size !== leftItems.length
+      ) {
+        throw new TypeError(
+          'answerKey.correctPairs must contain exactly one correct right-item mapping for every left item.',
+        );
+      }
+
+      if (
+        matchingMode === 'ONE_TO_ONE' &&
+        new Set(pairs.map((pair) => pair.rightItemId)).size !== pairs.length
+      ) {
+        throw new TypeError('ONE_TO_ONE matching cannot reuse a right item.');
+      }
+
       return;
     }
 

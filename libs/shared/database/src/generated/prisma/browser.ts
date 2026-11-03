@@ -187,3 +187,81 @@ export type Tenant = Prisma.TenantModel
  *
  */
 export type PrincipalTenantMembership = Prisma.PrincipalTenantMembershipModel
+/**
+ * Model Question
+ *
+ */
+export type Question = Prisma.QuestionModel
+/**
+ * Model QuestionVersion
+ *
+ */
+export type QuestionVersion = Prisma.QuestionVersionModel
+/**
+ * Model QuestionVersionContent
+ *
+ */
+export type QuestionVersionContent = Prisma.QuestionVersionContentModel
+/**
+ * Model QuestionVersionOption
+ *
+ */
+export type QuestionVersionOption = Prisma.QuestionVersionOptionModel
+/**
+ * Model QuestionVersionMatchingLeftItem
+ *
+ */
+export type QuestionVersionMatchingLeftItem = Prisma.QuestionVersionMatchingLeftItemModel
+/**
+ * Model QuestionVersionMatchingRightItem
+ *
+ */
+export type QuestionVersionMatchingRightItem = Prisma.QuestionVersionMatchingRightItemModel
+/**
+ * Model QuestionVersionOrderingItem
+ *
+ */
+export type QuestionVersionOrderingItem = Prisma.QuestionVersionOrderingItemModel
+/**
+ * Model QuestionVersionFillBlankSegment
+ *
+ */
+export type QuestionVersionFillBlankSegment = Prisma.QuestionVersionFillBlankSegmentModel
+/**
+ * Model QuestionVersionAnswerKey
+ *
+ */
+export type QuestionVersionAnswerKey = Prisma.QuestionVersionAnswerKeyModel
+/**
+ * Model QuestionVersionOptionAnswer
+ *
+ */
+export type QuestionVersionOptionAnswer = Prisma.QuestionVersionOptionAnswerModel
+/**
+ * Model QuestionVersionAcceptedAnswer
+ *
+ */
+export type QuestionVersionAcceptedAnswer = Prisma.QuestionVersionAcceptedAnswerModel
+/**
+ * Model QuestionVersionMatchingPair
+ * Each left item must have exactly one correct right-item mapping.
+ * The composite primary key prevents duplicate mappings for a left item;
+ * the completed-snapshot constraint trigger verifies that every left item
+ * has a mapping before the QuestionVersion can be completed.
+ */
+export type QuestionVersionMatchingPair = Prisma.QuestionVersionMatchingPairModel
+/**
+ * Model QuestionVersionOrderingAnswer
+ *
+ */
+export type QuestionVersionOrderingAnswer = Prisma.QuestionVersionOrderingAnswerModel
+/**
+ * Model QuestionVersionBlankAnswer
+ *
+ */
+export type QuestionVersionBlankAnswer = Prisma.QuestionVersionBlankAnswerModel
+/**
+ * Model QuestionVersionBlankAcceptedAnswer
+ *
+ */
+export type QuestionVersionBlankAcceptedAnswer = Prisma.QuestionVersionBlankAcceptedAnswerModel

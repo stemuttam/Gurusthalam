@@ -385,3 +385,42 @@ It must not depend on:
 - Transport or delivery frameworks
 
 Infrastructure integrations belong in their appropriate outer layers.
+
+### Matching Question Modes
+
+Matching questions support two explicitly defined matching modes:
+
+- **`ONE_TO_ONE`** - Each left-side item must map to exactly one right-side item. A right-side item cannot be reused by multiple left-side items. Unused right-side items are permitted as distractors.
+- **`MANY_TO_ONE`** - Each left-side item must map to exactly one right-side item. A right-side item may be reused by multiple left-side items. Unused right-side items are permitted as distractors.
+
+The matching mode is part of the question content discriminator and is stored in `QuestionVersionContent.matchingMode`. It is not part of the answer-key discriminator.
+
+The following invariants apply:
+
+1. Matching questions must have a non-null matching mode.
+2. Non-matching questions must have a null matching mode.
+3. Every left-side item must have exactly one correct matching pair in the answer key.
+4. A left-side item cannot appear more than once in the correct matching pairs.
+5. Under `ONE_TO_ONE`, a right-side item cannot be reused.
+6. Under `MANY_TO_ONE`, right-side item reuse is permitted.
+7. Every matching pair must reference items belonging to the same question version.
+
+The database completion guard enforces the matching-mode constraints when a question version is completed. This ensures that incomplete or invalid matching snapshots cannot become valid immutable versions.
+
+### Question Version Number Storage
+
+Question version numbers are represented as JavaScript numbers in the domain layer and support positive safe integers up to `Number.MAX_SAFE_INTEGER`.
+
+PostgreSQL `INTEGER` is insufficient for this domain range. Therefore, the Prisma persistence model uses PostgreSQL `BIGINT` for `QuestionVersion.versionNumber`.
+
+The following rules apply:
+
+1. The domain layer continues to represent question version numbers as JavaScript `number`.
+2. The Prisma persistence layer represents the corresponding database value as JavaScript `bigint`.
+3. Conversion between `number` and `bigint` belongs at the persistence boundary, within the domain-to-Prisma mapper and repository implementation.
+4. Conversion from `bigint` to `number` must verify that the resulting value is a safe integer.
+5. Unsafe or out-of-range values must be rejected rather than silently rounded or truncated.
+6. Version numbers must remain positive and sequential according to the question versioning rules.
+7. The database lineage and version integrity guards must use `BIGINT` when comparing or validating version numbers.
+
+This preserves the existing domain contract while allowing PostgreSQL to store the complete supported JavaScript safe-integer range without the limitations of a 32-bit integer.

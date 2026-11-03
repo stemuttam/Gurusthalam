@@ -426,7 +426,22 @@ export const ModelName = {
   AuthPrincipal: 'AuthPrincipal',
   ExternalIdentity: 'ExternalIdentity',
   Tenant: 'Tenant',
-  PrincipalTenantMembership: 'PrincipalTenantMembership'
+  PrincipalTenantMembership: 'PrincipalTenantMembership',
+  Question: 'Question',
+  QuestionVersion: 'QuestionVersion',
+  QuestionVersionContent: 'QuestionVersionContent',
+  QuestionVersionOption: 'QuestionVersionOption',
+  QuestionVersionMatchingLeftItem: 'QuestionVersionMatchingLeftItem',
+  QuestionVersionMatchingRightItem: 'QuestionVersionMatchingRightItem',
+  QuestionVersionOrderingItem: 'QuestionVersionOrderingItem',
+  QuestionVersionFillBlankSegment: 'QuestionVersionFillBlankSegment',
+  QuestionVersionAnswerKey: 'QuestionVersionAnswerKey',
+  QuestionVersionOptionAnswer: 'QuestionVersionOptionAnswer',
+  QuestionVersionAcceptedAnswer: 'QuestionVersionAcceptedAnswer',
+  QuestionVersionMatchingPair: 'QuestionVersionMatchingPair',
+  QuestionVersionOrderingAnswer: 'QuestionVersionOrderingAnswer',
+  QuestionVersionBlankAnswer: 'QuestionVersionBlankAnswer',
+  QuestionVersionBlankAcceptedAnswer: 'QuestionVersionBlankAcceptedAnswer'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -442,7 +457,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "course" | "courseOwnershipAssignment" | "courseVersion" | "courseVersionAudit" | "courseVersionLineage" | "enrollment" | "entitlement" | "learningSession" | "progress" | "lessonProgress" | "sectionProgress" | "learningActivityEvent" | "courseCatalogProjection" | "courseSearchProjection" | "notificationTemplate" | "notificationTemplateVersion" | "notification" | "notificationDelivery" | "outboxEvent" | "notificationAggregation" | "notificationAggregationItem" | "courseStructureSection" | "courseStructureLearningUnit" | "courseStructureContentItemReference" | "courseStructureAssessmentReference" | "courseProgressReadModel" | "authPrincipal" | "externalIdentity" | "tenant" | "principalTenantMembership"
+    modelProps: "course" | "courseOwnershipAssignment" | "courseVersion" | "courseVersionAudit" | "courseVersionLineage" | "enrollment" | "entitlement" | "learningSession" | "progress" | "lessonProgress" | "sectionProgress" | "learningActivityEvent" | "courseCatalogProjection" | "courseSearchProjection" | "notificationTemplate" | "notificationTemplateVersion" | "notification" | "notificationDelivery" | "outboxEvent" | "notificationAggregation" | "notificationAggregationItem" | "courseStructureSection" | "courseStructureLearningUnit" | "courseStructureContentItemReference" | "courseStructureAssessmentReference" | "courseProgressReadModel" | "authPrincipal" | "externalIdentity" | "tenant" | "principalTenantMembership" | "question" | "questionVersion" | "questionVersionContent" | "questionVersionOption" | "questionVersionMatchingLeftItem" | "questionVersionMatchingRightItem" | "questionVersionOrderingItem" | "questionVersionFillBlankSegment" | "questionVersionAnswerKey" | "questionVersionOptionAnswer" | "questionVersionAcceptedAnswer" | "questionVersionMatchingPair" | "questionVersionOrderingAnswer" | "questionVersionBlankAnswer" | "questionVersionBlankAcceptedAnswer"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -2666,6 +2681,1116 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    Question: {
+      payload: Prisma.$QuestionPayload<ExtArgs>
+      fields: Prisma.QuestionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.QuestionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.QuestionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionPayload>
+        }
+        findFirst: {
+          args: Prisma.QuestionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.QuestionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionPayload>
+        }
+        findMany: {
+          args: Prisma.QuestionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionPayload>[]
+        }
+        create: {
+          args: Prisma.QuestionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionPayload>
+        }
+        createMany: {
+          args: Prisma.QuestionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.QuestionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionPayload>[]
+        }
+        delete: {
+          args: Prisma.QuestionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionPayload>
+        }
+        update: {
+          args: Prisma.QuestionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionPayload>
+        }
+        deleteMany: {
+          args: Prisma.QuestionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.QuestionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.QuestionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionPayload>[]
+        }
+        upsert: {
+          args: Prisma.QuestionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionPayload>
+        }
+        aggregate: {
+          args: Prisma.QuestionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateQuestion>
+        }
+        groupBy: {
+          args: Prisma.QuestionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.QuestionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionCountAggregateOutputType> | number
+        }
+      }
+    }
+    QuestionVersion: {
+      payload: Prisma.$QuestionVersionPayload<ExtArgs>
+      fields: Prisma.QuestionVersionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.QuestionVersionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.QuestionVersionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionPayload>
+        }
+        findFirst: {
+          args: Prisma.QuestionVersionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.QuestionVersionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionPayload>
+        }
+        findMany: {
+          args: Prisma.QuestionVersionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionPayload>[]
+        }
+        create: {
+          args: Prisma.QuestionVersionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionPayload>
+        }
+        createMany: {
+          args: Prisma.QuestionVersionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.QuestionVersionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionPayload>[]
+        }
+        delete: {
+          args: Prisma.QuestionVersionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionPayload>
+        }
+        update: {
+          args: Prisma.QuestionVersionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionPayload>
+        }
+        deleteMany: {
+          args: Prisma.QuestionVersionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.QuestionVersionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.QuestionVersionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionPayload>[]
+        }
+        upsert: {
+          args: Prisma.QuestionVersionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionPayload>
+        }
+        aggregate: {
+          args: Prisma.QuestionVersionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateQuestionVersion>
+        }
+        groupBy: {
+          args: Prisma.QuestionVersionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionVersionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.QuestionVersionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionVersionCountAggregateOutputType> | number
+        }
+      }
+    }
+    QuestionVersionContent: {
+      payload: Prisma.$QuestionVersionContentPayload<ExtArgs>
+      fields: Prisma.QuestionVersionContentFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.QuestionVersionContentFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionContentPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.QuestionVersionContentFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionContentPayload>
+        }
+        findFirst: {
+          args: Prisma.QuestionVersionContentFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionContentPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.QuestionVersionContentFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionContentPayload>
+        }
+        findMany: {
+          args: Prisma.QuestionVersionContentFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionContentPayload>[]
+        }
+        create: {
+          args: Prisma.QuestionVersionContentCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionContentPayload>
+        }
+        createMany: {
+          args: Prisma.QuestionVersionContentCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.QuestionVersionContentCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionContentPayload>[]
+        }
+        delete: {
+          args: Prisma.QuestionVersionContentDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionContentPayload>
+        }
+        update: {
+          args: Prisma.QuestionVersionContentUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionContentPayload>
+        }
+        deleteMany: {
+          args: Prisma.QuestionVersionContentDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.QuestionVersionContentUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.QuestionVersionContentUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionContentPayload>[]
+        }
+        upsert: {
+          args: Prisma.QuestionVersionContentUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionContentPayload>
+        }
+        aggregate: {
+          args: Prisma.QuestionVersionContentAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateQuestionVersionContent>
+        }
+        groupBy: {
+          args: Prisma.QuestionVersionContentGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionVersionContentGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.QuestionVersionContentCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionVersionContentCountAggregateOutputType> | number
+        }
+      }
+    }
+    QuestionVersionOption: {
+      payload: Prisma.$QuestionVersionOptionPayload<ExtArgs>
+      fields: Prisma.QuestionVersionOptionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.QuestionVersionOptionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOptionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.QuestionVersionOptionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOptionPayload>
+        }
+        findFirst: {
+          args: Prisma.QuestionVersionOptionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOptionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.QuestionVersionOptionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOptionPayload>
+        }
+        findMany: {
+          args: Prisma.QuestionVersionOptionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOptionPayload>[]
+        }
+        create: {
+          args: Prisma.QuestionVersionOptionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOptionPayload>
+        }
+        createMany: {
+          args: Prisma.QuestionVersionOptionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.QuestionVersionOptionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOptionPayload>[]
+        }
+        delete: {
+          args: Prisma.QuestionVersionOptionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOptionPayload>
+        }
+        update: {
+          args: Prisma.QuestionVersionOptionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOptionPayload>
+        }
+        deleteMany: {
+          args: Prisma.QuestionVersionOptionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.QuestionVersionOptionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.QuestionVersionOptionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOptionPayload>[]
+        }
+        upsert: {
+          args: Prisma.QuestionVersionOptionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOptionPayload>
+        }
+        aggregate: {
+          args: Prisma.QuestionVersionOptionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateQuestionVersionOption>
+        }
+        groupBy: {
+          args: Prisma.QuestionVersionOptionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionVersionOptionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.QuestionVersionOptionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionVersionOptionCountAggregateOutputType> | number
+        }
+      }
+    }
+    QuestionVersionMatchingLeftItem: {
+      payload: Prisma.$QuestionVersionMatchingLeftItemPayload<ExtArgs>
+      fields: Prisma.QuestionVersionMatchingLeftItemFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.QuestionVersionMatchingLeftItemFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingLeftItemPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.QuestionVersionMatchingLeftItemFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingLeftItemPayload>
+        }
+        findFirst: {
+          args: Prisma.QuestionVersionMatchingLeftItemFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingLeftItemPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.QuestionVersionMatchingLeftItemFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingLeftItemPayload>
+        }
+        findMany: {
+          args: Prisma.QuestionVersionMatchingLeftItemFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingLeftItemPayload>[]
+        }
+        create: {
+          args: Prisma.QuestionVersionMatchingLeftItemCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingLeftItemPayload>
+        }
+        createMany: {
+          args: Prisma.QuestionVersionMatchingLeftItemCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.QuestionVersionMatchingLeftItemCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingLeftItemPayload>[]
+        }
+        delete: {
+          args: Prisma.QuestionVersionMatchingLeftItemDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingLeftItemPayload>
+        }
+        update: {
+          args: Prisma.QuestionVersionMatchingLeftItemUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingLeftItemPayload>
+        }
+        deleteMany: {
+          args: Prisma.QuestionVersionMatchingLeftItemDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.QuestionVersionMatchingLeftItemUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.QuestionVersionMatchingLeftItemUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingLeftItemPayload>[]
+        }
+        upsert: {
+          args: Prisma.QuestionVersionMatchingLeftItemUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingLeftItemPayload>
+        }
+        aggregate: {
+          args: Prisma.QuestionVersionMatchingLeftItemAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateQuestionVersionMatchingLeftItem>
+        }
+        groupBy: {
+          args: Prisma.QuestionVersionMatchingLeftItemGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionVersionMatchingLeftItemGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.QuestionVersionMatchingLeftItemCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionVersionMatchingLeftItemCountAggregateOutputType> | number
+        }
+      }
+    }
+    QuestionVersionMatchingRightItem: {
+      payload: Prisma.$QuestionVersionMatchingRightItemPayload<ExtArgs>
+      fields: Prisma.QuestionVersionMatchingRightItemFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.QuestionVersionMatchingRightItemFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingRightItemPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.QuestionVersionMatchingRightItemFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingRightItemPayload>
+        }
+        findFirst: {
+          args: Prisma.QuestionVersionMatchingRightItemFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingRightItemPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.QuestionVersionMatchingRightItemFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingRightItemPayload>
+        }
+        findMany: {
+          args: Prisma.QuestionVersionMatchingRightItemFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingRightItemPayload>[]
+        }
+        create: {
+          args: Prisma.QuestionVersionMatchingRightItemCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingRightItemPayload>
+        }
+        createMany: {
+          args: Prisma.QuestionVersionMatchingRightItemCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.QuestionVersionMatchingRightItemCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingRightItemPayload>[]
+        }
+        delete: {
+          args: Prisma.QuestionVersionMatchingRightItemDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingRightItemPayload>
+        }
+        update: {
+          args: Prisma.QuestionVersionMatchingRightItemUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingRightItemPayload>
+        }
+        deleteMany: {
+          args: Prisma.QuestionVersionMatchingRightItemDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.QuestionVersionMatchingRightItemUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.QuestionVersionMatchingRightItemUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingRightItemPayload>[]
+        }
+        upsert: {
+          args: Prisma.QuestionVersionMatchingRightItemUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingRightItemPayload>
+        }
+        aggregate: {
+          args: Prisma.QuestionVersionMatchingRightItemAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateQuestionVersionMatchingRightItem>
+        }
+        groupBy: {
+          args: Prisma.QuestionVersionMatchingRightItemGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionVersionMatchingRightItemGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.QuestionVersionMatchingRightItemCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionVersionMatchingRightItemCountAggregateOutputType> | number
+        }
+      }
+    }
+    QuestionVersionOrderingItem: {
+      payload: Prisma.$QuestionVersionOrderingItemPayload<ExtArgs>
+      fields: Prisma.QuestionVersionOrderingItemFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.QuestionVersionOrderingItemFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOrderingItemPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.QuestionVersionOrderingItemFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOrderingItemPayload>
+        }
+        findFirst: {
+          args: Prisma.QuestionVersionOrderingItemFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOrderingItemPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.QuestionVersionOrderingItemFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOrderingItemPayload>
+        }
+        findMany: {
+          args: Prisma.QuestionVersionOrderingItemFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOrderingItemPayload>[]
+        }
+        create: {
+          args: Prisma.QuestionVersionOrderingItemCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOrderingItemPayload>
+        }
+        createMany: {
+          args: Prisma.QuestionVersionOrderingItemCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.QuestionVersionOrderingItemCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOrderingItemPayload>[]
+        }
+        delete: {
+          args: Prisma.QuestionVersionOrderingItemDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOrderingItemPayload>
+        }
+        update: {
+          args: Prisma.QuestionVersionOrderingItemUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOrderingItemPayload>
+        }
+        deleteMany: {
+          args: Prisma.QuestionVersionOrderingItemDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.QuestionVersionOrderingItemUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.QuestionVersionOrderingItemUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOrderingItemPayload>[]
+        }
+        upsert: {
+          args: Prisma.QuestionVersionOrderingItemUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOrderingItemPayload>
+        }
+        aggregate: {
+          args: Prisma.QuestionVersionOrderingItemAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateQuestionVersionOrderingItem>
+        }
+        groupBy: {
+          args: Prisma.QuestionVersionOrderingItemGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionVersionOrderingItemGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.QuestionVersionOrderingItemCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionVersionOrderingItemCountAggregateOutputType> | number
+        }
+      }
+    }
+    QuestionVersionFillBlankSegment: {
+      payload: Prisma.$QuestionVersionFillBlankSegmentPayload<ExtArgs>
+      fields: Prisma.QuestionVersionFillBlankSegmentFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.QuestionVersionFillBlankSegmentFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionFillBlankSegmentPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.QuestionVersionFillBlankSegmentFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionFillBlankSegmentPayload>
+        }
+        findFirst: {
+          args: Prisma.QuestionVersionFillBlankSegmentFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionFillBlankSegmentPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.QuestionVersionFillBlankSegmentFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionFillBlankSegmentPayload>
+        }
+        findMany: {
+          args: Prisma.QuestionVersionFillBlankSegmentFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionFillBlankSegmentPayload>[]
+        }
+        create: {
+          args: Prisma.QuestionVersionFillBlankSegmentCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionFillBlankSegmentPayload>
+        }
+        createMany: {
+          args: Prisma.QuestionVersionFillBlankSegmentCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.QuestionVersionFillBlankSegmentCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionFillBlankSegmentPayload>[]
+        }
+        delete: {
+          args: Prisma.QuestionVersionFillBlankSegmentDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionFillBlankSegmentPayload>
+        }
+        update: {
+          args: Prisma.QuestionVersionFillBlankSegmentUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionFillBlankSegmentPayload>
+        }
+        deleteMany: {
+          args: Prisma.QuestionVersionFillBlankSegmentDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.QuestionVersionFillBlankSegmentUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.QuestionVersionFillBlankSegmentUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionFillBlankSegmentPayload>[]
+        }
+        upsert: {
+          args: Prisma.QuestionVersionFillBlankSegmentUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionFillBlankSegmentPayload>
+        }
+        aggregate: {
+          args: Prisma.QuestionVersionFillBlankSegmentAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateQuestionVersionFillBlankSegment>
+        }
+        groupBy: {
+          args: Prisma.QuestionVersionFillBlankSegmentGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionVersionFillBlankSegmentGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.QuestionVersionFillBlankSegmentCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionVersionFillBlankSegmentCountAggregateOutputType> | number
+        }
+      }
+    }
+    QuestionVersionAnswerKey: {
+      payload: Prisma.$QuestionVersionAnswerKeyPayload<ExtArgs>
+      fields: Prisma.QuestionVersionAnswerKeyFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.QuestionVersionAnswerKeyFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionAnswerKeyPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.QuestionVersionAnswerKeyFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionAnswerKeyPayload>
+        }
+        findFirst: {
+          args: Prisma.QuestionVersionAnswerKeyFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionAnswerKeyPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.QuestionVersionAnswerKeyFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionAnswerKeyPayload>
+        }
+        findMany: {
+          args: Prisma.QuestionVersionAnswerKeyFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionAnswerKeyPayload>[]
+        }
+        create: {
+          args: Prisma.QuestionVersionAnswerKeyCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionAnswerKeyPayload>
+        }
+        createMany: {
+          args: Prisma.QuestionVersionAnswerKeyCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.QuestionVersionAnswerKeyCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionAnswerKeyPayload>[]
+        }
+        delete: {
+          args: Prisma.QuestionVersionAnswerKeyDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionAnswerKeyPayload>
+        }
+        update: {
+          args: Prisma.QuestionVersionAnswerKeyUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionAnswerKeyPayload>
+        }
+        deleteMany: {
+          args: Prisma.QuestionVersionAnswerKeyDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.QuestionVersionAnswerKeyUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.QuestionVersionAnswerKeyUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionAnswerKeyPayload>[]
+        }
+        upsert: {
+          args: Prisma.QuestionVersionAnswerKeyUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionAnswerKeyPayload>
+        }
+        aggregate: {
+          args: Prisma.QuestionVersionAnswerKeyAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateQuestionVersionAnswerKey>
+        }
+        groupBy: {
+          args: Prisma.QuestionVersionAnswerKeyGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionVersionAnswerKeyGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.QuestionVersionAnswerKeyCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionVersionAnswerKeyCountAggregateOutputType> | number
+        }
+      }
+    }
+    QuestionVersionOptionAnswer: {
+      payload: Prisma.$QuestionVersionOptionAnswerPayload<ExtArgs>
+      fields: Prisma.QuestionVersionOptionAnswerFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.QuestionVersionOptionAnswerFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOptionAnswerPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.QuestionVersionOptionAnswerFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOptionAnswerPayload>
+        }
+        findFirst: {
+          args: Prisma.QuestionVersionOptionAnswerFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOptionAnswerPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.QuestionVersionOptionAnswerFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOptionAnswerPayload>
+        }
+        findMany: {
+          args: Prisma.QuestionVersionOptionAnswerFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOptionAnswerPayload>[]
+        }
+        create: {
+          args: Prisma.QuestionVersionOptionAnswerCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOptionAnswerPayload>
+        }
+        createMany: {
+          args: Prisma.QuestionVersionOptionAnswerCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.QuestionVersionOptionAnswerCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOptionAnswerPayload>[]
+        }
+        delete: {
+          args: Prisma.QuestionVersionOptionAnswerDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOptionAnswerPayload>
+        }
+        update: {
+          args: Prisma.QuestionVersionOptionAnswerUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOptionAnswerPayload>
+        }
+        deleteMany: {
+          args: Prisma.QuestionVersionOptionAnswerDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.QuestionVersionOptionAnswerUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.QuestionVersionOptionAnswerUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOptionAnswerPayload>[]
+        }
+        upsert: {
+          args: Prisma.QuestionVersionOptionAnswerUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOptionAnswerPayload>
+        }
+        aggregate: {
+          args: Prisma.QuestionVersionOptionAnswerAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateQuestionVersionOptionAnswer>
+        }
+        groupBy: {
+          args: Prisma.QuestionVersionOptionAnswerGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionVersionOptionAnswerGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.QuestionVersionOptionAnswerCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionVersionOptionAnswerCountAggregateOutputType> | number
+        }
+      }
+    }
+    QuestionVersionAcceptedAnswer: {
+      payload: Prisma.$QuestionVersionAcceptedAnswerPayload<ExtArgs>
+      fields: Prisma.QuestionVersionAcceptedAnswerFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.QuestionVersionAcceptedAnswerFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionAcceptedAnswerPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.QuestionVersionAcceptedAnswerFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionAcceptedAnswerPayload>
+        }
+        findFirst: {
+          args: Prisma.QuestionVersionAcceptedAnswerFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionAcceptedAnswerPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.QuestionVersionAcceptedAnswerFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionAcceptedAnswerPayload>
+        }
+        findMany: {
+          args: Prisma.QuestionVersionAcceptedAnswerFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionAcceptedAnswerPayload>[]
+        }
+        create: {
+          args: Prisma.QuestionVersionAcceptedAnswerCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionAcceptedAnswerPayload>
+        }
+        createMany: {
+          args: Prisma.QuestionVersionAcceptedAnswerCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.QuestionVersionAcceptedAnswerCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionAcceptedAnswerPayload>[]
+        }
+        delete: {
+          args: Prisma.QuestionVersionAcceptedAnswerDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionAcceptedAnswerPayload>
+        }
+        update: {
+          args: Prisma.QuestionVersionAcceptedAnswerUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionAcceptedAnswerPayload>
+        }
+        deleteMany: {
+          args: Prisma.QuestionVersionAcceptedAnswerDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.QuestionVersionAcceptedAnswerUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.QuestionVersionAcceptedAnswerUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionAcceptedAnswerPayload>[]
+        }
+        upsert: {
+          args: Prisma.QuestionVersionAcceptedAnswerUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionAcceptedAnswerPayload>
+        }
+        aggregate: {
+          args: Prisma.QuestionVersionAcceptedAnswerAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateQuestionVersionAcceptedAnswer>
+        }
+        groupBy: {
+          args: Prisma.QuestionVersionAcceptedAnswerGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionVersionAcceptedAnswerGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.QuestionVersionAcceptedAnswerCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionVersionAcceptedAnswerCountAggregateOutputType> | number
+        }
+      }
+    }
+    QuestionVersionMatchingPair: {
+      payload: Prisma.$QuestionVersionMatchingPairPayload<ExtArgs>
+      fields: Prisma.QuestionVersionMatchingPairFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.QuestionVersionMatchingPairFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingPairPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.QuestionVersionMatchingPairFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingPairPayload>
+        }
+        findFirst: {
+          args: Prisma.QuestionVersionMatchingPairFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingPairPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.QuestionVersionMatchingPairFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingPairPayload>
+        }
+        findMany: {
+          args: Prisma.QuestionVersionMatchingPairFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingPairPayload>[]
+        }
+        create: {
+          args: Prisma.QuestionVersionMatchingPairCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingPairPayload>
+        }
+        createMany: {
+          args: Prisma.QuestionVersionMatchingPairCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.QuestionVersionMatchingPairCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingPairPayload>[]
+        }
+        delete: {
+          args: Prisma.QuestionVersionMatchingPairDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingPairPayload>
+        }
+        update: {
+          args: Prisma.QuestionVersionMatchingPairUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingPairPayload>
+        }
+        deleteMany: {
+          args: Prisma.QuestionVersionMatchingPairDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.QuestionVersionMatchingPairUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.QuestionVersionMatchingPairUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingPairPayload>[]
+        }
+        upsert: {
+          args: Prisma.QuestionVersionMatchingPairUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionMatchingPairPayload>
+        }
+        aggregate: {
+          args: Prisma.QuestionVersionMatchingPairAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateQuestionVersionMatchingPair>
+        }
+        groupBy: {
+          args: Prisma.QuestionVersionMatchingPairGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionVersionMatchingPairGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.QuestionVersionMatchingPairCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionVersionMatchingPairCountAggregateOutputType> | number
+        }
+      }
+    }
+    QuestionVersionOrderingAnswer: {
+      payload: Prisma.$QuestionVersionOrderingAnswerPayload<ExtArgs>
+      fields: Prisma.QuestionVersionOrderingAnswerFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.QuestionVersionOrderingAnswerFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOrderingAnswerPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.QuestionVersionOrderingAnswerFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOrderingAnswerPayload>
+        }
+        findFirst: {
+          args: Prisma.QuestionVersionOrderingAnswerFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOrderingAnswerPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.QuestionVersionOrderingAnswerFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOrderingAnswerPayload>
+        }
+        findMany: {
+          args: Prisma.QuestionVersionOrderingAnswerFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOrderingAnswerPayload>[]
+        }
+        create: {
+          args: Prisma.QuestionVersionOrderingAnswerCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOrderingAnswerPayload>
+        }
+        createMany: {
+          args: Prisma.QuestionVersionOrderingAnswerCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.QuestionVersionOrderingAnswerCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOrderingAnswerPayload>[]
+        }
+        delete: {
+          args: Prisma.QuestionVersionOrderingAnswerDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOrderingAnswerPayload>
+        }
+        update: {
+          args: Prisma.QuestionVersionOrderingAnswerUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOrderingAnswerPayload>
+        }
+        deleteMany: {
+          args: Prisma.QuestionVersionOrderingAnswerDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.QuestionVersionOrderingAnswerUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.QuestionVersionOrderingAnswerUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOrderingAnswerPayload>[]
+        }
+        upsert: {
+          args: Prisma.QuestionVersionOrderingAnswerUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionOrderingAnswerPayload>
+        }
+        aggregate: {
+          args: Prisma.QuestionVersionOrderingAnswerAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateQuestionVersionOrderingAnswer>
+        }
+        groupBy: {
+          args: Prisma.QuestionVersionOrderingAnswerGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionVersionOrderingAnswerGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.QuestionVersionOrderingAnswerCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionVersionOrderingAnswerCountAggregateOutputType> | number
+        }
+      }
+    }
+    QuestionVersionBlankAnswer: {
+      payload: Prisma.$QuestionVersionBlankAnswerPayload<ExtArgs>
+      fields: Prisma.QuestionVersionBlankAnswerFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.QuestionVersionBlankAnswerFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionBlankAnswerPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.QuestionVersionBlankAnswerFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionBlankAnswerPayload>
+        }
+        findFirst: {
+          args: Prisma.QuestionVersionBlankAnswerFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionBlankAnswerPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.QuestionVersionBlankAnswerFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionBlankAnswerPayload>
+        }
+        findMany: {
+          args: Prisma.QuestionVersionBlankAnswerFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionBlankAnswerPayload>[]
+        }
+        create: {
+          args: Prisma.QuestionVersionBlankAnswerCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionBlankAnswerPayload>
+        }
+        createMany: {
+          args: Prisma.QuestionVersionBlankAnswerCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.QuestionVersionBlankAnswerCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionBlankAnswerPayload>[]
+        }
+        delete: {
+          args: Prisma.QuestionVersionBlankAnswerDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionBlankAnswerPayload>
+        }
+        update: {
+          args: Prisma.QuestionVersionBlankAnswerUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionBlankAnswerPayload>
+        }
+        deleteMany: {
+          args: Prisma.QuestionVersionBlankAnswerDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.QuestionVersionBlankAnswerUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.QuestionVersionBlankAnswerUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionBlankAnswerPayload>[]
+        }
+        upsert: {
+          args: Prisma.QuestionVersionBlankAnswerUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionBlankAnswerPayload>
+        }
+        aggregate: {
+          args: Prisma.QuestionVersionBlankAnswerAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateQuestionVersionBlankAnswer>
+        }
+        groupBy: {
+          args: Prisma.QuestionVersionBlankAnswerGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionVersionBlankAnswerGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.QuestionVersionBlankAnswerCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionVersionBlankAnswerCountAggregateOutputType> | number
+        }
+      }
+    }
+    QuestionVersionBlankAcceptedAnswer: {
+      payload: Prisma.$QuestionVersionBlankAcceptedAnswerPayload<ExtArgs>
+      fields: Prisma.QuestionVersionBlankAcceptedAnswerFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.QuestionVersionBlankAcceptedAnswerFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionBlankAcceptedAnswerPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.QuestionVersionBlankAcceptedAnswerFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionBlankAcceptedAnswerPayload>
+        }
+        findFirst: {
+          args: Prisma.QuestionVersionBlankAcceptedAnswerFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionBlankAcceptedAnswerPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.QuestionVersionBlankAcceptedAnswerFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionBlankAcceptedAnswerPayload>
+        }
+        findMany: {
+          args: Prisma.QuestionVersionBlankAcceptedAnswerFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionBlankAcceptedAnswerPayload>[]
+        }
+        create: {
+          args: Prisma.QuestionVersionBlankAcceptedAnswerCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionBlankAcceptedAnswerPayload>
+        }
+        createMany: {
+          args: Prisma.QuestionVersionBlankAcceptedAnswerCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.QuestionVersionBlankAcceptedAnswerCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionBlankAcceptedAnswerPayload>[]
+        }
+        delete: {
+          args: Prisma.QuestionVersionBlankAcceptedAnswerDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionBlankAcceptedAnswerPayload>
+        }
+        update: {
+          args: Prisma.QuestionVersionBlankAcceptedAnswerUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionBlankAcceptedAnswerPayload>
+        }
+        deleteMany: {
+          args: Prisma.QuestionVersionBlankAcceptedAnswerDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.QuestionVersionBlankAcceptedAnswerUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.QuestionVersionBlankAcceptedAnswerUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionBlankAcceptedAnswerPayload>[]
+        }
+        upsert: {
+          args: Prisma.QuestionVersionBlankAcceptedAnswerUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionVersionBlankAcceptedAnswerPayload>
+        }
+        aggregate: {
+          args: Prisma.QuestionVersionBlankAcceptedAnswerAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateQuestionVersionBlankAcceptedAnswer>
+        }
+        groupBy: {
+          args: Prisma.QuestionVersionBlankAcceptedAnswerGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionVersionBlankAcceptedAnswerGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.QuestionVersionBlankAcceptedAnswerCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionVersionBlankAcceptedAnswerCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -3180,6 +4305,173 @@ export const PrincipalTenantMembershipScalarFieldEnum = {
 export type PrincipalTenantMembershipScalarFieldEnum = (typeof PrincipalTenantMembershipScalarFieldEnum)[keyof typeof PrincipalTenantMembershipScalarFieldEnum]
 
 
+export const QuestionScalarFieldEnum = {
+  id: 'id',
+  createdAt: 'createdAt'
+} as const
+
+export type QuestionScalarFieldEnum = (typeof QuestionScalarFieldEnum)[keyof typeof QuestionScalarFieldEnum]
+
+
+export const QuestionVersionScalarFieldEnum = {
+  id: 'id',
+  questionId: 'questionId',
+  versionNumber: 'versionNumber',
+  questionType: 'questionType',
+  answerFormat: 'answerFormat',
+  previousVersionId: 'previousVersionId',
+  restoredFromVersionId: 'restoredFromVersionId',
+  createdAt: 'createdAt',
+  completedAt: 'completedAt'
+} as const
+
+export type QuestionVersionScalarFieldEnum = (typeof QuestionVersionScalarFieldEnum)[keyof typeof QuestionVersionScalarFieldEnum]
+
+
+export const QuestionVersionContentScalarFieldEnum = {
+  id: 'id',
+  questionVersionId: 'questionVersionId',
+  questionType: 'questionType',
+  promptText: 'promptText',
+  numericUnit: 'numericUnit',
+  matchingMode: 'matchingMode'
+} as const
+
+export type QuestionVersionContentScalarFieldEnum = (typeof QuestionVersionContentScalarFieldEnum)[keyof typeof QuestionVersionContentScalarFieldEnum]
+
+
+export const QuestionVersionOptionScalarFieldEnum = {
+  id: 'id',
+  contentId: 'contentId',
+  questionVersionId: 'questionVersionId',
+  text: 'text',
+  position: 'position'
+} as const
+
+export type QuestionVersionOptionScalarFieldEnum = (typeof QuestionVersionOptionScalarFieldEnum)[keyof typeof QuestionVersionOptionScalarFieldEnum]
+
+
+export const QuestionVersionMatchingLeftItemScalarFieldEnum = {
+  id: 'id',
+  contentId: 'contentId',
+  questionVersionId: 'questionVersionId',
+  text: 'text',
+  position: 'position'
+} as const
+
+export type QuestionVersionMatchingLeftItemScalarFieldEnum = (typeof QuestionVersionMatchingLeftItemScalarFieldEnum)[keyof typeof QuestionVersionMatchingLeftItemScalarFieldEnum]
+
+
+export const QuestionVersionMatchingRightItemScalarFieldEnum = {
+  id: 'id',
+  contentId: 'contentId',
+  questionVersionId: 'questionVersionId',
+  text: 'text',
+  position: 'position'
+} as const
+
+export type QuestionVersionMatchingRightItemScalarFieldEnum = (typeof QuestionVersionMatchingRightItemScalarFieldEnum)[keyof typeof QuestionVersionMatchingRightItemScalarFieldEnum]
+
+
+export const QuestionVersionOrderingItemScalarFieldEnum = {
+  id: 'id',
+  contentId: 'contentId',
+  questionVersionId: 'questionVersionId',
+  text: 'text',
+  position: 'position'
+} as const
+
+export type QuestionVersionOrderingItemScalarFieldEnum = (typeof QuestionVersionOrderingItemScalarFieldEnum)[keyof typeof QuestionVersionOrderingItemScalarFieldEnum]
+
+
+export const QuestionVersionFillBlankSegmentScalarFieldEnum = {
+  id: 'id',
+  contentId: 'contentId',
+  questionVersionId: 'questionVersionId',
+  kind: 'kind',
+  text: 'text',
+  blankId: 'blankId',
+  position: 'position'
+} as const
+
+export type QuestionVersionFillBlankSegmentScalarFieldEnum = (typeof QuestionVersionFillBlankSegmentScalarFieldEnum)[keyof typeof QuestionVersionFillBlankSegmentScalarFieldEnum]
+
+
+export const QuestionVersionAnswerKeyScalarFieldEnum = {
+  id: 'id',
+  questionVersionId: 'questionVersionId',
+  questionType: 'questionType',
+  correctBoolean: 'correctBoolean',
+  expectedNumericValue: 'expectedNumericValue',
+  referenceAnswer: 'referenceAnswer'
+} as const
+
+export type QuestionVersionAnswerKeyScalarFieldEnum = (typeof QuestionVersionAnswerKeyScalarFieldEnum)[keyof typeof QuestionVersionAnswerKeyScalarFieldEnum]
+
+
+export const QuestionVersionOptionAnswerScalarFieldEnum = {
+  answerKeyId: 'answerKeyId',
+  questionVersionId: 'questionVersionId',
+  optionId: 'optionId',
+  position: 'position'
+} as const
+
+export type QuestionVersionOptionAnswerScalarFieldEnum = (typeof QuestionVersionOptionAnswerScalarFieldEnum)[keyof typeof QuestionVersionOptionAnswerScalarFieldEnum]
+
+
+export const QuestionVersionAcceptedAnswerScalarFieldEnum = {
+  id: 'id',
+  answerKeyId: 'answerKeyId',
+  questionVersionId: 'questionVersionId',
+  text: 'text',
+  position: 'position'
+} as const
+
+export type QuestionVersionAcceptedAnswerScalarFieldEnum = (typeof QuestionVersionAcceptedAnswerScalarFieldEnum)[keyof typeof QuestionVersionAcceptedAnswerScalarFieldEnum]
+
+
+export const QuestionVersionMatchingPairScalarFieldEnum = {
+  answerKeyId: 'answerKeyId',
+  questionVersionId: 'questionVersionId',
+  leftItemId: 'leftItemId',
+  rightItemId: 'rightItemId',
+  position: 'position'
+} as const
+
+export type QuestionVersionMatchingPairScalarFieldEnum = (typeof QuestionVersionMatchingPairScalarFieldEnum)[keyof typeof QuestionVersionMatchingPairScalarFieldEnum]
+
+
+export const QuestionVersionOrderingAnswerScalarFieldEnum = {
+  answerKeyId: 'answerKeyId',
+  questionVersionId: 'questionVersionId',
+  itemId: 'itemId',
+  position: 'position'
+} as const
+
+export type QuestionVersionOrderingAnswerScalarFieldEnum = (typeof QuestionVersionOrderingAnswerScalarFieldEnum)[keyof typeof QuestionVersionOrderingAnswerScalarFieldEnum]
+
+
+export const QuestionVersionBlankAnswerScalarFieldEnum = {
+  answerKeyId: 'answerKeyId',
+  questionVersionId: 'questionVersionId',
+  blankSegmentId: 'blankSegmentId',
+  position: 'position'
+} as const
+
+export type QuestionVersionBlankAnswerScalarFieldEnum = (typeof QuestionVersionBlankAnswerScalarFieldEnum)[keyof typeof QuestionVersionBlankAnswerScalarFieldEnum]
+
+
+export const QuestionVersionBlankAcceptedAnswerScalarFieldEnum = {
+  id: 'id',
+  answerKeyId: 'answerKeyId',
+  blankSegmentId: 'blankSegmentId',
+  text: 'text',
+  position: 'position'
+} as const
+
+export type QuestionVersionBlankAcceptedAnswerScalarFieldEnum = (typeof QuestionVersionBlankAcceptedAnswerScalarFieldEnum)[keyof typeof QuestionVersionBlankAcceptedAnswerScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -3648,6 +4940,76 @@ export type ListEnumPrincipalTenantMembershipStatusFieldRefInput<$PrismaModel> =
 
 
 /**
+ * Reference to a field of type 'BigInt'
+ */
+export type BigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt'>
+
+
+
+/**
+ * Reference to a field of type 'BigInt[]'
+ */
+export type ListBigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt[]'>
+
+
+
+/**
+ * Reference to a field of type 'QuestionBankType'
+ */
+export type EnumQuestionBankTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QuestionBankType'>
+
+
+
+/**
+ * Reference to a field of type 'QuestionBankType[]'
+ */
+export type ListEnumQuestionBankTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QuestionBankType[]'>
+
+
+
+/**
+ * Reference to a field of type 'QuestionBankAnswerFormat'
+ */
+export type EnumQuestionBankAnswerFormatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QuestionBankAnswerFormat'>
+
+
+
+/**
+ * Reference to a field of type 'QuestionBankAnswerFormat[]'
+ */
+export type ListEnumQuestionBankAnswerFormatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QuestionBankAnswerFormat[]'>
+
+
+
+/**
+ * Reference to a field of type 'QuestionBankMatchingMode'
+ */
+export type EnumQuestionBankMatchingModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QuestionBankMatchingMode'>
+
+
+
+/**
+ * Reference to a field of type 'QuestionBankMatchingMode[]'
+ */
+export type ListEnumQuestionBankMatchingModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QuestionBankMatchingMode[]'>
+
+
+
+/**
+ * Reference to a field of type 'QuestionBankFillBlankSegmentKind'
+ */
+export type EnumQuestionBankFillBlankSegmentKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QuestionBankFillBlankSegmentKind'>
+
+
+
+/**
+ * Reference to a field of type 'QuestionBankFillBlankSegmentKind[]'
+ */
+export type ListEnumQuestionBankFillBlankSegmentKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QuestionBankFillBlankSegmentKind[]'>
+
+
+
+/**
  * Reference to a field of type 'Float'
  */
 export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
@@ -3841,6 +5203,21 @@ export type GlobalOmitConfig = {
   externalIdentity?: Prisma.ExternalIdentityOmit
   tenant?: Prisma.TenantOmit
   principalTenantMembership?: Prisma.PrincipalTenantMembershipOmit
+  question?: Prisma.QuestionOmit
+  questionVersion?: Prisma.QuestionVersionOmit
+  questionVersionContent?: Prisma.QuestionVersionContentOmit
+  questionVersionOption?: Prisma.QuestionVersionOptionOmit
+  questionVersionMatchingLeftItem?: Prisma.QuestionVersionMatchingLeftItemOmit
+  questionVersionMatchingRightItem?: Prisma.QuestionVersionMatchingRightItemOmit
+  questionVersionOrderingItem?: Prisma.QuestionVersionOrderingItemOmit
+  questionVersionFillBlankSegment?: Prisma.QuestionVersionFillBlankSegmentOmit
+  questionVersionAnswerKey?: Prisma.QuestionVersionAnswerKeyOmit
+  questionVersionOptionAnswer?: Prisma.QuestionVersionOptionAnswerOmit
+  questionVersionAcceptedAnswer?: Prisma.QuestionVersionAcceptedAnswerOmit
+  questionVersionMatchingPair?: Prisma.QuestionVersionMatchingPairOmit
+  questionVersionOrderingAnswer?: Prisma.QuestionVersionOrderingAnswerOmit
+  questionVersionBlankAnswer?: Prisma.QuestionVersionBlankAnswerOmit
+  questionVersionBlankAcceptedAnswer?: Prisma.QuestionVersionBlankAcceptedAnswerOmit
 }
 
 /* Types for Logging */

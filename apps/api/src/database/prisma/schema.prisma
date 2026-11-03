@@ -707,8 +707,8 @@ model NotificationDelivery {
   notificationId String
   deliveryKey    String @unique
 
-  provider String
-  channel  NotificationChannel
+  provider                    String
+  channel                     NotificationChannel
   providerSubmissionStartedAt DateTime?
 
   status NotificationDeliveryStatus @default(PENDING)
@@ -991,4 +991,259 @@ model PrincipalTenantMembership {
   @@unique([learnerId])
   @@index([tenantId, status])
   @@index([tenantId, learnerId, status])
+}
+
+// =============================================================
+// Question Bank - Phase 5.14-E-C
+// Normalized Question and Question Version Persistence
+// =============================================================
+
+enum QuestionBankType {
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  SHORT_ANSWER
+  LONG_ANSWER
+  NUMERIC
+  MATCHING
+  ORDERING
+  FILL_IN_THE_BLANK
+}
+
+enum QuestionBankAnswerFormat {
+  SELECTED_OPTION
+  SELECTED_OPTIONS
+  BOOLEAN
+  SHORT_TEXT
+  LONG_TEXT
+  NUMBER
+  MATCHING_PAIRS
+  ORDERED_ITEMS
+  BLANK_RESPONSES
+}
+
+enum QuestionBankFillBlankSegmentKind {
+  TEXT
+  BLANK
+}
+
+enum QuestionBankMatchingMode {
+  ONE_TO_ONE
+  MANY_TO_ONE
+}
+
+model Question {
+  id        String            @id
+  createdAt DateTime          @default(now())
+  versions  QuestionVersion[]
+
+  @@index([createdAt])
+}
+
+model QuestionVersion {
+  id                    String                    @id
+  questionId            String
+  versionNumber         BigInt
+  questionType          QuestionBankType
+  answerFormat          QuestionBankAnswerFormat
+  previousVersionId     String?
+  restoredFromVersionId String?
+  createdAt             DateTime
+  completedAt           DateTime?
+  question              Question                  @relation(fields: [questionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  previousVersion       QuestionVersion?          @relation("QuestionVersionPrevious", fields: [previousVersionId, questionId], references: [id, questionId], onDelete: Restrict, onUpdate: Restrict)
+  nextVersions          QuestionVersion[]         @relation("QuestionVersionPrevious")
+  restoredFrom          QuestionVersion?          @relation("QuestionVersionRestoredFrom", fields: [restoredFromVersionId, questionId], references: [id, questionId], onDelete: Restrict, onUpdate: Restrict)
+  restoredIntoVersions  QuestionVersion[]         @relation("QuestionVersionRestoredFrom")
+  content               QuestionVersionContent?
+  answerKey             QuestionVersionAnswerKey?
+
+  @@unique([questionId, versionNumber])
+  @@unique([id, questionId])
+  @@index([questionId, createdAt])
+  @@index([previousVersionId])
+  @@index([restoredFromVersionId])
+}
+
+model QuestionVersionContent {
+  id                 String                             @id
+  questionVersionId  String                             @unique
+  questionType       QuestionBankType
+  promptText         String?
+  numericUnit        String?
+  matchingMode       QuestionBankMatchingMode?
+  questionVersion    QuestionVersion                    @relation(fields: [questionVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  options            QuestionVersionOption[]
+  matchingLeftItems  QuestionVersionMatchingLeftItem[]
+  matchingRightItems QuestionVersionMatchingRightItem[]
+  orderingItems      QuestionVersionOrderingItem[]
+  fillBlankSegments  QuestionVersionFillBlankSegment[]
+
+  @@unique([id, questionVersionId])
+}
+
+model QuestionVersionOption {
+  id                String
+  contentId         String
+  questionVersionId String
+  text              String
+  position          Int
+  content           QuestionVersionContent        @relation(fields: [contentId, questionVersionId], references: [id, questionVersionId], onDelete: Restrict, onUpdate: Restrict)
+  optionAnswers     QuestionVersionOptionAnswer[]
+
+  @@id([questionVersionId, id])
+  @@unique([contentId, position])
+  @@index([contentId])
+}
+
+model QuestionVersionMatchingLeftItem {
+  id                String
+  contentId         String
+  questionVersionId String
+  text              String
+  position          Int
+  content           QuestionVersionContent        @relation(fields: [contentId, questionVersionId], references: [id, questionVersionId], onDelete: Restrict, onUpdate: Restrict)
+  leftPairs         QuestionVersionMatchingPair[] @relation("MatchingPairLeft")
+
+  @@id([questionVersionId, id])
+  @@unique([contentId, position])
+}
+
+model QuestionVersionMatchingRightItem {
+  id                String
+  contentId         String
+  questionVersionId String
+  text              String
+  position          Int
+  content           QuestionVersionContent        @relation(fields: [contentId, questionVersionId], references: [id, questionVersionId], onDelete: Restrict, onUpdate: Restrict)
+  rightPairs        QuestionVersionMatchingPair[] @relation("MatchingPairRight")
+
+  @@id([questionVersionId, id])
+  @@unique([contentId, position])
+}
+
+model QuestionVersionOrderingItem {
+  id                String
+  contentId         String
+  questionVersionId String
+  text              String
+  position          Int
+  content           QuestionVersionContent          @relation(fields: [contentId, questionVersionId], references: [id, questionVersionId], onDelete: Restrict, onUpdate: Restrict)
+  orderingAnswers   QuestionVersionOrderingAnswer[]
+
+  @@id([questionVersionId, id])
+  @@unique([contentId, position])
+}
+
+model QuestionVersionFillBlankSegment {
+  id                String
+  contentId         String
+  questionVersionId String
+  kind              QuestionBankFillBlankSegmentKind
+  text              String?
+  blankId           String?
+  position          Int
+  content           QuestionVersionContent           @relation(fields: [contentId, questionVersionId], references: [id, questionVersionId], onDelete: Restrict, onUpdate: Restrict)
+  blankAnswer       QuestionVersionBlankAnswer?
+
+  @@id([questionVersionId, id])
+  @@unique([contentId, position])
+  @@unique([questionVersionId, blankId])
+}
+
+model QuestionVersionAnswerKey {
+  id                   String                          @id
+  questionVersionId    String                          @unique
+  questionType         QuestionBankType
+  correctBoolean       Boolean?
+  expectedNumericValue Float?
+  referenceAnswer      String?
+  questionVersion      QuestionVersion                 @relation(fields: [questionVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  optionAnswers        QuestionVersionOptionAnswer[]
+  acceptedAnswers      QuestionVersionAcceptedAnswer[]
+  matchingPairs        QuestionVersionMatchingPair[]
+  orderingAnswers      QuestionVersionOrderingAnswer[]
+  blankAnswers         QuestionVersionBlankAnswer[]
+
+  @@unique([id, questionVersionId])
+}
+
+model QuestionVersionOptionAnswer {
+  answerKeyId       String
+  questionVersionId String
+  optionId          String
+  position          Int
+  answerKey         QuestionVersionAnswerKey @relation(fields: [answerKeyId, questionVersionId], references: [id, questionVersionId], onDelete: Restrict, onUpdate: Restrict)
+  option            QuestionVersionOption    @relation(fields: [questionVersionId, optionId], references: [questionVersionId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@id([answerKeyId, optionId])
+  @@unique([answerKeyId, position])
+}
+
+model QuestionVersionAcceptedAnswer {
+  id                String                   @id
+  answerKeyId       String
+  questionVersionId String
+  text              String
+  position          Int
+  answerKey         QuestionVersionAnswerKey @relation(fields: [answerKeyId, questionVersionId], references: [id, questionVersionId], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([answerKeyId, position])
+  @@index([answerKeyId])
+}
+
+/// Each left item must have exactly one correct right-item mapping.
+/// The composite primary key prevents duplicate mappings for a left item;
+/// the completed-snapshot constraint trigger verifies that every left item
+/// has a mapping before the QuestionVersion can be completed.
+model QuestionVersionMatchingPair {
+  answerKeyId       String
+  questionVersionId String
+  leftItemId        String
+  rightItemId       String
+  position          Int
+  answerKey         QuestionVersionAnswerKey         @relation(fields: [answerKeyId, questionVersionId], references: [id, questionVersionId], onDelete: Restrict, onUpdate: Restrict)
+  leftItem          QuestionVersionMatchingLeftItem  @relation("MatchingPairLeft", fields: [questionVersionId, leftItemId], references: [questionVersionId, id], onDelete: Restrict, onUpdate: Restrict)
+  rightItem         QuestionVersionMatchingRightItem @relation("MatchingPairRight", fields: [questionVersionId, rightItemId], references: [questionVersionId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@id([answerKeyId, leftItemId])
+  @@unique([answerKeyId, position])
+}
+
+model QuestionVersionOrderingAnswer {
+  answerKeyId       String
+  questionVersionId String
+  itemId            String
+  position          Int
+  answerKey         QuestionVersionAnswerKey    @relation(fields: [answerKeyId, questionVersionId], references: [id, questionVersionId], onDelete: Restrict, onUpdate: Restrict)
+  item              QuestionVersionOrderingItem @relation(fields: [questionVersionId, itemId], references: [questionVersionId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@id([answerKeyId, itemId])
+  @@unique([answerKeyId, position])
+}
+
+model QuestionVersionBlankAnswer {
+  answerKeyId       String
+  questionVersionId String
+  blankSegmentId    String
+  position          Int
+
+  answerKey       QuestionVersionAnswerKey             @relation(fields: [answerKeyId, questionVersionId], references: [id, questionVersionId], onDelete: Restrict, onUpdate: Restrict)
+  blankSegment    QuestionVersionFillBlankSegment      @relation(fields: [questionVersionId, blankSegmentId], references: [questionVersionId, id], onDelete: Restrict, onUpdate: Restrict)
+  acceptedAnswers QuestionVersionBlankAcceptedAnswer[]
+
+  @@id([answerKeyId, blankSegmentId])
+  @@unique([answerKeyId, position])
+  @@unique([questionVersionId, blankSegmentId])
+}
+
+model QuestionVersionBlankAcceptedAnswer {
+  id             String                     @id
+  answerKeyId    String
+  blankSegmentId String
+  text           String
+  position       Int
+  blankAnswer    QuestionVersionBlankAnswer @relation(fields: [answerKeyId, blankSegmentId], references: [answerKeyId, blankSegmentId], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([answerKeyId, blankSegmentId, position])
 }

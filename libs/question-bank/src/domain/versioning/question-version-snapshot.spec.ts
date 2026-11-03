@@ -208,6 +208,7 @@ describe('QuestionVersionSnapshot factory', () => {
       QuestionType.MATCHING,
       {
         questionType: QuestionType.MATCHING,
+        matchingMode: 'MANY_TO_ONE',
         prompt: { text: 'Match the items.' },
         leftItems: [
           { id: 'l1', text: 'Left 1' },
@@ -433,11 +434,99 @@ describe('QuestionVersionSnapshot factory', () => {
     );
   });
 
+  it('rejects a matching answer key that omits a left-item mapping', () => {
+    const input = makeInput(
+      QuestionType.MATCHING,
+      {
+        questionType: QuestionType.MATCHING,
+        matchingMode: 'MANY_TO_ONE',
+        prompt: { text: 'Match the items.' },
+        leftItems: [
+          { id: 'l1', text: 'Left 1' },
+          { id: 'l2', text: 'Left 2' },
+        ],
+        rightItems: [
+          { id: 'r1', text: 'Right 1' },
+          { id: 'r2', text: 'Right 2' },
+        ],
+      },
+      {
+        questionType: QuestionType.MATCHING,
+        correctPairs: [{ leftItemId: 'l1', rightItemId: 'r1' }],
+      },
+      AnswerFormat.MATCHING_PAIRS,
+    );
+
+    expect(() => createQuestionVersionSnapshot(input)).toThrow(
+      'answerKey.correctPairs must contain exactly one correct right-item mapping for every left item.',
+    );
+  });
+
+  it('rejects duplicate mappings for the same left item', () => {
+    const input = makeInput(
+      QuestionType.MATCHING,
+      {
+        questionType: QuestionType.MATCHING,
+        matchingMode: 'MANY_TO_ONE',
+        prompt: { text: 'Match the items.' },
+        leftItems: [
+          { id: 'l1', text: 'Left 1' },
+          { id: 'l2', text: 'Left 2' },
+        ],
+        rightItems: [
+          { id: 'r1', text: 'Right 1' },
+          { id: 'r2', text: 'Right 2' },
+        ],
+      },
+      {
+        questionType: QuestionType.MATCHING,
+        correctPairs: [
+          { leftItemId: 'l1', rightItemId: 'r1' },
+          { leftItemId: 'l1', rightItemId: 'r2' },
+        ],
+      },
+      AnswerFormat.MATCHING_PAIRS,
+    );
+
+    expect(() => createQuestionVersionSnapshot(input)).toThrow(
+      'answerKey.correctPairs must contain exactly one correct right-item mapping for every left item.',
+    );
+  });
+
+  it('allows multiple left items to map to the same right item', () => {
+    const input = makeInput(
+      QuestionType.MATCHING,
+      {
+        questionType: QuestionType.MATCHING,
+        matchingMode: 'MANY_TO_ONE',
+        prompt: { text: 'Match the items.' },
+        leftItems: [
+          { id: 'l1', text: 'Left 1' },
+          { id: 'l2', text: 'Left 2' },
+        ],
+        rightItems: [{ id: 'r1', text: 'Right 1' }],
+      },
+      {
+        questionType: QuestionType.MATCHING,
+        correctPairs: [
+          { leftItemId: 'l1', rightItemId: 'r1' },
+          { leftItemId: 'l2', rightItemId: 'r1' },
+        ],
+      },
+      AnswerFormat.MATCHING_PAIRS,
+    );
+
+    expect(createQuestionVersionSnapshot(input).questionType).toBe(
+      QuestionType.MATCHING,
+    );
+  });
+
   it('rejects matching pairs that reference unknown left items', () => {
     const input = makeInput(
       QuestionType.MATCHING,
       {
         questionType: QuestionType.MATCHING,
+        matchingMode: 'MANY_TO_ONE',
         prompt: { text: 'Match.' },
         leftItems: [{ id: 'l1', text: 'Left' }],
         rightItems: [{ id: 'r1', text: 'Right' }],
@@ -459,6 +548,7 @@ describe('QuestionVersionSnapshot factory', () => {
       QuestionType.MATCHING,
       {
         questionType: QuestionType.MATCHING,
+        matchingMode: 'MANY_TO_ONE',
         prompt: { text: 'Match.' },
         leftItems: [{ id: 'l1', text: 'Left' }],
         rightItems: [{ id: 'r1', text: 'Right' }],
@@ -677,5 +767,107 @@ describe('QuestionVersionSnapshot factory', () => {
     expect(() => createQuestionVersionSnapshot(input)).toThrow(
       'answerKey.expectedValue must be a finite number.',
     );
+  });
+
+  it('rejects right-item reuse in ONE_TO_ONE matching', () => {
+    const input = makeInput(
+      QuestionType.MATCHING,
+      {
+        questionType: QuestionType.MATCHING,
+        matchingMode: 'ONE_TO_ONE',
+        prompt: { text: 'Match.' },
+        leftItems: [
+          { id: 'l1', text: 'L1' },
+          { id: 'l2', text: 'L2' },
+        ],
+        rightItems: [
+          { id: 'r1', text: 'R1' },
+          { id: 'r2', text: 'R2' },
+        ],
+      },
+      {
+        questionType: QuestionType.MATCHING,
+        correctPairs: [
+          { leftItemId: 'l1', rightItemId: 'r1' },
+          { leftItemId: 'l2', rightItemId: 'r1' },
+        ],
+      },
+      AnswerFormat.MATCHING_PAIRS,
+    );
+    expect(() => createQuestionVersionSnapshot(input)).toThrow(
+      /ONE_TO_ONE matching cannot reuse/,
+    );
+  });
+
+  it('allows right-item reuse in MANY_TO_ONE matching and unused distractors', () => {
+    const input = makeInput(
+      QuestionType.MATCHING,
+      {
+        questionType: QuestionType.MATCHING,
+        matchingMode: 'MANY_TO_ONE',
+        prompt: { text: 'Match.' },
+        leftItems: [
+          { id: 'l1', text: 'L1' },
+          { id: 'l2', text: 'L2' },
+        ],
+        rightItems: [
+          { id: 'r1', text: 'R1' },
+          { id: 'r2', text: 'Distractor' },
+        ],
+      },
+      {
+        questionType: QuestionType.MATCHING,
+        correctPairs: [
+          { leftItemId: 'l1', rightItemId: 'r1' },
+          { leftItemId: 'l2', rightItemId: 'r1' },
+        ],
+      },
+      AnswerFormat.MATCHING_PAIRS,
+    );
+    expect(createQuestionVersionSnapshot(input).content).toMatchObject({
+      matchingMode: 'MANY_TO_ONE',
+    });
+  });
+
+  it('allows unused right-side distractors in ONE_TO_ONE matching', () => {
+    const input = makeInput(
+      QuestionType.MATCHING,
+      {
+        questionType: QuestionType.MATCHING,
+        matchingMode: 'ONE_TO_ONE',
+        prompt: { text: 'Match.' },
+        leftItems: [{ id: 'l1', text: 'L1' }],
+        rightItems: [
+          { id: 'r1', text: 'R1' },
+          { id: 'r2', text: 'Distractor' },
+        ],
+      },
+      {
+        questionType: QuestionType.MATCHING,
+        correctPairs: [{ leftItemId: 'l1', rightItemId: 'r1' }],
+      },
+      AnswerFormat.MATCHING_PAIRS,
+    );
+    expect(createQuestionVersionSnapshot(input).content).toMatchObject({
+      matchingMode: 'ONE_TO_ONE',
+    });
+  });
+
+  it('rejects a missing or unsupported matching mode', () => {
+    const input = makeInput(
+      QuestionType.MATCHING,
+      {
+        questionType: QuestionType.MATCHING,
+        prompt: { text: 'Match.' },
+        leftItems: [{ id: 'l1', text: 'L1' }],
+        rightItems: [{ id: 'r1', text: 'R1' }],
+      },
+      {
+        questionType: QuestionType.MATCHING,
+        correctPairs: [{ leftItemId: 'l1', rightItemId: 'r1' }],
+      },
+      AnswerFormat.MATCHING_PAIRS,
+    );
+    expect(() => createQuestionVersionSnapshot(input)).toThrow(/matchingMode/);
   });
 });

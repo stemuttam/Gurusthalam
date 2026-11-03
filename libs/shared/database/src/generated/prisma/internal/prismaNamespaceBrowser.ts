@@ -80,7 +80,22 @@ export const ModelName = {
   AuthPrincipal: 'AuthPrincipal',
   ExternalIdentity: 'ExternalIdentity',
   Tenant: 'Tenant',
-  PrincipalTenantMembership: 'PrincipalTenantMembership'
+  PrincipalTenantMembership: 'PrincipalTenantMembership',
+  Question: 'Question',
+  QuestionVersion: 'QuestionVersion',
+  QuestionVersionContent: 'QuestionVersionContent',
+  QuestionVersionOption: 'QuestionVersionOption',
+  QuestionVersionMatchingLeftItem: 'QuestionVersionMatchingLeftItem',
+  QuestionVersionMatchingRightItem: 'QuestionVersionMatchingRightItem',
+  QuestionVersionOrderingItem: 'QuestionVersionOrderingItem',
+  QuestionVersionFillBlankSegment: 'QuestionVersionFillBlankSegment',
+  QuestionVersionAnswerKey: 'QuestionVersionAnswerKey',
+  QuestionVersionOptionAnswer: 'QuestionVersionOptionAnswer',
+  QuestionVersionAcceptedAnswer: 'QuestionVersionAcceptedAnswer',
+  QuestionVersionMatchingPair: 'QuestionVersionMatchingPair',
+  QuestionVersionOrderingAnswer: 'QuestionVersionOrderingAnswer',
+  QuestionVersionBlankAnswer: 'QuestionVersionBlankAnswer',
+  QuestionVersionBlankAcceptedAnswer: 'QuestionVersionBlankAcceptedAnswer'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -572,6 +587,173 @@ export const PrincipalTenantMembershipScalarFieldEnum = {
 } as const
 
 export type PrincipalTenantMembershipScalarFieldEnum = (typeof PrincipalTenantMembershipScalarFieldEnum)[keyof typeof PrincipalTenantMembershipScalarFieldEnum]
+
+
+export const QuestionScalarFieldEnum = {
+  id: 'id',
+  createdAt: 'createdAt'
+} as const
+
+export type QuestionScalarFieldEnum = (typeof QuestionScalarFieldEnum)[keyof typeof QuestionScalarFieldEnum]
+
+
+export const QuestionVersionScalarFieldEnum = {
+  id: 'id',
+  questionId: 'questionId',
+  versionNumber: 'versionNumber',
+  questionType: 'questionType',
+  answerFormat: 'answerFormat',
+  previousVersionId: 'previousVersionId',
+  restoredFromVersionId: 'restoredFromVersionId',
+  createdAt: 'createdAt',
+  completedAt: 'completedAt'
+} as const
+
+export type QuestionVersionScalarFieldEnum = (typeof QuestionVersionScalarFieldEnum)[keyof typeof QuestionVersionScalarFieldEnum]
+
+
+export const QuestionVersionContentScalarFieldEnum = {
+  id: 'id',
+  questionVersionId: 'questionVersionId',
+  questionType: 'questionType',
+  promptText: 'promptText',
+  numericUnit: 'numericUnit',
+  matchingMode: 'matchingMode'
+} as const
+
+export type QuestionVersionContentScalarFieldEnum = (typeof QuestionVersionContentScalarFieldEnum)[keyof typeof QuestionVersionContentScalarFieldEnum]
+
+
+export const QuestionVersionOptionScalarFieldEnum = {
+  id: 'id',
+  contentId: 'contentId',
+  questionVersionId: 'questionVersionId',
+  text: 'text',
+  position: 'position'
+} as const
+
+export type QuestionVersionOptionScalarFieldEnum = (typeof QuestionVersionOptionScalarFieldEnum)[keyof typeof QuestionVersionOptionScalarFieldEnum]
+
+
+export const QuestionVersionMatchingLeftItemScalarFieldEnum = {
+  id: 'id',
+  contentId: 'contentId',
+  questionVersionId: 'questionVersionId',
+  text: 'text',
+  position: 'position'
+} as const
+
+export type QuestionVersionMatchingLeftItemScalarFieldEnum = (typeof QuestionVersionMatchingLeftItemScalarFieldEnum)[keyof typeof QuestionVersionMatchingLeftItemScalarFieldEnum]
+
+
+export const QuestionVersionMatchingRightItemScalarFieldEnum = {
+  id: 'id',
+  contentId: 'contentId',
+  questionVersionId: 'questionVersionId',
+  text: 'text',
+  position: 'position'
+} as const
+
+export type QuestionVersionMatchingRightItemScalarFieldEnum = (typeof QuestionVersionMatchingRightItemScalarFieldEnum)[keyof typeof QuestionVersionMatchingRightItemScalarFieldEnum]
+
+
+export const QuestionVersionOrderingItemScalarFieldEnum = {
+  id: 'id',
+  contentId: 'contentId',
+  questionVersionId: 'questionVersionId',
+  text: 'text',
+  position: 'position'
+} as const
+
+export type QuestionVersionOrderingItemScalarFieldEnum = (typeof QuestionVersionOrderingItemScalarFieldEnum)[keyof typeof QuestionVersionOrderingItemScalarFieldEnum]
+
+
+export const QuestionVersionFillBlankSegmentScalarFieldEnum = {
+  id: 'id',
+  contentId: 'contentId',
+  questionVersionId: 'questionVersionId',
+  kind: 'kind',
+  text: 'text',
+  blankId: 'blankId',
+  position: 'position'
+} as const
+
+export type QuestionVersionFillBlankSegmentScalarFieldEnum = (typeof QuestionVersionFillBlankSegmentScalarFieldEnum)[keyof typeof QuestionVersionFillBlankSegmentScalarFieldEnum]
+
+
+export const QuestionVersionAnswerKeyScalarFieldEnum = {
+  id: 'id',
+  questionVersionId: 'questionVersionId',
+  questionType: 'questionType',
+  correctBoolean: 'correctBoolean',
+  expectedNumericValue: 'expectedNumericValue',
+  referenceAnswer: 'referenceAnswer'
+} as const
+
+export type QuestionVersionAnswerKeyScalarFieldEnum = (typeof QuestionVersionAnswerKeyScalarFieldEnum)[keyof typeof QuestionVersionAnswerKeyScalarFieldEnum]
+
+
+export const QuestionVersionOptionAnswerScalarFieldEnum = {
+  answerKeyId: 'answerKeyId',
+  questionVersionId: 'questionVersionId',
+  optionId: 'optionId',
+  position: 'position'
+} as const
+
+export type QuestionVersionOptionAnswerScalarFieldEnum = (typeof QuestionVersionOptionAnswerScalarFieldEnum)[keyof typeof QuestionVersionOptionAnswerScalarFieldEnum]
+
+
+export const QuestionVersionAcceptedAnswerScalarFieldEnum = {
+  id: 'id',
+  answerKeyId: 'answerKeyId',
+  questionVersionId: 'questionVersionId',
+  text: 'text',
+  position: 'position'
+} as const
+
+export type QuestionVersionAcceptedAnswerScalarFieldEnum = (typeof QuestionVersionAcceptedAnswerScalarFieldEnum)[keyof typeof QuestionVersionAcceptedAnswerScalarFieldEnum]
+
+
+export const QuestionVersionMatchingPairScalarFieldEnum = {
+  answerKeyId: 'answerKeyId',
+  questionVersionId: 'questionVersionId',
+  leftItemId: 'leftItemId',
+  rightItemId: 'rightItemId',
+  position: 'position'
+} as const
+
+export type QuestionVersionMatchingPairScalarFieldEnum = (typeof QuestionVersionMatchingPairScalarFieldEnum)[keyof typeof QuestionVersionMatchingPairScalarFieldEnum]
+
+
+export const QuestionVersionOrderingAnswerScalarFieldEnum = {
+  answerKeyId: 'answerKeyId',
+  questionVersionId: 'questionVersionId',
+  itemId: 'itemId',
+  position: 'position'
+} as const
+
+export type QuestionVersionOrderingAnswerScalarFieldEnum = (typeof QuestionVersionOrderingAnswerScalarFieldEnum)[keyof typeof QuestionVersionOrderingAnswerScalarFieldEnum]
+
+
+export const QuestionVersionBlankAnswerScalarFieldEnum = {
+  answerKeyId: 'answerKeyId',
+  questionVersionId: 'questionVersionId',
+  blankSegmentId: 'blankSegmentId',
+  position: 'position'
+} as const
+
+export type QuestionVersionBlankAnswerScalarFieldEnum = (typeof QuestionVersionBlankAnswerScalarFieldEnum)[keyof typeof QuestionVersionBlankAnswerScalarFieldEnum]
+
+
+export const QuestionVersionBlankAcceptedAnswerScalarFieldEnum = {
+  id: 'id',
+  answerKeyId: 'answerKeyId',
+  blankSegmentId: 'blankSegmentId',
+  text: 'text',
+  position: 'position'
+} as const
+
+export type QuestionVersionBlankAcceptedAnswerScalarFieldEnum = (typeof QuestionVersionBlankAcceptedAnswerScalarFieldEnum)[keyof typeof QuestionVersionBlankAcceptedAnswerScalarFieldEnum]
 
 
 export const SortOrder = {

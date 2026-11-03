@@ -117,9 +117,7 @@ export type QuestionVersionAnswerKey =
 /**
  * Extracts the answer-key structure associated with a question type.
  */
-export type QuestionVersionAnswerKeyFor<
-  T extends QuestionType,
-> = Extract<
+export type QuestionVersionAnswerKeyFor<T extends QuestionType> = Extract<
   QuestionVersionAnswerKey,
   { readonly questionType: T }
 >;

@@ -74,6 +74,18 @@ export interface NumericContent {
 }
 
 /**
+ * Matching cardinality policy.
+ * ONE_TO_ONE prevents right-item reuse; MANY_TO_ONE permits it.
+ * Unused right-side items are valid distractors in either mode.
+ */
+export const MatchingMode = Object.freeze({
+  ONE_TO_ONE: 'ONE_TO_ONE',
+  MANY_TO_ONE: 'MANY_TO_ONE',
+} as const);
+
+export type MatchingMode = (typeof MatchingMode)[keyof typeof MatchingMode];
+
+/**
  * MATCHING
  */
 export interface MatchingItem {
@@ -83,6 +95,7 @@ export interface MatchingItem {
 
 export interface MatchingContent {
   readonly questionType: typeof QuestionType.MATCHING;
+  readonly matchingMode: MatchingMode;
   readonly prompt: QuestionPrompt;
   readonly leftItems: readonly MatchingItem[];
   readonly rightItems: readonly MatchingItem[];
@@ -142,6 +155,7 @@ export type QuestionVersionContent =
 /**
  * Extracts the content structure associated with a question type.
  */
-export type QuestionVersionContentFor<
-  T extends QuestionType,
-> = Extract<QuestionVersionContent, { readonly questionType: T }>;
+export type QuestionVersionContentFor<T extends QuestionType> = Extract<
+  QuestionVersionContent,
+  { readonly questionType: T }
+>;

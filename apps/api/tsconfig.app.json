@@ -24,22 +24,25 @@
   "exclude": ["node_modules", "dist", "out-tsc"],
   "references": [
     {
-      "path": "../../libs/courses/tsconfig.lib.json"
-    },
-    {
-      "path": "../../libs/learning/tsconfig.lib.json"
-    },
-    {
-      "path": "../../libs/shared/tsconfig.lib.json"
+      "path": "../../libs/question-bank/tsconfig.lib.json"
     },
     {
       "path": "../../libs/shared/validation/tsconfig.lib.json"
     },
     {
+      "path": "../../libs/shared/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/shared/logger/tsconfig.lib.json"
     },
     {
+      "path": "../../libs/learning/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/shared/database/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/courses/tsconfig.lib.json"
     },
     {
       "path": "../../libs/shared/config/tsconfig.lib.json"

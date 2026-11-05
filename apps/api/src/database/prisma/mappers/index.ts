@@ -9,3 +9,5 @@ export type {
   PrismaCourseVersionPersistence,
   PrismaCourseVersionRecord,
 } from './courses/index.js';
+
+export * from './question-bank/index.js';

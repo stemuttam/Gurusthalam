@@ -9,6 +9,7 @@
     "@gurusthalam/database": "workspace:*",
     "@gurusthalam/learning": "workspace:*",
     "@gurusthalam/logger": "workspace:*",
+    "@gurusthalam/question-bank": "workspace:*",
     "@gurusthalam/shared": "workspace:*",
     "@gurusthalam/validation": "workspace:*",
     "@nestjs/common": "11.1.28",

@@ -1,0 +1,17 @@
+export {
+  QuestionVersionPrismaMapper,
+  type PrismaQuestionVersionRecord,
+  type PrismaQuestionVersionReferenceRecord,
+  type PrismaQuestionVersionContentRecord,
+  type PrismaQuestionVersionOptionRecord,
+  type PrismaQuestionVersionMatchingItemRecord,
+  type PrismaQuestionVersionOrderingItemRecord,
+  type PrismaQuestionVersionFillBlankSegmentRecord,
+  type PrismaQuestionVersionAnswerKeyRecord,
+  type PrismaQuestionVersionOptionAnswerRecord,
+  type PrismaQuestionVersionAcceptedAnswerRecord,
+  type PrismaQuestionVersionMatchingPairRecord,
+  type PrismaQuestionVersionOrderingAnswerRecord,
+  type PrismaQuestionVersionBlankAnswerRecord,
+  type PrismaQuestionVersionPersistence,
+} from './question-version-prisma.mapper.js';

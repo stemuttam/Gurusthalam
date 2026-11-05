@@ -238,6 +238,9 @@ importers:
       '@gurusthalam/logger':
         specifier: workspace:*
         version: link:../../libs/shared/logger
+      '@gurusthalam/question-bank':
+        specifier: workspace:*
+        version: link:../../libs/question-bank
       '@gurusthalam/shared':
         specifier: workspace:*
         version: link:../../libs/shared

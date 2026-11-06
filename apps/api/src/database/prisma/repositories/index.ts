@@ -14,6 +14,12 @@ export {
   PrismaCourseVersionLineageRepository,
 } from './courses/index.js';
 
+export {
+  QuestionBankPersistenceModule,
+  QUESTION_VERSION_REPOSITORY,
+  PrismaQuestionVersionRepository,
+} from './question-bank/index.js';
+
 export {} from '../read-models/index.js';
 
 export {

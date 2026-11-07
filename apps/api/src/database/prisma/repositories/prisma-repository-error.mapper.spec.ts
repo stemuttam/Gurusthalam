@@ -1,8 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-} from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
   mapPrismaRepositoryError,
@@ -14,215 +10,139 @@ import {
   PrismaRepositoryErrorCode,
 } from './prisma-repository.error.js';
 
-describe(
-  'Prisma repository error mapping',
-  () => {
-    it(
-      'maps P2002 to UNIQUE_CONSTRAINT',
-      () => {
-        const prismaError = {
-          code: 'P2002',
-          message:
-            'Unique constraint failed',
-        };
+describe('Prisma repository error mapping', () => {
+  it('maps P2002 to UNIQUE_CONSTRAINT', () => {
+    const prismaError = {
+      code: 'P2002',
+      message: 'Unique constraint failed',
+    };
 
-        const error =
-          mapPrismaRepositoryError(
-            prismaError,
-            'CourseVersionRepository.save',
-          );
-
-        expect(error).toBeInstanceOf(
-          PrismaRepositoryError,
-        );
-
-        expect(error.code).toBe(
-          PrismaRepositoryErrorCode.UNIQUE_CONSTRAINT,
-        );
-
-        expect(error.prismaCode).toBe(
-          'P2002',
-        );
-
-        expect(error.cause).toBe(
-          prismaError,
-        );
-      },
+    const error = mapPrismaRepositoryError(
+      prismaError,
+      'CourseVersionRepository.save',
     );
 
-    it(
-      'maps P2003 to FOREIGN_KEY_CONSTRAINT',
-      () => {
-        const prismaError = {
-          code: 'P2003',
-          message:
-            'Foreign key constraint failed',
-        };
+    expect(error).toBeInstanceOf(PrismaRepositoryError);
+    expect(error.code).toBe(PrismaRepositoryErrorCode.UNIQUE_CONSTRAINT);
+    expect(error.prismaCode).toBe('P2002');
+    expect(error.cause).toBe(prismaError);
+  });
 
-        const error =
-          mapPrismaRepositoryError(
-            prismaError,
-            'CourseVersionRepository.save',
-          );
+  it('maps P2003 to FOREIGN_KEY_CONSTRAINT', () => {
+    const prismaError = {
+      code: 'P2003',
+      message: 'Foreign key constraint failed',
+    };
 
-        expect(error.code).toBe(
-          PrismaRepositoryErrorCode.FOREIGN_KEY_CONSTRAINT,
-        );
-
-        expect(error.prismaCode).toBe(
-          'P2003',
-        );
-
-        expect(error.cause).toBe(
-          prismaError,
-        );
-      },
+    const error = mapPrismaRepositoryError(
+      prismaError,
+      'CourseVersionRepository.save',
     );
 
-    it(
-      'maps P2025 to RECORD_NOT_FOUND',
-      () => {
-        const prismaError = {
-          code: 'P2025',
-          message:
-            'Record not found',
-        };
+    expect(error.code).toBe(PrismaRepositoryErrorCode.FOREIGN_KEY_CONSTRAINT);
+    expect(error.prismaCode).toBe('P2003');
+    expect(error.cause).toBe(prismaError);
+  });
 
-        const error =
-          mapPrismaRepositoryError(
-            prismaError,
-            'CourseVersionRepository.save',
-          );
+  it('maps P2025 to RECORD_NOT_FOUND', () => {
+    const prismaError = {
+      code: 'P2025',
+      message: 'Record not found',
+    };
 
-        expect(error.code).toBe(
-          PrismaRepositoryErrorCode.RECORD_NOT_FOUND,
-        );
-
-        expect(error.prismaCode).toBe(
-          'P2025',
-        );
-
-        expect(error.cause).toBe(
-          prismaError,
-        );
-      },
+    const error = mapPrismaRepositoryError(
+      prismaError,
+      'CourseVersionRepository.save',
     );
 
-    it(
-      'maps unknown Prisma failures to PERSISTENCE_FAILURE',
-      () => {
-        const prismaError = {
-          code: 'P2034',
-          message:
-            'Transaction failed due to a write conflict',
-        };
+    expect(error.code).toBe(PrismaRepositoryErrorCode.RECORD_NOT_FOUND);
+    expect(error.prismaCode).toBe('P2025');
+    expect(error.cause).toBe(prismaError);
+  });
 
-        const error =
-          mapPrismaRepositoryError(
-            prismaError,
-            'CourseRepository.save',
-          );
+  it('maps P2034 to CONCURRENT_MODIFICATION', () => {
+    const prismaError = {
+      code: 'P2034',
+      message: 'Transaction failed due to a write conflict',
+    };
 
-        expect(error.code).toBe(
-          PrismaRepositoryErrorCode.PERSISTENCE_FAILURE,
-        );
-
-        expect(error.prismaCode).toBe(
-          'P2034',
-        );
-
-        expect(error.cause).toBe(
-          prismaError,
-        );
-      },
+    const error = mapPrismaRepositoryError(
+      prismaError,
+      'QuestionVersionRepository.add',
     );
 
-    it(
-      'maps non-Prisma failures to PERSISTENCE_FAILURE',
-      () => {
-        const originalError =
-          new Error(
-            'Connection unexpectedly closed',
-          );
+    expect(error.code).toBe(PrismaRepositoryErrorCode.CONCURRENT_MODIFICATION);
+    expect(error.prismaCode).toBe('P2034');
+    expect(error.cause).toBe(prismaError);
+  });
 
-        const error =
-          mapPrismaRepositoryError(
-            originalError,
-            'CourseRepository.findById',
-          );
+  it('maps unknown Prisma failures to PERSISTENCE_FAILURE', () => {
+    const prismaError = {
+      code: 'P2099',
+      message: 'Unknown Prisma persistence failure',
+    };
 
-        expect(error.code).toBe(
-          PrismaRepositoryErrorCode.PERSISTENCE_FAILURE,
-        );
-
-        expect(error.prismaCode).toBeNull();
-
-        expect(error.cause).toBe(
-          originalError,
-        );
-      },
+    const error = mapPrismaRepositoryError(
+      prismaError,
+      'CourseRepository.save',
     );
 
-    it(
-      'does not double-wrap repository errors',
-      () => {
-        const originalError =
-          new PrismaRepositoryError(
-            'Already mapped',
-            PrismaRepositoryErrorCode.PERSISTENCE_FAILURE,
-          );
+    expect(error.code).toBe(PrismaRepositoryErrorCode.PERSISTENCE_FAILURE);
+    expect(error.prismaCode).toBe('P2099');
+    expect(error.cause).toBe(prismaError);
+  });
 
-        const error =
-          mapPrismaRepositoryError(
-            originalError,
-            'CourseRepository.save',
-          );
+  it('maps non-Prisma failures to PERSISTENCE_FAILURE', () => {
+    const originalError = new Error('Connection unexpectedly closed');
 
-        expect(error).toBe(
-          originalError,
-        );
-      },
+    const error = mapPrismaRepositoryError(
+      originalError,
+      'CourseRepository.findById',
     );
 
-    it(
-      'translates failures thrown by the async boundary',
-      async () => {
-        const prismaError = {
-          code: 'P2002',
-          message:
-            'Unique constraint failed',
-        };
+    expect(error.code).toBe(PrismaRepositoryErrorCode.PERSISTENCE_FAILURE);
+    expect(error.prismaCode).toBeNull();
+    expect(error.cause).toBe(originalError);
+  });
 
-        await expect(
-          withPrismaRepositoryErrorBoundary(
-            'CourseRepository.save',
-            async () => {
-              throw prismaError;
-            },
-          ),
-        ).rejects.toMatchObject({
-          name: 'PrismaRepositoryError',
-          code:
-            PrismaRepositoryErrorCode.UNIQUE_CONSTRAINT,
-          prismaCode: 'P2002',
-          cause: prismaError,
-        });
-      },
+  it('does not double-wrap repository errors', () => {
+    const originalError = new PrismaRepositoryError(
+      'Already mapped',
+      PrismaRepositoryErrorCode.PERSISTENCE_FAILURE,
     );
 
-    it(
-      'returns successful operation values unchanged',
-      async () => {
-        const result =
-          await withPrismaRepositoryErrorBoundary(
-            'CourseRepository.findById',
-            async () => 'success',
-          );
-
-        expect(result).toBe(
-          'success',
-        );
-      },
+    const error = mapPrismaRepositoryError(
+      originalError,
+      'CourseRepository.save',
     );
-  },
-);
+
+    expect(error).toBe(originalError);
+  });
+
+  it('translates failures thrown by the async boundary', async () => {
+    const prismaError = {
+      code: 'P2002',
+      message: 'Unique constraint failed',
+    };
+
+    await expect(
+      withPrismaRepositoryErrorBoundary('CourseRepository.save', async () => {
+        throw prismaError;
+      }),
+    ).rejects.toMatchObject({
+      name: 'PrismaRepositoryError',
+      code: PrismaRepositoryErrorCode.UNIQUE_CONSTRAINT,
+      prismaCode: 'P2002',
+      cause: prismaError,
+    });
+  });
+
+  it('returns successful operation values unchanged', async () => {
+    const result = await withPrismaRepositoryErrorBoundary(
+      'CourseRepository.findById',
+      async () => 'success',
+    );
+
+    expect(result).toBe('success');
+  });
+});

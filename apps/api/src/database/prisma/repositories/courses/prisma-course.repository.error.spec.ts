@@ -168,9 +168,9 @@ describe('PrismaCourseRepository persistence failures', () => {
     resetMocks();
 
     const prismaError = {
-      code: 'P2034',
-      message: 'Transaction failed due to a write conflict',
-    };
+  code: 'P2099',
+  message: 'Unknown Prisma persistence failure',
+};
 
     findUnique.mockRejectedValue(prismaError);
 
@@ -179,7 +179,7 @@ describe('PrismaCourseRepository persistence failures', () => {
 
       code: PrismaRepositoryErrorCode.PERSISTENCE_FAILURE,
 
-      prismaCode: 'P2034',
+      prismaCode: 'P2099',
 
       cause: prismaError,
     });

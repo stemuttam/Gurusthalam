@@ -165,7 +165,7 @@ describe('PrismaCourseVersionRepository concurrency guarantees', () => {
     ).rejects.toMatchObject({
       name: 'PrismaRepositoryError',
 
-      code: PrismaRepositoryErrorCode.PERSISTENCE_FAILURE,
+      code: PrismaRepositoryErrorCode.CONCURRENT_MODIFICATION,
 
       prismaCode: 'P2034',
 

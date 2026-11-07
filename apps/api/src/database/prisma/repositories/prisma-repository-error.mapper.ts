@@ -12,30 +12,16 @@ interface PrismaErrorLike {
  * Extracts a Prisma-style error code without depending on
  * Prisma's generated error class.
  *
- * This is intentional:
- *
- * - repositories should not depend on a particular Prisma
- *   runtime error class implementation;
- * - generated Prisma clients may be regenerated independently;
- * - tests can use lightweight error doubles;
- * - the repository only needs the stable structured code.
+ * Repositories only depend on the stable structured error code.
  */
-const getPrismaErrorCode = (
-  error: unknown,
-): string | null => {
-  if (
-    typeof error !== 'object' ||
-    error === null
-  ) {
+const getPrismaErrorCode = (error: unknown): string | null => {
+  if (typeof error !== 'object' || error === null) {
     return null;
   }
 
-  const candidate =
-    error as PrismaErrorLike;
+  const candidate = error as PrismaErrorLike;
 
-  return typeof candidate.code === 'string'
-    ? candidate.code
-    : null;
+  return typeof candidate.code === 'string' ? candidate.code : null;
 };
 
 /**
@@ -44,29 +30,25 @@ const getPrismaErrorCode = (
  */
 const isPrismaRepositoryError = (
   error: unknown,
-): error is PrismaRepositoryError =>
-  error instanceof PrismaRepositoryError;
+): error is PrismaRepositoryError => error instanceof PrismaRepositoryError;
 
 /**
- * Translates a Prisma persistence failure into the stable
- * repository infrastructure error contract.
+ * Translates Prisma persistence failures into stable
+ * repository infrastructure errors.
  *
- * Known Prisma errors receive semantic repository codes.
- * Unknown failures are preserved as the cause of a generic
- * persistence error.
+ * P2034 represents a transaction write conflict or deadlock.
+ * It is therefore exposed as CONCURRENT_MODIFICATION rather
+ * than being hidden inside the generic persistence category.
  */
 export const mapPrismaRepositoryError = (
   error: unknown,
   operation: string,
 ): PrismaRepositoryError => {
-  if (
-    isPrismaRepositoryError(error)
-  ) {
+  if (isPrismaRepositoryError(error)) {
     return error;
   }
 
-  const prismaCode =
-    getPrismaErrorCode(error);
+  const prismaCode = getPrismaErrorCode(error);
 
   switch (prismaCode) {
     case 'P2002':
@@ -99,6 +81,16 @@ export const mapPrismaRepositoryError = (
         },
       );
 
+    case 'P2034':
+      return new PrismaRepositoryError(
+        `A concurrent transaction conflict occurred while performing repository operation "${operation}".`,
+        PrismaRepositoryErrorCode.CONCURRENT_MODIFICATION,
+        {
+          cause: error,
+          prismaCode,
+        },
+      );
+
     default:
       return new PrismaRepositoryError(
         `Prisma persistence failed while performing repository operation "${operation}".`,
@@ -115,17 +107,13 @@ export const mapPrismaRepositoryError = (
  * Executes a repository persistence operation and translates
  * Prisma failures into the repository error boundary.
  */
-export const withPrismaRepositoryErrorBoundary =
-  async <T>(
-    operation: string,
-    action: () => Promise<T>,
-  ): Promise<T> => {
-    try {
-      return await action();
-    } catch (error) {
-      throw mapPrismaRepositoryError(
-        error,
-        operation,
-      );
-    }
-  };
+export const withPrismaRepositoryErrorBoundary = async <T>(
+  operation: string,
+  action: () => Promise<T>,
+): Promise<T> => {
+  try {
+    return await action();
+  } catch (error) {
+    throw mapPrismaRepositoryError(error, operation);
+  }
+};

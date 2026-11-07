@@ -26,16 +26,22 @@ export type AggregateQuestion = {
 
 export type QuestionMinAggregateOutputType = {
   id: string | null
+  tenantId: string | null
+  createdByPrincipalId: string | null
   createdAt: Date | null
 }
 
 export type QuestionMaxAggregateOutputType = {
   id: string | null
+  tenantId: string | null
+  createdByPrincipalId: string | null
   createdAt: Date | null
 }
 
 export type QuestionCountAggregateOutputType = {
   id: number
+  tenantId: number
+  createdByPrincipalId: number
   createdAt: number
   _all: number
 }
@@ -43,16 +49,22 @@ export type QuestionCountAggregateOutputType = {
 
 export type QuestionMinAggregateInputType = {
   id?: true
+  tenantId?: true
+  createdByPrincipalId?: true
   createdAt?: true
 }
 
 export type QuestionMaxAggregateInputType = {
   id?: true
+  tenantId?: true
+  createdByPrincipalId?: true
   createdAt?: true
 }
 
 export type QuestionCountAggregateInputType = {
   id?: true
+  tenantId?: true
+  createdByPrincipalId?: true
   createdAt?: true
   _all?: true
 }
@@ -131,6 +143,8 @@ export type QuestionGroupByArgs<ExtArgs extends runtime.Types.Extensions.Interna
 
 export type QuestionGroupByOutputType = {
   id: string
+  tenantId: string | null
+  createdByPrincipalId: string | null
   createdAt: Date
   _count: QuestionCountAggregateOutputType | null
   _min: QuestionMinAggregateOutputType | null
@@ -157,14 +171,20 @@ export type QuestionWhereInput = {
   OR?: Prisma.QuestionWhereInput[]
   NOT?: Prisma.QuestionWhereInput | Prisma.QuestionWhereInput[]
   id?: Prisma.StringFilter<"Question"> | string
+  tenantId?: Prisma.StringNullableFilter<"Question"> | string | null
+  createdByPrincipalId?: Prisma.StringNullableFilter<"Question"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Question"> | Date | string
   versions?: Prisma.QuestionVersionListRelationFilter
+  ownerMembership?: Prisma.XOR<Prisma.PrincipalTenantMembershipNullableScalarRelationFilter, Prisma.PrincipalTenantMembershipWhereInput> | null
 }
 
 export type QuestionOrderByWithRelationInput = {
   id?: Prisma.SortOrder
+  tenantId?: Prisma.SortOrderInput | Prisma.SortOrder
+  createdByPrincipalId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   versions?: Prisma.QuestionVersionOrderByRelationAggregateInput
+  ownerMembership?: Prisma.PrincipalTenantMembershipOrderByWithRelationInput
 }
 
 export type QuestionWhereUniqueInput = Prisma.AtLeast<{
@@ -172,12 +192,17 @@ export type QuestionWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.QuestionWhereInput | Prisma.QuestionWhereInput[]
   OR?: Prisma.QuestionWhereInput[]
   NOT?: Prisma.QuestionWhereInput | Prisma.QuestionWhereInput[]
+  tenantId?: Prisma.StringNullableFilter<"Question"> | string | null
+  createdByPrincipalId?: Prisma.StringNullableFilter<"Question"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Question"> | Date | string
   versions?: Prisma.QuestionVersionListRelationFilter
+  ownerMembership?: Prisma.XOR<Prisma.PrincipalTenantMembershipNullableScalarRelationFilter, Prisma.PrincipalTenantMembershipWhereInput> | null
 }, "id">
 
 export type QuestionOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
+  tenantId?: Prisma.SortOrderInput | Prisma.SortOrder
+  createdByPrincipalId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.QuestionCountOrderByAggregateInput
   _max?: Prisma.QuestionMaxOrderByAggregateInput
@@ -189,6 +214,8 @@ export type QuestionScalarWhereWithAggregatesInput = {
   OR?: Prisma.QuestionScalarWhereWithAggregatesInput[]
   NOT?: Prisma.QuestionScalarWhereWithAggregatesInput | Prisma.QuestionScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Question"> | string
+  tenantId?: Prisma.StringNullableWithAggregatesFilter<"Question"> | string | null
+  createdByPrincipalId?: Prisma.StringNullableWithAggregatesFilter<"Question"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Question"> | Date | string
 }
 
@@ -196,10 +223,13 @@ export type QuestionCreateInput = {
   id: string
   createdAt?: Date | string
   versions?: Prisma.QuestionVersionCreateNestedManyWithoutQuestionInput
+  ownerMembership?: Prisma.PrincipalTenantMembershipCreateNestedOneWithoutQuestionsInput
 }
 
 export type QuestionUncheckedCreateInput = {
   id: string
+  tenantId?: string | null
+  createdByPrincipalId?: string | null
   createdAt?: Date | string
   versions?: Prisma.QuestionVersionUncheckedCreateNestedManyWithoutQuestionInput
 }
@@ -208,16 +238,21 @@ export type QuestionUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   versions?: Prisma.QuestionVersionUpdateManyWithoutQuestionNestedInput
+  ownerMembership?: Prisma.PrincipalTenantMembershipUpdateOneWithoutQuestionsNestedInput
 }
 
 export type QuestionUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdByPrincipalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   versions?: Prisma.QuestionVersionUncheckedUpdateManyWithoutQuestionNestedInput
 }
 
 export type QuestionCreateManyInput = {
   id: string
+  tenantId?: string | null
+  createdByPrincipalId?: string | null
   createdAt?: Date | string
 }
 
@@ -228,27 +263,87 @@ export type QuestionUpdateManyMutationInput = {
 
 export type QuestionUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdByPrincipalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type QuestionListRelationFilter = {
+  every?: Prisma.QuestionWhereInput
+  some?: Prisma.QuestionWhereInput
+  none?: Prisma.QuestionWhereInput
+}
+
+export type QuestionOrderByRelationAggregateInput = {
+  _count?: Prisma.SortOrder
 }
 
 export type QuestionCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  tenantId?: Prisma.SortOrder
+  createdByPrincipalId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
 export type QuestionMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  tenantId?: Prisma.SortOrder
+  createdByPrincipalId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
 export type QuestionMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  tenantId?: Prisma.SortOrder
+  createdByPrincipalId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
 export type QuestionScalarRelationFilter = {
   is?: Prisma.QuestionWhereInput
   isNot?: Prisma.QuestionWhereInput
+}
+
+export type QuestionCreateNestedManyWithoutOwnerMembershipInput = {
+  create?: Prisma.XOR<Prisma.QuestionCreateWithoutOwnerMembershipInput, Prisma.QuestionUncheckedCreateWithoutOwnerMembershipInput> | Prisma.QuestionCreateWithoutOwnerMembershipInput[] | Prisma.QuestionUncheckedCreateWithoutOwnerMembershipInput[]
+  connectOrCreate?: Prisma.QuestionCreateOrConnectWithoutOwnerMembershipInput | Prisma.QuestionCreateOrConnectWithoutOwnerMembershipInput[]
+  createMany?: Prisma.QuestionCreateManyOwnerMembershipInputEnvelope
+  connect?: Prisma.QuestionWhereUniqueInput | Prisma.QuestionWhereUniqueInput[]
+}
+
+export type QuestionUncheckedCreateNestedManyWithoutOwnerMembershipInput = {
+  create?: Prisma.XOR<Prisma.QuestionCreateWithoutOwnerMembershipInput, Prisma.QuestionUncheckedCreateWithoutOwnerMembershipInput> | Prisma.QuestionCreateWithoutOwnerMembershipInput[] | Prisma.QuestionUncheckedCreateWithoutOwnerMembershipInput[]
+  connectOrCreate?: Prisma.QuestionCreateOrConnectWithoutOwnerMembershipInput | Prisma.QuestionCreateOrConnectWithoutOwnerMembershipInput[]
+  createMany?: Prisma.QuestionCreateManyOwnerMembershipInputEnvelope
+  connect?: Prisma.QuestionWhereUniqueInput | Prisma.QuestionWhereUniqueInput[]
+}
+
+export type QuestionUpdateManyWithoutOwnerMembershipNestedInput = {
+  create?: Prisma.XOR<Prisma.QuestionCreateWithoutOwnerMembershipInput, Prisma.QuestionUncheckedCreateWithoutOwnerMembershipInput> | Prisma.QuestionCreateWithoutOwnerMembershipInput[] | Prisma.QuestionUncheckedCreateWithoutOwnerMembershipInput[]
+  connectOrCreate?: Prisma.QuestionCreateOrConnectWithoutOwnerMembershipInput | Prisma.QuestionCreateOrConnectWithoutOwnerMembershipInput[]
+  upsert?: Prisma.QuestionUpsertWithWhereUniqueWithoutOwnerMembershipInput | Prisma.QuestionUpsertWithWhereUniqueWithoutOwnerMembershipInput[]
+  createMany?: Prisma.QuestionCreateManyOwnerMembershipInputEnvelope
+  set?: Prisma.QuestionWhereUniqueInput | Prisma.QuestionWhereUniqueInput[]
+  disconnect?: Prisma.QuestionWhereUniqueInput | Prisma.QuestionWhereUniqueInput[]
+  delete?: Prisma.QuestionWhereUniqueInput | Prisma.QuestionWhereUniqueInput[]
+  connect?: Prisma.QuestionWhereUniqueInput | Prisma.QuestionWhereUniqueInput[]
+  update?: Prisma.QuestionUpdateWithWhereUniqueWithoutOwnerMembershipInput | Prisma.QuestionUpdateWithWhereUniqueWithoutOwnerMembershipInput[]
+  updateMany?: Prisma.QuestionUpdateManyWithWhereWithoutOwnerMembershipInput | Prisma.QuestionUpdateManyWithWhereWithoutOwnerMembershipInput[]
+  deleteMany?: Prisma.QuestionScalarWhereInput | Prisma.QuestionScalarWhereInput[]
+}
+
+export type QuestionUncheckedUpdateManyWithoutOwnerMembershipNestedInput = {
+  create?: Prisma.XOR<Prisma.QuestionCreateWithoutOwnerMembershipInput, Prisma.QuestionUncheckedCreateWithoutOwnerMembershipInput> | Prisma.QuestionCreateWithoutOwnerMembershipInput[] | Prisma.QuestionUncheckedCreateWithoutOwnerMembershipInput[]
+  connectOrCreate?: Prisma.QuestionCreateOrConnectWithoutOwnerMembershipInput | Prisma.QuestionCreateOrConnectWithoutOwnerMembershipInput[]
+  upsert?: Prisma.QuestionUpsertWithWhereUniqueWithoutOwnerMembershipInput | Prisma.QuestionUpsertWithWhereUniqueWithoutOwnerMembershipInput[]
+  createMany?: Prisma.QuestionCreateManyOwnerMembershipInputEnvelope
+  set?: Prisma.QuestionWhereUniqueInput | Prisma.QuestionWhereUniqueInput[]
+  disconnect?: Prisma.QuestionWhereUniqueInput | Prisma.QuestionWhereUniqueInput[]
+  delete?: Prisma.QuestionWhereUniqueInput | Prisma.QuestionWhereUniqueInput[]
+  connect?: Prisma.QuestionWhereUniqueInput | Prisma.QuestionWhereUniqueInput[]
+  update?: Prisma.QuestionUpdateWithWhereUniqueWithoutOwnerMembershipInput | Prisma.QuestionUpdateWithWhereUniqueWithoutOwnerMembershipInput[]
+  updateMany?: Prisma.QuestionUpdateManyWithWhereWithoutOwnerMembershipInput | Prisma.QuestionUpdateManyWithWhereWithoutOwnerMembershipInput[]
+  deleteMany?: Prisma.QuestionScalarWhereInput | Prisma.QuestionScalarWhereInput[]
 }
 
 export type QuestionCreateNestedOneWithoutVersionsInput = {
@@ -265,13 +360,64 @@ export type QuestionUpdateOneRequiredWithoutVersionsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.QuestionUpdateToOneWithWhereWithoutVersionsInput, Prisma.QuestionUpdateWithoutVersionsInput>, Prisma.QuestionUncheckedUpdateWithoutVersionsInput>
 }
 
+export type QuestionCreateWithoutOwnerMembershipInput = {
+  id: string
+  createdAt?: Date | string
+  versions?: Prisma.QuestionVersionCreateNestedManyWithoutQuestionInput
+}
+
+export type QuestionUncheckedCreateWithoutOwnerMembershipInput = {
+  id: string
+  createdAt?: Date | string
+  versions?: Prisma.QuestionVersionUncheckedCreateNestedManyWithoutQuestionInput
+}
+
+export type QuestionCreateOrConnectWithoutOwnerMembershipInput = {
+  where: Prisma.QuestionWhereUniqueInput
+  create: Prisma.XOR<Prisma.QuestionCreateWithoutOwnerMembershipInput, Prisma.QuestionUncheckedCreateWithoutOwnerMembershipInput>
+}
+
+export type QuestionCreateManyOwnerMembershipInputEnvelope = {
+  data: Prisma.QuestionCreateManyOwnerMembershipInput | Prisma.QuestionCreateManyOwnerMembershipInput[]
+  skipDuplicates?: boolean
+}
+
+export type QuestionUpsertWithWhereUniqueWithoutOwnerMembershipInput = {
+  where: Prisma.QuestionWhereUniqueInput
+  update: Prisma.XOR<Prisma.QuestionUpdateWithoutOwnerMembershipInput, Prisma.QuestionUncheckedUpdateWithoutOwnerMembershipInput>
+  create: Prisma.XOR<Prisma.QuestionCreateWithoutOwnerMembershipInput, Prisma.QuestionUncheckedCreateWithoutOwnerMembershipInput>
+}
+
+export type QuestionUpdateWithWhereUniqueWithoutOwnerMembershipInput = {
+  where: Prisma.QuestionWhereUniqueInput
+  data: Prisma.XOR<Prisma.QuestionUpdateWithoutOwnerMembershipInput, Prisma.QuestionUncheckedUpdateWithoutOwnerMembershipInput>
+}
+
+export type QuestionUpdateManyWithWhereWithoutOwnerMembershipInput = {
+  where: Prisma.QuestionScalarWhereInput
+  data: Prisma.XOR<Prisma.QuestionUpdateManyMutationInput, Prisma.QuestionUncheckedUpdateManyWithoutOwnerMembershipInput>
+}
+
+export type QuestionScalarWhereInput = {
+  AND?: Prisma.QuestionScalarWhereInput | Prisma.QuestionScalarWhereInput[]
+  OR?: Prisma.QuestionScalarWhereInput[]
+  NOT?: Prisma.QuestionScalarWhereInput | Prisma.QuestionScalarWhereInput[]
+  id?: Prisma.StringFilter<"Question"> | string
+  tenantId?: Prisma.StringNullableFilter<"Question"> | string | null
+  createdByPrincipalId?: Prisma.StringNullableFilter<"Question"> | string | null
+  createdAt?: Prisma.DateTimeFilter<"Question"> | Date | string
+}
+
 export type QuestionCreateWithoutVersionsInput = {
   id: string
   createdAt?: Date | string
+  ownerMembership?: Prisma.PrincipalTenantMembershipCreateNestedOneWithoutQuestionsInput
 }
 
 export type QuestionUncheckedCreateWithoutVersionsInput = {
   id: string
+  tenantId?: string | null
+  createdByPrincipalId?: string | null
   createdAt?: Date | string
 }
 
@@ -294,9 +440,34 @@ export type QuestionUpdateToOneWithWhereWithoutVersionsInput = {
 export type QuestionUpdateWithoutVersionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ownerMembership?: Prisma.PrincipalTenantMembershipUpdateOneWithoutQuestionsNestedInput
 }
 
 export type QuestionUncheckedUpdateWithoutVersionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdByPrincipalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type QuestionCreateManyOwnerMembershipInput = {
+  id: string
+  createdAt?: Date | string
+}
+
+export type QuestionUpdateWithoutOwnerMembershipInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  versions?: Prisma.QuestionVersionUpdateManyWithoutQuestionNestedInput
+}
+
+export type QuestionUncheckedUpdateWithoutOwnerMembershipInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  versions?: Prisma.QuestionVersionUncheckedUpdateManyWithoutQuestionNestedInput
+}
+
+export type QuestionUncheckedUpdateManyWithoutOwnerMembershipInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -334,41 +505,60 @@ export type QuestionCountOutputTypeCountVersionsArgs<ExtArgs extends runtime.Typ
 
 export type QuestionSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  tenantId?: boolean
+  createdByPrincipalId?: boolean
   createdAt?: boolean
   versions?: boolean | Prisma.Question$versionsArgs<ExtArgs>
+  ownerMembership?: boolean | Prisma.Question$ownerMembershipArgs<ExtArgs>
   _count?: boolean | Prisma.QuestionCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["question"]>
 
 export type QuestionSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  tenantId?: boolean
+  createdByPrincipalId?: boolean
   createdAt?: boolean
+  ownerMembership?: boolean | Prisma.Question$ownerMembershipArgs<ExtArgs>
 }, ExtArgs["result"]["question"]>
 
 export type QuestionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  tenantId?: boolean
+  createdByPrincipalId?: boolean
   createdAt?: boolean
+  ownerMembership?: boolean | Prisma.Question$ownerMembershipArgs<ExtArgs>
 }, ExtArgs["result"]["question"]>
 
 export type QuestionSelectScalar = {
   id?: boolean
+  tenantId?: boolean
+  createdByPrincipalId?: boolean
   createdAt?: boolean
 }
 
-export type QuestionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "createdAt", ExtArgs["result"]["question"]>
+export type QuestionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "createdByPrincipalId" | "createdAt", ExtArgs["result"]["question"]>
 export type QuestionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   versions?: boolean | Prisma.Question$versionsArgs<ExtArgs>
+  ownerMembership?: boolean | Prisma.Question$ownerMembershipArgs<ExtArgs>
   _count?: boolean | Prisma.QuestionCountOutputTypeDefaultArgs<ExtArgs>
 }
-export type QuestionIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
-export type QuestionIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
+export type QuestionIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  ownerMembership?: boolean | Prisma.Question$ownerMembershipArgs<ExtArgs>
+}
+export type QuestionIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  ownerMembership?: boolean | Prisma.Question$ownerMembershipArgs<ExtArgs>
+}
 
 export type $QuestionPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Question"
   objects: {
     versions: Prisma.$QuestionVersionPayload<ExtArgs>[]
+    ownerMembership: Prisma.$PrincipalTenantMembershipPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
+    tenantId: string | null
+    createdByPrincipalId: string | null
     createdAt: Date
   }, ExtArgs["result"]["question"]>
   composites: {}
@@ -765,6 +955,7 @@ readonly fields: QuestionFieldRefs;
 export interface Prisma__QuestionClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   versions<T extends Prisma.Question$versionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Question$versionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$QuestionVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  ownerMembership<T extends Prisma.Question$ownerMembershipArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Question$ownerMembershipArgs<ExtArgs>>): Prisma.Prisma__PrincipalTenantMembershipClient<runtime.Types.Result.GetResult<Prisma.$PrincipalTenantMembershipPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -795,6 +986,8 @@ export interface Prisma__QuestionClient<T, Null = never, ExtArgs extends runtime
  */
 export interface QuestionFieldRefs {
   readonly id: Prisma.FieldRef<"Question", 'String'>
+  readonly tenantId: Prisma.FieldRef<"Question", 'String'>
+  readonly createdByPrincipalId: Prisma.FieldRef<"Question", 'String'>
   readonly createdAt: Prisma.FieldRef<"Question", 'DateTime'>
 }
 
@@ -1050,6 +1243,10 @@ export type QuestionCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Extens
    */
   data: Prisma.QuestionCreateManyInput | Prisma.QuestionCreateManyInput[]
   skipDuplicates?: boolean
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.QuestionIncludeCreateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1120,6 +1317,10 @@ export type QuestionUpdateManyAndReturnArgs<ExtArgs extends runtime.Types.Extens
    * Limit how many Questions to update.
    */
   limit?: number
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.QuestionIncludeUpdateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1210,6 +1411,25 @@ export type Question$versionsArgs<ExtArgs extends runtime.Types.Extensions.Inter
   take?: number
   skip?: number
   distinct?: Prisma.QuestionVersionScalarFieldEnum | Prisma.QuestionVersionScalarFieldEnum[]
+}
+
+/**
+ * Question.ownerMembership
+ */
+export type Question$ownerMembershipArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the PrincipalTenantMembership
+   */
+  select?: Prisma.PrincipalTenantMembershipSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the PrincipalTenantMembership
+   */
+  omit?: Prisma.PrincipalTenantMembershipOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PrincipalTenantMembershipInclude<ExtArgs> | null
+  where?: Prisma.PrincipalTenantMembershipWhereInput
 }
 
 /**

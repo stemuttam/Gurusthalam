@@ -987,6 +987,8 @@ model PrincipalTenantMembership {
   principal AuthPrincipal @relation(fields: [principalId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   tenant    Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
+  questions Question[] @relation("QuestionOwnershipMembership")
+
   @@id([principalId, tenantId])
   @@unique([learnerId])
   @@index([tenantId, status])
@@ -1033,11 +1035,18 @@ enum QuestionBankMatchingMode {
 }
 
 model Question {
-  id        String            @id
-  createdAt DateTime          @default(now())
-  versions  QuestionVersion[]
+  id                   String   @id
+  tenantId             String?
+  createdByPrincipalId String?
+  createdAt            DateTime @default(now())
+
+  versions QuestionVersion[]
+
+  ownerMembership PrincipalTenantMembership? @relation("QuestionOwnershipMembership", fields: [createdByPrincipalId, tenantId], references: [principalId, tenantId], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([createdAt])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, id])
 }
 
 model QuestionVersion {

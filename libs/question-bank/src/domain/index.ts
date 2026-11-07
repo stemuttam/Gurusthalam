@@ -5,3 +5,5 @@ export * from './compatibility/index.js';
 export * from './content/index.js';
 export * from './versioning/index.js';
 export * from './repositories/index.js';
+export * from './ownership/index.js';
+export * from './events/index.js';

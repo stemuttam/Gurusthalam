@@ -204,6 +204,7 @@ export type PrincipalTenantMembershipWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"PrincipalTenantMembership"> | Date | string
   principal?: Prisma.XOR<Prisma.AuthPrincipalScalarRelationFilter, Prisma.AuthPrincipalWhereInput>
   tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
+  questions?: Prisma.QuestionListRelationFilter
 }
 
 export type PrincipalTenantMembershipOrderByWithRelationInput = {
@@ -217,6 +218,7 @@ export type PrincipalTenantMembershipOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder
   principal?: Prisma.AuthPrincipalOrderByWithRelationInput
   tenant?: Prisma.TenantOrderByWithRelationInput
+  questions?: Prisma.QuestionOrderByRelationAggregateInput
 }
 
 export type PrincipalTenantMembershipWhereUniqueInput = Prisma.AtLeast<{
@@ -234,6 +236,7 @@ export type PrincipalTenantMembershipWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"PrincipalTenantMembership"> | Date | string
   principal?: Prisma.XOR<Prisma.AuthPrincipalScalarRelationFilter, Prisma.AuthPrincipalWhereInput>
   tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
+  questions?: Prisma.QuestionListRelationFilter
 }, "principalId_tenantId" | "learnerId">
 
 export type PrincipalTenantMembershipOrderByWithAggregationInput = {
@@ -273,6 +276,7 @@ export type PrincipalTenantMembershipCreateInput = {
   updatedAt?: Date | string
   principal: Prisma.AuthPrincipalCreateNestedOneWithoutMembershipsInput
   tenant: Prisma.TenantCreateNestedOneWithoutMembershipsInput
+  questions?: Prisma.QuestionCreateNestedManyWithoutOwnerMembershipInput
 }
 
 export type PrincipalTenantMembershipUncheckedCreateInput = {
@@ -284,6 +288,7 @@ export type PrincipalTenantMembershipUncheckedCreateInput = {
   status?: $Enums.PrincipalTenantMembershipStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  questions?: Prisma.QuestionUncheckedCreateNestedManyWithoutOwnerMembershipInput
 }
 
 export type PrincipalTenantMembershipUpdateInput = {
@@ -295,6 +300,7 @@ export type PrincipalTenantMembershipUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   principal?: Prisma.AuthPrincipalUpdateOneRequiredWithoutMembershipsNestedInput
   tenant?: Prisma.TenantUpdateOneRequiredWithoutMembershipsNestedInput
+  questions?: Prisma.QuestionUpdateManyWithoutOwnerMembershipNestedInput
 }
 
 export type PrincipalTenantMembershipUncheckedUpdateInput = {
@@ -306,6 +312,7 @@ export type PrincipalTenantMembershipUncheckedUpdateInput = {
   status?: Prisma.EnumPrincipalTenantMembershipStatusFieldUpdateOperationsInput | $Enums.PrincipalTenantMembershipStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  questions?: Prisma.QuestionUncheckedUpdateManyWithoutOwnerMembershipNestedInput
 }
 
 export type PrincipalTenantMembershipCreateManyInput = {
@@ -391,6 +398,11 @@ export type PrincipalTenantMembershipMinOrderByAggregateInput = {
   status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type PrincipalTenantMembershipNullableScalarRelationFilter = {
+  is?: Prisma.PrincipalTenantMembershipWhereInput | null
+  isNot?: Prisma.PrincipalTenantMembershipWhereInput | null
 }
 
 export type PrincipalTenantMembershipCreateNestedManyWithoutPrincipalInput = {
@@ -490,6 +502,22 @@ export type EnumPrincipalTenantMembershipStatusFieldUpdateOperationsInput = {
   set?: $Enums.PrincipalTenantMembershipStatus
 }
 
+export type PrincipalTenantMembershipCreateNestedOneWithoutQuestionsInput = {
+  create?: Prisma.XOR<Prisma.PrincipalTenantMembershipCreateWithoutQuestionsInput, Prisma.PrincipalTenantMembershipUncheckedCreateWithoutQuestionsInput>
+  connectOrCreate?: Prisma.PrincipalTenantMembershipCreateOrConnectWithoutQuestionsInput
+  connect?: Prisma.PrincipalTenantMembershipWhereUniqueInput
+}
+
+export type PrincipalTenantMembershipUpdateOneWithoutQuestionsNestedInput = {
+  create?: Prisma.XOR<Prisma.PrincipalTenantMembershipCreateWithoutQuestionsInput, Prisma.PrincipalTenantMembershipUncheckedCreateWithoutQuestionsInput>
+  connectOrCreate?: Prisma.PrincipalTenantMembershipCreateOrConnectWithoutQuestionsInput
+  upsert?: Prisma.PrincipalTenantMembershipUpsertWithoutQuestionsInput
+  disconnect?: Prisma.PrincipalTenantMembershipWhereInput | boolean
+  delete?: Prisma.PrincipalTenantMembershipWhereInput | boolean
+  connect?: Prisma.PrincipalTenantMembershipWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.PrincipalTenantMembershipUpdateToOneWithWhereWithoutQuestionsInput, Prisma.PrincipalTenantMembershipUpdateWithoutQuestionsInput>, Prisma.PrincipalTenantMembershipUncheckedUpdateWithoutQuestionsInput>
+}
+
 export type PrincipalTenantMembershipCreateWithoutPrincipalInput = {
   learnerId?: string | null
   timezone?: string
@@ -498,6 +526,7 @@ export type PrincipalTenantMembershipCreateWithoutPrincipalInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   tenant: Prisma.TenantCreateNestedOneWithoutMembershipsInput
+  questions?: Prisma.QuestionCreateNestedManyWithoutOwnerMembershipInput
 }
 
 export type PrincipalTenantMembershipUncheckedCreateWithoutPrincipalInput = {
@@ -508,6 +537,7 @@ export type PrincipalTenantMembershipUncheckedCreateWithoutPrincipalInput = {
   status?: $Enums.PrincipalTenantMembershipStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  questions?: Prisma.QuestionUncheckedCreateNestedManyWithoutOwnerMembershipInput
 }
 
 export type PrincipalTenantMembershipCreateOrConnectWithoutPrincipalInput = {
@@ -558,6 +588,7 @@ export type PrincipalTenantMembershipCreateWithoutTenantInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   principal: Prisma.AuthPrincipalCreateNestedOneWithoutMembershipsInput
+  questions?: Prisma.QuestionCreateNestedManyWithoutOwnerMembershipInput
 }
 
 export type PrincipalTenantMembershipUncheckedCreateWithoutTenantInput = {
@@ -568,6 +599,7 @@ export type PrincipalTenantMembershipUncheckedCreateWithoutTenantInput = {
   status?: $Enums.PrincipalTenantMembershipStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  questions?: Prisma.QuestionUncheckedCreateNestedManyWithoutOwnerMembershipInput
 }
 
 export type PrincipalTenantMembershipCreateOrConnectWithoutTenantInput = {
@@ -596,6 +628,66 @@ export type PrincipalTenantMembershipUpdateManyWithWhereWithoutTenantInput = {
   data: Prisma.XOR<Prisma.PrincipalTenantMembershipUpdateManyMutationInput, Prisma.PrincipalTenantMembershipUncheckedUpdateManyWithoutTenantInput>
 }
 
+export type PrincipalTenantMembershipCreateWithoutQuestionsInput = {
+  learnerId?: string | null
+  timezone?: string
+  roles?: Prisma.PrincipalTenantMembershipCreaterolesInput | string[]
+  status?: $Enums.PrincipalTenantMembershipStatus
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  principal: Prisma.AuthPrincipalCreateNestedOneWithoutMembershipsInput
+  tenant: Prisma.TenantCreateNestedOneWithoutMembershipsInput
+}
+
+export type PrincipalTenantMembershipUncheckedCreateWithoutQuestionsInput = {
+  principalId: string
+  tenantId: string
+  learnerId?: string | null
+  timezone?: string
+  roles?: Prisma.PrincipalTenantMembershipCreaterolesInput | string[]
+  status?: $Enums.PrincipalTenantMembershipStatus
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type PrincipalTenantMembershipCreateOrConnectWithoutQuestionsInput = {
+  where: Prisma.PrincipalTenantMembershipWhereUniqueInput
+  create: Prisma.XOR<Prisma.PrincipalTenantMembershipCreateWithoutQuestionsInput, Prisma.PrincipalTenantMembershipUncheckedCreateWithoutQuestionsInput>
+}
+
+export type PrincipalTenantMembershipUpsertWithoutQuestionsInput = {
+  update: Prisma.XOR<Prisma.PrincipalTenantMembershipUpdateWithoutQuestionsInput, Prisma.PrincipalTenantMembershipUncheckedUpdateWithoutQuestionsInput>
+  create: Prisma.XOR<Prisma.PrincipalTenantMembershipCreateWithoutQuestionsInput, Prisma.PrincipalTenantMembershipUncheckedCreateWithoutQuestionsInput>
+  where?: Prisma.PrincipalTenantMembershipWhereInput
+}
+
+export type PrincipalTenantMembershipUpdateToOneWithWhereWithoutQuestionsInput = {
+  where?: Prisma.PrincipalTenantMembershipWhereInput
+  data: Prisma.XOR<Prisma.PrincipalTenantMembershipUpdateWithoutQuestionsInput, Prisma.PrincipalTenantMembershipUncheckedUpdateWithoutQuestionsInput>
+}
+
+export type PrincipalTenantMembershipUpdateWithoutQuestionsInput = {
+  learnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  timezone?: Prisma.StringFieldUpdateOperationsInput | string
+  roles?: Prisma.PrincipalTenantMembershipUpdaterolesInput | string[]
+  status?: Prisma.EnumPrincipalTenantMembershipStatusFieldUpdateOperationsInput | $Enums.PrincipalTenantMembershipStatus
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  principal?: Prisma.AuthPrincipalUpdateOneRequiredWithoutMembershipsNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutMembershipsNestedInput
+}
+
+export type PrincipalTenantMembershipUncheckedUpdateWithoutQuestionsInput = {
+  principalId?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  learnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  timezone?: Prisma.StringFieldUpdateOperationsInput | string
+  roles?: Prisma.PrincipalTenantMembershipUpdaterolesInput | string[]
+  status?: Prisma.EnumPrincipalTenantMembershipStatusFieldUpdateOperationsInput | $Enums.PrincipalTenantMembershipStatus
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
 export type PrincipalTenantMembershipCreateManyPrincipalInput = {
   tenantId: string
   learnerId?: string | null
@@ -614,6 +706,7 @@ export type PrincipalTenantMembershipUpdateWithoutPrincipalInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.TenantUpdateOneRequiredWithoutMembershipsNestedInput
+  questions?: Prisma.QuestionUpdateManyWithoutOwnerMembershipNestedInput
 }
 
 export type PrincipalTenantMembershipUncheckedUpdateWithoutPrincipalInput = {
@@ -624,6 +717,7 @@ export type PrincipalTenantMembershipUncheckedUpdateWithoutPrincipalInput = {
   status?: Prisma.EnumPrincipalTenantMembershipStatusFieldUpdateOperationsInput | $Enums.PrincipalTenantMembershipStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  questions?: Prisma.QuestionUncheckedUpdateManyWithoutOwnerMembershipNestedInput
 }
 
 export type PrincipalTenantMembershipUncheckedUpdateManyWithoutPrincipalInput = {
@@ -654,6 +748,7 @@ export type PrincipalTenantMembershipUpdateWithoutTenantInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   principal?: Prisma.AuthPrincipalUpdateOneRequiredWithoutMembershipsNestedInput
+  questions?: Prisma.QuestionUpdateManyWithoutOwnerMembershipNestedInput
 }
 
 export type PrincipalTenantMembershipUncheckedUpdateWithoutTenantInput = {
@@ -664,6 +759,7 @@ export type PrincipalTenantMembershipUncheckedUpdateWithoutTenantInput = {
   status?: Prisma.EnumPrincipalTenantMembershipStatusFieldUpdateOperationsInput | $Enums.PrincipalTenantMembershipStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  questions?: Prisma.QuestionUncheckedUpdateManyWithoutOwnerMembershipNestedInput
 }
 
 export type PrincipalTenantMembershipUncheckedUpdateManyWithoutTenantInput = {
@@ -677,6 +773,35 @@ export type PrincipalTenantMembershipUncheckedUpdateManyWithoutTenantInput = {
 }
 
 
+/**
+ * Count Type PrincipalTenantMembershipCountOutputType
+ */
+
+export type PrincipalTenantMembershipCountOutputType = {
+  questions: number
+}
+
+export type PrincipalTenantMembershipCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  questions?: boolean | PrincipalTenantMembershipCountOutputTypeCountQuestionsArgs
+}
+
+/**
+ * PrincipalTenantMembershipCountOutputType without action
+ */
+export type PrincipalTenantMembershipCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the PrincipalTenantMembershipCountOutputType
+   */
+  select?: Prisma.PrincipalTenantMembershipCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * PrincipalTenantMembershipCountOutputType without action
+ */
+export type PrincipalTenantMembershipCountOutputTypeCountQuestionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.QuestionWhereInput
+}
+
 
 export type PrincipalTenantMembershipSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   principalId?: boolean
@@ -689,6 +814,8 @@ export type PrincipalTenantMembershipSelect<ExtArgs extends runtime.Types.Extens
   updatedAt?: boolean
   principal?: boolean | Prisma.AuthPrincipalDefaultArgs<ExtArgs>
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  questions?: boolean | Prisma.PrincipalTenantMembership$questionsArgs<ExtArgs>
+  _count?: boolean | Prisma.PrincipalTenantMembershipCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["principalTenantMembership"]>
 
 export type PrincipalTenantMembershipSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -732,6 +859,8 @@ export type PrincipalTenantMembershipOmit<ExtArgs extends runtime.Types.Extensio
 export type PrincipalTenantMembershipInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   principal?: boolean | Prisma.AuthPrincipalDefaultArgs<ExtArgs>
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  questions?: boolean | Prisma.PrincipalTenantMembership$questionsArgs<ExtArgs>
+  _count?: boolean | Prisma.PrincipalTenantMembershipCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type PrincipalTenantMembershipIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   principal?: boolean | Prisma.AuthPrincipalDefaultArgs<ExtArgs>
@@ -747,6 +876,7 @@ export type $PrincipalTenantMembershipPayload<ExtArgs extends runtime.Types.Exte
   objects: {
     principal: Prisma.$AuthPrincipalPayload<ExtArgs>
     tenant: Prisma.$TenantPayload<ExtArgs>
+    questions: Prisma.$QuestionPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     principalId: string
@@ -1153,6 +1283,7 @@ export interface Prisma__PrincipalTenantMembershipClient<T, Null = never, ExtArg
   readonly [Symbol.toStringTag]: "PrismaPromise"
   principal<T extends Prisma.AuthPrincipalDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AuthPrincipalDefaultArgs<ExtArgs>>): Prisma.Prisma__AuthPrincipalClient<runtime.Types.Result.GetResult<Prisma.$AuthPrincipalPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   tenant<T extends Prisma.TenantDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TenantDefaultArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  questions<T extends Prisma.PrincipalTenantMembership$questionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.PrincipalTenantMembership$questionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$QuestionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1588,6 +1719,30 @@ export type PrincipalTenantMembershipDeleteManyArgs<ExtArgs extends runtime.Type
    * Limit how many PrincipalTenantMemberships to delete.
    */
   limit?: number
+}
+
+/**
+ * PrincipalTenantMembership.questions
+ */
+export type PrincipalTenantMembership$questionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Question
+   */
+  select?: Prisma.QuestionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Question
+   */
+  omit?: Prisma.QuestionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.QuestionInclude<ExtArgs> | null
+  where?: Prisma.QuestionWhereInput
+  orderBy?: Prisma.QuestionOrderByWithRelationInput | Prisma.QuestionOrderByWithRelationInput[]
+  cursor?: Prisma.QuestionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.QuestionScalarFieldEnum | Prisma.QuestionScalarFieldEnum[]
 }
 
 /**

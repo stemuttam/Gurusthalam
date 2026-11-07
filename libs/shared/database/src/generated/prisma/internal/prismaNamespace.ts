@@ -4307,6 +4307,8 @@ export type PrincipalTenantMembershipScalarFieldEnum = (typeof PrincipalTenantMe
 
 export const QuestionScalarFieldEnum = {
   id: 'id',
+  tenantId: 'tenantId',
+  createdByPrincipalId: 'createdByPrincipalId',
   createdAt: 'createdAt'
 } as const
 

@@ -11,6 +11,7 @@ import { HealthModule } from '../health/health.module.js';
 import { CoursesApplicationModule } from '../courses/courses-application.module.js';
 import { LearningApplicationModule } from '../learning/learning-application.module.js';
 import { LearningProgressQueryModule } from '../learning/learning-progress-query.module.js';
+import { QuestionBankApplicationModule } from '../question-bank/question-bank-application.module.js';
 import { RequestIdMiddleware } from '../middleware/request-id.middleware.js';
 import { RedisModule } from '../queues/redis/redis.module.js';
 import { BullMqModule } from '../queues/bullmq/bullmq.module.js';
@@ -43,6 +44,7 @@ import { AppService } from './app.service.js';
     CoursesApplicationModule,
     LearningApplicationModule,
     LearningProgressQueryModule,
+    QuestionBankApplicationModule,
     Auth0AuthenticationModule,
     RedisModule,
     NotificationTemplateModule,
@@ -98,6 +100,9 @@ export class AppModule implements NestModule {
         method: RequestMethod.GET,
       },
       { path: 'learning/streak', method: RequestMethod.GET },
+      { path: 'question-bank/questions', method: RequestMethod.POST },
+      { path: 'question-bank/questions/:questionId/versions', method: RequestMethod.POST },
+      { path: 'question-bank/questions/:questionId/restore/:versionId', method: RequestMethod.POST },
     );
   }
 }

@@ -305,3 +305,13 @@ export const QuestionBankMatchingMode = {
 } as const
 
 export type QuestionBankMatchingMode = (typeof QuestionBankMatchingMode)[keyof typeof QuestionBankMatchingMode]
+
+
+export const QuestionAssignmentRole = {
+  OWNER: 'OWNER',
+  AUTHOR: 'AUTHOR',
+  CO_AUTHOR: 'CO_AUTHOR',
+  EDITOR: 'EDITOR'
+} as const
+
+export type QuestionAssignmentRole = (typeof QuestionAssignmentRole)[keyof typeof QuestionAssignmentRole]

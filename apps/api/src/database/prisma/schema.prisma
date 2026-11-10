@@ -988,6 +988,8 @@ model PrincipalTenantMembership {
   tenant    Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   questions Question[] @relation("QuestionOwnershipMembership")
+  questionAssignments       QuestionAssignment[] @relation("QuestionAssignmentMember")
+  questionAssignmentsMade   QuestionAssignment[] @relation("QuestionAssignmentAssigner")
 
   @@id([principalId, tenantId])
   @@unique([learnerId])
@@ -1034,6 +1036,13 @@ enum QuestionBankMatchingMode {
   MANY_TO_ONE
 }
 
+enum QuestionAssignmentRole {
+  OWNER
+  AUTHOR
+  CO_AUTHOR
+  EDITOR
+}
+
 model Question {
   id                   String   @id
   tenantId             String?
@@ -1041,9 +1050,11 @@ model Question {
   createdAt            DateTime @default(now())
 
   versions QuestionVersion[]
-
   ownerMembership PrincipalTenantMembership? @relation("QuestionOwnershipMembership", fields: [createdByPrincipalId, tenantId], references: [principalId, tenantId], onDelete: Restrict, onUpdate: Cascade)
 
+  assignments QuestionAssignment[] @relation("QuestionAssignmentQuestion")
+
+  @@unique([id, tenantId])
   @@index([createdAt])
   @@index([tenantId, createdAt])
   @@index([tenantId, id])
@@ -1255,4 +1266,25 @@ model QuestionVersionBlankAcceptedAnswer {
   blankAnswer    QuestionVersionBlankAnswer @relation(fields: [answerKeyId, blankSegmentId], references: [answerKeyId, blankSegmentId], onDelete: Restrict, onUpdate: Restrict)
 
   @@unique([answerKeyId, blankSegmentId, position])
+}
+
+model QuestionAssignment {
+  questionId            String
+  tenantId              String
+  principalId           String
+  role                  QuestionAssignmentRole
+  assignedByPrincipalId String
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  question Question @relation("QuestionAssignmentQuestion", fields: [questionId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+
+  member PrincipalTenantMembership @relation("QuestionAssignmentMember", fields: [principalId, tenantId], references: [principalId, tenantId], onDelete: Restrict, onUpdate: Cascade)
+
+  assignedByMembership PrincipalTenantMembership @relation("QuestionAssignmentAssigner", fields: [assignedByPrincipalId, tenantId], references: [principalId, tenantId], onDelete: Restrict, onUpdate: Cascade)
+
+  @@id([questionId, principalId])
+  @@index([tenantId, principalId, role])
+  @@index([questionId, role])
+  @@index([assignedByPrincipalId, createdAt])
 }

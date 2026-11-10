@@ -441,7 +441,8 @@ export const ModelName = {
   QuestionVersionMatchingPair: 'QuestionVersionMatchingPair',
   QuestionVersionOrderingAnswer: 'QuestionVersionOrderingAnswer',
   QuestionVersionBlankAnswer: 'QuestionVersionBlankAnswer',
-  QuestionVersionBlankAcceptedAnswer: 'QuestionVersionBlankAcceptedAnswer'
+  QuestionVersionBlankAcceptedAnswer: 'QuestionVersionBlankAcceptedAnswer',
+  QuestionAssignment: 'QuestionAssignment'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -457,7 +458,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "course" | "courseOwnershipAssignment" | "courseVersion" | "courseVersionAudit" | "courseVersionLineage" | "enrollment" | "entitlement" | "learningSession" | "progress" | "lessonProgress" | "sectionProgress" | "learningActivityEvent" | "courseCatalogProjection" | "courseSearchProjection" | "notificationTemplate" | "notificationTemplateVersion" | "notification" | "notificationDelivery" | "outboxEvent" | "notificationAggregation" | "notificationAggregationItem" | "courseStructureSection" | "courseStructureLearningUnit" | "courseStructureContentItemReference" | "courseStructureAssessmentReference" | "courseProgressReadModel" | "authPrincipal" | "externalIdentity" | "tenant" | "principalTenantMembership" | "question" | "questionVersion" | "questionVersionContent" | "questionVersionOption" | "questionVersionMatchingLeftItem" | "questionVersionMatchingRightItem" | "questionVersionOrderingItem" | "questionVersionFillBlankSegment" | "questionVersionAnswerKey" | "questionVersionOptionAnswer" | "questionVersionAcceptedAnswer" | "questionVersionMatchingPair" | "questionVersionOrderingAnswer" | "questionVersionBlankAnswer" | "questionVersionBlankAcceptedAnswer"
+    modelProps: "course" | "courseOwnershipAssignment" | "courseVersion" | "courseVersionAudit" | "courseVersionLineage" | "enrollment" | "entitlement" | "learningSession" | "progress" | "lessonProgress" | "sectionProgress" | "learningActivityEvent" | "courseCatalogProjection" | "courseSearchProjection" | "notificationTemplate" | "notificationTemplateVersion" | "notification" | "notificationDelivery" | "outboxEvent" | "notificationAggregation" | "notificationAggregationItem" | "courseStructureSection" | "courseStructureLearningUnit" | "courseStructureContentItemReference" | "courseStructureAssessmentReference" | "courseProgressReadModel" | "authPrincipal" | "externalIdentity" | "tenant" | "principalTenantMembership" | "question" | "questionVersion" | "questionVersionContent" | "questionVersionOption" | "questionVersionMatchingLeftItem" | "questionVersionMatchingRightItem" | "questionVersionOrderingItem" | "questionVersionFillBlankSegment" | "questionVersionAnswerKey" | "questionVersionOptionAnswer" | "questionVersionAcceptedAnswer" | "questionVersionMatchingPair" | "questionVersionOrderingAnswer" | "questionVersionBlankAnswer" | "questionVersionBlankAcceptedAnswer" | "questionAssignment"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -3791,6 +3792,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    QuestionAssignment: {
+      payload: Prisma.$QuestionAssignmentPayload<ExtArgs>
+      fields: Prisma.QuestionAssignmentFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.QuestionAssignmentFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionAssignmentPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.QuestionAssignmentFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionAssignmentPayload>
+        }
+        findFirst: {
+          args: Prisma.QuestionAssignmentFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionAssignmentPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.QuestionAssignmentFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionAssignmentPayload>
+        }
+        findMany: {
+          args: Prisma.QuestionAssignmentFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionAssignmentPayload>[]
+        }
+        create: {
+          args: Prisma.QuestionAssignmentCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionAssignmentPayload>
+        }
+        createMany: {
+          args: Prisma.QuestionAssignmentCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.QuestionAssignmentCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionAssignmentPayload>[]
+        }
+        delete: {
+          args: Prisma.QuestionAssignmentDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionAssignmentPayload>
+        }
+        update: {
+          args: Prisma.QuestionAssignmentUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionAssignmentPayload>
+        }
+        deleteMany: {
+          args: Prisma.QuestionAssignmentDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.QuestionAssignmentUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.QuestionAssignmentUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionAssignmentPayload>[]
+        }
+        upsert: {
+          args: Prisma.QuestionAssignmentUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionAssignmentPayload>
+        }
+        aggregate: {
+          args: Prisma.QuestionAssignmentAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateQuestionAssignment>
+        }
+        groupBy: {
+          args: Prisma.QuestionAssignmentGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionAssignmentGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.QuestionAssignmentCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionAssignmentCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -4474,6 +4549,19 @@ export const QuestionVersionBlankAcceptedAnswerScalarFieldEnum = {
 export type QuestionVersionBlankAcceptedAnswerScalarFieldEnum = (typeof QuestionVersionBlankAcceptedAnswerScalarFieldEnum)[keyof typeof QuestionVersionBlankAcceptedAnswerScalarFieldEnum]
 
 
+export const QuestionAssignmentScalarFieldEnum = {
+  questionId: 'questionId',
+  tenantId: 'tenantId',
+  principalId: 'principalId',
+  role: 'role',
+  assignedByPrincipalId: 'assignedByPrincipalId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type QuestionAssignmentScalarFieldEnum = (typeof QuestionAssignmentScalarFieldEnum)[keyof typeof QuestionAssignmentScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -5024,6 +5112,20 @@ export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, '
 export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
 
 
+
+/**
+ * Reference to a field of type 'QuestionAssignmentRole'
+ */
+export type EnumQuestionAssignmentRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QuestionAssignmentRole'>
+
+
+
+/**
+ * Reference to a field of type 'QuestionAssignmentRole[]'
+ */
+export type ListEnumQuestionAssignmentRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QuestionAssignmentRole[]'>
+
+
 /**
  * Batch Payload for updateMany & deleteMany & createMany
  */
@@ -5220,6 +5322,7 @@ export type GlobalOmitConfig = {
   questionVersionOrderingAnswer?: Prisma.QuestionVersionOrderingAnswerOmit
   questionVersionBlankAnswer?: Prisma.QuestionVersionBlankAnswerOmit
   questionVersionBlankAcceptedAnswer?: Prisma.QuestionVersionBlankAcceptedAnswerOmit
+  questionAssignment?: Prisma.QuestionAssignmentOmit
 }
 
 /* Types for Logging */

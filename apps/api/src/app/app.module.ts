@@ -1,3 +1,4 @@
+
 import {
   MiddlewareConsumer,
   Module,
@@ -33,6 +34,7 @@ import { NotificationReconciliationService } from '../queues/notifications/notif
 import { NotificationTemplateModule } from '../queues/templates/notification-template.module.js';
 import { InternalApiKeyGuard } from '../security/internal-api-key.guard.js';
 import { Auth0AuthenticationMiddleware } from '../security/auth0/auth0-authentication.middleware.js';
+import { Auth0QuestionBankAuthenticationMiddleware } from '../security/auth0/auth0-question-bank-authentication.middleware.js';
 import { Auth0AuthenticationModule } from '../security/auth0/auth0-authentication.module.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
@@ -100,9 +102,18 @@ export class AppModule implements NestModule {
         method: RequestMethod.GET,
       },
       { path: 'learning/streak', method: RequestMethod.GET },
+    );
+
+    consumer.apply(Auth0QuestionBankAuthenticationMiddleware).forRoutes(
       { path: 'question-bank/questions', method: RequestMethod.POST },
-      { path: 'question-bank/questions/:questionId/versions', method: RequestMethod.POST },
-      { path: 'question-bank/questions/:questionId/restore/:versionId', method: RequestMethod.POST },
+      {
+        path: 'question-bank/questions/:questionId/versions',
+        method: RequestMethod.POST,
+      },
+      {
+        path: 'question-bank/questions/:questionId/restore/:versionId',
+        method: RequestMethod.POST,
+      },
     );
   }
 }

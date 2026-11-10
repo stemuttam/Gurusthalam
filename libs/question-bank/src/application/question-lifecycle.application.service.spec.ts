@@ -5,6 +5,7 @@ import {
   AnswerFormat,
   QuestionId,
   QuestionLifecycleApplicationService,
+  QuestionOwnership,
   QuestionType,
   QuestionVersionId,
   QuestionVersionLineage,
@@ -78,6 +79,9 @@ describe('QuestionLifecycleApplicationService.restore', () => {
     let persisted: QuestionVersionSnapshot | undefined;
 
     const repository: QuestionLifecycleRepository = {
+      findOwnership: vi.fn(async () =>
+        QuestionOwnership.create('tenant-1', 'principal-1'),
+      ),
       findLatest: vi.fn(async () => latest),
       findVersion: vi.fn(async () => source),
       persist: vi.fn(async (command) => {

@@ -1,3 +1,4 @@
+
 import {
   Controller,
   Get,
@@ -40,6 +41,8 @@ const configuration: Auth0Configuration = {
   issuer: 'https://tenant.example.auth0.com/',
   audience: 'https://api.example.test',
   learnerProgressScope: 'read:learning-progress',
+  questionBankWriteScope: 'write:question-bank',
+  questionBankAssignmentManagementScope: 'manage:question-bank-access',
 };
 
 @Module({
@@ -70,16 +73,20 @@ describe('Auth0AuthenticationMiddleware', () => {
     const moduleRef = await Test.createTestingModule({
       imports: [Auth0TestModule],
     }).compile();
+
     app = moduleRef.createNestApplication();
+
     await app.init();
     await app.listen(0, '127.0.0.1');
 
     const address = app.getHttpServer().address();
+
     if (address === null || typeof address === 'string') {
       throw new Error(
         'Expected the Auth0 middleware test server to expose a TCP address.',
       );
     }
+
     baseUrl = `http://127.0.0.1:${address.port}`;
   }, 30_000);
 
@@ -89,6 +96,7 @@ describe('Auth0AuthenticationMiddleware', () => {
 
   it('rejects missing credentials before calling identity resolution', async () => {
     const response = await fetch(`${baseUrl}/auth0-test/private`);
+
     expect(response.status).toBe(401);
     expect(await response.json()).toMatchObject({
       code: 'AUTHENTICATION_REQUIRED',
@@ -99,6 +107,7 @@ describe('Auth0AuthenticationMiddleware', () => {
     const response = await fetch(`${baseUrl}/auth0-test/private`, {
       headers: { authorization: 'Bearer not-a-valid-jwt' },
     });
+
     expect(response.status).toBe(401);
     expect(await response.json()).toMatchObject({
       code: 'AUTHENTICATION_REQUIRED',
@@ -107,9 +116,11 @@ describe('Auth0AuthenticationMiddleware', () => {
 
   it('rejects machine-to-machine subjects for learner-facing routes', () => {
     expect(isEndUserAuth0Identity('auth0|learner-001', undefined)).toBe(true);
+
     expect(
       isEndUserAuth0Identity('client-id@clients', 'client-credentials'),
     ).toBe(false);
+
     expect(isEndUserAuth0Identity('client-id@clients', undefined)).toBe(false);
     expect(isEndUserAuth0Identity('', undefined)).toBe(false);
   });
@@ -121,12 +132,18 @@ describe('Auth0AuthenticationMiddleware', () => {
         'read:learning-progress',
       ),
     ).toBe(true);
+
     expect(
       hasRequiredScope('write:lesson-progress', 'read:learning-progress'),
     ).toBe(false);
+
     expect(hasRequiredScope(undefined, 'read:learning-progress')).toBe(false);
+
     expect(
-      hasRequiredScope(['read:learning-progress'], 'read:learning-progress'),
+      hasRequiredScope(
+        ['read:learning-progress'],
+        'read:learning-progress',
+      ),
     ).toBe(false);
   });
 });

@@ -205,6 +205,8 @@ export type PrincipalTenantMembershipWhereInput = {
   principal?: Prisma.XOR<Prisma.AuthPrincipalScalarRelationFilter, Prisma.AuthPrincipalWhereInput>
   tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
   questions?: Prisma.QuestionListRelationFilter
+  questionAssignments?: Prisma.QuestionAssignmentListRelationFilter
+  questionAssignmentsMade?: Prisma.QuestionAssignmentListRelationFilter
 }
 
 export type PrincipalTenantMembershipOrderByWithRelationInput = {
@@ -219,6 +221,8 @@ export type PrincipalTenantMembershipOrderByWithRelationInput = {
   principal?: Prisma.AuthPrincipalOrderByWithRelationInput
   tenant?: Prisma.TenantOrderByWithRelationInput
   questions?: Prisma.QuestionOrderByRelationAggregateInput
+  questionAssignments?: Prisma.QuestionAssignmentOrderByRelationAggregateInput
+  questionAssignmentsMade?: Prisma.QuestionAssignmentOrderByRelationAggregateInput
 }
 
 export type PrincipalTenantMembershipWhereUniqueInput = Prisma.AtLeast<{
@@ -237,6 +241,8 @@ export type PrincipalTenantMembershipWhereUniqueInput = Prisma.AtLeast<{
   principal?: Prisma.XOR<Prisma.AuthPrincipalScalarRelationFilter, Prisma.AuthPrincipalWhereInput>
   tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
   questions?: Prisma.QuestionListRelationFilter
+  questionAssignments?: Prisma.QuestionAssignmentListRelationFilter
+  questionAssignmentsMade?: Prisma.QuestionAssignmentListRelationFilter
 }, "principalId_tenantId" | "learnerId">
 
 export type PrincipalTenantMembershipOrderByWithAggregationInput = {
@@ -277,6 +283,8 @@ export type PrincipalTenantMembershipCreateInput = {
   principal: Prisma.AuthPrincipalCreateNestedOneWithoutMembershipsInput
   tenant: Prisma.TenantCreateNestedOneWithoutMembershipsInput
   questions?: Prisma.QuestionCreateNestedManyWithoutOwnerMembershipInput
+  questionAssignments?: Prisma.QuestionAssignmentCreateNestedManyWithoutMemberInput
+  questionAssignmentsMade?: Prisma.QuestionAssignmentCreateNestedManyWithoutAssignedByMembershipInput
 }
 
 export type PrincipalTenantMembershipUncheckedCreateInput = {
@@ -289,6 +297,8 @@ export type PrincipalTenantMembershipUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   questions?: Prisma.QuestionUncheckedCreateNestedManyWithoutOwnerMembershipInput
+  questionAssignments?: Prisma.QuestionAssignmentUncheckedCreateNestedManyWithoutMemberInput
+  questionAssignmentsMade?: Prisma.QuestionAssignmentUncheckedCreateNestedManyWithoutAssignedByMembershipInput
 }
 
 export type PrincipalTenantMembershipUpdateInput = {
@@ -301,6 +311,8 @@ export type PrincipalTenantMembershipUpdateInput = {
   principal?: Prisma.AuthPrincipalUpdateOneRequiredWithoutMembershipsNestedInput
   tenant?: Prisma.TenantUpdateOneRequiredWithoutMembershipsNestedInput
   questions?: Prisma.QuestionUpdateManyWithoutOwnerMembershipNestedInput
+  questionAssignments?: Prisma.QuestionAssignmentUpdateManyWithoutMemberNestedInput
+  questionAssignmentsMade?: Prisma.QuestionAssignmentUpdateManyWithoutAssignedByMembershipNestedInput
 }
 
 export type PrincipalTenantMembershipUncheckedUpdateInput = {
@@ -313,6 +325,8 @@ export type PrincipalTenantMembershipUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   questions?: Prisma.QuestionUncheckedUpdateManyWithoutOwnerMembershipNestedInput
+  questionAssignments?: Prisma.QuestionAssignmentUncheckedUpdateManyWithoutMemberNestedInput
+  questionAssignmentsMade?: Prisma.QuestionAssignmentUncheckedUpdateManyWithoutAssignedByMembershipNestedInput
 }
 
 export type PrincipalTenantMembershipCreateManyInput = {
@@ -403,6 +417,11 @@ export type PrincipalTenantMembershipMinOrderByAggregateInput = {
 export type PrincipalTenantMembershipNullableScalarRelationFilter = {
   is?: Prisma.PrincipalTenantMembershipWhereInput | null
   isNot?: Prisma.PrincipalTenantMembershipWhereInput | null
+}
+
+export type PrincipalTenantMembershipScalarRelationFilter = {
+  is?: Prisma.PrincipalTenantMembershipWhereInput
+  isNot?: Prisma.PrincipalTenantMembershipWhereInput
 }
 
 export type PrincipalTenantMembershipCreateNestedManyWithoutPrincipalInput = {
@@ -518,6 +537,34 @@ export type PrincipalTenantMembershipUpdateOneWithoutQuestionsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.PrincipalTenantMembershipUpdateToOneWithWhereWithoutQuestionsInput, Prisma.PrincipalTenantMembershipUpdateWithoutQuestionsInput>, Prisma.PrincipalTenantMembershipUncheckedUpdateWithoutQuestionsInput>
 }
 
+export type PrincipalTenantMembershipCreateNestedOneWithoutQuestionAssignmentsInput = {
+  create?: Prisma.XOR<Prisma.PrincipalTenantMembershipCreateWithoutQuestionAssignmentsInput, Prisma.PrincipalTenantMembershipUncheckedCreateWithoutQuestionAssignmentsInput>
+  connectOrCreate?: Prisma.PrincipalTenantMembershipCreateOrConnectWithoutQuestionAssignmentsInput
+  connect?: Prisma.PrincipalTenantMembershipWhereUniqueInput
+}
+
+export type PrincipalTenantMembershipCreateNestedOneWithoutQuestionAssignmentsMadeInput = {
+  create?: Prisma.XOR<Prisma.PrincipalTenantMembershipCreateWithoutQuestionAssignmentsMadeInput, Prisma.PrincipalTenantMembershipUncheckedCreateWithoutQuestionAssignmentsMadeInput>
+  connectOrCreate?: Prisma.PrincipalTenantMembershipCreateOrConnectWithoutQuestionAssignmentsMadeInput
+  connect?: Prisma.PrincipalTenantMembershipWhereUniqueInput
+}
+
+export type PrincipalTenantMembershipUpdateOneRequiredWithoutQuestionAssignmentsNestedInput = {
+  create?: Prisma.XOR<Prisma.PrincipalTenantMembershipCreateWithoutQuestionAssignmentsInput, Prisma.PrincipalTenantMembershipUncheckedCreateWithoutQuestionAssignmentsInput>
+  connectOrCreate?: Prisma.PrincipalTenantMembershipCreateOrConnectWithoutQuestionAssignmentsInput
+  upsert?: Prisma.PrincipalTenantMembershipUpsertWithoutQuestionAssignmentsInput
+  connect?: Prisma.PrincipalTenantMembershipWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.PrincipalTenantMembershipUpdateToOneWithWhereWithoutQuestionAssignmentsInput, Prisma.PrincipalTenantMembershipUpdateWithoutQuestionAssignmentsInput>, Prisma.PrincipalTenantMembershipUncheckedUpdateWithoutQuestionAssignmentsInput>
+}
+
+export type PrincipalTenantMembershipUpdateOneRequiredWithoutQuestionAssignmentsMadeNestedInput = {
+  create?: Prisma.XOR<Prisma.PrincipalTenantMembershipCreateWithoutQuestionAssignmentsMadeInput, Prisma.PrincipalTenantMembershipUncheckedCreateWithoutQuestionAssignmentsMadeInput>
+  connectOrCreate?: Prisma.PrincipalTenantMembershipCreateOrConnectWithoutQuestionAssignmentsMadeInput
+  upsert?: Prisma.PrincipalTenantMembershipUpsertWithoutQuestionAssignmentsMadeInput
+  connect?: Prisma.PrincipalTenantMembershipWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.PrincipalTenantMembershipUpdateToOneWithWhereWithoutQuestionAssignmentsMadeInput, Prisma.PrincipalTenantMembershipUpdateWithoutQuestionAssignmentsMadeInput>, Prisma.PrincipalTenantMembershipUncheckedUpdateWithoutQuestionAssignmentsMadeInput>
+}
+
 export type PrincipalTenantMembershipCreateWithoutPrincipalInput = {
   learnerId?: string | null
   timezone?: string
@@ -527,6 +574,8 @@ export type PrincipalTenantMembershipCreateWithoutPrincipalInput = {
   updatedAt?: Date | string
   tenant: Prisma.TenantCreateNestedOneWithoutMembershipsInput
   questions?: Prisma.QuestionCreateNestedManyWithoutOwnerMembershipInput
+  questionAssignments?: Prisma.QuestionAssignmentCreateNestedManyWithoutMemberInput
+  questionAssignmentsMade?: Prisma.QuestionAssignmentCreateNestedManyWithoutAssignedByMembershipInput
 }
 
 export type PrincipalTenantMembershipUncheckedCreateWithoutPrincipalInput = {
@@ -538,6 +587,8 @@ export type PrincipalTenantMembershipUncheckedCreateWithoutPrincipalInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   questions?: Prisma.QuestionUncheckedCreateNestedManyWithoutOwnerMembershipInput
+  questionAssignments?: Prisma.QuestionAssignmentUncheckedCreateNestedManyWithoutMemberInput
+  questionAssignmentsMade?: Prisma.QuestionAssignmentUncheckedCreateNestedManyWithoutAssignedByMembershipInput
 }
 
 export type PrincipalTenantMembershipCreateOrConnectWithoutPrincipalInput = {
@@ -589,6 +640,8 @@ export type PrincipalTenantMembershipCreateWithoutTenantInput = {
   updatedAt?: Date | string
   principal: Prisma.AuthPrincipalCreateNestedOneWithoutMembershipsInput
   questions?: Prisma.QuestionCreateNestedManyWithoutOwnerMembershipInput
+  questionAssignments?: Prisma.QuestionAssignmentCreateNestedManyWithoutMemberInput
+  questionAssignmentsMade?: Prisma.QuestionAssignmentCreateNestedManyWithoutAssignedByMembershipInput
 }
 
 export type PrincipalTenantMembershipUncheckedCreateWithoutTenantInput = {
@@ -600,6 +653,8 @@ export type PrincipalTenantMembershipUncheckedCreateWithoutTenantInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   questions?: Prisma.QuestionUncheckedCreateNestedManyWithoutOwnerMembershipInput
+  questionAssignments?: Prisma.QuestionAssignmentUncheckedCreateNestedManyWithoutMemberInput
+  questionAssignmentsMade?: Prisma.QuestionAssignmentUncheckedCreateNestedManyWithoutAssignedByMembershipInput
 }
 
 export type PrincipalTenantMembershipCreateOrConnectWithoutTenantInput = {
@@ -637,6 +692,8 @@ export type PrincipalTenantMembershipCreateWithoutQuestionsInput = {
   updatedAt?: Date | string
   principal: Prisma.AuthPrincipalCreateNestedOneWithoutMembershipsInput
   tenant: Prisma.TenantCreateNestedOneWithoutMembershipsInput
+  questionAssignments?: Prisma.QuestionAssignmentCreateNestedManyWithoutMemberInput
+  questionAssignmentsMade?: Prisma.QuestionAssignmentCreateNestedManyWithoutAssignedByMembershipInput
 }
 
 export type PrincipalTenantMembershipUncheckedCreateWithoutQuestionsInput = {
@@ -648,6 +705,8 @@ export type PrincipalTenantMembershipUncheckedCreateWithoutQuestionsInput = {
   status?: $Enums.PrincipalTenantMembershipStatus
   createdAt?: Date | string
   updatedAt?: Date | string
+  questionAssignments?: Prisma.QuestionAssignmentUncheckedCreateNestedManyWithoutMemberInput
+  questionAssignmentsMade?: Prisma.QuestionAssignmentUncheckedCreateNestedManyWithoutAssignedByMembershipInput
 }
 
 export type PrincipalTenantMembershipCreateOrConnectWithoutQuestionsInput = {
@@ -675,6 +734,8 @@ export type PrincipalTenantMembershipUpdateWithoutQuestionsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   principal?: Prisma.AuthPrincipalUpdateOneRequiredWithoutMembershipsNestedInput
   tenant?: Prisma.TenantUpdateOneRequiredWithoutMembershipsNestedInput
+  questionAssignments?: Prisma.QuestionAssignmentUpdateManyWithoutMemberNestedInput
+  questionAssignmentsMade?: Prisma.QuestionAssignmentUpdateManyWithoutAssignedByMembershipNestedInput
 }
 
 export type PrincipalTenantMembershipUncheckedUpdateWithoutQuestionsInput = {
@@ -686,6 +747,144 @@ export type PrincipalTenantMembershipUncheckedUpdateWithoutQuestionsInput = {
   status?: Prisma.EnumPrincipalTenantMembershipStatusFieldUpdateOperationsInput | $Enums.PrincipalTenantMembershipStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  questionAssignments?: Prisma.QuestionAssignmentUncheckedUpdateManyWithoutMemberNestedInput
+  questionAssignmentsMade?: Prisma.QuestionAssignmentUncheckedUpdateManyWithoutAssignedByMembershipNestedInput
+}
+
+export type PrincipalTenantMembershipCreateWithoutQuestionAssignmentsInput = {
+  learnerId?: string | null
+  timezone?: string
+  roles?: Prisma.PrincipalTenantMembershipCreaterolesInput | string[]
+  status?: $Enums.PrincipalTenantMembershipStatus
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  principal: Prisma.AuthPrincipalCreateNestedOneWithoutMembershipsInput
+  tenant: Prisma.TenantCreateNestedOneWithoutMembershipsInput
+  questions?: Prisma.QuestionCreateNestedManyWithoutOwnerMembershipInput
+  questionAssignmentsMade?: Prisma.QuestionAssignmentCreateNestedManyWithoutAssignedByMembershipInput
+}
+
+export type PrincipalTenantMembershipUncheckedCreateWithoutQuestionAssignmentsInput = {
+  principalId: string
+  tenantId: string
+  learnerId?: string | null
+  timezone?: string
+  roles?: Prisma.PrincipalTenantMembershipCreaterolesInput | string[]
+  status?: $Enums.PrincipalTenantMembershipStatus
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  questions?: Prisma.QuestionUncheckedCreateNestedManyWithoutOwnerMembershipInput
+  questionAssignmentsMade?: Prisma.QuestionAssignmentUncheckedCreateNestedManyWithoutAssignedByMembershipInput
+}
+
+export type PrincipalTenantMembershipCreateOrConnectWithoutQuestionAssignmentsInput = {
+  where: Prisma.PrincipalTenantMembershipWhereUniqueInput
+  create: Prisma.XOR<Prisma.PrincipalTenantMembershipCreateWithoutQuestionAssignmentsInput, Prisma.PrincipalTenantMembershipUncheckedCreateWithoutQuestionAssignmentsInput>
+}
+
+export type PrincipalTenantMembershipCreateWithoutQuestionAssignmentsMadeInput = {
+  learnerId?: string | null
+  timezone?: string
+  roles?: Prisma.PrincipalTenantMembershipCreaterolesInput | string[]
+  status?: $Enums.PrincipalTenantMembershipStatus
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  principal: Prisma.AuthPrincipalCreateNestedOneWithoutMembershipsInput
+  tenant: Prisma.TenantCreateNestedOneWithoutMembershipsInput
+  questions?: Prisma.QuestionCreateNestedManyWithoutOwnerMembershipInput
+  questionAssignments?: Prisma.QuestionAssignmentCreateNestedManyWithoutMemberInput
+}
+
+export type PrincipalTenantMembershipUncheckedCreateWithoutQuestionAssignmentsMadeInput = {
+  principalId: string
+  tenantId: string
+  learnerId?: string | null
+  timezone?: string
+  roles?: Prisma.PrincipalTenantMembershipCreaterolesInput | string[]
+  status?: $Enums.PrincipalTenantMembershipStatus
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  questions?: Prisma.QuestionUncheckedCreateNestedManyWithoutOwnerMembershipInput
+  questionAssignments?: Prisma.QuestionAssignmentUncheckedCreateNestedManyWithoutMemberInput
+}
+
+export type PrincipalTenantMembershipCreateOrConnectWithoutQuestionAssignmentsMadeInput = {
+  where: Prisma.PrincipalTenantMembershipWhereUniqueInput
+  create: Prisma.XOR<Prisma.PrincipalTenantMembershipCreateWithoutQuestionAssignmentsMadeInput, Prisma.PrincipalTenantMembershipUncheckedCreateWithoutQuestionAssignmentsMadeInput>
+}
+
+export type PrincipalTenantMembershipUpsertWithoutQuestionAssignmentsInput = {
+  update: Prisma.XOR<Prisma.PrincipalTenantMembershipUpdateWithoutQuestionAssignmentsInput, Prisma.PrincipalTenantMembershipUncheckedUpdateWithoutQuestionAssignmentsInput>
+  create: Prisma.XOR<Prisma.PrincipalTenantMembershipCreateWithoutQuestionAssignmentsInput, Prisma.PrincipalTenantMembershipUncheckedCreateWithoutQuestionAssignmentsInput>
+  where?: Prisma.PrincipalTenantMembershipWhereInput
+}
+
+export type PrincipalTenantMembershipUpdateToOneWithWhereWithoutQuestionAssignmentsInput = {
+  where?: Prisma.PrincipalTenantMembershipWhereInput
+  data: Prisma.XOR<Prisma.PrincipalTenantMembershipUpdateWithoutQuestionAssignmentsInput, Prisma.PrincipalTenantMembershipUncheckedUpdateWithoutQuestionAssignmentsInput>
+}
+
+export type PrincipalTenantMembershipUpdateWithoutQuestionAssignmentsInput = {
+  learnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  timezone?: Prisma.StringFieldUpdateOperationsInput | string
+  roles?: Prisma.PrincipalTenantMembershipUpdaterolesInput | string[]
+  status?: Prisma.EnumPrincipalTenantMembershipStatusFieldUpdateOperationsInput | $Enums.PrincipalTenantMembershipStatus
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  principal?: Prisma.AuthPrincipalUpdateOneRequiredWithoutMembershipsNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutMembershipsNestedInput
+  questions?: Prisma.QuestionUpdateManyWithoutOwnerMembershipNestedInput
+  questionAssignmentsMade?: Prisma.QuestionAssignmentUpdateManyWithoutAssignedByMembershipNestedInput
+}
+
+export type PrincipalTenantMembershipUncheckedUpdateWithoutQuestionAssignmentsInput = {
+  principalId?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  learnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  timezone?: Prisma.StringFieldUpdateOperationsInput | string
+  roles?: Prisma.PrincipalTenantMembershipUpdaterolesInput | string[]
+  status?: Prisma.EnumPrincipalTenantMembershipStatusFieldUpdateOperationsInput | $Enums.PrincipalTenantMembershipStatus
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  questions?: Prisma.QuestionUncheckedUpdateManyWithoutOwnerMembershipNestedInput
+  questionAssignmentsMade?: Prisma.QuestionAssignmentUncheckedUpdateManyWithoutAssignedByMembershipNestedInput
+}
+
+export type PrincipalTenantMembershipUpsertWithoutQuestionAssignmentsMadeInput = {
+  update: Prisma.XOR<Prisma.PrincipalTenantMembershipUpdateWithoutQuestionAssignmentsMadeInput, Prisma.PrincipalTenantMembershipUncheckedUpdateWithoutQuestionAssignmentsMadeInput>
+  create: Prisma.XOR<Prisma.PrincipalTenantMembershipCreateWithoutQuestionAssignmentsMadeInput, Prisma.PrincipalTenantMembershipUncheckedCreateWithoutQuestionAssignmentsMadeInput>
+  where?: Prisma.PrincipalTenantMembershipWhereInput
+}
+
+export type PrincipalTenantMembershipUpdateToOneWithWhereWithoutQuestionAssignmentsMadeInput = {
+  where?: Prisma.PrincipalTenantMembershipWhereInput
+  data: Prisma.XOR<Prisma.PrincipalTenantMembershipUpdateWithoutQuestionAssignmentsMadeInput, Prisma.PrincipalTenantMembershipUncheckedUpdateWithoutQuestionAssignmentsMadeInput>
+}
+
+export type PrincipalTenantMembershipUpdateWithoutQuestionAssignmentsMadeInput = {
+  learnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  timezone?: Prisma.StringFieldUpdateOperationsInput | string
+  roles?: Prisma.PrincipalTenantMembershipUpdaterolesInput | string[]
+  status?: Prisma.EnumPrincipalTenantMembershipStatusFieldUpdateOperationsInput | $Enums.PrincipalTenantMembershipStatus
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  principal?: Prisma.AuthPrincipalUpdateOneRequiredWithoutMembershipsNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutMembershipsNestedInput
+  questions?: Prisma.QuestionUpdateManyWithoutOwnerMembershipNestedInput
+  questionAssignments?: Prisma.QuestionAssignmentUpdateManyWithoutMemberNestedInput
+}
+
+export type PrincipalTenantMembershipUncheckedUpdateWithoutQuestionAssignmentsMadeInput = {
+  principalId?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  learnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  timezone?: Prisma.StringFieldUpdateOperationsInput | string
+  roles?: Prisma.PrincipalTenantMembershipUpdaterolesInput | string[]
+  status?: Prisma.EnumPrincipalTenantMembershipStatusFieldUpdateOperationsInput | $Enums.PrincipalTenantMembershipStatus
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  questions?: Prisma.QuestionUncheckedUpdateManyWithoutOwnerMembershipNestedInput
+  questionAssignments?: Prisma.QuestionAssignmentUncheckedUpdateManyWithoutMemberNestedInput
 }
 
 export type PrincipalTenantMembershipCreateManyPrincipalInput = {
@@ -707,6 +906,8 @@ export type PrincipalTenantMembershipUpdateWithoutPrincipalInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.TenantUpdateOneRequiredWithoutMembershipsNestedInput
   questions?: Prisma.QuestionUpdateManyWithoutOwnerMembershipNestedInput
+  questionAssignments?: Prisma.QuestionAssignmentUpdateManyWithoutMemberNestedInput
+  questionAssignmentsMade?: Prisma.QuestionAssignmentUpdateManyWithoutAssignedByMembershipNestedInput
 }
 
 export type PrincipalTenantMembershipUncheckedUpdateWithoutPrincipalInput = {
@@ -718,6 +919,8 @@ export type PrincipalTenantMembershipUncheckedUpdateWithoutPrincipalInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   questions?: Prisma.QuestionUncheckedUpdateManyWithoutOwnerMembershipNestedInput
+  questionAssignments?: Prisma.QuestionAssignmentUncheckedUpdateManyWithoutMemberNestedInput
+  questionAssignmentsMade?: Prisma.QuestionAssignmentUncheckedUpdateManyWithoutAssignedByMembershipNestedInput
 }
 
 export type PrincipalTenantMembershipUncheckedUpdateManyWithoutPrincipalInput = {
@@ -749,6 +952,8 @@ export type PrincipalTenantMembershipUpdateWithoutTenantInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   principal?: Prisma.AuthPrincipalUpdateOneRequiredWithoutMembershipsNestedInput
   questions?: Prisma.QuestionUpdateManyWithoutOwnerMembershipNestedInput
+  questionAssignments?: Prisma.QuestionAssignmentUpdateManyWithoutMemberNestedInput
+  questionAssignmentsMade?: Prisma.QuestionAssignmentUpdateManyWithoutAssignedByMembershipNestedInput
 }
 
 export type PrincipalTenantMembershipUncheckedUpdateWithoutTenantInput = {
@@ -760,6 +965,8 @@ export type PrincipalTenantMembershipUncheckedUpdateWithoutTenantInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   questions?: Prisma.QuestionUncheckedUpdateManyWithoutOwnerMembershipNestedInput
+  questionAssignments?: Prisma.QuestionAssignmentUncheckedUpdateManyWithoutMemberNestedInput
+  questionAssignmentsMade?: Prisma.QuestionAssignmentUncheckedUpdateManyWithoutAssignedByMembershipNestedInput
 }
 
 export type PrincipalTenantMembershipUncheckedUpdateManyWithoutTenantInput = {
@@ -779,10 +986,14 @@ export type PrincipalTenantMembershipUncheckedUpdateManyWithoutTenantInput = {
 
 export type PrincipalTenantMembershipCountOutputType = {
   questions: number
+  questionAssignments: number
+  questionAssignmentsMade: number
 }
 
 export type PrincipalTenantMembershipCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   questions?: boolean | PrincipalTenantMembershipCountOutputTypeCountQuestionsArgs
+  questionAssignments?: boolean | PrincipalTenantMembershipCountOutputTypeCountQuestionAssignmentsArgs
+  questionAssignmentsMade?: boolean | PrincipalTenantMembershipCountOutputTypeCountQuestionAssignmentsMadeArgs
 }
 
 /**
@@ -802,6 +1013,20 @@ export type PrincipalTenantMembershipCountOutputTypeCountQuestionsArgs<ExtArgs e
   where?: Prisma.QuestionWhereInput
 }
 
+/**
+ * PrincipalTenantMembershipCountOutputType without action
+ */
+export type PrincipalTenantMembershipCountOutputTypeCountQuestionAssignmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.QuestionAssignmentWhereInput
+}
+
+/**
+ * PrincipalTenantMembershipCountOutputType without action
+ */
+export type PrincipalTenantMembershipCountOutputTypeCountQuestionAssignmentsMadeArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.QuestionAssignmentWhereInput
+}
+
 
 export type PrincipalTenantMembershipSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   principalId?: boolean
@@ -815,6 +1040,8 @@ export type PrincipalTenantMembershipSelect<ExtArgs extends runtime.Types.Extens
   principal?: boolean | Prisma.AuthPrincipalDefaultArgs<ExtArgs>
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   questions?: boolean | Prisma.PrincipalTenantMembership$questionsArgs<ExtArgs>
+  questionAssignments?: boolean | Prisma.PrincipalTenantMembership$questionAssignmentsArgs<ExtArgs>
+  questionAssignmentsMade?: boolean | Prisma.PrincipalTenantMembership$questionAssignmentsMadeArgs<ExtArgs>
   _count?: boolean | Prisma.PrincipalTenantMembershipCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["principalTenantMembership"]>
 
@@ -860,6 +1087,8 @@ export type PrincipalTenantMembershipInclude<ExtArgs extends runtime.Types.Exten
   principal?: boolean | Prisma.AuthPrincipalDefaultArgs<ExtArgs>
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   questions?: boolean | Prisma.PrincipalTenantMembership$questionsArgs<ExtArgs>
+  questionAssignments?: boolean | Prisma.PrincipalTenantMembership$questionAssignmentsArgs<ExtArgs>
+  questionAssignmentsMade?: boolean | Prisma.PrincipalTenantMembership$questionAssignmentsMadeArgs<ExtArgs>
   _count?: boolean | Prisma.PrincipalTenantMembershipCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type PrincipalTenantMembershipIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -877,6 +1106,8 @@ export type $PrincipalTenantMembershipPayload<ExtArgs extends runtime.Types.Exte
     principal: Prisma.$AuthPrincipalPayload<ExtArgs>
     tenant: Prisma.$TenantPayload<ExtArgs>
     questions: Prisma.$QuestionPayload<ExtArgs>[]
+    questionAssignments: Prisma.$QuestionAssignmentPayload<ExtArgs>[]
+    questionAssignmentsMade: Prisma.$QuestionAssignmentPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     principalId: string
@@ -1284,6 +1515,8 @@ export interface Prisma__PrincipalTenantMembershipClient<T, Null = never, ExtArg
   principal<T extends Prisma.AuthPrincipalDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AuthPrincipalDefaultArgs<ExtArgs>>): Prisma.Prisma__AuthPrincipalClient<runtime.Types.Result.GetResult<Prisma.$AuthPrincipalPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   tenant<T extends Prisma.TenantDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TenantDefaultArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   questions<T extends Prisma.PrincipalTenantMembership$questionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.PrincipalTenantMembership$questionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$QuestionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  questionAssignments<T extends Prisma.PrincipalTenantMembership$questionAssignmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.PrincipalTenantMembership$questionAssignmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$QuestionAssignmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  questionAssignmentsMade<T extends Prisma.PrincipalTenantMembership$questionAssignmentsMadeArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.PrincipalTenantMembership$questionAssignmentsMadeArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$QuestionAssignmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1743,6 +1976,54 @@ export type PrincipalTenantMembership$questionsArgs<ExtArgs extends runtime.Type
   take?: number
   skip?: number
   distinct?: Prisma.QuestionScalarFieldEnum | Prisma.QuestionScalarFieldEnum[]
+}
+
+/**
+ * PrincipalTenantMembership.questionAssignments
+ */
+export type PrincipalTenantMembership$questionAssignmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the QuestionAssignment
+   */
+  select?: Prisma.QuestionAssignmentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the QuestionAssignment
+   */
+  omit?: Prisma.QuestionAssignmentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.QuestionAssignmentInclude<ExtArgs> | null
+  where?: Prisma.QuestionAssignmentWhereInput
+  orderBy?: Prisma.QuestionAssignmentOrderByWithRelationInput | Prisma.QuestionAssignmentOrderByWithRelationInput[]
+  cursor?: Prisma.QuestionAssignmentWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.QuestionAssignmentScalarFieldEnum | Prisma.QuestionAssignmentScalarFieldEnum[]
+}
+
+/**
+ * PrincipalTenantMembership.questionAssignmentsMade
+ */
+export type PrincipalTenantMembership$questionAssignmentsMadeArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the QuestionAssignment
+   */
+  select?: Prisma.QuestionAssignmentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the QuestionAssignment
+   */
+  omit?: Prisma.QuestionAssignmentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.QuestionAssignmentInclude<ExtArgs> | null
+  where?: Prisma.QuestionAssignmentWhereInput
+  orderBy?: Prisma.QuestionAssignmentOrderByWithRelationInput | Prisma.QuestionAssignmentOrderByWithRelationInput[]
+  cursor?: Prisma.QuestionAssignmentWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.QuestionAssignmentScalarFieldEnum | Prisma.QuestionAssignmentScalarFieldEnum[]
 }
 
 /**

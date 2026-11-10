@@ -66,6 +66,7 @@ describe.skipIf(!databaseAvailable)(
         data: {
           principalId,
           tenantId,
+          roles: ['teacher'],
         },
       });
 
@@ -165,6 +166,7 @@ describe.skipIf(!databaseAvailable)(
             operation: 'CREATE',
             snapshot,
             ownership,
+            actorPrincipalId: ownership.createdByPrincipalId,
             event,
           }),
         ).rejects.toThrow();
@@ -174,6 +176,7 @@ describe.skipIf(!databaseAvailable)(
           version,
           content,
           answerKey,
+          ownerAssignment,
         ] = await Promise.all([
           requirePrisma().question.findUnique({
             where: { id: questionIdValue },
@@ -187,12 +190,21 @@ describe.skipIf(!databaseAvailable)(
           requirePrisma().questionVersionAnswerKey.findUnique({
             where: { questionVersionId: versionIdValue },
           }),
+          requirePrisma().questionAssignment.findUnique({
+            where: {
+              questionId_principalId: {
+                questionId: questionIdValue,
+                principalId: ownership.createdByPrincipalId,
+              },
+            },
+          }),
         ]);
 
         expect(question).toBeNull();
         expect(version).toBeNull();
         expect(content).toBeNull();
         expect(answerKey).toBeNull();
+        expect(ownerAssignment).toBeNull();
 
         const reservedEvent =
           await requirePrisma().outboxEvent.findUnique({

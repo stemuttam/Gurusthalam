@@ -1,3 +1,4 @@
+
 export interface Auth0Configuration {
   /** Origin used by the JWT validator. */
   readonly issuerBaseUrl: string;
@@ -5,25 +6,60 @@ export interface Auth0Configuration {
   readonly issuer: string;
   readonly audience: string;
   readonly learnerProgressScope: string;
+  readonly questionBankWriteScope: string;
+  readonly questionBankAssignmentManagementScope: string;
 }
 
 export const AUTH0_CONFIGURATION = Symbol('AUTH0_CONFIGURATION');
 
+const DEFAULT_LEARNER_PROGRESS_SCOPE = 'read:learning-progress';
+const DEFAULT_QUESTION_BANK_WRITE_SCOPE = 'write:question-bank';
+const DEFAULT_QUESTION_BANK_ASSIGNMENT_SCOPE =
+  'manage:question-bank-access';
+
+function validateScope(value: string, environmentName: string): void {
+  if (!/^[A-Za-z0-9:_./-]{1,256}$/.test(value)) {
+    throw new Error(`${environmentName} is invalid.`);
+  }
+}
+
 /**
  * Loads and validates Auth0 resource-server configuration.
  *
- * A completely unconfigured local/test environment can boot, but the protected
- * route will return 503 (never silently bypass authentication). Partial
- * configuration is always an error; production requires complete settings.
+ * A completely unconfigured local/test environment can boot, but protected
+ * routes return 503. Partial configuration is always an error; production
+ * requires complete issuer and audience settings.
  */
 export function loadAuth0Configuration(
   environment: NodeJS.ProcessEnv = process.env,
 ): Auth0Configuration | null {
   const rawIssuer = environment.AUTH0_ISSUER_BASE_URL?.trim() ?? '';
   const audience = environment.AUTH0_AUDIENCE?.trim() ?? '';
+
   const learnerProgressScope =
     environment.AUTH0_LEARNING_PROGRESS_SCOPE?.trim() ||
-    'read:learning-progress';
+    DEFAULT_LEARNER_PROGRESS_SCOPE;
+
+  const questionBankWriteScope =
+    environment.AUTH0_QUESTION_BANK_WRITE_SCOPE?.trim() ||
+    DEFAULT_QUESTION_BANK_WRITE_SCOPE;
+
+  const questionBankAssignmentManagementScope =
+    environment.AUTH0_QUESTION_BANK_ASSIGNMENT_MANAGEMENT_SCOPE?.trim() ||
+    DEFAULT_QUESTION_BANK_ASSIGNMENT_SCOPE;
+
+  validateScope(
+    learnerProgressScope,
+    'AUTH0_LEARNING_PROGRESS_SCOPE',
+  );
+  validateScope(
+    questionBankWriteScope,
+    'AUTH0_QUESTION_BANK_WRITE_SCOPE',
+  );
+  validateScope(
+    questionBankAssignmentManagementScope,
+    'AUTH0_QUESTION_BANK_ASSIGNMENT_MANAGEMENT_SCOPE',
+  );
 
   if (rawIssuer.length === 0 && audience.length === 0) {
     if (environment.NODE_ENV === 'production') {
@@ -52,11 +88,8 @@ export function loadAuth0Configuration(
     );
   }
 
-  if (!/^[A-Za-z0-9:_./-]{1,256}$/.test(learnerProgressScope)) {
-    throw new Error('AUTH0_LEARNING_PROGRESS_SCOPE is invalid.');
-  }
-
   let issuerUrl: URL;
+
   try {
     issuerUrl = new URL(rawIssuer);
   } catch {
@@ -85,5 +118,7 @@ export function loadAuth0Configuration(
     issuer: `${issuerUrl.origin}/`,
     audience,
     learnerProgressScope,
+    questionBankWriteScope,
+    questionBankAssignmentManagementScope,
   });
 }

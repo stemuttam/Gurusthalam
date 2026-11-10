@@ -1,5 +1,6 @@
 import {
   type QuestionId,
+  QuestionOwnership,
   type QuestionVersionId,
   type QuestionVersionSnapshot,
   type QuestionLifecycleRepository,
@@ -14,13 +15,21 @@ import {
 } from '../../mappers/question-bank/index.js';
 
 import { withPrismaRepositoryErrorBoundary } from '../prisma-repository-error.mapper.js';
+import {
+  PrismaRepositoryError,
+  PrismaRepositoryErrorCode,
+} from '../prisma-repository.error.js';
+
+const CREATE_TENANT_ROLES = ['teacher', 'question_bank_admin', 'tenant_admin'] as const;
+const APPEND_ASSIGNMENT_ROLES = ['OWNER', 'AUTHOR', 'CO_AUTHOR', 'EDITOR'] as const;
 
 /**
- * Tenant-scoped lifecycle persistence.
+ * Tenant-scoped Question lifecycle persistence.
  *
- * The legacy QuestionVersionRepository remains available for its existing
- * read/test contracts. New lifecycle writes must use this adapter; it never
- * upserts Question and never accepts ownership from the draft.
+ * All write authorization is repeated inside the same PostgreSQL transaction
+ * as the Question/version/outbox write. The immutable creator identity is
+ * persisted on Question; the current actor is independently authorized for
+ * each operation.
  */
 export class PrismaQuestionLifecycleRepository implements QuestionLifecycleRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -42,48 +51,24 @@ export class PrismaQuestionLifecycleRepository implements QuestionLifecycleRepos
     },
     content: {
       include: {
-        options: {
-          orderBy: { position: 'asc' as const },
-        },
-        matchingLeftItems: {
-          orderBy: { position: 'asc' as const },
-        },
-        matchingRightItems: {
-          orderBy: { position: 'asc' as const },
-        },
-        orderingItems: {
-          orderBy: { position: 'asc' as const },
-        },
-        fillBlankSegments: {
-          orderBy: { position: 'asc' as const },
-        },
+        options: { orderBy: { position: 'asc' as const } },
+        matchingLeftItems: { orderBy: { position: 'asc' as const } },
+        matchingRightItems: { orderBy: { position: 'asc' as const } },
+        orderingItems: { orderBy: { position: 'asc' as const } },
+        fillBlankSegments: { orderBy: { position: 'asc' as const } },
       },
     },
     answerKey: {
       include: {
-        optionAnswers: {
-          orderBy: { position: 'asc' as const },
-        },
-        acceptedAnswers: {
-          orderBy: { position: 'asc' as const },
-        },
-        matchingPairs: {
-          orderBy: { position: 'asc' as const },
-        },
-        orderingAnswers: {
-          orderBy: { position: 'asc' as const },
-        },
+        optionAnswers: { orderBy: { position: 'asc' as const } },
+        acceptedAnswers: { orderBy: { position: 'asc' as const } },
+        matchingPairs: { orderBy: { position: 'asc' as const } },
+        orderingAnswers: { orderBy: { position: 'asc' as const } },
         blankAnswers: {
           orderBy: { position: 'asc' as const },
           include: {
-            blankSegment: {
-              select: {
-                blankId: true,
-              },
-            },
-            acceptedAnswers: {
-              orderBy: { position: 'asc' as const },
-            },
+            blankSegment: { select: { blankId: true } },
+            acceptedAnswers: { orderBy: { position: 'asc' as const } },
           },
         },
       },
@@ -101,11 +86,12 @@ export class PrismaQuestionLifecycleRepository implements QuestionLifecycleRepos
           where: {
             questionId: questionId.value,
             completedAt: { not: null },
-            question: { is: { tenantId } },
+            question: { is: { tenantId, createdByPrincipalId: { not: null } } },
           },
           orderBy: { versionNumber: 'desc' },
           include: PrismaQuestionLifecycleRepository.relationGraph,
         });
+
         return record === null
           ? null
           : QuestionVersionPrismaMapper.toDomain(
@@ -128,10 +114,11 @@ export class PrismaQuestionLifecycleRepository implements QuestionLifecycleRepos
             id: versionId.value,
             questionId: questionId.value,
             completedAt: { not: null },
-            question: { is: { tenantId } },
+            question: { is: { tenantId, createdByPrincipalId: { not: null } } },
           },
           include: PrismaQuestionLifecycleRepository.relationGraph,
         });
+
         return record === null
           ? null
           : QuestionVersionPrismaMapper.toDomain(
@@ -141,152 +128,284 @@ export class PrismaQuestionLifecycleRepository implements QuestionLifecycleRepos
     );
   }
 
+  async findOwnership(
+    tenantId: string,
+    questionId: QuestionId,
+  ): Promise<QuestionOwnership | null> {
+    return withPrismaRepositoryErrorBoundary(
+      'QuestionLifecycleRepository.findOwnership',
+      async () => {
+        const question = await this.prisma.question.findFirst({
+          where: {
+            id: questionId.value,
+            tenantId,
+            createdByPrincipalId: { not: null },
+          },
+          select: {
+            tenantId: true,
+            createdByPrincipalId: true,
+          },
+        });
+
+        if (
+          question === null ||
+          question.tenantId === null ||
+          question.createdByPrincipalId === null
+        ) {
+          return null;
+        }
+
+        return QuestionOwnership.create(
+          question.tenantId,
+          question.createdByPrincipalId,
+        );
+      },
+    );
+  }
+
   async persist(command: QuestionLifecycleWrite): Promise<void> {
     await withPrismaRepositoryErrorBoundary(
       'QuestionLifecycleRepository.persist',
       async () => {
-        const { snapshot, ownership, event } = command;
+        const { snapshot, ownership, event, actorPrincipalId } = command;
         const persistence = QuestionVersionPrismaMapper.toPersistence(snapshot);
         const { version } = persistence;
         const questionId = snapshot.questionId.value;
+        const previousVersionId = snapshot.lineage.previousVersion?.id.value ?? null;
+        const restoredFromVersionId = snapshot.lineage.restoredFromVersion?.id.value ?? null;
 
-        const lineage = snapshot.lineage;
-        const previousVersionId = lineage.previousVersion?.id.value ?? null;
-        const restoredFromVersionId = lineage.restoredFromVersion?.id.value ?? null;
-
-        if (
-          event.eventVersion !== 1 ||
-          event.aggregateType !== 'Question' ||
-          event.aggregateId !== questionId ||
-          event.payload.questionId !== questionId ||
-          event.payload.questionVersionId !== version.id ||
-          event.payload.versionNumber !== Number(version.versionNumber) ||
-          event.payload.tenantId !== ownership.tenantId ||
-          event.occurredAt.getTime() !== version.createdAt.getTime() ||
-          (event.eventName === 'QuestionCreated' &&
-            (event.payload.createdByPrincipalId !== ownership.createdByPrincipalId ||
-              previousVersionId !== null ||
-              restoredFromVersionId !== null ||
-              version.previousVersionId !== null ||
-              version.restoredFromVersionId !== null ||
-              version.versionNumber !== 1n)) ||
-          (event.eventName === 'QuestionRevised' &&
-            (event.payload.actorPrincipalId !== ownership.createdByPrincipalId ||
-              event.payload.previousVersionId !== previousVersionId ||
-              restoredFromVersionId !== null ||
-              version.previousVersionId !== previousVersionId ||
-              version.restoredFromVersionId !== null)) ||
-          (event.eventName === 'QuestionRestored' &&
-            (event.payload.actorPrincipalId !== ownership.createdByPrincipalId ||
-              event.payload.previousVersionId !== previousVersionId ||
-              event.payload.restoredFromVersionId !== restoredFromVersionId ||
-              version.previousVersionId !== previousVersionId ||
-              version.restoredFromVersionId !== restoredFromVersionId ||
-              restoredFromVersionId === null))
-        ) {
-          throw new TypeError(
-            'Question lifecycle event does not match its snapshot, lineage, aggregate or ownership.',
-          );
-        }
-
-        await this.prisma.$transaction(async (transaction) => {
-          // Membership, principal and tenant status are checked at write time.
-          const membership = await transaction.principalTenantMembership.findFirst({
-            where: {
-              principalId: ownership.createdByPrincipalId,
-              tenantId: ownership.tenantId,
-              status: 'ACTIVE',
-              principal: { is: { status: 'ACTIVE' } },
-              tenant: { is: { status: 'ACTIVE' } },
-            },
-            select: { principalId: true, tenantId: true },
-          });
-
-          if (membership === null) {
-            throw new Error('An active principal, tenant and membership are required.');
-          }
-
-          if (command.operation === 'CREATE') {
-            if (
-              version.versionNumber !== 1n ||
-              version.previousVersionId !== null ||
-              version.restoredFromVersionId !== null ||
-              event.eventName !== 'QuestionCreated'
-            ) {
-              throw new TypeError('CREATE requires an initial version and QuestionCreated event.');
-            }
-
-            // Explicit create: never adopt an existing or unassigned legacy Question.
-            await transaction.question.create({
-              data: {
-                id: questionId,
-                tenantId: ownership.tenantId,
-                createdByPrincipalId: ownership.createdByPrincipalId,
-              },
-            });
-          } else {
-            // Serialize appends for this Question and exclude unassigned legacy rows.
-            const locked = await transaction.$queryRaw<Array<{ id: string }>>`
-              SELECT "id"
-              FROM "Question"
-              WHERE "id" = ${questionId}
-                AND "tenantId" = ${ownership.tenantId}
-                AND "createdByPrincipalId" IS NOT NULL
-              FOR UPDATE
-            `;
-
-            if (locked.length !== 1) {
-              throw new Error('Question was not found in the authenticated tenant.');
-            }
-
-            const latest = await transaction.questionVersion.findFirst({
-              where: {
-                questionId,
-                completedAt: { not: null },
-              },
-              orderBy: { versionNumber: 'desc' },
-              select: { id: true, versionNumber: true },
-            });
-
-            if (
-              latest === null ||
-              latest.id !== command.expectedPreviousVersionId.value ||
-              version.versionNumber !== latest.versionNumber + 1n ||
-              version.previousVersionId !== latest.id
-            ) {
-              throw new Error('Question version conflict: the expected predecessor is no longer current.');
-            }
-
-            if (
-              event.eventName !== 'QuestionRevised' &&
-              event.eventName !== 'QuestionRestored'
-            ) {
-              throw new TypeError('APPEND requires a QuestionRevised or QuestionRestored event.');
-            }
-          }
-
-          // Insert the complete normalized snapshot. No Question upsert occurs here.
-          await PrismaQuestionLifecycleRepository.insertSnapshot(
-            transaction,
-            persistence,
-          );
-
-          // The full immutable event envelope is committed with the snapshot.
-          await transaction.outboxEvent.create({
-            data: {
-              eventType: event.eventName,
-              aggregateType: 'Question',
-              aggregateId: questionId,
-              dedupeKey: `question-domain-event:${event.eventId}`,
-              payload: JSON.parse(JSON.stringify(event)) as Prisma.InputJsonValue,
-              status: 'PENDING',
-              attempts: 0,
-              availableAt: event.occurredAt,
-            },
-          });
+        this.assertCommandIntegrity(command, {
+          questionId,
+          version,
+          previousVersionId,
+          restoredFromVersionId,
         });
+
+        await this.prisma.$transaction(
+          async (transaction) => {
+            // Resolve the current actor, not the immutable Question creator.
+            const actorMembership = await transaction.principalTenantMembership.findFirst({
+              where: {
+                principalId: actorPrincipalId,
+                tenantId: ownership.tenantId,
+                status: 'ACTIVE',
+                principal: { is: { status: 'ACTIVE' } },
+                tenant: { is: { status: 'ACTIVE' } },
+              },
+              select: {
+                principalId: true,
+                roles: true,
+              },
+            });
+
+            if (actorMembership === null) {
+              throw new PrismaRepositoryError(
+                'The authenticated principal is not an active member of this tenant.',
+                PrismaRepositoryErrorCode.AUTHORIZATION_DENIED,
+              );
+            }
+
+            if (command.operation === 'CREATE') {
+              if (actorPrincipalId !== ownership.createdByPrincipalId) {
+                throw new PrismaRepositoryError(
+                  'The Question creator must be the authenticated principal.',
+                  PrismaRepositoryErrorCode.AUTHORIZATION_DENIED,
+                );
+              }
+
+              if (
+                !actorMembership.roles.some((role) =>
+                  (CREATE_TENANT_ROLES as readonly string[]).includes(role),
+                )
+              ) {
+                throw new PrismaRepositoryError(
+                  'The authenticated tenant membership cannot create Questions.',
+                  PrismaRepositoryErrorCode.AUTHORIZATION_DENIED,
+                );
+              }
+
+              // Explicit insert: never adopt or overwrite a legacy Question.
+              await transaction.question.create({
+                data: {
+                  id: questionId,
+                  tenantId: ownership.tenantId,
+                  createdByPrincipalId: ownership.createdByPrincipalId,
+                },
+              });
+
+              // Creator ownership and the initial version are one atomic unit.
+              await transaction.questionAssignment.create({
+                data: {
+                  questionId,
+                  tenantId: ownership.tenantId,
+                  principalId: ownership.createdByPrincipalId,
+                  role: 'OWNER',
+                  assignedByPrincipalId: actorPrincipalId,
+                },
+              });
+            } else {
+              // All append and future assignment-mutation paths must acquire
+              // this aggregate lock before reading/changing assignments.
+              const locked = await transaction.$queryRaw<
+                Array<{
+                  id: string;
+                  tenantId: string | null;
+                  createdByPrincipalId: string | null;
+                }>
+              >`
+                SELECT "id", "tenantId", "createdByPrincipalId"
+                FROM "Question"
+                WHERE "id" = ${questionId}
+                  AND "tenantId" = ${ownership.tenantId}
+                FOR UPDATE
+              `;
+
+              const question = locked[0];
+
+              if (
+                question === undefined ||
+                question.tenantId !== ownership.tenantId ||
+                question.createdByPrincipalId === null ||
+                question.createdByPrincipalId !== ownership.createdByPrincipalId
+              ) {
+                throw new PrismaRepositoryError(
+                  'The Question was not found in the authenticated tenant.',
+                  PrismaRepositoryErrorCode.RECORD_NOT_FOUND,
+                );
+              }
+
+              const assignment = await transaction.questionAssignment.findFirst({
+                where: {
+                  questionId,
+                  tenantId: ownership.tenantId,
+                  principalId: actorPrincipalId,
+                  role: { in: [...APPEND_ASSIGNMENT_ROLES] },
+                },
+                select: { role: true },
+              });
+
+              if (assignment === null) {
+                throw new PrismaRepositoryError(
+                  'An active Question assignment is required for this operation.',
+                  PrismaRepositoryErrorCode.AUTHORIZATION_DENIED,
+                );
+              }
+
+              const latest = await transaction.questionVersion.findFirst({
+                where: {
+                  questionId,
+                  completedAt: { not: null },
+                },
+                orderBy: { versionNumber: 'desc' },
+                select: { id: true, versionNumber: true },
+              });
+
+              if (
+                latest === null ||
+                latest.id !== command.expectedPreviousVersionId.value ||
+                version.versionNumber !== latest.versionNumber + 1n ||
+                version.previousVersionId !== latest.id
+              ) {
+                throw new PrismaRepositoryError(
+                  'The Question has changed since the requested version was read.',
+                  PrismaRepositoryErrorCode.CONCURRENT_MODIFICATION,
+                );
+              }
+            }
+
+            await PrismaQuestionLifecycleRepository.insertSnapshot(
+              transaction,
+              persistence,
+            );
+
+            await transaction.outboxEvent.create({
+              data: {
+                eventType: event.eventName,
+                aggregateType: 'Question',
+                aggregateId: questionId,
+                dedupeKey: `question-domain-event:${event.eventId}`,
+                payload: JSON.parse(JSON.stringify(event)) as Prisma.InputJsonValue,
+                status: 'PENDING',
+                attempts: 0,
+                availableAt: event.occurredAt,
+              },
+            });
+          },
+          { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+        );
       },
     );
+  }
+
+  private assertCommandIntegrity(
+    command: QuestionLifecycleWrite,
+    context: {
+      readonly questionId: string;
+      readonly version: ReturnType<typeof QuestionVersionPrismaMapper.toPersistence>['version'];
+      readonly previousVersionId: string | null;
+      readonly restoredFromVersionId: string | null;
+    },
+  ): void {
+    const { questionId, version, previousVersionId, restoredFromVersionId } = context;
+    const { ownership, actorPrincipalId, event, snapshot } = command;
+
+    if (
+      event.eventVersion !== 1 ||
+      event.aggregateType !== 'Question' ||
+      event.aggregateId !== questionId ||
+      event.payload.questionId !== questionId ||
+      event.payload.questionVersionId !== version.id ||
+      event.payload.versionNumber !== Number(version.versionNumber) ||
+      event.payload.tenantId !== ownership.tenantId ||
+      event.occurredAt.getTime() !== version.createdAt.getTime() ||
+      snapshot.questionId.value !== questionId
+    ) {
+      throw new TypeError('Question lifecycle event does not match its snapshot or ownership.');
+    }
+
+    if (command.operation === 'CREATE') {
+      if (
+        event.eventName !== 'QuestionCreated' ||
+        event.payload.createdByPrincipalId !== ownership.createdByPrincipalId ||
+        actorPrincipalId !== ownership.createdByPrincipalId ||
+        previousVersionId !== null ||
+        restoredFromVersionId !== null ||
+        version.previousVersionId !== null ||
+        version.restoredFromVersionId !== null ||
+        version.versionNumber !== 1n
+      ) {
+        throw new TypeError('CREATE requires the creator, initial version and QuestionCreated event.');
+      }
+      return;
+    }
+
+    if (
+      event.eventName === 'QuestionCreated' ||
+      event.payload.actorPrincipalId !== actorPrincipalId ||
+      previousVersionId !== command.expectedPreviousVersionId.value ||
+      version.previousVersionId !== previousVersionId
+    ) {
+      throw new TypeError('APPEND event actor or predecessor does not match the lifecycle command.');
+    }
+
+    if (
+      event.eventName === 'QuestionRevised' &&
+      (restoredFromVersionId !== null ||
+        event.payload.previousVersionId !== previousVersionId ||
+        version.restoredFromVersionId !== null)
+    ) {
+      throw new TypeError('QuestionRevised event does not match the version lineage.');
+    }
+
+    if (
+      event.eventName === 'QuestionRestored' &&
+      (restoredFromVersionId === null ||
+        event.payload.previousVersionId !== previousVersionId ||
+        event.payload.restoredFromVersionId !== restoredFromVersionId ||
+        version.restoredFromVersionId !== restoredFromVersionId)
+    ) {
+      throw new TypeError('QuestionRestored event does not match the version lineage.');
+    }
   }
 
   private static async insertSnapshot(

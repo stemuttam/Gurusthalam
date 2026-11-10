@@ -289,3 +289,8 @@ export type QuestionVersionBlankAnswer = Prisma.QuestionVersionBlankAnswerModel
  *
  */
 export type QuestionVersionBlankAcceptedAnswer = Prisma.QuestionVersionBlankAcceptedAnswerModel
+/**
+ * Model QuestionAssignment
+ *
+ */
+export type QuestionAssignment = Prisma.QuestionAssignmentModel

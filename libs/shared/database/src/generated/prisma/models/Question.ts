@@ -176,6 +176,7 @@ export type QuestionWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Question"> | Date | string
   versions?: Prisma.QuestionVersionListRelationFilter
   ownerMembership?: Prisma.XOR<Prisma.PrincipalTenantMembershipNullableScalarRelationFilter, Prisma.PrincipalTenantMembershipWhereInput> | null
+  assignments?: Prisma.QuestionAssignmentListRelationFilter
 }
 
 export type QuestionOrderByWithRelationInput = {
@@ -185,10 +186,12 @@ export type QuestionOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   versions?: Prisma.QuestionVersionOrderByRelationAggregateInput
   ownerMembership?: Prisma.PrincipalTenantMembershipOrderByWithRelationInput
+  assignments?: Prisma.QuestionAssignmentOrderByRelationAggregateInput
 }
 
 export type QuestionWhereUniqueInput = Prisma.AtLeast<{
   id?: string
+  id_tenantId?: Prisma.QuestionIdTenantIdCompoundUniqueInput
   AND?: Prisma.QuestionWhereInput | Prisma.QuestionWhereInput[]
   OR?: Prisma.QuestionWhereInput[]
   NOT?: Prisma.QuestionWhereInput | Prisma.QuestionWhereInput[]
@@ -197,7 +200,8 @@ export type QuestionWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"Question"> | Date | string
   versions?: Prisma.QuestionVersionListRelationFilter
   ownerMembership?: Prisma.XOR<Prisma.PrincipalTenantMembershipNullableScalarRelationFilter, Prisma.PrincipalTenantMembershipWhereInput> | null
-}, "id">
+  assignments?: Prisma.QuestionAssignmentListRelationFilter
+}, "id" | "id_tenantId">
 
 export type QuestionOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -224,6 +228,7 @@ export type QuestionCreateInput = {
   createdAt?: Date | string
   versions?: Prisma.QuestionVersionCreateNestedManyWithoutQuestionInput
   ownerMembership?: Prisma.PrincipalTenantMembershipCreateNestedOneWithoutQuestionsInput
+  assignments?: Prisma.QuestionAssignmentCreateNestedManyWithoutQuestionInput
 }
 
 export type QuestionUncheckedCreateInput = {
@@ -232,6 +237,7 @@ export type QuestionUncheckedCreateInput = {
   createdByPrincipalId?: string | null
   createdAt?: Date | string
   versions?: Prisma.QuestionVersionUncheckedCreateNestedManyWithoutQuestionInput
+  assignments?: Prisma.QuestionAssignmentUncheckedCreateNestedManyWithoutQuestionInput
 }
 
 export type QuestionUpdateInput = {
@@ -239,6 +245,7 @@ export type QuestionUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   versions?: Prisma.QuestionVersionUpdateManyWithoutQuestionNestedInput
   ownerMembership?: Prisma.PrincipalTenantMembershipUpdateOneWithoutQuestionsNestedInput
+  assignments?: Prisma.QuestionAssignmentUpdateManyWithoutQuestionNestedInput
 }
 
 export type QuestionUncheckedUpdateInput = {
@@ -247,6 +254,7 @@ export type QuestionUncheckedUpdateInput = {
   createdByPrincipalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   versions?: Prisma.QuestionVersionUncheckedUpdateManyWithoutQuestionNestedInput
+  assignments?: Prisma.QuestionAssignmentUncheckedUpdateManyWithoutQuestionNestedInput
 }
 
 export type QuestionCreateManyInput = {
@@ -276,6 +284,11 @@ export type QuestionListRelationFilter = {
 
 export type QuestionOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
+}
+
+export type QuestionIdTenantIdCompoundUniqueInput = {
+  id: string
+  tenantId: string
 }
 
 export type QuestionCountOrderByAggregateInput = {
@@ -360,16 +373,32 @@ export type QuestionUpdateOneRequiredWithoutVersionsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.QuestionUpdateToOneWithWhereWithoutVersionsInput, Prisma.QuestionUpdateWithoutVersionsInput>, Prisma.QuestionUncheckedUpdateWithoutVersionsInput>
 }
 
+export type QuestionCreateNestedOneWithoutAssignmentsInput = {
+  create?: Prisma.XOR<Prisma.QuestionCreateWithoutAssignmentsInput, Prisma.QuestionUncheckedCreateWithoutAssignmentsInput>
+  connectOrCreate?: Prisma.QuestionCreateOrConnectWithoutAssignmentsInput
+  connect?: Prisma.QuestionWhereUniqueInput
+}
+
+export type QuestionUpdateOneRequiredWithoutAssignmentsNestedInput = {
+  create?: Prisma.XOR<Prisma.QuestionCreateWithoutAssignmentsInput, Prisma.QuestionUncheckedCreateWithoutAssignmentsInput>
+  connectOrCreate?: Prisma.QuestionCreateOrConnectWithoutAssignmentsInput
+  upsert?: Prisma.QuestionUpsertWithoutAssignmentsInput
+  connect?: Prisma.QuestionWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.QuestionUpdateToOneWithWhereWithoutAssignmentsInput, Prisma.QuestionUpdateWithoutAssignmentsInput>, Prisma.QuestionUncheckedUpdateWithoutAssignmentsInput>
+}
+
 export type QuestionCreateWithoutOwnerMembershipInput = {
   id: string
   createdAt?: Date | string
   versions?: Prisma.QuestionVersionCreateNestedManyWithoutQuestionInput
+  assignments?: Prisma.QuestionAssignmentCreateNestedManyWithoutQuestionInput
 }
 
 export type QuestionUncheckedCreateWithoutOwnerMembershipInput = {
   id: string
   createdAt?: Date | string
   versions?: Prisma.QuestionVersionUncheckedCreateNestedManyWithoutQuestionInput
+  assignments?: Prisma.QuestionAssignmentUncheckedCreateNestedManyWithoutQuestionInput
 }
 
 export type QuestionCreateOrConnectWithoutOwnerMembershipInput = {
@@ -412,6 +441,7 @@ export type QuestionCreateWithoutVersionsInput = {
   id: string
   createdAt?: Date | string
   ownerMembership?: Prisma.PrincipalTenantMembershipCreateNestedOneWithoutQuestionsInput
+  assignments?: Prisma.QuestionAssignmentCreateNestedManyWithoutQuestionInput
 }
 
 export type QuestionUncheckedCreateWithoutVersionsInput = {
@@ -419,6 +449,7 @@ export type QuestionUncheckedCreateWithoutVersionsInput = {
   tenantId?: string | null
   createdByPrincipalId?: string | null
   createdAt?: Date | string
+  assignments?: Prisma.QuestionAssignmentUncheckedCreateNestedManyWithoutQuestionInput
 }
 
 export type QuestionCreateOrConnectWithoutVersionsInput = {
@@ -441,6 +472,7 @@ export type QuestionUpdateWithoutVersionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ownerMembership?: Prisma.PrincipalTenantMembershipUpdateOneWithoutQuestionsNestedInput
+  assignments?: Prisma.QuestionAssignmentUpdateManyWithoutQuestionNestedInput
 }
 
 export type QuestionUncheckedUpdateWithoutVersionsInput = {
@@ -448,6 +480,53 @@ export type QuestionUncheckedUpdateWithoutVersionsInput = {
   tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdByPrincipalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  assignments?: Prisma.QuestionAssignmentUncheckedUpdateManyWithoutQuestionNestedInput
+}
+
+export type QuestionCreateWithoutAssignmentsInput = {
+  id: string
+  createdAt?: Date | string
+  versions?: Prisma.QuestionVersionCreateNestedManyWithoutQuestionInput
+  ownerMembership?: Prisma.PrincipalTenantMembershipCreateNestedOneWithoutQuestionsInput
+}
+
+export type QuestionUncheckedCreateWithoutAssignmentsInput = {
+  id: string
+  tenantId?: string | null
+  createdByPrincipalId?: string | null
+  createdAt?: Date | string
+  versions?: Prisma.QuestionVersionUncheckedCreateNestedManyWithoutQuestionInput
+}
+
+export type QuestionCreateOrConnectWithoutAssignmentsInput = {
+  where: Prisma.QuestionWhereUniqueInput
+  create: Prisma.XOR<Prisma.QuestionCreateWithoutAssignmentsInput, Prisma.QuestionUncheckedCreateWithoutAssignmentsInput>
+}
+
+export type QuestionUpsertWithoutAssignmentsInput = {
+  update: Prisma.XOR<Prisma.QuestionUpdateWithoutAssignmentsInput, Prisma.QuestionUncheckedUpdateWithoutAssignmentsInput>
+  create: Prisma.XOR<Prisma.QuestionCreateWithoutAssignmentsInput, Prisma.QuestionUncheckedCreateWithoutAssignmentsInput>
+  where?: Prisma.QuestionWhereInput
+}
+
+export type QuestionUpdateToOneWithWhereWithoutAssignmentsInput = {
+  where?: Prisma.QuestionWhereInput
+  data: Prisma.XOR<Prisma.QuestionUpdateWithoutAssignmentsInput, Prisma.QuestionUncheckedUpdateWithoutAssignmentsInput>
+}
+
+export type QuestionUpdateWithoutAssignmentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  versions?: Prisma.QuestionVersionUpdateManyWithoutQuestionNestedInput
+  ownerMembership?: Prisma.PrincipalTenantMembershipUpdateOneWithoutQuestionsNestedInput
+}
+
+export type QuestionUncheckedUpdateWithoutAssignmentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdByPrincipalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  versions?: Prisma.QuestionVersionUncheckedUpdateManyWithoutQuestionNestedInput
 }
 
 export type QuestionCreateManyOwnerMembershipInput = {
@@ -459,12 +538,14 @@ export type QuestionUpdateWithoutOwnerMembershipInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   versions?: Prisma.QuestionVersionUpdateManyWithoutQuestionNestedInput
+  assignments?: Prisma.QuestionAssignmentUpdateManyWithoutQuestionNestedInput
 }
 
 export type QuestionUncheckedUpdateWithoutOwnerMembershipInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   versions?: Prisma.QuestionVersionUncheckedUpdateManyWithoutQuestionNestedInput
+  assignments?: Prisma.QuestionAssignmentUncheckedUpdateManyWithoutQuestionNestedInput
 }
 
 export type QuestionUncheckedUpdateManyWithoutOwnerMembershipInput = {
@@ -479,10 +560,12 @@ export type QuestionUncheckedUpdateManyWithoutOwnerMembershipInput = {
 
 export type QuestionCountOutputType = {
   versions: number
+  assignments: number
 }
 
 export type QuestionCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   versions?: boolean | QuestionCountOutputTypeCountVersionsArgs
+  assignments?: boolean | QuestionCountOutputTypeCountAssignmentsArgs
 }
 
 /**
@@ -502,6 +585,13 @@ export type QuestionCountOutputTypeCountVersionsArgs<ExtArgs extends runtime.Typ
   where?: Prisma.QuestionVersionWhereInput
 }
 
+/**
+ * QuestionCountOutputType without action
+ */
+export type QuestionCountOutputTypeCountAssignmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.QuestionAssignmentWhereInput
+}
+
 
 export type QuestionSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -510,6 +600,7 @@ export type QuestionSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   createdAt?: boolean
   versions?: boolean | Prisma.Question$versionsArgs<ExtArgs>
   ownerMembership?: boolean | Prisma.Question$ownerMembershipArgs<ExtArgs>
+  assignments?: boolean | Prisma.Question$assignmentsArgs<ExtArgs>
   _count?: boolean | Prisma.QuestionCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["question"]>
 
@@ -540,6 +631,7 @@ export type QuestionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs =
 export type QuestionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   versions?: boolean | Prisma.Question$versionsArgs<ExtArgs>
   ownerMembership?: boolean | Prisma.Question$ownerMembershipArgs<ExtArgs>
+  assignments?: boolean | Prisma.Question$assignmentsArgs<ExtArgs>
   _count?: boolean | Prisma.QuestionCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type QuestionIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -554,6 +646,7 @@ export type $QuestionPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
   objects: {
     versions: Prisma.$QuestionVersionPayload<ExtArgs>[]
     ownerMembership: Prisma.$PrincipalTenantMembershipPayload<ExtArgs> | null
+    assignments: Prisma.$QuestionAssignmentPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -956,6 +1049,7 @@ export interface Prisma__QuestionClient<T, Null = never, ExtArgs extends runtime
   readonly [Symbol.toStringTag]: "PrismaPromise"
   versions<T extends Prisma.Question$versionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Question$versionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$QuestionVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   ownerMembership<T extends Prisma.Question$ownerMembershipArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Question$ownerMembershipArgs<ExtArgs>>): Prisma.Prisma__PrincipalTenantMembershipClient<runtime.Types.Result.GetResult<Prisma.$PrincipalTenantMembershipPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  assignments<T extends Prisma.Question$assignmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Question$assignmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$QuestionAssignmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1430,6 +1524,30 @@ export type Question$ownerMembershipArgs<ExtArgs extends runtime.Types.Extension
    */
   include?: Prisma.PrincipalTenantMembershipInclude<ExtArgs> | null
   where?: Prisma.PrincipalTenantMembershipWhereInput
+}
+
+/**
+ * Question.assignments
+ */
+export type Question$assignmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the QuestionAssignment
+   */
+  select?: Prisma.QuestionAssignmentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the QuestionAssignment
+   */
+  omit?: Prisma.QuestionAssignmentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.QuestionAssignmentInclude<ExtArgs> | null
+  where?: Prisma.QuestionAssignmentWhereInput
+  orderBy?: Prisma.QuestionAssignmentOrderByWithRelationInput | Prisma.QuestionAssignmentOrderByWithRelationInput[]
+  cursor?: Prisma.QuestionAssignmentWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.QuestionAssignmentScalarFieldEnum | Prisma.QuestionAssignmentScalarFieldEnum[]
 }
 
 /**

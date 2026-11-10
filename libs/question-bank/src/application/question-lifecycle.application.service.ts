@@ -39,9 +39,12 @@ export interface AppendQuestionResult extends CreateQuestionResult {
 /**
  * Application orchestration for Question create/revise/restore.
  *
- * Authorization identity is supplied by the API adapter from the trusted
- * request principal. This service never accepts tenant or actor identifiers
- * from the question draft itself.
+ * The creator and the actor are deliberately separate:
+ * - ownership.createdByPrincipalId never changes after Question creation;
+ * - actorPrincipalId identifies the principal performing each write.
+ *
+ * The API adapter supplies the actor from the trusted authenticated-principal
+ * boundary. Tenant and actor identifiers are never accepted from the draft.
  */
 export class QuestionLifecycleApplicationService {
   constructor(
@@ -53,7 +56,12 @@ export class QuestionLifecycleApplicationService {
     actor: QuestionActor,
     draft: QuestionVersionDraft,
   ): Promise<CreateQuestionResult> {
-    const ownership = this.createOwnership(actor);
+    const validatedActor = this.validateActor(actor);
+    const ownership = QuestionOwnership.create(
+      validatedActor.tenantId,
+      validatedActor.principalId,
+    );
+
     const questionId = QuestionId.generate();
     const versionId = QuestionVersionId.generate();
     const versionNumber = QuestionVersionNumber.initial();
@@ -86,6 +94,7 @@ export class QuestionLifecycleApplicationService {
       operation: 'CREATE',
       snapshot,
       ownership,
+      actorPrincipalId: validatedActor.principalId,
       event,
     });
 
@@ -101,8 +110,22 @@ export class QuestionLifecycleApplicationService {
     questionIdValue: string,
     draft: QuestionVersionDraft,
   ): Promise<AppendQuestionResult> {
-    const ownership = this.createOwnership(actor);
+    const validatedActor = this.validateActor(actor);
     const questionId = QuestionId.from(questionIdValue);
+
+    // Retrieve the immutable creator ownership. Never replace it with the
+    // editor's identity merely because the editor is performing this write.
+    const ownership = await this.repository.findOwnership(
+      validatedActor.tenantId,
+      questionId,
+    );
+
+    if (ownership === null) {
+      throw new QuestionLifecycleNotFoundError(
+        'The Question was not found in the authenticated tenant.',
+      );
+    }
+
     const latest = await this.requireLatest(ownership.tenantId, questionId);
     const versionNumber = latest.versionNumber.next();
     const versionId = QuestionVersionId.generate();
@@ -131,7 +154,7 @@ export class QuestionLifecycleApplicationService {
       versionNumber,
       latest.id,
       ownership,
-      actor.principalId,
+      validatedActor.principalId,
       now,
     );
 
@@ -139,6 +162,7 @@ export class QuestionLifecycleApplicationService {
       operation: 'APPEND',
       snapshot,
       ownership,
+      actorPrincipalId: validatedActor.principalId,
       expectedPreviousVersionId: latest.id,
       event,
     });
@@ -156,8 +180,21 @@ export class QuestionLifecycleApplicationService {
     questionIdValue: string,
     sourceVersionIdValue: string,
   ): Promise<AppendQuestionResult> {
-    const ownership = this.createOwnership(actor);
+    const validatedActor = this.validateActor(actor);
     const questionId = QuestionId.from(questionIdValue);
+
+    // Restore uses the same immutable ownership rule as revise.
+    const ownership = await this.repository.findOwnership(
+      validatedActor.tenantId,
+      questionId,
+    );
+
+    if (ownership === null) {
+      throw new QuestionLifecycleNotFoundError(
+        'The Question was not found in the authenticated tenant.',
+      );
+    }
+
     const sourceVersionId = QuestionVersionId.from(sourceVersionIdValue);
 
     const [latest, source] = await Promise.all([
@@ -210,7 +247,7 @@ export class QuestionLifecycleApplicationService {
       latest.id,
       source.id,
       ownership,
-      actor.principalId,
+      validatedActor.principalId,
       now,
     );
 
@@ -218,6 +255,7 @@ export class QuestionLifecycleApplicationService {
       operation: 'APPEND',
       snapshot,
       ownership,
+      actorPrincipalId: validatedActor.principalId,
       expectedPreviousVersionId: latest.id,
       event,
     });
@@ -246,7 +284,7 @@ export class QuestionLifecycleApplicationService {
     return latest;
   }
 
-  private createOwnership(actor: QuestionActor): QuestionOwnership {
+  private validateActor(actor: QuestionActor): QuestionActor {
     if (
       actor === null ||
       typeof actor !== 'object' ||
@@ -262,7 +300,10 @@ export class QuestionLifecycleApplicationService {
       );
     }
 
-    return QuestionOwnership.create(actor.tenantId, actor.principalId);
+    return Object.freeze({
+      principalId: actor.principalId,
+      tenantId: actor.tenantId,
+    });
   }
 
   private toReference(snapshot: QuestionVersionSnapshot) {
@@ -306,14 +347,11 @@ function cloneVersionScopedIdentities(
         QuestionVersionContent,
         { questionType: typeof QuestionType.SINGLE_CHOICE }
       >;
-
       const answerKey = source.answerKey as Extract<
         QuestionVersionAnswerKey,
         { questionType: typeof QuestionType.SINGLE_CHOICE }
       >;
-
       const ids = new Map<string, string>();
-
       const options = content.options.map((item) => {
         const id = newId();
         ids.set(item.id, id);
@@ -343,14 +381,11 @@ function cloneVersionScopedIdentities(
         QuestionVersionContent,
         { questionType: typeof QuestionType.MULTIPLE_CHOICE }
       >;
-
       const answerKey = source.answerKey as Extract<
         QuestionVersionAnswerKey,
         { questionType: typeof QuestionType.MULTIPLE_CHOICE }
       >;
-
       const ids = new Map<string, string>();
-
       const options = content.options.map((item) => {
         const id = newId();
         ids.set(item.id, id);
@@ -378,12 +413,10 @@ function cloneVersionScopedIdentities(
         QuestionVersionContent,
         { questionType: typeof QuestionType.MATCHING }
       >;
-
       const answerKey = source.answerKey as Extract<
         QuestionVersionAnswerKey,
         { questionType: typeof QuestionType.MATCHING }
       >;
-
       const leftIds = new Map<string, string>();
       const rightIds = new Map<string, string>();
 
@@ -432,14 +465,11 @@ function cloneVersionScopedIdentities(
         QuestionVersionContent,
         { questionType: typeof QuestionType.ORDERING }
       >;
-
       const answerKey = source.answerKey as Extract<
         QuestionVersionAnswerKey,
         { questionType: typeof QuestionType.ORDERING }
       >;
-
       const ids = new Map<string, string>();
-
       const items = content.items.map((item) => {
         const id = newId();
         ids.set(item.id, id);
@@ -467,12 +497,10 @@ function cloneVersionScopedIdentities(
         QuestionVersionContent,
         { questionType: typeof QuestionType.FILL_IN_THE_BLANK }
       >;
-
       const answerKey = source.answerKey as Extract<
         QuestionVersionAnswerKey,
         { questionType: typeof QuestionType.FILL_IN_THE_BLANK }
       >;
-
       const ids = new Map<string, string>();
 
       const segments = content.prompt.segments.map((segment) => {
@@ -513,7 +541,6 @@ function cloneVersionScopedIdentities(
     case QuestionType.SHORT_ANSWER:
     case QuestionType.LONG_ANSWER:
     case QuestionType.NUMERIC:
-      // These types have no version-scoped content-child identities.
       return {
         content: source.content,
         answerKey: source.answerKey,

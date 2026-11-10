@@ -442,8 +442,12 @@ describe.skipIf(!databaseAvailable)(
 
       await requirePrisma().principalTenantMembership.createMany({
         data: [
-          { principalId: creatorPrincipalId, tenantId },
-          { principalId: editorPrincipalId, tenantId },
+          {
+            principalId: creatorPrincipalId,
+            tenantId,
+            roles: ['teacher'],
+          },
+          { principalId: editorPrincipalId, tenantId, roles: ['tenant_admin'] },
         ],
       });
 
@@ -481,10 +485,11 @@ describe.skipIf(!databaseAvailable)(
           operation: 'CREATE',
           snapshot,
           ownership,
+          actorPrincipalId: creatorPrincipalId,
           event,
         });
 
-        const [stored, question, outbox] = await Promise.all([
+        const [stored, question, outbox, ownerAssignment] = await Promise.all([
           repository.findLatest(tenantId, snapshot.questionId),
           requirePrisma().question.findUnique({
             where: { id: questionId },
@@ -492,6 +497,14 @@ describe.skipIf(!databaseAvailable)(
           requirePrisma().outboxEvent.findUnique({
             where: {
               dedupeKey: `question-domain-event:${event.eventId}`,
+            },
+          }),
+          requirePrisma().questionAssignment.findUnique({
+            where: {
+              questionId_principalId: {
+                questionId,
+                principalId: creatorPrincipalId,
+              },
             },
           }),
         ]);
@@ -503,6 +516,14 @@ describe.skipIf(!databaseAvailable)(
         expect(question).toMatchObject({
           tenantId,
           createdByPrincipalId: creatorPrincipalId,
+        });
+
+        expect(ownerAssignment).toMatchObject({
+          questionId,
+          tenantId,
+          principalId: creatorPrincipalId,
+          role: 'OWNER',
+          assignedByPrincipalId: creatorPrincipalId,
         });
 
         expect(outbox).toMatchObject({
@@ -546,13 +567,47 @@ describe.skipIf(!databaseAvailable)(
           operation: 'CREATE',
           snapshot: first,
           ownership,
+          actorPrincipalId: creatorPrincipalId,
           event: createdEvent,
         });
 
-        const editorOwnership = QuestionOwnership.create(
-          tenantId,
-          editorPrincipalId,
+        // Tenant administration is not a Question-level authoring bypass.
+        const unauthorizedSecond = createSingleChoiceSnapshot(
+          `${suitePrefix}-lineage-v2-unauthorized`,
+          questionIdValue,
+          2,
+          first,
         );
+        const unauthorizedEvent = createQuestionRevisedEvent(
+          unauthorizedSecond.questionId,
+          unauthorizedSecond.id,
+          unauthorizedSecond.versionNumber,
+          first.id,
+          ownership,
+          editorPrincipalId,
+          unauthorizedSecond.createdAt,
+        );
+
+        await expect(
+          repository.persist({
+            operation: 'APPEND',
+            snapshot: unauthorizedSecond,
+            ownership,
+            actorPrincipalId: editorPrincipalId,
+            expectedPreviousVersionId: first.id,
+            event: unauthorizedEvent,
+          }),
+        ).rejects.toThrow();
+
+        await requirePrisma().questionAssignment.create({
+          data: {
+            questionId: questionIdValue,
+            tenantId,
+            principalId: editorPrincipalId,
+            role: 'EDITOR',
+            assignedByPrincipalId: creatorPrincipalId,
+          },
+        });
 
         const second = createSingleChoiceSnapshot(
           `${suitePrefix}-lineage-v2`,
@@ -566,7 +621,7 @@ describe.skipIf(!databaseAvailable)(
           second.id,
           second.versionNumber,
           first.id,
-          editorOwnership,
+          ownership,
           editorPrincipalId,
           second.createdAt,
         );
@@ -574,7 +629,8 @@ describe.skipIf(!databaseAvailable)(
         await repository.persist({
           operation: 'APPEND',
           snapshot: second,
-          ownership: editorOwnership,
+          ownership,
+          actorPrincipalId: editorPrincipalId,
           expectedPreviousVersionId: first.id,
           event: revisedEvent,
         });
@@ -593,7 +649,7 @@ describe.skipIf(!databaseAvailable)(
           third.versionNumber,
           second.id,
           first.id,
-          editorOwnership,
+          ownership,
           editorPrincipalId,
           third.createdAt,
         );
@@ -601,7 +657,8 @@ describe.skipIf(!databaseAvailable)(
         await repository.persist({
           operation: 'APPEND',
           snapshot: third,
-          ownership: editorOwnership,
+          ownership,
+          actorPrincipalId: editorPrincipalId,
           expectedPreviousVersionId: second.id,
           event: restoredEvent,
         });
@@ -640,6 +697,20 @@ describe.skipIf(!databaseAvailable)(
           creatorPrincipalId,
         );
 
+        expect(
+          await requirePrisma().questionAssignment.findUnique({
+            where: {
+              questionId_principalId: {
+                questionId: questionIdValue,
+                principalId: editorPrincipalId,
+              },
+            },
+          }),
+        ).toMatchObject({
+          role: 'EDITOR',
+          assignedByPrincipalId: creatorPrincipalId,
+        });
+
         expect(outboxEvents.map((item) => item.eventType)).toEqual([
           'QuestionCreated',
           'QuestionRevised',
@@ -671,6 +742,7 @@ describe.skipIf(!databaseAvailable)(
           operation: 'CREATE',
           snapshot,
           ownership,
+          actorPrincipalId: creatorPrincipalId,
           event,
         });
 
@@ -714,6 +786,7 @@ describe.skipIf(!databaseAvailable)(
           operation: 'CREATE',
           snapshot: first,
           ownership,
+          actorPrincipalId: creatorPrincipalId,
           event: createEvent,
         });
 
@@ -738,6 +811,7 @@ describe.skipIf(!databaseAvailable)(
           operation: 'APPEND',
           snapshot: second,
           ownership,
+          actorPrincipalId: creatorPrincipalId,
           expectedPreviousVersionId: first.id,
           event: secondEvent,
         });
@@ -764,6 +838,7 @@ describe.skipIf(!databaseAvailable)(
             operation: 'APPEND',
             snapshot: stale,
             ownership,
+            actorPrincipalId: creatorPrincipalId,
             expectedPreviousVersionId: first.id,
             event: staleEvent,
           }),
@@ -777,5 +852,56 @@ describe.skipIf(!databaseAvailable)(
         expect(versions).toHaveLength(2);
       },
     );
+
+
+    it('rejects a learner from creating a Question even with an active membership', async () => {
+      const learnerPrincipalId = `${suitePrefix}-learner`;
+      const questionIdValue = `${suitePrefix}-learner-create-question`;
+
+      await requirePrisma().authPrincipal.create({
+        data: { id: learnerPrincipalId },
+      });
+      await requirePrisma().principalTenantMembership.create({
+        data: {
+          principalId: learnerPrincipalId,
+          tenantId,
+          learnerId: `${suitePrefix}-learner-id`,
+          roles: ['learner'],
+        },
+      });
+
+      const learnerOwnership = QuestionOwnership.create(
+        tenantId,
+        learnerPrincipalId,
+      );
+      const snapshot = createSingleChoiceSnapshot(
+        `${suitePrefix}-learner-create-version`,
+        questionIdValue,
+        1,
+      );
+      const event = createQuestionCreatedEvent(
+        snapshot.questionId,
+        snapshot.id,
+        snapshot.versionNumber,
+        learnerOwnership,
+        snapshot.createdAt,
+      );
+
+      await expect(
+        repository.persist({
+          operation: 'CREATE',
+          snapshot,
+          ownership: learnerOwnership,
+          actorPrincipalId: learnerPrincipalId,
+          event,
+        }),
+      ).rejects.toThrow();
+
+      await expect(
+        requirePrisma().question.findUnique({
+          where: { id: questionIdValue },
+        }),
+      ).resolves.toBeNull();
+    });
   },
 );

@@ -1,4 +1,3 @@
-
 import { Module } from '@nestjs/common';
 
 import {
@@ -12,6 +11,10 @@ import { QUESTION_LIFECYCLE_REPOSITORY } from '../database/prisma/repositories/q
 
 import { RequestPrincipalResolver } from '../security/authorization/request-principal.resolver.js';
 
+import { QuestionBankAuthorizationPolicy } from '../security/authorization/question-bank-authorization.policy.js';
+
+import { QuestionBankAuthorizationService } from '../security/authorization/question-bank-authorization.service.js';
+
 import { QuestionBankController } from './question-bank.controller.js';
 
 @Module({
@@ -19,6 +22,8 @@ import { QuestionBankController } from './question-bank.controller.js';
   controllers: [QuestionBankController],
   providers: [
     RequestPrincipalResolver,
+    QuestionBankAuthorizationPolicy,
+    QuestionBankAuthorizationService,
     {
       provide: QuestionLifecycleApplicationService,
       inject: [QUESTION_LIFECYCLE_REPOSITORY],
@@ -28,6 +33,10 @@ import { QuestionBankController } from './question-bank.controller.js';
         new QuestionLifecycleApplicationService(repository),
     },
   ],
-  exports: [QuestionLifecycleApplicationService],
+  exports: [
+    QuestionLifecycleApplicationService,
+    QuestionBankAuthorizationPolicy,
+    QuestionBankAuthorizationService,
+  ],
 })
 export class QuestionBankApplicationModule {}

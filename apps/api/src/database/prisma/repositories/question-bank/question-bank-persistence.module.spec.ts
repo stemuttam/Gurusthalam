@@ -2,13 +2,18 @@ import { describe, expect, it } from 'vitest';
 
 import { Test } from '@nestjs/testing';
 
-import type { QuestionVersionRepository } from '@gurusthalam/question-bank';
+import type {
+  QuestionLifecycleRepository,
+  QuestionVersionRepository,
+} from '@gurusthalam/question-bank';
 
 import { PrismaService } from '../../prisma.service.js';
 
 import {
+  QUESTION_LIFECYCLE_REPOSITORY,
   QUESTION_VERSION_REPOSITORY,
   QuestionBankPersistenceModule,
+  PrismaQuestionLifecycleRepository,
   PrismaQuestionVersionRepository,
 } from './index.js';
 
@@ -35,6 +40,21 @@ describe('QuestionBankPersistenceModule', () => {
       );
 
       expect(repository).toBeInstanceOf(PrismaQuestionVersionRepository);
+    } finally {
+      await moduleRef.close();
+    }
+  });
+
+
+  it('resolves the Question lifecycle repository using its exported token', async () => {
+    const { moduleRef } = await createTestingModule();
+
+    try {
+      const repository = moduleRef.get<QuestionLifecycleRepository>(
+        QUESTION_LIFECYCLE_REPOSITORY,
+      );
+
+      expect(repository).toBeInstanceOf(PrismaQuestionLifecycleRepository);
     } finally {
       await moduleRef.close();
     }

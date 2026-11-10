@@ -95,7 +95,8 @@ export const ModelName = {
   QuestionVersionMatchingPair: 'QuestionVersionMatchingPair',
   QuestionVersionOrderingAnswer: 'QuestionVersionOrderingAnswer',
   QuestionVersionBlankAnswer: 'QuestionVersionBlankAnswer',
-  QuestionVersionBlankAcceptedAnswer: 'QuestionVersionBlankAcceptedAnswer'
+  QuestionVersionBlankAcceptedAnswer: 'QuestionVersionBlankAcceptedAnswer',
+  QuestionAssignment: 'QuestionAssignment'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -756,6 +757,19 @@ export const QuestionVersionBlankAcceptedAnswerScalarFieldEnum = {
 } as const
 
 export type QuestionVersionBlankAcceptedAnswerScalarFieldEnum = (typeof QuestionVersionBlankAcceptedAnswerScalarFieldEnum)[keyof typeof QuestionVersionBlankAcceptedAnswerScalarFieldEnum]
+
+
+export const QuestionAssignmentScalarFieldEnum = {
+  questionId: 'questionId',
+  tenantId: 'tenantId',
+  principalId: 'principalId',
+  role: 'role',
+  assignedByPrincipalId: 'assignedByPrincipalId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type QuestionAssignmentScalarFieldEnum = (typeof QuestionAssignmentScalarFieldEnum)[keyof typeof QuestionAssignmentScalarFieldEnum]
 
 
 export const SortOrder = {

@@ -1,3 +1,4 @@
+
 import { Module } from '@nestjs/common';
 
 import { DatabaseModule } from '../../database/database.module.js';
@@ -6,8 +7,13 @@ import {
   AUTH0_CONFIGURATION,
   loadAuth0Configuration,
 } from './auth0-configuration.js';
+
 import { Auth0AuthenticationMiddleware } from './auth0-authentication.middleware.js';
 import { Auth0IdentityResolver } from './auth0-identity-resolver.js';
+
+import { Auth0AuthoringIdentityResolver } from './auth0-authoring-identity-resolver.js';
+
+import { Auth0QuestionBankAuthenticationMiddleware } from './auth0-question-bank-authentication.middleware.js';
 
 @Module({
   imports: [DatabaseModule],
@@ -18,11 +24,15 @@ import { Auth0IdentityResolver } from './auth0-identity-resolver.js';
     },
     Auth0IdentityResolver,
     Auth0AuthenticationMiddleware,
+    Auth0AuthoringIdentityResolver,
+    Auth0QuestionBankAuthenticationMiddleware,
   ],
   exports: [
     AUTH0_CONFIGURATION,
     Auth0IdentityResolver,
     Auth0AuthenticationMiddleware,
+    Auth0AuthoringIdentityResolver,
+    Auth0QuestionBankAuthenticationMiddleware,
   ],
 })
 export class Auth0AuthenticationModule {}

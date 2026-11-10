@@ -864,6 +864,23 @@ export type FloatNullableWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedFloatNullableFilter<$PrismaModel>
 }
 
+export type EnumQuestionAssignmentRoleFilter<$PrismaModel = never> = {
+  equals?: $Enums.QuestionAssignmentRole | Prisma.EnumQuestionAssignmentRoleFieldRefInput<$PrismaModel>
+  in?: $Enums.QuestionAssignmentRole[] | Prisma.ListEnumQuestionAssignmentRoleFieldRefInput<$PrismaModel>
+  notIn?: $Enums.QuestionAssignmentRole[] | Prisma.ListEnumQuestionAssignmentRoleFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumQuestionAssignmentRoleFilter<$PrismaModel> | $Enums.QuestionAssignmentRole
+}
+
+export type EnumQuestionAssignmentRoleWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.QuestionAssignmentRole | Prisma.EnumQuestionAssignmentRoleFieldRefInput<$PrismaModel>
+  in?: $Enums.QuestionAssignmentRole[] | Prisma.ListEnumQuestionAssignmentRoleFieldRefInput<$PrismaModel>
+  notIn?: $Enums.QuestionAssignmentRole[] | Prisma.ListEnumQuestionAssignmentRoleFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumQuestionAssignmentRoleWithAggregatesFilter<$PrismaModel> | $Enums.QuestionAssignmentRole
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumQuestionAssignmentRoleFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumQuestionAssignmentRoleFilter<$PrismaModel>
+}
+
 export type NestedStringFilter<$PrismaModel = never> = {
   equals?: string | Prisma.StringFieldRefInput<$PrismaModel>
   in?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
@@ -1660,6 +1677,23 @@ export type NestedFloatNullableWithAggregatesFilter<$PrismaModel = never> = {
   _sum?: Prisma.NestedFloatNullableFilter<$PrismaModel>
   _min?: Prisma.NestedFloatNullableFilter<$PrismaModel>
   _max?: Prisma.NestedFloatNullableFilter<$PrismaModel>
+}
+
+export type NestedEnumQuestionAssignmentRoleFilter<$PrismaModel = never> = {
+  equals?: $Enums.QuestionAssignmentRole | Prisma.EnumQuestionAssignmentRoleFieldRefInput<$PrismaModel>
+  in?: $Enums.QuestionAssignmentRole[] | Prisma.ListEnumQuestionAssignmentRoleFieldRefInput<$PrismaModel>
+  notIn?: $Enums.QuestionAssignmentRole[] | Prisma.ListEnumQuestionAssignmentRoleFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumQuestionAssignmentRoleFilter<$PrismaModel> | $Enums.QuestionAssignmentRole
+}
+
+export type NestedEnumQuestionAssignmentRoleWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.QuestionAssignmentRole | Prisma.EnumQuestionAssignmentRoleFieldRefInput<$PrismaModel>
+  in?: $Enums.QuestionAssignmentRole[] | Prisma.ListEnumQuestionAssignmentRoleFieldRefInput<$PrismaModel>
+  notIn?: $Enums.QuestionAssignmentRole[] | Prisma.ListEnumQuestionAssignmentRoleFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumQuestionAssignmentRoleWithAggregatesFilter<$PrismaModel> | $Enums.QuestionAssignmentRole
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumQuestionAssignmentRoleFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumQuestionAssignmentRoleFilter<$PrismaModel>
 }
 
 

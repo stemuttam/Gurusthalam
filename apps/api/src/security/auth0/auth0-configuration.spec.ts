@@ -1,3 +1,4 @@
+
 import { describe, expect, it } from 'vitest';
 
 import { loadAuth0Configuration } from './auth0-configuration.js';
@@ -34,7 +35,7 @@ describe('Auth0 resource-server configuration', () => {
     ).toThrow(/must both be configured/);
   });
 
-  it('normalizes the issuer and sets the least-surprising default scope', () => {
+  it('normalizes issuer and configures all three independent scopes', () => {
     expect(
       loadAuth0Configuration({
         NODE_ENV: 'test',
@@ -46,7 +47,62 @@ describe('Auth0 resource-server configuration', () => {
       issuer: 'https://tenant.example.auth0.com/',
       audience: 'https://api.example.test',
       learnerProgressScope: 'read:learning-progress',
+      questionBankWriteScope: 'write:question-bank',
+      questionBankAssignmentManagementScope:
+        'manage:question-bank-access',
     });
+  });
+
+  it('allows independently configured Question Bank scopes', () => {
+    const configuration = loadAuth0Configuration({
+      NODE_ENV: 'test',
+      AUTH0_ISSUER_BASE_URL: 'https://tenant.example.auth0.com/',
+      AUTH0_AUDIENCE: 'https://api.example.test',
+      AUTH0_QUESTION_BANK_WRITE_SCOPE: 'write:questions',
+      AUTH0_QUESTION_BANK_ASSIGNMENT_MANAGEMENT_SCOPE:
+        'manage:question-access',
+    } as NodeJS.ProcessEnv);
+
+    expect(configuration?.questionBankWriteScope).toBe('write:questions');
+    expect(
+      configuration?.questionBankAssignmentManagementScope,
+    ).toBe('manage:question-access');
+  });
+
+  it('rejects malformed learner-progress scopes', () => {
+    expect(() =>
+      loadAuth0Configuration({
+        NODE_ENV: 'test',
+        AUTH0_ISSUER_BASE_URL: 'https://tenant.example.auth0.com/',
+        AUTH0_AUDIENCE: 'https://api.example.test',
+        AUTH0_LEARNING_PROGRESS_SCOPE: 'scope with spaces',
+      } as NodeJS.ProcessEnv),
+    ).toThrow(/AUTH0_LEARNING_PROGRESS_SCOPE is invalid/);
+  });
+
+  it('rejects malformed Question Bank write scopes', () => {
+    expect(() =>
+      loadAuth0Configuration({
+        NODE_ENV: 'test',
+        AUTH0_ISSUER_BASE_URL: 'https://tenant.example.auth0.com/',
+        AUTH0_AUDIENCE: 'https://api.example.test',
+        AUTH0_QUESTION_BANK_WRITE_SCOPE: 'write questions',
+      } as NodeJS.ProcessEnv),
+    ).toThrow(/AUTH0_QUESTION_BANK_WRITE_SCOPE is invalid/);
+  });
+
+  it('rejects malformed assignment-management scopes', () => {
+    expect(() =>
+      loadAuth0Configuration({
+        NODE_ENV: 'test',
+        AUTH0_ISSUER_BASE_URL: 'https://tenant.example.auth0.com/',
+        AUTH0_AUDIENCE: 'https://api.example.test',
+        AUTH0_QUESTION_BANK_ASSIGNMENT_MANAGEMENT_SCOPE:
+          'manage question access',
+      } as NodeJS.ProcessEnv),
+    ).toThrow(
+      /AUTH0_QUESTION_BANK_ASSIGNMENT_MANAGEMENT_SCOPE is invalid/,
+    );
   });
 
   it('rejects issuer paths, query strings, and non-HTTPS issuers', () => {
@@ -63,16 +119,5 @@ describe('Auth0 resource-server configuration', () => {
         } as NodeJS.ProcessEnv),
       ).toThrow(/must be an HTTPS issuer origin/);
     }
-  });
-
-  it('rejects malformed required scopes', () => {
-    expect(() =>
-      loadAuth0Configuration({
-        NODE_ENV: 'test',
-        AUTH0_ISSUER_BASE_URL: 'https://tenant.example.auth0.com/',
-        AUTH0_AUDIENCE: 'https://api.example.test',
-        AUTH0_LEARNING_PROGRESS_SCOPE: 'scope with spaces',
-      } as NodeJS.ProcessEnv),
-    ).toThrow(/AUTH0_LEARNING_PROGRESS_SCOPE is invalid/);
   });
 });

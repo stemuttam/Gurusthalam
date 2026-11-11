@@ -22,6 +22,8 @@ import {
 
 import { GlobalExceptionFilter } from './global-exception.filter.js';
 
+import { QUESTION_BANK_ERROR_CODE } from '../question-bank/question-bank-error.contract.js';
+
 describe('GlobalExceptionFilter', () => {
   const createLogger = (): {
     logger: GurusthalamLogger;
@@ -94,6 +96,111 @@ describe('GlobalExceptionFilter', () => {
       response,
     };
   };
+
+  describe('Prisma repository error contracts', () => {
+    it.each([
+      [PrismaRepositoryErrorCode.AUTHORIZATION_DENIED, HttpStatus.FORBIDDEN],
+      [PrismaRepositoryErrorCode.RECORD_NOT_FOUND, HttpStatus.NOT_FOUND],
+      [PrismaRepositoryErrorCode.UNIQUE_CONSTRAINT, HttpStatus.CONFLICT],
+      [PrismaRepositoryErrorCode.FOREIGN_KEY_CONSTRAINT, HttpStatus.CONFLICT],
+      [PrismaRepositoryErrorCode.CONCURRENT_MODIFICATION, HttpStatus.CONFLICT],
+      [
+        PrismaRepositoryErrorCode.PERSISTENCE_FAILURE,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      ],
+    ] as const)(
+      'returns the safe generic infrastructure response for %s',
+      (repositoryCode, expectedStatus) => {
+        const { logger } = createLogger();
+        const { host, response } = createHttpContext();
+
+        const filter = new GlobalExceptionFilter(logger);
+
+        filter.catch(
+          new PrismaRepositoryError(
+            'Internal database message must never be exposed.',
+            repositoryCode,
+            { prismaCode: 'P1001' },
+          ),
+          host as never,
+        );
+
+        expect(response.status).toHaveBeenCalledWith(expectedStatus);
+
+        expect(response.json).toHaveBeenCalledWith(
+          expect.objectContaining({
+            statusCode: expectedStatus,
+            code: repositoryCode,
+          }),
+        );
+
+        const payload = response.json.mock.calls[0]?.[0] as Record<
+          string,
+          unknown
+        >;
+
+        expect(JSON.stringify(payload)).not.toContain(
+          'Internal database message',
+        );
+
+        expect(JSON.stringify(payload)).not.toContain('P1001');
+      },
+    );
+  });
+
+  describe('Question Bank structured Nest exceptions', () => {
+    it('preserves a valid Question Bank public error code', () => {
+      const { logger } = createLogger();
+      const { host, response } = createHttpContext();
+
+      const filter = new GlobalExceptionFilter(logger);
+
+      filter.catch(
+        new HttpException(
+          {
+            statusCode: HttpStatus.CONFLICT,
+            code: QUESTION_BANK_ERROR_CODE.CONCURRENT_MODIFICATION,
+            message: 'The resource was modified by another operation.',
+          },
+          HttpStatus.CONFLICT,
+        ),
+        host as never,
+      );
+
+      expect(response.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          statusCode: HttpStatus.CONFLICT,
+          code: QUESTION_BANK_ERROR_CODE.CONCURRENT_MODIFICATION,
+        }),
+      );
+    });
+
+    it('does not expose an unrecognized arbitrary exception code', () => {
+      const { logger } = createLogger();
+      const { host, response } = createHttpContext();
+
+      const filter = new GlobalExceptionFilter(logger);
+
+      filter.catch(
+        new HttpException(
+          {
+            statusCode: HttpStatus.BAD_REQUEST,
+            code: 'INTERNAL_DATABASE_SECRET',
+            message: 'Invalid request.',
+          },
+          HttpStatus.BAD_REQUEST,
+        ),
+        host as never,
+      );
+
+      const payload = response.json.mock.calls[0]?.[0] as Record<
+        string,
+        unknown
+      >;
+
+      expect(payload).not.toHaveProperty('code');
+    });
+  });
 
   describe('CourseValidationError', () => {
     it('maps validation errors to HTTP 400 and preserves structured issues', () => {

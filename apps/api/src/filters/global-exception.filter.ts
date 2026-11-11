@@ -25,6 +25,8 @@ import {
   PrismaRepositoryErrorCode,
 } from '../database/prisma/repositories/prisma-repository.error.js';
 
+import { QUESTION_BANK_PUBLIC_ERROR_CODES } from '../question-bank/question-bank-error.contract.js';
+
 interface HttpErrorResponse {
   readonly statusCode: number;
   readonly timestamp: string;
@@ -120,16 +122,21 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     }
 
     if (exception instanceof PrismaRepositoryError) {
-      if (
-        exception.code === PrismaRepositoryErrorCode.CONCURRENT_MODIFICATION
-      ) {
-        return HttpStatus.CONFLICT;
-      }
+      switch (exception.code) {
+        case PrismaRepositoryErrorCode.AUTHORIZATION_DENIED:
+          return HttpStatus.FORBIDDEN;
 
-      // Other repository failures are infrastructure failures.
-      // Do not infer that an API resource is missing merely because
-      // an internal persistence operation reported a missing record.
-      return HttpStatus.INTERNAL_SERVER_ERROR;
+        case PrismaRepositoryErrorCode.RECORD_NOT_FOUND:
+          return HttpStatus.NOT_FOUND;
+
+        case PrismaRepositoryErrorCode.UNIQUE_CONSTRAINT:
+        case PrismaRepositoryErrorCode.FOREIGN_KEY_CONSTRAINT:
+        case PrismaRepositoryErrorCode.CONCURRENT_MODIFICATION:
+          return HttpStatus.CONFLICT;
+
+        case PrismaRepositoryErrorCode.PERSISTENCE_FAILURE:
+          return HttpStatus.INTERNAL_SERVER_ERROR;
+      }
     }
 
     return HttpStatus.INTERNAL_SERVER_ERROR;
@@ -148,13 +155,23 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     }
 
     if (exception instanceof PrismaRepositoryError) {
-      if (
-        exception.code === PrismaRepositoryErrorCode.CONCURRENT_MODIFICATION
-      ) {
-        return 'The resource was modified by another operation. Refresh and try again.';
-      }
+      switch (exception.code) {
+        case PrismaRepositoryErrorCode.AUTHORIZATION_DENIED:
+          return 'The operation is not permitted.';
 
-      return 'An internal persistence error occurred.';
+        case PrismaRepositoryErrorCode.RECORD_NOT_FOUND:
+          return 'The requested resource was not found.';
+
+        case PrismaRepositoryErrorCode.UNIQUE_CONSTRAINT:
+        case PrismaRepositoryErrorCode.FOREIGN_KEY_CONSTRAINT:
+          return 'The operation conflicts with the current resource state.';
+
+        case PrismaRepositoryErrorCode.CONCURRENT_MODIFICATION:
+          return 'The resource was modified by another operation. Refresh and try again.';
+
+        case PrismaRepositoryErrorCode.PERSISTENCE_FAILURE:
+          return 'An internal persistence error occurred.';
+      }
     }
 
     if (typeof exceptionResponse === 'string') {
@@ -204,11 +221,27 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     }
 
     if (exception instanceof PrismaRepositoryError) {
-      // Expose only the stable repository error code, never the
-      // underlying Prisma code, SQL details, or original cause.
+      // Preserve the stable infrastructure contract.
+      // Never expose prismaCode, SQL details, or the original cause.
       return {
         code: exception.code,
       };
+    }
+
+    if (exception instanceof HttpException) {
+      const response = exception.getResponse();
+
+      if (
+        response !== null &&
+        typeof response === 'object' &&
+        'code' in response &&
+        typeof response.code === 'string' &&
+        QUESTION_BANK_PUBLIC_ERROR_CODES.has(response.code)
+      ) {
+        return {
+          code: response.code,
+        };
+      }
     }
 
     return {};

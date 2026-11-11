@@ -1,12 +1,9 @@
 import {
   BadRequestException,
   Body,
-  ConflictException,
   Controller,
   Delete,
-  ForbiddenException,
   Get,
-  NotFoundException,
   Param,
   Patch,
   Post,
@@ -16,24 +13,17 @@ import {
 
 import {
   QuestionAssignmentApplicationService,
-  QuestionAssignmentAuthenticationError,
   QuestionAssignmentRole,
-  QuestionAssignmentValidationError,
   QuestionLifecycleApplicationService,
-  QuestionLifecycleAuthenticationError,
-  QuestionLifecycleNotFoundError,
   type QuestionVersionDraft,
 } from '@gurusthalam/question-bank';
-
-import {
-  PrismaRepositoryError,
-  PrismaRepositoryErrorCode,
-} from '../database/prisma/repositories/prisma-repository.error.js';
 
 import { RequestPrincipalResolver } from '../security/authorization/request-principal.resolver.js';
 import { QuestionBankAuthorizationService } from '../security/authorization/question-bank-authorization.service.js';
 import { QuestionBankAuthorizationOperation } from '../security/authorization/question-bank-authorization.types.js';
 import type { AuthenticatedPrincipal } from '../security/authorization/authenticated-principal.js';
+
+import { mapQuestionBankError } from './question-bank-error.mapper.js';
 
 type NonOwnerAssignmentRole = Exclude<
   (typeof QuestionAssignmentRole)[keyof typeof QuestionAssignmentRole],
@@ -90,10 +80,12 @@ export class QuestionBankController {
     @Body() draft: QuestionVersionDraft,
   ) {
     const principal = this.requirePrincipal(request);
+
     const validatedQuestionId = this.requireIdentifier(
       questionId,
       'questionId',
     );
+
     const validatedDraft = this.requireQuestionVersionDraft(draft);
 
     return this.execute(() =>
@@ -112,10 +104,12 @@ export class QuestionBankController {
     @Param('versionId') versionId: string,
   ) {
     const principal = this.requirePrincipal(request);
+
     const validatedQuestionId = this.requireIdentifier(
       questionId,
       'questionId',
     );
+
     const validatedVersionId = this.requireIdentifier(versionId, 'versionId');
 
     return this.execute(() =>
@@ -141,10 +135,12 @@ export class QuestionBankController {
     @Body() body: unknown,
   ) {
     const principal = this.requirePrincipal(request);
+
     const validatedQuestionId = this.requireIdentifier(
       questionId,
       'questionId',
     );
+
     const input = this.parseGrantBody(body);
 
     return this.execute(() =>
@@ -168,14 +164,17 @@ export class QuestionBankController {
     @Body() body: unknown,
   ) {
     const principal = this.requirePrincipal(request);
+
     const validatedQuestionId = this.requireIdentifier(
       questionId,
       'questionId',
     );
+
     const validatedPrincipalId = this.requireIdentifier(
       principalId,
       'principalId',
     );
+
     const input = this.parseRoleBody(body);
 
     return this.execute(() =>
@@ -198,10 +197,12 @@ export class QuestionBankController {
     @Param('principalId') principalId: string,
   ): Promise<void> {
     const principal = this.requirePrincipal(request);
+
     const validatedQuestionId = this.requireIdentifier(
       questionId,
       'questionId',
     );
+
     const validatedPrincipalId = this.requireIdentifier(
       principalId,
       'principalId',
@@ -227,6 +228,7 @@ export class QuestionBankController {
     @Param('questionId') questionId: string,
   ) {
     const principal = this.requirePrincipal(request);
+
     const validatedQuestionId = this.requireIdentifier(
       questionId,
       'questionId',
@@ -253,10 +255,12 @@ export class QuestionBankController {
     @Body() body: unknown,
   ) {
     const principal = this.requirePrincipal(request);
+
     const validatedQuestionId = this.requireIdentifier(
       questionId,
       'questionId',
     );
+
     const input = this.parseOwnershipTransferBody(body);
 
     return this.execute(() =>
@@ -397,44 +401,25 @@ export class QuestionBankController {
    */
   private requireQuestionVersionDraft(draft: unknown): QuestionVersionDraft {
     this.requireObjectBody(draft);
+
     return draft as QuestionVersionDraft;
   }
 
+  /**
+   * Centralized A4-D error mapping.
+   *
+   * Known Question Bank application and repository errors are converted
+   * into stable public HTTP errors. Unknown errors are rethrown unchanged
+   * so the global exception filter can handle them safely.
+   */
   private async execute<T>(action: () => Promise<T>): Promise<T> {
     try {
       return await action();
     } catch (error) {
-      if (
-        error instanceof QuestionLifecycleAuthenticationError ||
-        error instanceof QuestionAssignmentAuthenticationError
-      ) {
-        throw new UnauthorizedException(error.message);
-      }
+      const mappedError = mapQuestionBankError(error);
 
-      if (error instanceof QuestionAssignmentValidationError) {
-        throw new BadRequestException(error.message);
-      }
-
-      if (error instanceof QuestionLifecycleNotFoundError) {
-        throw new NotFoundException(error.message);
-      }
-
-      if (error instanceof PrismaRepositoryError) {
-        switch (error.code) {
-          case PrismaRepositoryErrorCode.AUTHORIZATION_DENIED:
-            throw new ForbiddenException(error.message);
-
-          case PrismaRepositoryErrorCode.RECORD_NOT_FOUND:
-            throw new NotFoundException(error.message);
-
-          case PrismaRepositoryErrorCode.CONCURRENT_MODIFICATION:
-          case PrismaRepositoryErrorCode.UNIQUE_CONSTRAINT:
-          case PrismaRepositoryErrorCode.FOREIGN_KEY_CONSTRAINT:
-            throw new ConflictException(error.message);
-
-          default:
-            throw error;
-        }
+      if (mappedError !== null) {
+        throw mappedError;
       }
 
       throw error;

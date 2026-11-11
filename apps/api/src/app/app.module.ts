@@ -35,6 +35,7 @@ import { NotificationTemplateModule } from '../queues/templates/notification-tem
 import { InternalApiKeyGuard } from '../security/internal-api-key.guard.js';
 import { Auth0AuthenticationMiddleware } from '../security/auth0/auth0-authentication.middleware.js';
 import { Auth0QuestionBankAuthenticationMiddleware } from '../security/auth0/auth0-question-bank-authentication.middleware.js';
+import { Auth0QuestionBankAssignmentScopeMiddleware } from '../security/auth0/auth0-question-bank-assignment-scope.middleware.js';
 import { Auth0AuthenticationModule } from '../security/auth0/auth0-authentication.module.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
@@ -101,17 +102,72 @@ export class AppModule implements NestModule {
         path: 'learning/enrollments/:enrollmentId/section-progress/:sectionId',
         method: RequestMethod.GET,
       },
-      { path: 'learning/streak', method: RequestMethod.GET },
+      {
+        path: 'learning/streak',
+        method: RequestMethod.GET,
+      },
     );
 
+    // Every Question Bank lifecycle write requires the Question Bank write scope.
     consumer.apply(Auth0QuestionBankAuthenticationMiddleware).forRoutes(
-      { path: 'question-bank/questions', method: RequestMethod.POST },
+      {
+        path: 'question-bank/questions',
+        method: RequestMethod.POST,
+      },
       {
         path: 'question-bank/questions/:questionId/versions',
         method: RequestMethod.POST,
       },
       {
         path: 'question-bank/questions/:questionId/restore/:versionId',
+        method: RequestMethod.POST,
+      },
+      {
+        path: 'question-bank/questions/:questionId/assignments',
+        method: RequestMethod.POST,
+      },
+      {
+        path: 'question-bank/questions/:questionId/assignments/:principalId',
+        method: RequestMethod.PATCH,
+      },
+      {
+        path: 'question-bank/questions/:questionId/assignments/:principalId',
+        method: RequestMethod.DELETE,
+      },
+      {
+        path: 'question-bank/questions/:questionId/assignments',
+        method: RequestMethod.GET,
+      },
+      {
+        path: 'question-bank/questions/:questionId/ownership/transfer',
+        method: RequestMethod.POST,
+      },
+    );
+
+    // Assignment-management endpoints additionally require the dedicated
+    // manage:question-bank-access scope. This middleware consumes only the
+    // verified request.auth payload established by the preceding middleware.
+    consumer.apply(
+      Auth0QuestionBankAssignmentScopeMiddleware,
+    ).forRoutes(
+      {
+        path: 'question-bank/questions/:questionId/assignments',
+        method: RequestMethod.POST,
+      },
+      {
+        path: 'question-bank/questions/:questionId/assignments/:principalId',
+        method: RequestMethod.PATCH,
+      },
+      {
+        path: 'question-bank/questions/:questionId/assignments/:principalId',
+        method: RequestMethod.DELETE,
+      },
+      {
+        path: 'question-bank/questions/:questionId/assignments',
+        method: RequestMethod.GET,
+      },
+      {
+        path: 'question-bank/questions/:questionId/ownership/transfer',
         method: RequestMethod.POST,
       },
     );

@@ -1,4 +1,3 @@
-
 import {
   BadRequestException,
   Body,
@@ -18,12 +17,11 @@ import {
 import {
   QuestionAssignmentApplicationService,
   QuestionAssignmentAuthenticationError,
+  QuestionAssignmentRole,
   QuestionAssignmentValidationError,
   QuestionLifecycleApplicationService,
   QuestionLifecycleAuthenticationError,
   QuestionLifecycleNotFoundError,
-  type GrantQuestionAssignmentCommand,
-  type ChangeQuestionAssignmentRoleCommand,
   type QuestionVersionDraft,
 } from '@gurusthalam/question-bank';
 
@@ -37,18 +35,29 @@ import { QuestionBankAuthorizationService } from '../security/authorization/ques
 import { QuestionBankAuthorizationOperation } from '../security/authorization/question-bank-authorization.types.js';
 import type { AuthenticatedPrincipal } from '../security/authorization/authenticated-principal.js';
 
+type NonOwnerAssignmentRole = Exclude<
+  (typeof QuestionAssignmentRole)[keyof typeof QuestionAssignmentRole],
+  'OWNER'
+>;
+
 interface AssignmentGrantBody {
   readonly principalId: string;
-  readonly role: GrantQuestionAssignmentCommand['role'];
+  readonly role: NonOwnerAssignmentRole;
 }
 
 interface AssignmentRoleBody {
-  readonly role: ChangeQuestionAssignmentRoleCommand['role'];
+  readonly role: NonOwnerAssignmentRole;
 }
 
 interface OwnershipTransferBody {
   readonly newOwnerPrincipalId: string;
 }
+
+const NON_OWNER_ASSIGNMENT_ROLES: ReadonlySet<string> = new Set([
+  QuestionAssignmentRole.AUTHOR,
+  QuestionAssignmentRole.CO_AUTHOR,
+  QuestionAssignmentRole.EDITOR,
+]);
 
 @Controller('question-bank/questions')
 export class QuestionBankController {
@@ -60,11 +69,9 @@ export class QuestionBankController {
   ) {}
 
   @Post()
-  async create(
-    @Req() request: unknown,
-    @Body() draft: QuestionVersionDraft,
-  ) {
+  async create(@Req() request: unknown, @Body() draft: QuestionVersionDraft) {
     const principal = this.requirePrincipal(request);
+    const validatedDraft = this.requireQuestionVersionDraft(draft);
 
     this.authorization.assertAuthorized(
       principal,
@@ -72,7 +79,7 @@ export class QuestionBankController {
     );
 
     return this.execute(() =>
-      this.application.create(this.toActor(principal), draft),
+      this.application.create(this.toActor(principal), validatedDraft),
     );
   }
 
@@ -83,9 +90,18 @@ export class QuestionBankController {
     @Body() draft: QuestionVersionDraft,
   ) {
     const principal = this.requirePrincipal(request);
+    const validatedQuestionId = this.requireIdentifier(
+      questionId,
+      'questionId',
+    );
+    const validatedDraft = this.requireQuestionVersionDraft(draft);
 
     return this.execute(() =>
-      this.application.revise(this.toActor(principal), questionId, draft),
+      this.application.revise(
+        this.toActor(principal),
+        validatedQuestionId,
+        validatedDraft,
+      ),
     );
   }
 
@@ -96,12 +112,17 @@ export class QuestionBankController {
     @Param('versionId') versionId: string,
   ) {
     const principal = this.requirePrincipal(request);
+    const validatedQuestionId = this.requireIdentifier(
+      questionId,
+      'questionId',
+    );
+    const validatedVersionId = this.requireIdentifier(versionId, 'versionId');
 
     return this.execute(() =>
       this.application.restore(
         this.toActor(principal),
-        questionId,
-        versionId,
+        validatedQuestionId,
+        validatedVersionId,
       ),
     );
   }
@@ -110,7 +131,7 @@ export class QuestionBankController {
    * Grants AUTHOR, CO_AUTHOR, or EDITOR access to a Question.
    *
    * The actor is always derived from trusted request authentication context.
-   * The repository performs the authoritative manager and membership checks
+   * The repository performs authoritative manager and membership checks
    * inside its transaction.
    */
   @Post(':questionId/assignments')
@@ -120,12 +141,16 @@ export class QuestionBankController {
     @Body() body: unknown,
   ) {
     const principal = this.requirePrincipal(request);
+    const validatedQuestionId = this.requireIdentifier(
+      questionId,
+      'questionId',
+    );
     const input = this.parseGrantBody(body);
 
     return this.execute(() =>
       this.assignmentApplication.grant(
         this.toActor(principal),
-        questionId,
+        validatedQuestionId,
         input.principalId,
         input.role,
       ),
@@ -143,13 +168,21 @@ export class QuestionBankController {
     @Body() body: unknown,
   ) {
     const principal = this.requirePrincipal(request);
+    const validatedQuestionId = this.requireIdentifier(
+      questionId,
+      'questionId',
+    );
+    const validatedPrincipalId = this.requireIdentifier(
+      principalId,
+      'principalId',
+    );
     const input = this.parseRoleBody(body);
 
     return this.execute(() =>
       this.assignmentApplication.changeRole(
         this.toActor(principal),
-        questionId,
-        principalId,
+        validatedQuestionId,
+        validatedPrincipalId,
         input.role,
       ),
     );
@@ -165,18 +198,26 @@ export class QuestionBankController {
     @Param('principalId') principalId: string,
   ): Promise<void> {
     const principal = this.requirePrincipal(request);
+    const validatedQuestionId = this.requireIdentifier(
+      questionId,
+      'questionId',
+    );
+    const validatedPrincipalId = this.requireIdentifier(
+      principalId,
+      'principalId',
+    );
 
     await this.execute(() =>
       this.assignmentApplication.revoke(
         this.toActor(principal),
-        questionId,
-        principalId,
+        validatedQuestionId,
+        validatedPrincipalId,
       ),
     );
   }
 
   /**
-   * Lists the assignments for a Question.
+   * Lists assignments for a Question.
    *
    * The repository enforces tenant isolation and manager authorization.
    */
@@ -186,11 +227,15 @@ export class QuestionBankController {
     @Param('questionId') questionId: string,
   ) {
     const principal = this.requirePrincipal(request);
+    const validatedQuestionId = this.requireIdentifier(
+      questionId,
+      'questionId',
+    );
 
     return this.execute(() =>
       this.assignmentApplication.list(
         this.toActor(principal),
-        questionId,
+        validatedQuestionId,
       ),
     );
   }
@@ -208,12 +253,16 @@ export class QuestionBankController {
     @Body() body: unknown,
   ) {
     const principal = this.requirePrincipal(request);
+    const validatedQuestionId = this.requireIdentifier(
+      questionId,
+      'questionId',
+    );
     const input = this.parseOwnershipTransferBody(body);
 
     return this.execute(() =>
       this.assignmentApplication.transferOwnership(
         this.toActor(principal),
-        questionId,
+        validatedQuestionId,
         input.newOwnerPrincipalId,
       ),
     );
@@ -244,76 +293,111 @@ export class QuestionBankController {
     });
   }
 
-  private parseGrantBody(body: unknown): AssignmentGrantBody {
-    const record = this.requireObjectBody(body);
-
+  /**
+   * Validates identifiers without imposing a UUID-only constraint.
+   *
+   * The domain currently defines canonical identifiers as non-empty strings
+   * with no leading or trailing whitespace. Preserve that contract here.
+   */
+  private requireIdentifier(value: unknown, field: string): string {
     if (
-      typeof record.principalId !== 'string' ||
-      record.principalId.length === 0 ||
-      record.principalId.trim() !== record.principalId
+      typeof value !== 'string' ||
+      value.length === 0 ||
+      value.trim() !== value
     ) {
       throw new BadRequestException(
-        'principalId must be a non-empty canonical identifier.',
+        `${field} must be a non-empty canonical identifier.`,
       );
     }
 
-    if (typeof record.role !== 'string') {
-      throw new BadRequestException('role must be a string.');
-    }
+    return value;
+  }
+
+  private parseGrantBody(body: unknown): AssignmentGrantBody {
+    const record = this.requireObjectBody(body);
+
+    const principalId = this.requireIdentifier(
+      record.principalId,
+      'principalId',
+    );
+
+    const role = this.parseNonOwnerAssignmentRole(record.role);
 
     return {
-      principalId: record.principalId,
-      role: record.role as GrantQuestionAssignmentCommand['role'],
+      principalId,
+      role,
     };
   }
 
   private parseRoleBody(body: unknown): AssignmentRoleBody {
     const record = this.requireObjectBody(body);
 
-    if (typeof record.role !== 'string') {
-      throw new BadRequestException('role must be a string.');
-    }
-
     return {
-      role: record.role as ChangeQuestionAssignmentRoleCommand['role'],
+      role: this.parseNonOwnerAssignmentRole(record.role),
     };
   }
 
-  private parseOwnershipTransferBody(
-    body: unknown,
-  ): OwnershipTransferBody {
-    const record = this.requireObjectBody(body);
+  private parseNonOwnerAssignmentRole(value: unknown): NonOwnerAssignmentRole {
+    if (typeof value !== 'string') {
+      throw new BadRequestException('role must be a valid assignment role.');
+    }
 
-    if (
-      typeof record.newOwnerPrincipalId !== 'string' ||
-      record.newOwnerPrincipalId.length === 0 ||
-      record.newOwnerPrincipalId.trim() !==
-        record.newOwnerPrincipalId
-    ) {
+    if (value === QuestionAssignmentRole.OWNER) {
       throw new BadRequestException(
-        'newOwnerPrincipalId must be a non-empty canonical identifier.',
+        'The OWNER role can only be established through ownership transfer.',
       );
     }
 
+    if (!NON_OWNER_ASSIGNMENT_ROLES.has(value)) {
+      throw new BadRequestException(
+        'role must be one of AUTHOR, CO_AUTHOR, or EDITOR.',
+      );
+    }
+
+    return value as NonOwnerAssignmentRole;
+  }
+
+  private parseOwnershipTransferBody(body: unknown): OwnershipTransferBody {
+    const record = this.requireObjectBody(body);
+
     return {
-      newOwnerPrincipalId: record.newOwnerPrincipalId,
+      newOwnerPrincipalId: this.requireIdentifier(
+        record.newOwnerPrincipalId,
+        'newOwnerPrincipalId',
+      ),
     };
   }
 
-  private requireObjectBody(
-    body: unknown,
-  ): Record<string, unknown> {
-    if (
-      body === null ||
-      typeof body !== 'object' ||
-      Array.isArray(body)
-    ) {
+  /**
+   * Validates that a request body is a plain JSON object.
+   *
+   * Arrays, null, primitives, and non-plain objects are rejected.
+   * Unknown properties are intentionally ignored by individual parsers.
+   */
+  private requireObjectBody(body: unknown): Record<string, unknown> {
+    if (body === null || typeof body !== 'object' || Array.isArray(body)) {
+      throw new BadRequestException('A JSON object request body is required.');
+    }
+
+    const prototype = Object.getPrototypeOf(body);
+
+    if (prototype !== Object.prototype && prototype !== null) {
       throw new BadRequestException(
-        'A JSON object request body is required.',
+        'A plain JSON object request body is required.',
       );
     }
 
     return body as Record<string, unknown>;
+  }
+
+  /**
+   * The current version-draft contract is validated as a plain object here.
+   * Question-type-specific content validation remains in the domain and
+   * application layers; this boundary does not duplicate that logic.
+   */
+  private requireQuestionVersionDraft(draft: unknown): QuestionVersionDraft {
+    this.requireObjectBody(draft);
+    return draft as QuestionVersionDraft;
   }
 
   private async execute<T>(action: () => Promise<T>): Promise<T> {

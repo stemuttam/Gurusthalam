@@ -1,13 +1,19 @@
+
 import { Module } from '@nestjs/common';
 
 import {
+  QuestionAssignmentApplicationService,
   QuestionLifecycleApplicationService,
+  type QuestionAssignmentRepository,
   type QuestionLifecycleRepository,
 } from '@gurusthalam/question-bank';
 
 import { QuestionBankPersistenceModule } from '../database/prisma/repositories/question-bank/question-bank-persistence.module.js';
 
-import { QUESTION_LIFECYCLE_REPOSITORY } from '../database/prisma/repositories/question-bank/question-bank-repository.tokens.js';
+import {
+  QUESTION_ASSIGNMENT_REPOSITORY,
+  QUESTION_LIFECYCLE_REPOSITORY,
+} from '../database/prisma/repositories/question-bank/question-bank-repository.tokens.js';
 
 import { RequestPrincipalResolver } from '../security/authorization/request-principal.resolver.js';
 
@@ -32,9 +38,18 @@ import { QuestionBankController } from './question-bank.controller.js';
       ): QuestionLifecycleApplicationService =>
         new QuestionLifecycleApplicationService(repository),
     },
+    {
+      provide: QuestionAssignmentApplicationService,
+      inject: [QUESTION_ASSIGNMENT_REPOSITORY],
+      useFactory: (
+        repository: QuestionAssignmentRepository,
+      ): QuestionAssignmentApplicationService =>
+        new QuestionAssignmentApplicationService(repository),
+    },
   ],
   exports: [
     QuestionLifecycleApplicationService,
+    QuestionAssignmentApplicationService,
     QuestionBankAuthorizationPolicy,
     QuestionBankAuthorizationService,
   ],

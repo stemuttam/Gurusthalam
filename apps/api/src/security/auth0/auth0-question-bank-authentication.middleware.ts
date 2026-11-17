@@ -1,4 +1,3 @@
-
 import { Inject, Injectable, type NestMiddleware } from '@nestjs/common';
 
 import type { NextFunction, Request, Response } from 'express';
@@ -43,6 +42,25 @@ function extractVerifiedPayload(
 }
 
 /**
+ * Reads the request ID assigned by RequestIdMiddleware.
+ *
+ * Direct middleware responses do not pass through GlobalExceptionFilter,
+ * so they must explicitly include this ID in their response body.
+ *
+ * Optional chaining also supports isolated Express response mocks used
+ * by unit tests, where response.locals may not be initialized.
+ */
+function getRequestIdDetails(response: Response): {
+  readonly requestId?: string;
+} {
+  const requestId = response.locals?.requestId;
+
+  return typeof requestId === 'string' && requestId.length > 0
+    ? { requestId }
+    : {};
+}
+
+/**
  * Dedicated Auth0 resource-server middleware for Question Bank write routes.
  *
  * It verifies the bearer token, requires the configured Question Bank write
@@ -53,9 +71,7 @@ function extractVerifiedPayload(
  * authorization boundary and persistence layer.
  */
 @Injectable()
-export class Auth0QuestionBankAuthenticationMiddleware
-  implements NestMiddleware
-{
+export class Auth0QuestionBankAuthenticationMiddleware implements NestMiddleware {
   private readonly validateAccessToken: ReturnType<typeof auth> | null;
 
   constructor(
@@ -78,6 +94,7 @@ export class Auth0QuestionBankAuthenticationMiddleware
 
     if (configuration === null || validateAccessToken === null) {
       response.status(503).json({
+        ...getRequestIdDetails(response),
         code: 'AUTHENTICATION_NOT_CONFIGURED',
         message: 'The authentication provider is not configured.',
       });
@@ -91,6 +108,7 @@ export class Auth0QuestionBankAuthenticationMiddleware
           error instanceof UnauthorizedError
         ) {
           response.status(401).json({
+            ...getRequestIdDetails(response),
             code: 'AUTHENTICATION_REQUIRED',
             message: 'A valid Auth0 access token is required.',
           });
@@ -113,6 +131,7 @@ export class Auth0QuestionBankAuthenticationMiddleware
             organizationId.trim() !== organizationId))
       ) {
         response.status(401).json({
+          ...getRequestIdDetails(response),
           code: 'INVALID_AUTHENTICATED_IDENTITY',
           message: 'The access token does not contain a valid identity.',
         });
@@ -120,12 +139,10 @@ export class Auth0QuestionBankAuthenticationMiddleware
       }
 
       if (
-        !hasRequiredScope(
-          payload?.scope,
-          configuration.questionBankWriteScope,
-        )
+        !hasRequiredScope(payload?.scope, configuration.questionBankWriteScope)
       ) {
         response.status(403).json({
+          ...getRequestIdDetails(response),
           code: 'INSUFFICIENT_SCOPE',
           message:
             'The access token lacks the required Question Bank write scope.',
@@ -144,6 +161,7 @@ export class Auth0QuestionBankAuthenticationMiddleware
         .then((principal) => {
           if (principal === null) {
             response.status(403).json({
+              ...getRequestIdDetails(response),
               code: 'IDENTITY_NOT_PROVISIONED',
               message:
                 'This authenticated identity has no active Gurusthalam tenant membership.',

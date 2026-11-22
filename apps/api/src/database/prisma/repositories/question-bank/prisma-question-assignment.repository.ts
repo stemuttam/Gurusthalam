@@ -109,7 +109,7 @@ export class PrismaQuestionAssignmentRepository
     return withPrismaRepositoryErrorBoundary(
       'QuestionAssignmentRepository.grant',
       async () =>
-        this.prisma.$transaction(
+        this.runSerializableTransaction(
           async (transaction) => {
             const question = await this.lockQuestion(
               transaction,
@@ -169,10 +169,7 @@ export class PrismaQuestionAssignmentRepository
             });
 
             return toDomain(created as AssignmentRecord);
-          },
-          {
-            isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-          },
+          }
         ),
     );
   }
@@ -183,7 +180,7 @@ export class PrismaQuestionAssignmentRepository
     return withPrismaRepositoryErrorBoundary(
       'QuestionAssignmentRepository.changeRole',
       async () =>
-        this.prisma.$transaction(
+        this.runSerializableTransaction(
           async (transaction) => {
             const question = await this.lockQuestion(
               transaction,
@@ -246,10 +243,7 @@ export class PrismaQuestionAssignmentRepository
             });
 
             return toDomain(updated as AssignmentRecord);
-          },
-          {
-            isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-          },
+          }
         ),
     );
   }
@@ -260,7 +254,7 @@ export class PrismaQuestionAssignmentRepository
     await withPrismaRepositoryErrorBoundary(
       'QuestionAssignmentRepository.revoke',
       async () =>
-        this.prisma.$transaction(
+        this.runSerializableTransaction(
           async (transaction) => {
             const question = await this.lockQuestion(
               transaction,
@@ -304,10 +298,7 @@ export class PrismaQuestionAssignmentRepository
                 },
               },
             });
-          },
-          {
-            isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-          },
+          }
         ),
     );
   }
@@ -318,7 +309,7 @@ export class PrismaQuestionAssignmentRepository
     return withPrismaRepositoryErrorBoundary(
       'QuestionAssignmentRepository.list',
       async () =>
-        this.prisma.$transaction(
+        this.runSerializableTransaction(
           async (transaction) => {
             const question = await transaction.question.findFirst({
               where: {
@@ -363,10 +354,7 @@ export class PrismaQuestionAssignmentRepository
             return records.map((record) =>
               toDomain(record as AssignmentRecord),
             );
-          },
-          {
-            isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-            },
+          }
         ),
     );
   }
@@ -377,7 +365,7 @@ export class PrismaQuestionAssignmentRepository
     return withPrismaRepositoryErrorBoundary(
       'QuestionAssignmentRepository.transferOwnership',
       async () =>
-        this.prisma.$transaction(
+        this.runSerializableTransaction(
           async (transaction) => {
             const question = await this.lockQuestion(
               transaction,
@@ -502,12 +490,65 @@ export class PrismaQuestionAssignmentRepository
             return records.map((record) =>
               toDomain(record as AssignmentRecord),
             );
-          },
-          {
-            isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-          },
+          }
         ),
     );
+  }
+
+
+  /**
+   * Runs a complete repository operation in a PostgreSQL Serializable
+   * transaction, retrying only Prisma's serialization/deadlock conflict.
+   *
+   * PostgreSQL may abort one transaction when concurrent writers operate
+   * on the same aggregate, even when their intended rows are distinct.
+   * Retrying the entire callback starts a fresh transaction and snapshot,
+   * so all locks, authorization checks, reads, and writes are re-evaluated.
+   *
+   * Domain, authorization, uniqueness, and other persistence failures are
+   * never retried. Four total attempts (one initial attempt plus three
+   * retries) bound contention and prevent unbounded request latency.
+   */
+  private async runSerializableTransaction<T>(
+    action: (transaction: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T> {
+    const maximumAttempts = 4;
+    const retryablePrismaCode = 'P2034';
+
+    for (let attempt = 1; attempt <= maximumAttempts; attempt += 1) {
+      try {
+        return await this.prisma.$transaction(action, {
+          isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+        });
+      } catch (error) {
+        const prismaCode =
+          typeof error === 'object' &&
+          error !== null &&
+          'code' in error &&
+          typeof error.code === 'string'
+            ? error.code
+            : null;
+
+        if (
+          prismaCode !== retryablePrismaCode ||
+          attempt === maximumAttempts
+        ) {
+          throw error;
+        }
+
+        // Small capped exponential backoff gives the winning transaction
+        // time to commit before the losing transaction takes a new snapshot.
+        const delayMs = 15 * 2 ** (attempt - 1);
+
+        await new Promise<void>((resolve) => {
+          setTimeout(resolve, delayMs);
+        });
+      }
+    }
+
+    // The loop always returns or throws. This protects the return contract
+    // if the retry policy is changed in the future.
+    throw new Error('Serializable transaction retry loop exited unexpectedly.');
   }
 
   private async lockQuestion(

@@ -1,26 +1,55 @@
-import { render } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 
 import App from './app';
 
-describe('App', () => {
-  it('should render successfully', () => {
-    const { baseElement } = render(
+describe('Admin application UI library integration', () => {
+  function renderApp() {
+    return render(
       <BrowserRouter>
         <App />
       </BrowserRouter>,
     );
-    expect(baseElement).toBeTruthy();
+  }
+
+  it('renders the administration workspace heading', () => {
+    renderApp();
+
+    expect(
+      screen.getByRole('heading', { name: 'Administration workspace' }),
+    ).toBeTruthy();
   });
 
-  it('should have a greeting as the title', () => {
-    const { getAllByText } = render(
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>,
-    );
+  it('renders the shared UI package integration preview', () => {
+    renderApp();
+
+    expect(screen.getByText('UI package connected')).toBeTruthy();
+    expect(screen.getByText('Integration preview')).toBeTruthy();
+  });
+
+  it('renders the shared avatar and empty state components', () => {
+    renderApp();
+
     expect(
-      getAllByText(new RegExp('@org/admin', 'gi')).length > 0,
+      screen.getByRole('img', { name: 'Gurusthalam Administrator' }),
     ).toBeTruthy();
+
+    expect(
+      screen.getByText('No administration modules in this preview'),
+    ).toBeTruthy();
+  });
+
+  it('displays and dismisses a shared UI toast notification', () => {
+    renderApp();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show notification' }));
+
+    expect(screen.getByText('Shared UI notification')).toBeTruthy();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Dismiss notification' }),
+    );
+
+    expect(screen.queryByText('Shared UI notification')).toBeNull();
   });
 });

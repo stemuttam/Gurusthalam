@@ -2,11 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./out-tsc/app",
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": [
       "vite/client",
       "node",
@@ -17,10 +13,7 @@
     "module": "ESNext",
     "moduleResolution": "Bundler"
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx"
-  ],
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": [
     "src/**/*.spec.ts",
     "src/**/*.spec.tsx",
@@ -30,5 +23,10 @@
     "src/**/*.test.js",
     "src/**/*.spec.jsx",
     "src/**/*.test.jsx"
+  ],
+  "references": [
+    {
+      "path": "../../libs/ui/tsconfig.lib.json"
+    }
   ]
 }

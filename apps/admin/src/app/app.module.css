@@ -1,1 +1,71 @@
-/* Your styles goes here. */
+.integrationPage {
+  display: grid;
+  width: min(100% - 2rem, 1200px);
+  gap: 1.5rem;
+  margin-inline: auto;
+  padding-block: 2rem 3rem;
+}
+
+.integrationGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.integrationCard {
+  min-width: 0;
+}
+
+.cardContent {
+  display: grid;
+  align-content: start;
+  gap: 1rem;
+}
+
+.identityRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.identityContent {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.cardTitle {
+  margin: 0;
+  color: var(--gt-text-primary);
+  font-size: 1.125rem;
+  font-weight: 650;
+}
+
+.cardDescription {
+  margin: 0;
+  color: var(--gt-text-secondary);
+  line-height: 1.6;
+}
+
+.integrationFooter {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 760px;
+}
+
+@media (max-width: 700px) {
+  .integrationPage {
+    width: min(100% - 1.25rem, 1200px);
+    padding-block: 1.25rem 2rem;
+  }
+
+  .integrationGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

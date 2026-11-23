@@ -1,51 +1,101 @@
-// Uncomment this line to use CSS modules
-// import styles from './app.module.css';
-import NxWelcome from './nx-welcome';
+import { useState } from 'react';
 
-import { Route, Routes, Link } from 'react-router-dom';
+import {
+  Avatar,
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  PageHeader,
+  Separator,
+  Toast,
+} from '@gurusthalam/ui';
+
+import styles from './app.module.css';
 
 export function App() {
-  return (
-    <div>
-      <NxWelcome title="@org/admin" />
+  const [notificationVisible, setNotificationVisible] = useState(false);
 
-      {/* START: routes */}
-      {/* These routes and navigation have been generated for you */}
-      {/* Feel free to move and update them to fit your needs */}
-      <br />
-      <hr />
-      <br />
-      <div role="navigation">
-        <ul>
-          <li>
-            <Link to="/">Home</Link>
-          </li>
-          <li>
-            <Link to="/page-2">Page 2</Link>
-          </li>
-        </ul>
-      </div>
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <div>
-              This is the generated root route.{' '}
-              <Link to="/page-2">Click here for page 2.</Link>
+  return (
+    <main className={styles.integrationPage}>
+      <PageHeader
+        eyebrow="Gurusthalam · Administration"
+        title="Administration workspace"
+        description="Shared UI library integration preview."
+        actions={
+          <Button
+            variant="secondary"
+            onClick={() => setNotificationVisible(true)}
+          >
+            Show notification
+          </Button>
+        }
+      />
+
+      <section
+        className={styles.integrationGrid}
+        aria-label="Administration UI integration"
+      >
+        <Card className={styles.integrationCard}>
+          <div className={styles.cardContent}>
+            <div className={styles.identityRow}>
+              <Avatar name="Gurusthalam Administrator" size="large" />
+
+              <div className={styles.identityContent}>
+                <h2 className={styles.cardTitle}>Administrator preview</h2>
+                <p className={styles.cardDescription}>
+                  Shared identity and status components.
+                </p>
+              </div>
             </div>
-          }
-        />
-        <Route
-          path="/page-2"
-          element={
-            <div>
-              <Link to="/">Click here to go back to root page.</Link>
+
+            <div className={styles.statusRow}>
+              <Badge variant="success">UI package connected</Badge>
+              <Badge variant="info">Integration preview</Badge>
             </div>
-          }
+
+            <Button
+              variant="primary"
+              onClick={() => setNotificationVisible(true)}
+            >
+              Test shared button
+            </Button>
+          </div>
+        </Card>
+
+        <Card className={styles.integrationCard}>
+          <div className={styles.cardContent}>
+            <h2 className={styles.cardTitle}>Empty state component</h2>
+
+            <EmptyState
+              title="No administration modules in this preview"
+              description="Administration workflows will be implemented in their designated product phases."
+            />
+          </div>
+        </Card>
+      </section>
+
+      <Separator decorative={false} />
+
+      <section className={styles.integrationFooter}>
+        <h2 className={styles.cardTitle}>Integration scope</h2>
+
+        <p className={styles.cardDescription}>
+          This preview verifies that the Admin application can resolve and
+          render shared UI components through the workspace package. It does not
+          represent a completed administration feature.
+        </p>
+      </section>
+
+      {notificationVisible ? (
+        <Toast
+          variant="success"
+          title="Shared UI notification"
+          description="The Admin application successfully rendered the shared Toast component."
+          onDismiss={() => setNotificationVisible(false)}
         />
-      </Routes>
-      {/* END: routes */}
-    </div>
+      ) : null}
+    </main>
   );
 }
 

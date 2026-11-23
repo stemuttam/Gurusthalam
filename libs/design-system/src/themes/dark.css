@@ -1,10 +1,9 @@
-
 /* =====================================================
    GURUSTHALAM
    DARK THEME
    ===================================================== */
 
-:root[data-theme="dark"] {
+:root[data-theme='dark'] {
   color-scheme: dark;
 
   --gt-background: #0b1220;
@@ -46,12 +45,9 @@
   --gt-info-100: #1e3a8a;
   --gt-info-50: #172554;
 
-  --gt-shadow-sm:
-    0 1px 3px rgb(0 0 0 / 20%);
+  --gt-shadow-sm: 0 1px 3px rgb(0 0 0 / 20%);
 
-  --gt-shadow-md:
-    0 4px 12px rgb(0 0 0 / 25%);
+  --gt-shadow-md: 0 4px 12px rgb(0 0 0 / 25%);
 
-  --gt-shadow-lg:
-    0 12px 28px rgb(0 0 0 / 30%);
+  --gt-shadow-lg: 0 12px 28px rgb(0 0 0 / 30%);
 }

@@ -1,4 +1,3 @@
-
 /* =====================================================
    GURUSTHALAM
    OFFICIAL DESIGN SYSTEM ENTRY POINT
@@ -6,24 +5,25 @@
 
 /* 1. Design tokens */
 
-@import "./tokens/colors.css";
-@import "./tokens/spacing.css";
-@import "./tokens/typography.css";
+@import './tokens/colors.css';
+@import './tokens/spacing.css';
+@import './tokens/typography.css';
 
 /* 2. Themes */
 
-@import "./themes/light.css";
-@import "./themes/dark.css";
+@import './themes/light.css';
+@import './themes/dark.css';
 
 /* 3. Foundations */
 
-@import "./foundations/reset.css";
-@import "./foundations/accessibility.css";
+@import './foundations/reset.css';
+@import './foundations/accessibility.css';
 
 /* 4. Typography */
 
-@import "./typography/typography.css";
+@import './typography/typography.css';
 
 /* 5. Shared visual primitives */
 
-@import "./components/components.css";
+@import './components/components.css';
+@import './components/selection.css';

@@ -1,4 +1,3 @@
-
 /* =====================================================
    GURUSTHALAM
    GLOBAL CSS FOUNDATION
@@ -112,9 +111,7 @@ samp {
 /* Browser scrollbar */
 
 * {
-  scrollbar-color:
-    var(--gt-scrollbar-thumb)
-    var(--gt-scrollbar-track);
+  scrollbar-color: var(--gt-scrollbar-thumb) var(--gt-scrollbar-track);
 }
 
 *::-webkit-scrollbar {

@@ -1,23 +1,14 @@
-
 /* =====================================================
    GURUSTHALAM
    TYPOGRAPHY FOUNDATION
    ===================================================== */
 
 h1 {
-  font-size: clamp(
-    var(--gt-font-size-2xl),
-    4vw,
-    var(--gt-font-size-4xl)
-  );
+  font-size: clamp(var(--gt-font-size-2xl), 4vw, var(--gt-font-size-4xl));
 }
 
 h2 {
-  font-size: clamp(
-    var(--gt-font-size-xl),
-    3vw,
-    var(--gt-font-size-3xl)
-  );
+  font-size: clamp(var(--gt-font-size-xl), 3vw, var(--gt-font-size-3xl));
 }
 
 h3 {

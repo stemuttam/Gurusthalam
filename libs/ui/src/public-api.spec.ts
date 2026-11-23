@@ -22,6 +22,17 @@ const publicComponents = [
   'Radio',
   'RadioGroup',
   'Switch',
+  'Dialog',
+  'Tabs',
+  'TabsList',
+  'TabsTrigger',
+  'TabsContent',
+  'Tooltip',
+  'DropdownMenu',
+  'DropdownMenuTrigger',
+  'DropdownMenuContent',
+  'DropdownMenuItem',
+  'DropdownMenuSeparator',
 ] as const;
 
 describe('UI library public API', () => {

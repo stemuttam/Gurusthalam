@@ -1,0 +1,59 @@
+
+/* =====================================================
+   GURUSTHALAM
+   BRAND AND COLOR TOKENS
+   ===================================================== */
+
+:root {
+  /* Brand */
+  --gt-brand-950: #10243a;
+  --gt-brand-900: #15324b;
+  --gt-brand-800: #1e4663;
+  --gt-brand-700: #245a78;
+
+  /* Primary */
+  --gt-primary-700: #1d4ed8;
+  --gt-primary-600: #2563eb;
+  --gt-primary-500: #3b82f6;
+  --gt-primary-100: #dbeafe;
+  --gt-primary-50: #eff6ff;
+
+  /* Accent */
+  --gt-accent-700: #0f766e;
+  --gt-accent-600: #0d9488;
+  --gt-accent-100: #ccfbf1;
+  --gt-accent-50: #f0fdfa;
+
+  /* Neutral */
+  --gt-neutral-950: #0f172a;
+  --gt-neutral-900: #172033;
+  --gt-neutral-800: #263449;
+  --gt-neutral-700: #334155;
+  --gt-neutral-600: #475569;
+  --gt-neutral-500: #64748b;
+  --gt-neutral-400: #94a3b8;
+  --gt-neutral-300: #cbd5e1;
+  --gt-neutral-200: #e2e8f0;
+  --gt-neutral-100: #f1f5f9;
+  --gt-neutral-50: #f8fafc;
+
+  /* Success */
+  --gt-success-700: #15803d;
+  --gt-success-100: #dcfce7;
+  --gt-success-50: #f0fdf4;
+
+  /* Warning */
+  --gt-warning-700: #a16207;
+  --gt-warning-100: #fef3c7;
+  --gt-warning-50: #fffbeb;
+
+  /* Danger */
+  --gt-danger-700: #b91c1c;
+  --gt-danger-100: #fee2e2;
+  --gt-danger-50: #fef2f2;
+
+  /* Information */
+  --gt-info-700: #1d4ed8;
+  --gt-info-100: #dbeafe;
+  --gt-info-50: #eff6ff;
+}

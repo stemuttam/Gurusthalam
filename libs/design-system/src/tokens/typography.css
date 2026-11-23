@@ -1,0 +1,44 @@
+
+/* =====================================================
+   GURUSTHALAM
+   TYPOGRAPHY DESIGN TOKENS
+   ===================================================== */
+
+:root {
+  --gt-font-sans:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+  --gt-font-mono:
+    "SFMono-Regular",
+    Consolas,
+    "Liberation Mono",
+    monospace;
+
+  /* Font sizes */
+  --gt-font-size-xs: 0.75rem;
+  --gt-font-size-sm: 0.875rem;
+  --gt-font-size-md: 1rem;
+  --gt-font-size-lg: 1.125rem;
+  --gt-font-size-xl: 1.25rem;
+  --gt-font-size-2xl: 1.5rem;
+  --gt-font-size-3xl: 1.875rem;
+  --gt-font-size-4xl: 2.25rem;
+  --gt-font-size-5xl: 3rem;
+
+  /* Font weights */
+  --gt-font-weight-normal: 400;
+  --gt-font-weight-medium: 500;
+  --gt-font-weight-semibold: 600;
+  --gt-font-weight-bold: 700;
+
+  /* Line heights */
+  --gt-line-height-tight: 1.2;
+  --gt-line-height-normal: 1.5;
+  --gt-line-height-relaxed: 1.7;
+}

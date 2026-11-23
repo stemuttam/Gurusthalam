@@ -1,1 +1,20 @@
-/* You can add global styles to this file, and also import other style files */
+
+/* =====================================================
+   GURUSTHALAM WEB
+   OFFICIAL SHARED DESIGN SYSTEM INTEGRATION
+   ===================================================== */
+
+@import "../../../libs/design-system/src/index.css";
+
+/* Web application-specific layout tokens */
+
+:root {
+  --gt-web-content-width: 1440px;
+}
+
+/* React application root */
+
+#root {
+  min-height: 100vh;
+  isolation: isolate;
+}

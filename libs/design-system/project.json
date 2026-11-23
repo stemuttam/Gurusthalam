@@ -1,0 +1,12 @@
+
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "@gurusthalam/design-system",
+  "root": "libs/design-system",
+  "sourceRoot": "libs/design-system/src",
+  "projectType": "library",
+  "tags": [
+    "scope:frontend",
+    "type:ui"
+  ]
+}

@@ -1,0 +1,29 @@
+
+/* =====================================================
+   GURUSTHALAM
+   LIGHT THEME
+   ===================================================== */
+
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --gt-background: #f6f8fc;
+
+  --gt-surface: #ffffff;
+  --gt-surface-raised: #ffffff;
+  --gt-surface-muted: #f1f5f9;
+
+  --gt-text: #172033;
+  --gt-text-secondary: #475569;
+  --gt-text-muted: #64748b;
+  --gt-text-inverse: #ffffff;
+
+  --gt-border: #e2e8f0;
+  --gt-border-strong: #cbd5e1;
+
+  --gt-focus: #2563eb;
+
+  --gt-scrollbar-track: #f1f5f9;
+  --gt-scrollbar-thumb: #cbd5e1;
+}

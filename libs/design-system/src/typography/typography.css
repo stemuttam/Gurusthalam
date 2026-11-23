@@ -1,0 +1,84 @@
+
+/* =====================================================
+   GURUSTHALAM
+   TYPOGRAPHY FOUNDATION
+   ===================================================== */
+
+h1 {
+  font-size: clamp(
+    var(--gt-font-size-2xl),
+    4vw,
+    var(--gt-font-size-4xl)
+  );
+}
+
+h2 {
+  font-size: clamp(
+    var(--gt-font-size-xl),
+    3vw,
+    var(--gt-font-size-3xl)
+  );
+}
+
+h3 {
+  font-size: var(--gt-font-size-xl);
+}
+
+h4 {
+  font-size: var(--gt-font-size-lg);
+}
+
+.gt-heading-1 {
+  font-size: var(--gt-font-size-4xl);
+  font-weight: var(--gt-font-weight-bold);
+  line-height: var(--gt-line-height-tight);
+}
+
+.gt-heading-2 {
+  font-size: var(--gt-font-size-3xl);
+  font-weight: var(--gt-font-weight-semibold);
+}
+
+.gt-heading-3 {
+  font-size: var(--gt-font-size-2xl);
+  font-weight: var(--gt-font-weight-semibold);
+}
+
+.gt-body {
+  font-size: var(--gt-font-size-md);
+  line-height: var(--gt-line-height-normal);
+}
+
+.gt-body-small {
+  font-size: var(--gt-font-size-sm);
+  line-height: var(--gt-line-height-normal);
+}
+
+.gt-caption {
+  color: var(--gt-text-muted);
+  font-size: var(--gt-font-size-xs);
+}
+
+.gt-text-muted {
+  color: var(--gt-text-muted);
+}
+
+.gt-text-secondary {
+  color: var(--gt-text-secondary);
+}
+
+.gt-text-primary {
+  color: var(--gt-primary-600);
+}
+
+.gt-text-success {
+  color: var(--gt-success-700);
+}
+
+.gt-text-danger {
+  color: var(--gt-danger-700);
+}
+
+.gt-tabular-nums {
+  font-variant-numeric: tabular-nums;
+}

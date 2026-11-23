@@ -35,13 +35,6 @@
   cursor: pointer;
 }
 
-.gt-checkbox__input:focus-visible,
-.gt-radio__input:focus-visible,
-.gt-switch__input:focus-visible + .gt-switch__track {
-  outline: 3px solid rgb(37 99 235 / 25%);
-  outline-offset: 2px;
-}
-
 .gt-checkbox--disabled,
 .gt-radio--disabled,
 .gt-switch--disabled {
@@ -152,6 +145,15 @@
   transition:
     background-color var(--gt-motion-normal) var(--gt-easing-standard),
     border-color var(--gt-motion-normal) var(--gt-easing-standard);
+}
+
+/*
+ * The switch input is visually clipped, so its focus indicator
+ * must be drawn on the adjacent visible track.
+ */
+.gt-switch__input:focus-visible + .gt-switch__track {
+  outline: 3px solid var(--gt-focus);
+  outline-offset: 3px;
 }
 
 .gt-switch__thumb {

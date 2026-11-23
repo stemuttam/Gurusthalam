@@ -7,6 +7,10 @@
   outline: none;
 }
 
+/*
+ * Use one consistent, theme-aware focus indicator for
+ * keyboard navigation across the design system.
+ */
 :focus-visible {
   outline: 3px solid var(--gt-focus);
   outline-offset: 3px;
@@ -55,6 +59,24 @@
 
 .gt-skip-link:focus {
   transform: translateY(0);
+}
+
+/* Windows High Contrast / forced-colors support */
+
+@media (forced-colors: active) {
+  :focus-visible {
+    outline: 3px solid Highlight;
+    outline-offset: 3px;
+  }
+
+  .gt-switch__input:focus-visible + .gt-switch__track {
+    outline: 3px solid Highlight;
+    outline-offset: 3px;
+  }
+
+  .gt-skip-link {
+    border: 1px solid LinkText;
+  }
 }
 
 /* Reduced motion */

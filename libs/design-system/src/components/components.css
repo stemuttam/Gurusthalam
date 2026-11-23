@@ -129,12 +129,12 @@
 }
 
 .gt-button--accent {
-  background: var(--gt-accent-600);
+  background: var(--gt-accent-700);
   color: #ffffff;
 }
 
 .gt-button--accent:hover:not(:disabled) {
-  background: var(--gt-accent-700);
+  background: var(--gt-accent-800);
 }
 
 .gt-button--ghost {
@@ -246,13 +246,11 @@
   color: var(--gt-text-muted);
 }
 
-.gt-input:focus-visible,
-.gt-select:focus-visible,
-.gt-textarea:focus-visible {
-  border-color: var(--gt-primary-600);
-  box-shadow: 0 0 0 3px rgb(37 99 235 / 15%);
-  outline: none;
-}
+/*
+ * Focus indicators are provided by the global :focus-visible
+ * rule in foundations/accessibility.css. Do not override that
+ * rule here with low-opacity shadows or outline: none.
+ */
 
 .gt-input[aria-invalid='true'],
 .gt-select[aria-invalid='true'],

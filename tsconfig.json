@@ -52,6 +52,9 @@
     },
     {
       "path": "./libs/question-bank"
+    },
+    {
+      "path": "./libs/ui"
     }
   ]
 }

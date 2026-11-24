@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 
 import {
@@ -8,6 +9,7 @@ import {
   PageHeader,
   Progress,
   Separator,
+  ThemeSwitcher,
   Toast,
 } from '@gurusthalam/ui';
 
@@ -24,13 +26,16 @@ export function App() {
         title="Learner workspace"
         description="Shared UI library integration preview."
         actions={
-          <Button
-            variant="secondary"
-            size="medium"
-            onClick={() => setNotificationVisible(true)}
-          >
-            Show notification
-          </Button>
+          <div className={styles.headerActions}>
+            <ThemeSwitcher />
+            <Button
+              variant="secondary"
+              size="medium"
+              onClick={() => setNotificationVisible(true)}
+            >
+              Show notification
+            </Button>
+          </div>
         }
       />
 

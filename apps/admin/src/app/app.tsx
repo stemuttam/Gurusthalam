@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 
 import {
@@ -8,6 +9,7 @@ import {
   EmptyState,
   PageHeader,
   Separator,
+  ThemeSwitcher,
   Toast,
 } from '@gurusthalam/ui';
 
@@ -24,12 +26,15 @@ export function App() {
         title="Administration workspace"
         description="Shared UI library integration preview."
         actions={
-          <Button
-            variant="secondary"
-            onClick={() => setNotificationVisible(true)}
-          >
-            Show notification
-          </Button>
+          <div className={styles.headerActions}>
+            <ThemeSwitcher />
+            <Button
+              variant="secondary"
+              onClick={() => setNotificationVisible(true)}
+            >
+              Show notification
+            </Button>
+          </div>
         }
       />
 

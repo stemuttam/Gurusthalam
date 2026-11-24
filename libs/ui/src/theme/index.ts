@@ -1,3 +1,4 @@
+
 export {
   applyThemePreference,
   getSystemThemePreference,
@@ -20,3 +21,5 @@ export {
 export type { ThemePreference } from './theme-storage.js';
 
 export { useTheme } from './use-theme.js';
+
+export { ThemeSwitcher } from './ThemeSwitcher.js';

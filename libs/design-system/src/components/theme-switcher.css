@@ -1,0 +1,86 @@
+
+/* Theme preference switcher */
+
+.gt-theme-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  padding: 3px;
+
+  border: 1px solid var(--gt-border);
+  border-radius: var(--gt-radius-lg);
+
+  background: var(--gt-surface-muted);
+  color: var(--gt-text-secondary);
+}
+
+.gt-theme-switcher__option {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  padding: 6px 9px;
+
+  border: 1px solid transparent;
+  border-radius: var(--gt-radius-md);
+
+  background: transparent;
+  color: inherit;
+
+  font: inherit;
+  font-size: var(--gt-font-size-xs);
+  font-weight: var(--gt-font-weight-medium);
+  white-space: nowrap;
+
+  cursor: pointer;
+}
+
+.gt-theme-switcher__option:hover {
+  background: var(--gt-surface);
+  color: var(--gt-text);
+}
+
+.gt-theme-switcher__option[data-selected='true'] {
+  border-color: var(--gt-border);
+  background: var(--gt-surface);
+  color: var(--gt-text);
+  box-shadow: var(--gt-shadow-xs);
+}
+
+.gt-theme-switcher__option svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.gt-theme-switcher__option:focus-visible {
+  outline: 2px solid var(--gt-focus);
+  outline-offset: 2px;
+}
+
+@media (max-width: 420px) {
+  .gt-theme-switcher__option {
+    min-width: 36px;
+    padding-inline: 7px;
+  }
+}
+
+@media (forced-colors: active) {
+  .gt-theme-switcher,
+  .gt-theme-switcher__option[data-selected='true'] {
+    border: 1px solid ButtonText;
+  }
+
+  .gt-theme-switcher__option:focus-visible {
+    outline: 2px solid Highlight;
+  }
+}

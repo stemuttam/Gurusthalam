@@ -6,3 +6,4 @@ export * from './forms/index.js';
 export * from './interactions/index.js';
 export * from './layout/index.js';
 export * from './selection/index.js';
+export * from './theme/index.js';

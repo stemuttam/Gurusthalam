@@ -6,44 +6,78 @@
 :root[data-theme='dark'] {
   color-scheme: dark;
 
+  /* Core surfaces */
+
   --gt-background: #0b1220;
 
   --gt-surface: #111c2e;
   --gt-surface-raised: #17243a;
   --gt-surface-muted: #1e293b;
 
+  /* Text */
+
   --gt-text: #f1f5f9;
   --gt-text-secondary: #cbd5e1;
   --gt-text-muted: #94a3b8;
   --gt-text-inverse: #0f172a;
+
+  /* Borders and focus */
 
   --gt-border: #334155;
   --gt-border-strong: #475569;
 
   --gt-focus: #60a5fa;
 
+  /* Scrollbars */
+
   --gt-scrollbar-track: #1e293b;
   --gt-scrollbar-thumb: #475569;
 
-  /* Dark semantic surfaces */
+  /*
+   * Neutral tokens used by badges, progress tracks
+   * and skeletons. Keep neutral-900 unchanged because
+   * the tooltip uses it as a dark background with white text.
+   */
+
+  --gt-neutral-700: #cbd5e1;
+  --gt-neutral-200: #334155;
+  --gt-neutral-100: #1e293b;
+
+  /* Dark primary surfaces */
 
   --gt-primary-100: #1e3a8a;
   --gt-primary-50: #172554;
 
+  /* Dark accent surfaces */
+
   --gt-accent-100: #134e4a;
   --gt-accent-50: #042f2e;
 
+  /* Dark success surfaces and foreground */
+
+  --gt-success-700: #86efac;
   --gt-success-100: #14532d;
   --gt-success-50: #052e16;
 
+  /* Dark warning surfaces and foreground */
+
+  --gt-warning-700: #fcd34d;
   --gt-warning-100: #713f12;
   --gt-warning-50: #422006;
 
+  /* Dark danger surfaces and foreground */
+
+  --gt-danger-700: #fca5a5;
   --gt-danger-100: #7f1d1d;
   --gt-danger-50: #450a0a;
 
+  /* Dark information surfaces and foreground */
+
+  --gt-info-700: #93c5fd;
   --gt-info-100: #1e3a8a;
   --gt-info-50: #172554;
+
+  /* Shadows */
 
   --gt-shadow-sm: 0 1px 3px rgb(0 0 0 / 20%);
 

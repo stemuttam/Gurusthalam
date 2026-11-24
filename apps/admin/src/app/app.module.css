@@ -1,4 +1,3 @@
-
 .integrationPage {
   display: grid;
   width: min(100% - 2rem, 1200px);
@@ -43,14 +42,14 @@
 
 .cardTitle {
   margin: 0;
-  color: var(--gt-text-primary, #172033);
+  color: var(--gt-text);
   font-size: 1.125rem;
   font-weight: 650;
 }
 
 .cardDescription {
   margin: 0;
-  color: var(--gt-text-secondary, #52627a);
+  color: var(--gt-text-secondary);
   line-height: 1.6;
 }
 
@@ -91,9 +90,9 @@
   min-height: 220px;
   padding: 1.5rem;
 
-  border: 1px solid var(--gt-border-subtle, #e2e8f0);
-  border-radius: var(--gt-radius-lg, 0.875rem);
-  background: var(--gt-surface-primary, #ffffff);
+  border: 1px solid var(--gt-border);
+  border-radius: var(--gt-radius-lg);
+  background: var(--gt-surface);
 
   box-shadow:
     0 1px 2px rgb(15 23 42 / 4%),
@@ -102,7 +101,7 @@
 
 .interactionTitle {
   margin: 0;
-  color: var(--gt-text-primary, #172033);
+  color: var(--gt-text);
   font-size: 1.125rem;
   font-weight: 650;
   line-height: 1.4;
@@ -110,7 +109,7 @@
 
 .interactionSubheading {
   margin: 0;
-  color: var(--gt-text-primary, #172033);
+  color: var(--gt-text);
   font-size: 1rem;
   font-weight: 650;
 }
@@ -156,11 +155,11 @@
   max-width: 100%;
   padding: 0.625rem 1rem;
 
-  border: 1px solid var(--gt-border-default, #d8e0ec);
-  border-radius: var(--gt-radius-md, 0.5rem);
-  background: var(--gt-surface-primary, #ffffff);
+  border: 1px solid var(--gt-border);
+  border-radius: var(--gt-radius-md);
+  background: var(--gt-surface);
 
-  color: var(--gt-text-primary, #172033);
+  color: var(--gt-text);
   font: inherit;
   font-size: 0.9rem;
   font-weight: 600;
@@ -174,17 +173,17 @@
 }
 
 .previewButton:hover {
-  background: var(--gt-surface-secondary, #f1f5f9);
+  background: var(--gt-surface-muted);
 }
 
 .previewButton:focus-visible {
-  outline: 2px solid var(--gt-border-focus, #2563eb);
+  outline: 2px solid var(--gt-focus);
   outline-offset: 3px;
 }
 
 .actionResult {
   margin: 0;
-  color: var(--gt-text-secondary, #52627a);
+  color: var(--gt-text-secondary);
   font-size: 0.875rem;
   line-height: 1.5;
 }

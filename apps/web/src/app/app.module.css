@@ -35,7 +35,7 @@
 
 .cardTitle {
   margin: 0;
-  color: var(--gt-text-primary);
+  color: var(--gt-text);
   font-size: 1.125rem;
   font-weight: 650;
 }
@@ -67,7 +67,7 @@
 
 .sectionHeading h2 {
   margin: 0;
-  color: var(--gt-text-primary);
+  color: var(--gt-text);
   font-size: 1.5rem;
   font-weight: 700;
 }
@@ -91,15 +91,15 @@
   gap: 1rem;
   min-width: 0;
   padding: 1.5rem;
-  border: 1px solid var(--gt-border, #dce3ed);
+  border: 1px solid var(--gt-border);
   border-radius: 1rem;
-  background: var(--gt-surface, #ffffff);
+  background: var(--gt-surface);
   box-shadow: 0 1px 3px rgb(15 23 42 / 5%);
 }
 
 .interactionCard h3 {
   margin: 0;
-  color: var(--gt-text-primary);
+  color: var(--gt-text);
   font-size: 1.125rem;
   font-weight: 700;
 }
@@ -126,13 +126,13 @@
   gap: 0.5rem;
   min-height: 90px;
   padding: 1rem;
-  border: 1px solid var(--gt-border, #dce3ed);
+  border: 1px solid var(--gt-border);
   border-radius: 0.75rem;
-  background: var(--gt-surface, #ffffff);
+  background: var(--gt-surface);
 }
 
 .tabPanel strong {
-  color: var(--gt-text-primary);
+  color: var(--gt-text);
 }
 
 .tabPanel p {
@@ -154,21 +154,21 @@
   justify-content: center;
   min-height: 42px;
   padding: 0.625rem 1rem;
-  border: 1px solid var(--gt-border, #dce3ed);
+  border: 1px solid var(--gt-border);
   border-radius: 0.625rem;
-  background: var(--gt-surface, #ffffff);
-  color: var(--gt-text-primary);
+  background: var(--gt-surface);
+  color: var(--gt-text);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
 }
 
 .previewAction:hover {
-  background: var(--gt-surface-secondary, #f1f5f9);
+  background: var(--gt-surface-muted);
 }
 
 .previewAction:focus-visible {
-  outline: 3px solid var(--gt-focus-ring, #2563eb);
+  outline: 3px solid var(--gt-focus);
   outline-offset: 3px;
 }
 
@@ -178,9 +178,9 @@
 
 .actionResult {
   padding: 0.875rem;
-  border: 1px solid var(--gt-border, #dce3ed);
+  border: 1px solid var(--gt-border);
   border-radius: 0.625rem;
-  background: var(--gt-surface-secondary, #f8fafc);
+  background: var(--gt-surface-muted);
   color: var(--gt-text-secondary);
   line-height: 1.5;
   overflow-wrap: anywhere;

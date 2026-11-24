@@ -1,52 +1,83 @@
-import * as UI from './index.js';
 
-import { describe, expect, it } from 'vitest';
+import {
+  Alert,
+  Avatar,
+  Badge,
+  Button,
+  Card,
+  Checkbox,
+  Dialog,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  EmptyState,
+  Input,
+  PageHeader,
+  Progress,
+  Radio,
+  RadioGroup,
+  Select,
+  Separator,
+  Skeleton,
+  StatCard,
+  Switch,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  Textarea,
+  Toast,
+  Tooltip,
+} from './index.js';
 
-const publicComponents = [
-  'Button',
-  'Card',
-  'StatCard',
-  'Avatar',
-  'Badge',
-  'Alert',
-  'EmptyState',
-  'Progress',
-  'Skeleton',
-  'Toast',
-  'Input',
-  'Select',
-  'Textarea',
-  'PageHeader',
-  'Separator',
-  'Checkbox',
-  'Radio',
-  'RadioGroup',
-  'Switch',
-  'Dialog',
-  'Tabs',
-  'TabsList',
-  'TabsTrigger',
-  'TabsContent',
-  'Tooltip',
-  'DropdownMenu',
-  'DropdownMenuTrigger',
-  'DropdownMenuContent',
-  'DropdownMenuItem',
-  'DropdownMenuSeparator',
-] as const;
+describe('@gurusthalam/ui public API', () => {
+  const publicComponents = {
+    Alert,
+    Avatar,
+    Badge,
+    Button,
+    Card,
+    Checkbox,
+    Dialog,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+    EmptyState,
+    Input,
+    PageHeader,
+    Progress,
+    Radio,
+    RadioGroup,
+    Select,
+    Separator,
+    Skeleton,
+    StatCard,
+    Switch,
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger,
+    Textarea,
+    Toast,
+    Tooltip,
+  };
 
-describe('UI library public API', () => {
-  it.each(publicComponents)(
-    'exports the %s component from the package root',
-    (componentName) => {
-      expect(UI).toHaveProperty(componentName);
-      expect(UI[componentName]).toBeDefined();
+  it('exports every currently supported public component', () => {
+    expect(Object.keys(publicComponents)).toHaveLength(30);
+  });
+
+  it.each(Object.entries(publicComponents))(
+    'exports %s as a defined public component',
+    (_name, component) => {
+      expect(component).toBeDefined();
+      expect(
+        typeof component === 'function' ||
+          (typeof component === 'object' && component !== null),
+      ).toBe(true);
     },
   );
-
-  it('exports all component categories through the root entry point', () => {
-    expect(Object.keys(UI)).toEqual(
-      expect.arrayContaining([...publicComponents]),
-    );
-  });
 });

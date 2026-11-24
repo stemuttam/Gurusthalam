@@ -1,3 +1,4 @@
+
 .integrationPage {
   display: grid;
   width: min(100% - 2rem, 1200px);
@@ -42,14 +43,14 @@
 
 .cardTitle {
   margin: 0;
-  color: var(--gt-text-primary);
+  color: var(--gt-text-primary, #172033);
   font-size: 1.125rem;
   font-weight: 650;
 }
 
 .cardDescription {
   margin: 0;
-  color: var(--gt-text-secondary);
+  color: var(--gt-text-secondary, #52627a);
   line-height: 1.6;
 }
 
@@ -59,13 +60,162 @@
   max-width: 760px;
 }
 
+/* Shared interaction preview */
+
+.interactionSection {
+  display: grid;
+  gap: 1.5rem;
+  min-width: 0;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.interactionGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 1.25rem;
+}
+
+.interactionCard {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: 1rem;
+  min-width: 0;
+  min-height: 220px;
+  padding: 1.5rem;
+
+  border: 1px solid var(--gt-border-subtle, #e2e8f0);
+  border-radius: var(--gt-radius-lg, 0.875rem);
+  background: var(--gt-surface-primary, #ffffff);
+
+  box-shadow:
+    0 1px 2px rgb(15 23 42 / 4%),
+    0 3px 10px rgb(15 23 42 / 3%);
+}
+
+.interactionTitle {
+  margin: 0;
+  color: var(--gt-text-primary, #172033);
+  font-size: 1.125rem;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.interactionSubheading {
+  margin: 0;
+  color: var(--gt-text-primary, #172033);
+  font-size: 1rem;
+  font-weight: 650;
+}
+
+.interactionControl {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: 0.75rem;
+  width: 100%;
+  min-width: 0;
+  padding-top: 0.25rem;
+}
+
+.interactionAction {
+  display: flex;
+  width: 100%;
+  align-items: center;
+}
+
+.interactionAction > button {
+  width: 100%;
+}
+
+.interactionContent {
+  display: grid;
+  justify-items: start;
+  gap: 0.75rem;
+  width: 100%;
+  padding-block: 0.75rem;
+}
+
+/* Make the Dialog close button match Learner Web. */
+.interactionContent > button {
+  width: 100%;
+}
+
+.previewButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  max-width: 100%;
+  padding: 0.625rem 1rem;
+
+  border: 1px solid var(--gt-border-default, #d8e0ec);
+  border-radius: var(--gt-radius-md, 0.5rem);
+  background: var(--gt-surface-primary, #ffffff);
+
+  color: var(--gt-text-primary, #172033);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: center;
+
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.previewButton:hover {
+  background: var(--gt-surface-secondary, #f1f5f9);
+}
+
+.previewButton:focus-visible {
+  outline: 2px solid var(--gt-border-focus, #2563eb);
+  outline-offset: 3px;
+}
+
+.actionResult {
+  margin: 0;
+  color: var(--gt-text-secondary, #52627a);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
 @media (max-width: 700px) {
   .integrationPage {
     width: min(100% - 1.25rem, 1200px);
     padding-block: 1.25rem 2rem;
   }
 
-  .integrationGrid {
+  .integrationGrid,
+  .interactionGrid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .interactionSection {
+    gap: 1.125rem;
+  }
+
+  .interactionGrid {
+    gap: 1rem;
+  }
+
+  .interactionCard {
+    min-height: 0;
+    padding: 1.125rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .previewButton {
+    transition: none;
   }
 }

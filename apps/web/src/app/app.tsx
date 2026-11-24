@@ -11,6 +11,7 @@ import {
   Toast,
 } from '@gurusthalam/ui';
 
+import { InteractionPreview } from './interaction-preview.js';
 import styles from './app.module.css';
 
 export function App() {
@@ -95,6 +96,8 @@ export function App() {
           implementation phases.
         </p>
       </section>
+
+      <InteractionPreview />
 
       {notificationVisible ? (
         <Toast

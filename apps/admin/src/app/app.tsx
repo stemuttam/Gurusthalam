@@ -11,6 +11,7 @@ import {
   Toast,
 } from '@gurusthalam/ui';
 
+import { InteractionPreview } from './interaction-preview';
 import styles from './app.module.css';
 
 export function App() {
@@ -74,6 +75,10 @@ export function App() {
           </div>
         </Card>
       </section>
+
+      <Separator decorative={false} />
+
+      <InteractionPreview />
 
       <Separator decorative={false} />
 

@@ -1,3 +1,4 @@
+/// <reference lib="dom" />
 import { fireEvent, render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider } from '@gurusthalam/ui';
@@ -38,6 +39,40 @@ describe('Admin application UI library integration', () => {
         pressed: true,
       }),
     ).toBeTruthy();
+
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+  });
+
+  it('switches back to light theme from the application header', () => {
+    renderApp();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dark theme' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Light theme' }));
+
+    expect(
+      screen.getByRole('button', {
+        name: 'Light theme',
+        pressed: true,
+      }),
+    ).toBeTruthy();
+
+    expect(document.documentElement.getAttribute('data-theme')).toBe('light');
+  });
+
+  it('selects the system preference from the application header', () => {
+    renderApp();
+
+    fireEvent.click(screen.getByRole('button', { name: 'System theme' }));
+
+    expect(
+      screen.getByRole('button', {
+        name: 'System theme',
+        pressed: true,
+      }),
+    ).toBeTruthy();
+
+    expect(localStorage.getItem('gurusthalam-theme')).toBe('system');
+    expect(document.documentElement.getAttribute('data-theme')).toBe('light');
   });
 
   it('renders the administration workspace heading', () => {

@@ -106,6 +106,10 @@ describe('Design system accessibility regression', () => {
 
   const colorsCss = readDesignSystemFile('tokens/colors.css');
 
+  const lightThemeCss = readDesignSystemFile('themes/light.css');
+
+  const darkThemeCss = readDesignSystemFile('themes/dark.css');
+
   it('provides a visible global keyboard focus indicator', () => {
     expect(accessibilityCss).toMatch(
       /:focus-visible\s*\{[^}]*outline:\s*3px solid var\(--gt-focus\)/s,
@@ -169,4 +173,60 @@ describe('Design system accessibility regression', () => {
   it('keeps the original accent token available for other components', () => {
     expect(colorsCss).toMatch(/--gt-accent-600:\s*#0d9488\s*;/);
   });
+
+  it.each([
+    ['success', '--gt-success-700', '--gt-success-50', '--gt-success-100'],
+    ['warning', '--gt-warning-700', '--gt-warning-50', '--gt-warning-100'],
+    ['danger', '--gt-danger-700', '--gt-danger-50', '--gt-danger-100'],
+    ['info', '--gt-info-700', '--gt-info-50', '--gt-info-100'],
+  ])(
+    'keeps light-theme %s semantic text contrast at WCAG AA',
+    (_name, foregroundToken, background50Token, background100Token) => {
+      const foreground = getCssVariable(colorsCss, foregroundToken);
+
+      const background50 = getCssVariable(colorsCss, background50Token);
+
+      const background100 = getCssVariable(colorsCss, background100Token);
+
+      expect(
+        contrastRatio(foreground, background50),
+        `${foregroundToken} against ${background50Token}`,
+      ).toBeGreaterThanOrEqual(4.5);
+
+      expect(
+        contrastRatio(foreground, background100),
+        `${foregroundToken} against ${background100Token}`,
+      ).toBeGreaterThanOrEqual(4.5);
+
+      expect(lightThemeCss).toContain('--gt-background:');
+    },
+  );
+
+  it.each([
+    ['success', '--gt-success-700', '--gt-success-50', '--gt-success-100'],
+    ['warning', '--gt-warning-700', '--gt-warning-50', '--gt-warning-100'],
+    ['danger', '--gt-danger-700', '--gt-danger-50', '--gt-danger-100'],
+    ['info', '--gt-info-700', '--gt-info-50', '--gt-info-100'],
+  ])(
+    'keeps dark-theme %s semantic text contrast at WCAG AA',
+    (_name, foregroundToken, background50Token, background100Token) => {
+      const foreground = getCssVariable(darkThemeCss, foregroundToken);
+
+      const background50 = getCssVariable(darkThemeCss, background50Token);
+
+      const background100 = getCssVariable(darkThemeCss, background100Token);
+
+      expect(
+        contrastRatio(foreground, background50),
+        `${foregroundToken} against ${background50Token}`,
+      ).toBeGreaterThanOrEqual(4.5);
+
+      expect(
+        contrastRatio(foreground, background100),
+        `${foregroundToken} against ${background100Token}`,
+      ).toBeGreaterThanOrEqual(4.5);
+
+      expect(darkThemeCss).toContain('--gt-background:');
+    },
+  );
 });

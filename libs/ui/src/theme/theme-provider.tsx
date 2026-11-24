@@ -27,12 +27,18 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     () => readThemePreference() ?? 'light',
   );
 
+  const [resolvedTheme, setResolvedTheme] = useState(() =>
+    resolveTheme(theme, getSystemThemePreference()),
+  );
+
   const setTheme = useCallback((nextTheme: ThemePreference) => {
     setThemeState(nextTheme);
     writeThemePreference(nextTheme);
-  }, []);
 
-  const resolvedTheme = resolveTheme(theme, getSystemThemePreference());
+    const nextResolvedTheme = applyThemePreference(nextTheme);
+
+    setResolvedTheme(nextResolvedTheme);
+  }, []);
 
   useEffect(() => {
     if (typeof document === 'undefined') {
@@ -54,11 +60,19 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     }
 
     const updateTheme = () => {
-      applyThemePreference(
+      const systemTheme = mediaQuery
+        ? mediaQuery.matches
+          ? 'dark'
+          : 'light'
+        : undefined;
+
+      const nextResolvedTheme = applyThemePreference(
         theme,
         document.documentElement,
-        mediaQuery?.matches ? 'dark' : 'light',
+        systemTheme,
       );
+
+      setResolvedTheme(nextResolvedTheme);
     };
 
     updateTheme();

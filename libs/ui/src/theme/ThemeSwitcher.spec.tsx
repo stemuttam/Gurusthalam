@@ -1,9 +1,15 @@
+// @vitest-environment jsdom
 
-import { fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { ThemeProvider } from './theme-provider.js';
 import { THEME_STORAGE_KEY } from './theme-storage.js';
 import { ThemeSwitcher } from './ThemeSwitcher.js';
+
+afterEach(() => {
+  cleanup();
+});
 
 describe('ThemeSwitcher', () => {
   beforeEach(() => {
@@ -22,9 +28,14 @@ describe('ThemeSwitcher', () => {
   it('renders all three theme preferences', () => {
     renderSwitcher();
 
-    expect(screen.getByRole('group', { name: 'Theme preference' })).toBeTruthy();
+    expect(
+      screen.getByRole('group', { name: 'Theme preference' }),
+    ).toBeTruthy();
+
     expect(screen.getByRole('button', { name: 'Light theme' })).toBeTruthy();
+
     expect(screen.getByRole('button', { name: 'Dark theme' })).toBeTruthy();
+
     expect(screen.getByRole('button', { name: 'System theme' })).toBeTruthy();
   });
 
@@ -32,8 +43,11 @@ describe('ThemeSwitcher', () => {
     renderSwitcher();
 
     expect(
-      screen.getByRole('button', { name: 'Light theme' }).getAttribute('aria-pressed'),
-    ).toBe('true');
+      screen.getByRole('button', {
+        name: 'Light theme',
+        pressed: true,
+      }),
+    ).toBeTruthy();
   });
 
   it('changes and persists the dark preference', () => {
@@ -42,9 +56,14 @@ describe('ThemeSwitcher', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Dark theme' }));
 
     expect(
-      screen.getByRole('button', { name: 'Dark theme' }).getAttribute('aria-pressed'),
-    ).toBe('true');
+      screen.getByRole('button', {
+        name: 'Dark theme',
+        pressed: true,
+      }),
+    ).toBeTruthy();
+
     expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark');
   });
 
@@ -55,7 +74,15 @@ describe('ThemeSwitcher', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Light theme' }));
 
+    expect(
+      screen.getByRole('button', {
+        name: 'Light theme',
+        pressed: true,
+      }),
+    ).toBeTruthy();
+
     expect(document.documentElement.getAttribute('data-theme')).toBe('light');
+
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe('light');
   });
 
@@ -65,22 +92,28 @@ describe('ThemeSwitcher', () => {
     fireEvent.click(screen.getByRole('button', { name: 'System theme' }));
 
     expect(
-      screen.getByRole('button', { name: 'System theme' }).getAttribute('aria-pressed'),
-    ).toBe('true');
+      screen.getByRole('button', {
+        name: 'System theme',
+        pressed: true,
+      }),
+    ).toBeTruthy();
+
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe('system');
   });
 
-  it('supports keyboard activation through native buttons', () => {
+  it('uses native focusable buttons for keyboard accessibility', () => {
     renderSwitcher();
 
-    const darkButton = screen.getByRole('button', { name: 'Dark theme' });
+    const darkButton = screen.getByRole('button', {
+      name: 'Dark theme',
+    });
+
+    expect(darkButton.getAttribute('type')).toBe('button');
+    expect(darkButton.tabIndex).toBe(0);
 
     darkButton.focus();
+
     expect(document.activeElement).toBe(darkButton);
-
-    fireEvent.keyDown(darkButton, { key: 'Enter' });
-    fireEvent.click(darkButton);
-
-    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    expect(darkButton.getAttribute('aria-pressed')).toBe('false');
   });
 });

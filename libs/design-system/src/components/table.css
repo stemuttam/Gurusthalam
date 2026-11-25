@@ -1,0 +1,195 @@
+/* =====================================================
+   GURUSTHALAM
+   TABLE AND DATA TABLE
+   ===================================================== */
+
+.gt-table__container {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  border: 1px solid var(--gt-border);
+  border-radius: var(--gt-radius-lg);
+  background: var(--gt-surface);
+}
+
+.gt-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  color: var(--gt-text);
+  font-size: var(--gt-font-size-sm);
+  text-align: left;
+}
+
+.gt-table__caption {
+  padding: var(--gt-space-4);
+  color: var(--gt-text-secondary);
+  font-size: var(--gt-font-size-sm);
+  text-align: left;
+  caption-side: top;
+}
+
+.gt-table__header {
+  background: var(--gt-surface-muted);
+}
+
+.gt-table__head {
+  padding: var(--gt-space-3) var(--gt-space-4);
+  border-bottom: 1px solid var(--gt-border);
+  color: var(--gt-text-secondary);
+  font-size: var(--gt-font-size-xs);
+  font-weight: var(--gt-font-weight-semibold);
+  letter-spacing: 0.025em;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.gt-table__body .gt-table__row {
+  background: var(--gt-surface);
+  transition: background-color var(--gt-motion-fast) var(--gt-easing-standard);
+}
+
+.gt-table__body .gt-table__row:hover {
+  background: var(--gt-surface-muted);
+}
+
+.gt-table__body .gt-table__row:last-child .gt-table__cell {
+  border-bottom: 0;
+}
+
+.gt-table__row[data-selected='true'] {
+  background: var(--gt-primary-50);
+}
+
+.gt-table__cell {
+  padding: var(--gt-space-3) var(--gt-space-4);
+  border-bottom: 1px solid var(--gt-border);
+  color: var(--gt-text);
+  vertical-align: middle;
+}
+
+.gt-table__footer {
+  background: var(--gt-surface-muted);
+  font-weight: var(--gt-font-weight-medium);
+}
+
+.gt-table__footer .gt-table__cell {
+  border-top: 1px solid var(--gt-border);
+  border-bottom: 0;
+}
+
+/* Data table */
+
+.gt-data-table {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--gt-space-2);
+}
+
+.gt-data-table__table {
+  min-width: 100%;
+}
+
+.gt-data-table__selection-head,
+.gt-data-table__selection-cell {
+  width: 44px;
+  min-width: 44px;
+  padding-right: var(--gt-space-2);
+  padding-left: var(--gt-space-4);
+  text-align: center;
+}
+
+.gt-table__checkbox {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--gt-primary-600);
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.gt-table__checkbox:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.gt-data-table__sort-button {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: var(--gt-space-2);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+
+.gt-data-table__sort-button:hover {
+  color: var(--gt-text);
+}
+
+.gt-data-table__sort-button:focus-visible {
+  border-radius: var(--gt-radius-sm);
+  outline: 3px solid var(--gt-focus);
+  outline-offset: 3px;
+}
+
+.gt-data-table__sort-indicator {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  color: var(--gt-text-secondary);
+  font-size: var(--gt-font-size-sm);
+  line-height: 1;
+}
+
+.gt-data-table__empty {
+  height: 112px;
+  color: var(--gt-text-secondary);
+  text-align: center;
+}
+
+.gt-data-table__selection-status {
+  align-self: flex-end;
+  padding: var(--gt-space-1) var(--gt-space-2);
+  color: var(--gt-text-secondary);
+  font-size: var(--gt-font-size-xs);
+}
+
+@media (max-width: 640px) {
+  .gt-table__head,
+  .gt-table__cell {
+    padding: var(--gt-space-3);
+  }
+
+  .gt-table {
+    min-width: 520px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gt-table__body .gt-table__row {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .gt-table__container {
+    border: 1px solid CanvasText;
+  }
+
+  .gt-data-table__sort-button:focus-visible {
+    outline-color: Highlight;
+  }
+
+  .gt-table__checkbox {
+    accent-color: Highlight;
+  }
+}

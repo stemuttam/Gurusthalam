@@ -59,3 +59,27 @@ export {
   type CommandMenuSeparatorProps,
   type CommandMenuEmptyProps,
 } from './CommandMenu.js';
+
+export {
+  Table,
+  TableHeader,
+  TableBody,
+  TableFooter,
+  TableRow,
+  TableHead,
+  TableCell,
+  TableCaption,
+  DataTable,
+  type TableProps,
+  type TableHeaderProps,
+  type TableBodyProps,
+  type TableFooterProps,
+  type TableRowProps,
+  type TableHeadProps,
+  type TableCellProps,
+  type TableCaptionProps,
+  type DataTableProps,
+  type DataTableColumn,
+  type DataTableSorting,
+  type DataTableSortingChange,
+} from '../data-display/Table.js';

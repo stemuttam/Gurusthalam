@@ -28,6 +28,7 @@
 @import './components/components.css';
 @import './components/selection.css';
 @import './components/data-display.css';
+@import './components/table.css';
 @import './components/feedback.css';
 @import './components/layout.css';
 @import './components/interactions.css';

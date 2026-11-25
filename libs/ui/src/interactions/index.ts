@@ -1,8 +1,4 @@
-
-export {
-  Dialog,
-  type DialogProps,
-} from './Dialog.js';
+export { Dialog, type DialogProps } from './Dialog.js';
 
 export {
   Tabs,
@@ -46,3 +42,20 @@ export {
   type PopoverSide,
   type PopoverAlign,
 } from './Popover.js';
+
+export {
+  CommandMenu,
+  CommandMenuInput,
+  CommandMenuList,
+  CommandMenuGroup,
+  CommandMenuItem,
+  CommandMenuSeparator,
+  CommandMenuEmpty,
+  type CommandMenuProps,
+  type CommandMenuInputProps,
+  type CommandMenuListProps,
+  type CommandMenuGroupProps,
+  type CommandMenuItemProps,
+  type CommandMenuSeparatorProps,
+  type CommandMenuEmptyProps,
+} from './CommandMenu.js';

@@ -32,6 +32,10 @@ import {
   Tooltip,
   List,
   ListItem,
+  Form,
+  FormActions,
+  FormField,
+  FormSection,
 } from './index.js';
 
 describe('@gurusthalam/ui public API', () => {
@@ -69,10 +73,14 @@ describe('@gurusthalam/ui public API', () => {
     Tooltip,
     List,
     ListItem,
+    Form,
+    FormActions,
+    FormField,
+    FormSection,
   };
 
   it('exports every currently supported public component', () => {
-    expect(Object.keys(publicComponents)).toHaveLength(33);
+    expect(Object.keys(publicComponents)).toHaveLength(37);
   });
 
   it.each(Object.entries(publicComponents))(

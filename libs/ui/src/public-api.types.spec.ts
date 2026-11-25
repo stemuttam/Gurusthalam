@@ -53,6 +53,12 @@ import type {
   ListProps,
   ListSize,
   ListVariant,
+  FormActionsAlign,
+  FormActionsJustify,
+  FormActionsProps,
+  FormFieldProps,
+  FormProps,
+  FormSectionProps,
 } from './index.js';
 
 /**
@@ -128,6 +134,13 @@ export type PublicApiTypeContract = {
   radioOption: RadioOption;
   switch: SwitchProps;
 
+  form: FormProps;
+  formField: FormFieldProps;
+  formSection: FormSectionProps;
+  formActions: FormActionsProps;
+  formActionsAlign: FormActionsAlign;
+  formActionsJustify: FormActionsJustify;
+
   list: ListProps;
   listItem: ListItemProps;
   listSize: ListSize;
@@ -183,6 +196,10 @@ describe('@gurusthalam/ui public type API', () => {
     expectTypeOf<SwitchProps>().toBeObject();
     expectTypeOf<ListProps>().toBeObject();
     expectTypeOf<ListItemProps>().toBeObject();
+    expectTypeOf<FormProps>().toBeObject();
+    expectTypeOf<FormFieldProps>().toBeObject();
+    expectTypeOf<FormSectionProps>().toBeObject();
+    expectTypeOf<FormActionsProps>().toBeObject();
   });
 
   it('exposes component variants and configuration types as string types', () => {
@@ -207,6 +224,8 @@ describe('@gurusthalam/ui public type API', () => {
     expectTypeOf<SeparatorOrientation>().toBeString();
     expectTypeOf<ListSize>().toBeString();
     expectTypeOf<ListVariant>().toBeString();
+    expectTypeOf<FormActionsAlign>().toBeString();
+    expectTypeOf<FormActionsJustify>().toBeString();
   });
 
   it('exposes PaginationItem as the supported pagination item union', () => {

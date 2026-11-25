@@ -1,11 +1,21 @@
 import { forwardRef, useId, type TextareaHTMLAttributes } from 'react';
 
+import { useFormFieldContext } from './FormFieldContext.js';
+
 export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
   helperText?: string;
   errorMessage?: string;
   invalid?: boolean;
   fieldClassName?: string;
+}
+
+function mergeIds(...values: Array<string | undefined>): string | undefined {
+  const ids = [
+    ...new Set(values.flatMap((value) => value?.split(/\s+/) ?? [])),
+  ].filter(Boolean);
+
+  return ids.length > 0 ? ids.join(' ') : undefined;
 }
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
@@ -18,26 +28,43 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
       fieldClassName,
       className,
       id: providedId,
-      required = false,
-      disabled = false,
+      required,
+      disabled,
       'aria-describedby': ariaDescribedBy,
+      'aria-invalid': ariaInvalid,
       ...props
     },
     ref,
   ) {
     const generatedId = useId();
-    const textareaId = providedId ?? generatedId;
+    const formField = useFormFieldContext();
+
+    const textareaId = formField?.controlId ?? providedId ?? generatedId;
+
+    const resolvedRequired = required ?? formField?.required ?? false;
+    const resolvedDisabled = disabled ?? formField?.disabled ?? false;
+
     const helperId = `${textareaId}-help`;
     const errorId = `${textareaId}-error`;
 
-    const describedBy =
-      [
-        ariaDescribedBy,
-        helperText ? helperId : undefined,
-        errorMessage ? errorId : undefined,
-      ]
-        .filter(Boolean)
-        .join(' ') || undefined;
+    const describedBy = mergeIds(
+      ariaDescribedBy,
+      formField?.describedBy,
+      helperText ? helperId : undefined,
+      errorMessage ? errorId : undefined,
+    );
+
+    const isAriaInvalid =
+      ariaInvalid === true ||
+      ariaInvalid === 'true' ||
+      ariaInvalid === 'grammar' ||
+      ariaInvalid === 'spelling';
+
+    const isInvalid =
+      invalid ||
+      Boolean(errorMessage) ||
+      Boolean(formField?.invalid) ||
+      isAriaInvalid;
 
     const textareaClasses = ['gt-textarea', className ?? '']
       .filter(Boolean)
@@ -52,7 +79,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         {label ? (
           <label className="gt-label" htmlFor={textareaId}>
             {label}
-            {required ? <span aria-hidden="true"> *</span> : null}
+            {resolvedRequired ? <span aria-hidden="true"> *</span> : null}
           </label>
         ) : null}
 
@@ -61,10 +88,11 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           ref={ref}
           id={textareaId}
           className={textareaClasses}
-          required={required}
-          disabled={disabled}
-          aria-invalid={invalid || Boolean(errorMessage) || undefined}
+          required={resolvedRequired}
+          disabled={resolvedDisabled}
+          aria-invalid={isInvalid || undefined}
           aria-describedby={describedBy}
+          aria-errormessage={formField?.errorId}
         />
 
         {helperText ? (
@@ -74,7 +102,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         ) : null}
 
         {errorMessage ? (
-          <span className="gt-error-text" id={errorId}>
+          <span className="gt-error-text" id={errorId} role="alert">
             {errorMessage}
           </span>
         ) : null}

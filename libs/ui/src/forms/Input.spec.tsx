@@ -1,8 +1,13 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-
+// @vitest-environment jsdom
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it } from 'vitest';
 import { Input } from './Input.js';
 
 describe('Input', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   it('renders a labelled input', () => {
     render(<Input label="Email address" />);
 
@@ -122,5 +127,13 @@ describe('Input', () => {
     render(<Input ref={ref} label="Search" />);
 
     expect(ref.current).toBeInstanceOf(HTMLInputElement);
+  });
+
+  it('preserves a supplied aria-errormessage', () => {
+    render(<Input label="Email" aria-errormessage="external-email-error" />);
+
+    expect(screen.getByRole('textbox').getAttribute('aria-errormessage')).toBe(
+      'external-email-error',
+    );
   });
 });

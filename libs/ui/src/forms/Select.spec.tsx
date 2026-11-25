@@ -1,8 +1,14 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+// @vitest-environment jsdom
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { Select } from './Select.js';
 
 describe('Select', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   it('renders a labelled select with its options', () => {
     render(
       <Select label="Course level" defaultValue="">
@@ -157,5 +163,17 @@ describe('Select', () => {
     );
 
     expect(ref.current).toBeInstanceOf(HTMLSelectElement);
+  });
+
+  it('preserves a supplied aria-errormessage', () => {
+    render(
+      <Select label="Course" aria-errormessage="external-course-error">
+        <option value="science">Science</option>
+      </Select>,
+    );
+
+    expect(screen.getByRole('combobox').getAttribute('aria-errormessage')).toBe(
+      'external-course-error',
+    );
   });
 });

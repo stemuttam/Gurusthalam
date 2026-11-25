@@ -31,6 +31,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
       required,
       disabled,
       'aria-describedby': ariaDescribedBy,
+      'aria-errormessage': ariaErrorMessage,
       'aria-invalid': ariaInvalid,
       ...props
     },
@@ -51,6 +52,12 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
       ariaDescribedBy,
       formField?.describedBy,
       helperText ? helperId : undefined,
+      errorMessage ? errorId : undefined,
+    );
+
+    const resolvedErrorMessage = mergeIds(
+      ariaErrorMessage,
+      formField?.errorId,
       errorMessage ? errorId : undefined,
     );
 
@@ -92,7 +99,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           disabled={resolvedDisabled}
           aria-invalid={isInvalid || undefined}
           aria-describedby={describedBy}
-          aria-errormessage={formField?.errorId}
+          aria-errormessage={resolvedErrorMessage}
         />
 
         {helperText ? (
@@ -102,7 +109,11 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         ) : null}
 
         {errorMessage ? (
-          <span className="gt-error-text" id={errorId} role="alert">
+          <span
+            className="gt-error-text"
+            id={errorId}
+            role={formField ? undefined : 'alert'}
+          >
             {errorMessage}
           </span>
         ) : null}

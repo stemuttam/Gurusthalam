@@ -1,6 +1,8 @@
 import { useId, type HTMLAttributes, type ReactNode } from 'react';
 
 import { FormFieldProvider } from './FormFieldContext.js';
+import { useFormValidationErrors } from './FormValidationContext.js';
+import type { FormErrorValue } from './FormValidationContext.js';
 
 export interface FormFieldProps extends Omit<
   HTMLAttributes<HTMLDivElement>,
@@ -8,41 +10,23 @@ export interface FormFieldProps extends Omit<
 > {
   /** Accessible label for the control. */
   label: ReactNode;
-
   /** Control content, normally Input, Select, or Textarea. */
   children: ReactNode;
-
+  /** Name used to associate the field with Form validation errors. */
+  name?: string;
   /** Optional stable ID assigned to the control. */
   controlId?: string;
-
   /** Supporting text displayed below the control. */
   description?: ReactNode;
-
-  /** Validation message displayed below the control. */
+  /** Explicit validation message; takes precedence over Form validation errors. */
   error?: ReactNode;
-
-  /** Marks the control as required and communicates it to supported controls. */
   required?: boolean;
-
-  /** Displays an optional indicator when the field is not required. */
   optional?: boolean;
-
-  /** Disables supported controls within the field. */
   disabled?: boolean;
-
-  /** Explicit invalid state, useful before an error message is available. */
   invalid?: boolean;
-
-  /** Custom class for the label. */
   labelClassName?: string;
-
-  /** Custom class for the description. */
   descriptionClassName?: string;
-
-  /** Custom class for the error message. */
   errorClassName?: string;
-
-  /** Text shown beside an optional field label. */
   optionalLabel?: ReactNode;
 }
 
@@ -50,9 +34,36 @@ function hasContent(value: ReactNode): boolean {
   return value !== null && value !== undefined && value !== false;
 }
 
+function toErrorContent(value: FormErrorValue | undefined): ReactNode {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (value.length === 0) {
+    return undefined;
+  }
+
+  if (value.length === 1) {
+    return value[0];
+  }
+
+  return (
+    <ul className="gt-form-field__error-list">
+      {value.map((message, index) => (
+        <li key={`${index}-${message}`}>{message}</li>
+      ))}
+    </ul>
+  );
+}
+
 export function FormField({
   label,
   children,
+  name,
   controlId,
   description,
   error,
@@ -68,10 +79,19 @@ export function FormField({
   ...props
 }: FormFieldProps) {
   const generatedId = useId();
-  const resolvedControlId = controlId ?? `gt-form-control-${generatedId}`;
+  const validationErrors = useFormValidationErrors();
+
+  const resolvedControlId =
+    controlId ?? name ?? `gt-form-control-${generatedId}`;
+
+  const mappedError =
+    name && Object.prototype.hasOwnProperty.call(validationErrors, name)
+      ? toErrorContent(validationErrors[name])
+      : undefined;
+  const resolvedError = error ?? mappedError;
 
   const hasDescription = hasContent(description);
-  const hasError = hasContent(error);
+  const hasError = hasContent(resolvedError);
   const isInvalid = invalid || hasError;
 
   const descriptionId = hasDescription
@@ -97,6 +117,7 @@ export function FormField({
       <div
         {...props}
         className={['gt-form-field', className ?? ''].filter(Boolean).join(' ')}
+        data-field-name={name}
         data-invalid={isInvalid ? 'true' : undefined}
         data-disabled={disabled ? 'true' : undefined}
       >
@@ -146,9 +167,8 @@ export function FormField({
             ]
               .filter(Boolean)
               .join(' ')}
-            role="alert"
           >
-            {error}
+            {resolvedError}
           </div>
         ) : null}
       </div>

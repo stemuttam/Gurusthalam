@@ -582,3 +582,97 @@
     color: CanvasText;
   }
 }
+/* =====================================================
+   FORM VALIDATION AND ERROR SUMMARY
+   ===================================================== */
+
+.gt-form-field__error-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gt-space-1);
+  margin: 0;
+  padding-inline-start: var(--gt-space-5);
+}
+
+.gt-form-error-summary {
+  width: 100%;
+  min-width: 0;
+  padding: var(--gt-space-4);
+
+  border: 1px solid var(--gt-danger-700);
+  border-inline-start-width: 4px;
+  border-radius: var(--gt-radius-lg);
+
+  background: var(--gt-surface);
+  color: var(--gt-text);
+}
+
+.gt-form-error-summary:focus {
+  outline: 3px solid var(--gt-danger-700);
+  outline-offset: 3px;
+}
+
+.gt-form-error-summary__title {
+  margin: 0;
+  color: var(--gt-danger-700);
+  font-size: var(--gt-font-size-md);
+  font-weight: var(--gt-font-weight-semibold);
+}
+
+.gt-form-error-summary__description {
+  margin-block: var(--gt-space-2) 0;
+  color: var(--gt-text-muted);
+  font-size: var(--gt-font-size-sm);
+}
+
+.gt-form-error-summary__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gt-space-2);
+  margin-block: var(--gt-space-3) 0;
+  padding-inline-start: var(--gt-space-5);
+}
+
+.gt-form-error-summary__item {
+  color: var(--gt-danger-700);
+  font-size: var(--gt-font-size-sm);
+}
+
+.gt-form-error-summary__link {
+  color: var(--gt-danger-700);
+  font-weight: var(--gt-font-weight-medium);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.gt-form-error-summary__link:hover {
+  text-decoration-thickness: 2px;
+}
+
+.gt-form-error-summary__link:focus-visible {
+  outline: 2px solid var(--gt-danger-700);
+  outline-offset: 3px;
+  border-radius: var(--gt-radius-sm);
+}
+
+.gt-form-field[data-invalid='true'] .gt-form-field__label {
+  color: var(--gt-danger-700);
+}
+
+@media (forced-colors: active) {
+  .gt-form-error-summary {
+    border-color: CanvasText;
+  }
+
+  .gt-form-error-summary__title,
+  .gt-form-error-summary__item,
+  .gt-form-error-summary__link,
+  .gt-form-field[data-invalid='true'] .gt-form-field__label {
+    color: CanvasText;
+  }
+
+  .gt-form-error-summary:focus,
+  .gt-form-error-summary__link:focus-visible {
+    outline-color: Highlight;
+  }
+}

@@ -1,5 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+// @vitest-environment jsdom
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { Button } from '../buttons/Button.js';
 import { Input } from './Input.js';
@@ -11,6 +12,10 @@ import { Select } from './Select.js';
 import { Textarea } from './Textarea.js';
 
 describe('Form composition', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   it('renders a semantic form', () => {
     render(
       <Form aria-label="Create course">
@@ -152,11 +157,16 @@ describe('Form composition', () => {
     );
 
     const input = screen.getByRole('textbox', { name: 'Course name' });
-    const error = screen.getByRole('alert');
+    const error = screen.getByText('A course name is required.');
 
     expect(input.getAttribute('aria-invalid')).toBe('true');
     expect(input.getAttribute('aria-describedby')).toContain(error.id);
     expect(input.getAttribute('aria-errormessage')).toBe(error.id);
+    expect(error.id).toBe(`${input.id}-form-error`);
+
+    // Inline field errors are associated with the control.
+    // FormErrorSummary owns the form-level live announcement.
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('supports a description and error simultaneously', () => {
@@ -172,10 +182,17 @@ describe('Form composition', () => {
 
     const input = screen.getByRole('textbox', { name: 'Course name' });
     const description = screen.getByText('Use the official course title.');
-    const error = screen.getByRole('alert');
+    const error = screen.getByText('The course name is already in use.');
 
+    expect(input.getAttribute('aria-invalid')).toBe('true');
     expect(input.getAttribute('aria-describedby')).toContain(description.id);
     expect(input.getAttribute('aria-describedby')).toContain(error.id);
+    expect(input.getAttribute('aria-errormessage')).toBe(error.id);
+    expect(error.id).toBe(`${input.id}-form-error`);
+
+    // Description and validation text are both associated with the control.
+    // The inline error does not create a second live announcement.
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('communicates required state to the native input', () => {
@@ -397,5 +414,18 @@ describe('Form composition', () => {
 
     expect(actions?.className).toContain('custom-actions');
     expect(actions?.getAttribute('aria-label')).toBe('Form actions');
+  });
+
+  it('does not create a duplicate live alert for a FormField error', () => {
+    render(
+      <Form>
+        <FormField label="Course name" error="A course name is required.">
+          <Input />
+        </FormField>
+      </Form>,
+    );
+
+    expect(screen.queryAllByRole('alert')).toHaveLength(0);
+    expect(screen.getByText('A course name is required.')).toBeTruthy();
   });
 });

@@ -1,8 +1,14 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+// @vitest-environment jsdom
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { Textarea } from './Textarea.js';
 
 describe('Textarea', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   it('renders a labelled textarea', () => {
     render(<Textarea label="Course description" />);
 
@@ -122,5 +128,18 @@ describe('Textarea', () => {
     render(<Textarea ref={ref} label="Notes" />);
 
     expect(ref.current).toBeInstanceOf(HTMLTextAreaElement);
+  });
+
+  it('preserves a supplied aria-errormessage', () => {
+    render(
+      <Textarea
+        label="Description"
+        aria-errormessage="external-description-error"
+      />,
+    );
+
+    expect(screen.getByRole('textbox').getAttribute('aria-errormessage')).toBe(
+      'external-description-error',
+    );
   });
 });

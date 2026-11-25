@@ -30,6 +30,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     required,
     disabled,
     'aria-describedby': ariaDescribedBy,
+    'aria-errormessage': ariaErrorMessage,
     'aria-invalid': ariaInvalid,
     ...props
   },
@@ -50,6 +51,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     ariaDescribedBy,
     formField?.describedBy,
     helperText ? helperId : undefined,
+    errorMessage ? errorId : undefined,
+  );
+
+  const resolvedErrorMessage = mergeIds(
+    ariaErrorMessage,
+    formField?.errorId,
     errorMessage ? errorId : undefined,
   );
 
@@ -89,7 +96,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         disabled={resolvedDisabled}
         aria-invalid={isInvalid || undefined}
         aria-describedby={describedBy}
-        aria-errormessage={formField?.errorId}
+        aria-errormessage={resolvedErrorMessage}
       />
 
       {helperText ? (
@@ -99,7 +106,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       ) : null}
 
       {errorMessage ? (
-        <span className="gt-error-text" id={errorId} role="alert">
+        <span
+          className="gt-error-text"
+          id={errorId}
+          role={formField ? undefined : 'alert'}
+        >
           {errorMessage}
         </span>
       ) : null}

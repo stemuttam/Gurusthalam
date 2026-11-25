@@ -31,6 +31,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
       required,
       disabled,
       'aria-describedby': ariaDescribedBy,
+      'aria-errormessage': ariaErrorMessage,
       'aria-invalid': ariaInvalid,
       children,
       ...props
@@ -52,6 +53,12 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
       ariaDescribedBy,
       formField?.describedBy,
       helperText ? helperId : undefined,
+      errorMessage ? errorId : undefined,
+    );
+
+    const resolvedErrorMessage = mergeIds(
+      ariaErrorMessage,
+      formField?.errorId,
       errorMessage ? errorId : undefined,
     );
 
@@ -93,7 +100,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           disabled={resolvedDisabled}
           aria-invalid={isInvalid || undefined}
           aria-describedby={describedBy}
-          aria-errormessage={formField?.errorId}
+          aria-errormessage={resolvedErrorMessage}
         >
           {children}
         </select>
@@ -105,7 +112,11 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         ) : null}
 
         {errorMessage ? (
-          <span className="gt-error-text" id={errorId} role="alert">
+          <span
+            className="gt-error-text"
+            id={errorId}
+            role={formField ? undefined : 'alert'}
+          >
             {errorMessage}
           </span>
         ) : null}

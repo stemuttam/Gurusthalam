@@ -59,6 +59,12 @@ import type {
   FormFieldProps,
   FormProps,
   FormSectionProps,
+  FormErrorSummaryProps,
+  FormErrorValue,
+  FormValidationErrors,
+  SafeValidationResultLike,
+  ValidationErrorLike,
+  ValidationIssueLike,
 } from './index.js';
 
 /**
@@ -145,6 +151,13 @@ export type PublicApiTypeContract = {
   listItem: ListItemProps;
   listSize: ListSize;
   listVariant: ListVariant;
+
+  formErrorSummary: FormErrorSummaryProps;
+  formErrorValue: FormErrorValue;
+  formValidationErrors: FormValidationErrors;
+  safeValidationResult: SafeValidationResultLike;
+  validationError: ValidationErrorLike;
+  validationIssue: ValidationIssueLike;
 };
 
 describe('@gurusthalam/ui public type API', () => {
@@ -200,6 +213,12 @@ describe('@gurusthalam/ui public type API', () => {
     expectTypeOf<FormFieldProps>().toBeObject();
     expectTypeOf<FormSectionProps>().toBeObject();
     expectTypeOf<FormActionsProps>().toBeObject();
+
+    expectTypeOf<FormErrorSummaryProps>().toBeObject();
+    expectTypeOf<FormValidationErrors>().toBeObject();
+    expectTypeOf<SafeValidationResultLike>().toBeObject();
+    expectTypeOf<ValidationErrorLike>().toBeObject();
+    expectTypeOf<ValidationIssueLike>().toBeObject();
   });
 
   it('exposes component variants and configuration types as string types', () => {

@@ -12,7 +12,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   EmptyState,
+  Form,
+  FormActions,
+  FormErrorSummary,
+  FormField,
+  FormSection,
   Input,
+  List,
+  ListItem,
   PageHeader,
   Pagination,
   Progress,
@@ -30,12 +37,10 @@ import {
   Textarea,
   Toast,
   Tooltip,
-  List,
-  ListItem,
-  Form,
-  FormActions,
-  FormField,
-  FormSection,
+  FORM_LEVEL_ERROR_KEY,
+  validationErrorToFormErrors,
+  validationIssuesToFormErrors,
+  validationResultToFormErrors,
 } from './index.js';
 
 describe('@gurusthalam/ui public API', () => {
@@ -53,7 +58,14 @@ describe('@gurusthalam/ui public API', () => {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
     EmptyState,
+    Form,
+    FormActions,
+    FormErrorSummary,
+    FormField,
+    FormSection,
     Input,
+    List,
+    ListItem,
     PageHeader,
     Pagination,
     Progress,
@@ -71,16 +83,10 @@ describe('@gurusthalam/ui public API', () => {
     Textarea,
     Toast,
     Tooltip,
-    List,
-    ListItem,
-    Form,
-    FormActions,
-    FormField,
-    FormSection,
   };
 
   it('exports every currently supported public component', () => {
-    expect(Object.keys(publicComponents)).toHaveLength(37);
+    expect(Object.keys(publicComponents)).toHaveLength(38);
   });
 
   it.each(Object.entries(publicComponents))(
@@ -93,4 +99,11 @@ describe('@gurusthalam/ui public API', () => {
       ).toBe(true);
     },
   );
+
+  it('exports the form validation helpers', () => {
+    expect(FORM_LEVEL_ERROR_KEY).toBe('_form');
+    expect(validationErrorToFormErrors).toBeTypeOf('function');
+    expect(validationIssuesToFormErrors).toBeTypeOf('function');
+    expect(validationResultToFormErrors).toBeTypeOf('function');
+  });
 });

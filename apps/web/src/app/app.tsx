@@ -1,8 +1,8 @@
-
 import { useState } from 'react';
 
 import {
   Alert,
+  Avatar,
   Badge,
   Button,
   Card,
@@ -50,6 +50,21 @@ export function App() {
       >
         <Card className={styles.integrationCard}>
           <div className={styles.cardContent}>
+            <div className={styles.identityRow}>
+              <Avatar
+                name="Gurusthalam Learner"
+                size="large"
+                alt="Gurusthalam learner profile"
+              />
+
+              <div className={styles.identityContent}>
+                <h2 className={styles.cardTitle}>Learner profile preview</h2>
+                <p className={styles.cardDescription}>
+                  Shared identity and profile components.
+                </p>
+              </div>
+            </div>
+
             <div className={styles.statusRow}>
               <Badge variant="success">Connected</Badge>
               <span className={styles.mutedText}>Package integration</span>
@@ -58,8 +73,8 @@ export function App() {
             <h2 className={styles.cardTitle}>Public component API</h2>
 
             <p className={styles.cardDescription}>
-              Page headers, cards, badges, alerts and buttons are imported
-              through the shared package entry point.
+              Avatars, page headers, cards, badges, alerts and buttons are
+              imported through the shared package entry point.
             </p>
 
             <Button

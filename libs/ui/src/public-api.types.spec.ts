@@ -1,4 +1,3 @@
-
 import { expectTypeOf, it } from 'vitest';
 
 import type {
@@ -24,6 +23,8 @@ import type {
   InputProps,
   PageHeaderHeadingLevel,
   PageHeaderProps,
+  PaginationItem,
+  PaginationProps,
   ProgressProps,
   ProgressSize,
   ProgressVariant,
@@ -48,6 +49,10 @@ import type {
   ToastVariant,
   TooltipPlacement,
   TooltipProps,
+  ListItemProps,
+  ListProps,
+  ListSize,
+  ListVariant,
 } from './index.js';
 
 /**
@@ -68,17 +73,21 @@ export type PublicApiTypeContract = {
   avatar: AvatarProps;
   avatarShape: AvatarShape;
   avatarSize: AvatarSize;
+
   badge: BadgeProps;
   badgeVariant: BadgeVariant;
 
   alert: AlertProps;
   alertVariant: AlertVariant;
   emptyState: EmptyStateProps;
+
   progress: ProgressProps;
   progressSize: ProgressSize;
   progressVariant: ProgressVariant;
+
   skeleton: SkeletonProps;
   skeletonVariant: SkeletonVariant;
+
   toast: ToastProps;
   toastVariant: ToastVariant;
 
@@ -104,6 +113,9 @@ export type PublicApiTypeContract = {
   dropdownMenuItem: DropdownMenuItemProps;
   dropdownMenuSeparator: DropdownMenuSeparatorProps;
 
+  pagination: PaginationProps;
+  paginationItem: PaginationItem;
+
   pageHeader: PageHeaderProps;
   pageHeaderHeadingLevel: PageHeaderHeadingLevel;
 
@@ -115,6 +127,11 @@ export type PublicApiTypeContract = {
   radioGroup: RadioGroupProps;
   radioOption: RadioOption;
   switch: SwitchProps;
+
+  list: ListProps;
+  listItem: ListItemProps;
+  listSize: ListSize;
+  listVariant: ListVariant;
 };
 
 describe('@gurusthalam/ui public type API', () => {
@@ -154,6 +171,8 @@ describe('@gurusthalam/ui public type API', () => {
     expectTypeOf<DropdownMenuItemProps>().toBeObject();
     expectTypeOf<DropdownMenuSeparatorProps>().toBeObject();
 
+    expectTypeOf<PaginationProps>().toBeObject();
+
     expectTypeOf<PageHeaderProps>().toBeObject();
     expectTypeOf<SeparatorProps>().toBeObject();
 
@@ -162,6 +181,8 @@ describe('@gurusthalam/ui public type API', () => {
     expectTypeOf<RadioGroupProps>().toBeObject();
     expectTypeOf<RadioOption>().toBeObject();
     expectTypeOf<SwitchProps>().toBeObject();
+    expectTypeOf<ListProps>().toBeObject();
+    expectTypeOf<ListItemProps>().toBeObject();
   });
 
   it('exposes component variants and configuration types as string types', () => {
@@ -184,5 +205,13 @@ describe('@gurusthalam/ui public type API', () => {
 
     expectTypeOf<PageHeaderHeadingLevel>().toBeString();
     expectTypeOf<SeparatorOrientation>().toBeString();
+    expectTypeOf<ListSize>().toBeString();
+    expectTypeOf<ListVariant>().toBeString();
+  });
+
+  it('exposes PaginationItem as the supported pagination item union', () => {
+    expectTypeOf<PaginationItem>().toEqualTypeOf<
+      number | 'start-ellipsis' | 'end-ellipsis'
+    >();
   });
 });

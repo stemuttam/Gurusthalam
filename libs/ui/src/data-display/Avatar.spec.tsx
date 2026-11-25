@@ -67,8 +67,76 @@ describe('Avatar', () => {
     );
   });
 
+  it('renders a new image source after the previous source failed', () => {
+    const { rerender } = render(
+      <Avatar name="Uttam Pal" src="/avatars/missing.png" />,
+    );
+
+    const failedImage = screen
+      .getByRole('img', { name: 'Uttam Pal' })
+      .querySelector('img');
+
+    expect(failedImage).toBeTruthy();
+
+    fireEvent.error(failedImage as HTMLImageElement);
+
+    expect(screen.getByRole('img', { name: 'Uttam Pal' }).textContent).toBe(
+      'UP',
+    );
+
+    rerender(<Avatar name="Uttam Pal" src="/avatars/uttam.png" />);
+
+    const recoveredImage = screen
+      .getByRole('img', { name: 'Uttam Pal' })
+      .querySelector('img');
+
+    expect(recoveredImage).toBeTruthy();
+    expect(recoveredImage?.getAttribute('src')).toBe('/avatars/uttam.png');
+  });
+
+  it('falls back again if the replacement image also fails', () => {
+    const { rerender } = render(
+      <Avatar name="Uttam Pal" src="/avatars/first.png" />,
+    );
+
+    const firstImage = screen
+      .getByRole('img', { name: 'Uttam Pal' })
+      .querySelector('img');
+
+    fireEvent.error(firstImage as HTMLImageElement);
+
+    rerender(<Avatar name="Uttam Pal" src="/avatars/second.png" />);
+
+    const secondImage = screen
+      .getByRole('img', { name: 'Uttam Pal' })
+      .querySelector('img');
+
+    expect(secondImage).toBeTruthy();
+
+    fireEvent.error(secondImage as HTMLImageElement);
+
+    expect(screen.getByRole('img', { name: 'Uttam Pal' }).textContent).toBe(
+      'UP',
+    );
+  });
+
+  it('does not render an image for an empty source', () => {
+    render(<Avatar name="Uttam Pal" src="   " />);
+
+    const avatar = screen.getByRole('img', { name: 'Uttam Pal' });
+
+    expect(avatar.querySelector('img')).toBeNull();
+    expect(avatar.textContent).toBe('UP');
+  });
+
   it('uses the supplied alt text as its accessible name', () => {
     render(<Avatar name="Uttam Pal" alt="Course instructor" />);
+
+    expect(screen.getByRole('img', { name: 'Course instructor' })).toBeTruthy();
+  });
+
+  it('normalizes whitespace in the accessible name', () => {
+    render(<Avatar name="Uttam Pal" alt="  Course   instructor  " />);
 
     expect(screen.getByRole('img', { name: 'Course instructor' })).toBeTruthy();
   });

@@ -21,6 +21,19 @@
   gap: 1rem;
 }
 
+.identityRow {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 1rem;
+}
+
+.identityContent {
+  display: grid;
+  min-width: 0;
+  gap: 0.35rem;
+}
+
 .statusRow {
   display: flex;
   align-items: center;
@@ -186,6 +199,15 @@
   overflow-wrap: anywhere;
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
 @media (max-width: 700px) {
   .integrationPage {
     width: min(100% - 1.25rem, 1120px);
@@ -200,18 +222,7 @@
   .interactionCard {
     padding: 1.125rem;
   }
-}
 
-.headerActions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  min-width: 0;
-}
-
-@media (max-width: 700px) {
   .headerActions {
     justify-content: flex-start;
   }

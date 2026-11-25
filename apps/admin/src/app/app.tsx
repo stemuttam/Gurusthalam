@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 
 import {
@@ -45,7 +44,11 @@ export function App() {
         <Card className={styles.integrationCard}>
           <div className={styles.cardContent}>
             <div className={styles.identityRow}>
-              <Avatar name="Gurusthalam Administrator" size="large" />
+              <Avatar
+                name="Gurusthalam Administrator"
+                size="large"
+                alt="Gurusthalam administrator profile"
+              />
 
               <div className={styles.identityContent}>
                 <h2 className={styles.cardTitle}>Administrator preview</h2>

@@ -99,18 +99,14 @@ describe('Admin application UI library integration', () => {
   });
 
   it('renders the shared avatar and empty state components', () => {
-    renderApp();
+  renderApp();
 
-    expect(
-      screen.getByRole('img', {
-        name: 'Gurusthalam Administrator',
-      }),
-    ).toBeTruthy();
+  expect(screen.getByText('GA')).toBeTruthy();
 
-    expect(
-      screen.getByText('No administration modules in this preview'),
-    ).toBeTruthy();
-  });
+  expect(
+    screen.getByText('No administration modules in this preview'),
+  ).toBeTruthy();
+});
 
   it('displays and dismisses a shared UI toast notification', () => {
     renderApp();

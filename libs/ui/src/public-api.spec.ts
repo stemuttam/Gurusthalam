@@ -1,4 +1,3 @@
-
 import {
   Alert,
   Avatar,
@@ -15,6 +14,7 @@ import {
   EmptyState,
   Input,
   PageHeader,
+  Pagination,
   Progress,
   Radio,
   RadioGroup,
@@ -30,6 +30,8 @@ import {
   Textarea,
   Toast,
   Tooltip,
+  List,
+  ListItem,
 } from './index.js';
 
 describe('@gurusthalam/ui public API', () => {
@@ -49,6 +51,7 @@ describe('@gurusthalam/ui public API', () => {
     EmptyState,
     Input,
     PageHeader,
+    Pagination,
     Progress,
     Radio,
     RadioGroup,
@@ -64,10 +67,12 @@ describe('@gurusthalam/ui public API', () => {
     Textarea,
     Toast,
     Tooltip,
+    List,
+    ListItem,
   };
 
   it('exports every currently supported public component', () => {
-    expect(Object.keys(publicComponents)).toHaveLength(30);
+    expect(Object.keys(publicComponents)).toHaveLength(33);
   });
 
   it.each(Object.entries(publicComponents))(

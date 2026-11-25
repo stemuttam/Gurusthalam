@@ -1,3 +1,4 @@
+
 export {
   Dialog,
   type DialogProps,
@@ -34,3 +35,14 @@ export {
   type DropdownMenuItemProps,
   type DropdownMenuSeparatorProps,
 } from './DropdownMenu.js';
+
+export {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  type PopoverProps,
+  type PopoverTriggerProps,
+  type PopoverContentProps,
+  type PopoverSide,
+  type PopoverAlign,
+} from './Popover.js';

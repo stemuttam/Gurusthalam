@@ -32,4 +32,5 @@
 @import './components/feedback.css';
 @import './components/layout.css';
 @import './components/interactions.css';
+@import './components/popover.css';
 @import './components/theme-switcher.css';
